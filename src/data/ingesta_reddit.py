@@ -22,7 +22,7 @@ Sin dependencias externas: solo libreria estandar (urllib, xml.etree).
 
 Nota: validado en desarrollo contra r/webdev real (ver docs/fuentes_de_datos_acceso.md).
 La logica de parseo tambien se prueba sin red con fixtures de XML en
-src/data/verificar_transformacion_reddit.py.
+tests/verificar_transformacion_reddit.py.
 """
 
 import argparse

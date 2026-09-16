@@ -85,7 +85,7 @@ lote nuevo, no sobrescribe los anteriores.
 
 **Cómo probar:**
 1. `python -m py_compile src/data/ingesta_reddit.py` — valida sintaxis.
-2. `python src/data/verificar_transformacion_reddit.py` — prueba el parseo de
+2. `python tests/verificar_transformacion_reddit.py` — prueba el parseo de
    Atom y la transformación con fixtures de XML (posts, comentarios,
    comentario borrado), sin red.
 3. `python src/data/ingesta_reddit.py --help` — confirma que el CLI arranca
@@ -96,7 +96,9 @@ lote nuevo, no sobrescribe los anteriores.
    asumido en los fixtures (el primer `<entry>` del feed de comentarios es el
    post mismo con fullname `t3_`, seguido de comentarios `t1_`), texto limpio
    sin residuos de HTML, tildes/comillas UTF-8 preservadas correctamente, y el
-   manejo de `429` funcionando (esperó y reintentó exitosamente).
+   manejo de `429` funcionando (esperó y reintentó exitosamente). Resultado
+   conservado como evidencia en `tests/fixtures/prueba_reddit_controlada.json`
+   (datos reales de Reddit, sin anonimizar).
 
 **Nota:** esta integración es un **diferencial opcional** según el checklist del
 brief oficial; el requisito obligatorio del MVP (ingestión funcional con datos

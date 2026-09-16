@@ -1,13 +1,21 @@
 """Pruebas rapidas (sin red) del parseo y transformacion de feeds RSS de Reddit.
 
-Ejecutar: python src/data/verificar_transformacion_reddit.py
+Ejecutar (desde la raiz del repo): python tests/verificar_transformacion_reddit.py
 
 Los fixtures de XML replican la estructura real de los feeds Atom de Reddit
 (namespace, author/name, content HTML, id con fullname t1_/t3_) — confirmada
-contra r/webdev real en desarrollo (ver docs/fuentes_de_datos_acceso.md).
+contra r/webdev real en desarrollo (ver docs/fuentes_de_datos_acceso.md y el
+snapshot de evidencia en tests/fixtures/prueba_reddit_controlada.json).
 """
 
-from ingesta_reddit import (
+import sys
+from pathlib import Path
+
+# src/data no es un paquete instalable (sin __init__.py/setup.py); se agrega
+# su ruta a sys.path para poder importar ingesta_reddit.py directamente.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src" / "data"))
+
+from ingesta_reddit import (  # noqa: E402
     comentario_fue_eliminado,
     es_comentario,
     parsear_entradas_atom,

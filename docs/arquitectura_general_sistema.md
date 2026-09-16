@@ -19,7 +19,7 @@ flowchart TD
         A --> B --> C --> D
     end
 
-    subgraph S2["Sub-equipo 2 · Cerebro de IA (Danny, Arnold)"]
+    subgraph S2["Sub-equipo 2 · Cerebro de IA (Arthur, Danny, Arnold)"]
         E[Grafo LangGraph/LangChain]
         F[Análisis de sentimiento<br/>y clasificación de temas]
         G[Generación de copy<br/>LinkedIn / Newsletter / FAQ]

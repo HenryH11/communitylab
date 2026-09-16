@@ -14,6 +14,7 @@ marcando cuál ya está implementada como diferencial opcional.
 | Discord | Bot de Discord (`discord.py`) con permisos de lectura de canal, o export manual de historial | Mensajes vía API/gateway del bot | Simulado (`Discord_Grupo_ONE_G10` en datos de ejemplo) |
 | Slack | App de Slack (Bolt SDK / Events API) con OAuth token y suscripción a eventos de canal | Webhook de eventos o polling de Conversations API | No implementado, solo conceptual |
 | Foros (ej. Discourse) | API REST propia del foro (requiere API key de admin) o RSS del foro si está disponible | Polling periódico vía API/RSS | No implementado, solo conceptual |
+| Foro de Alura (comunidad del curso) | Requiere login obligatorio — sin API pública ni RSS (ver sección abajo) | No aplica sin credenciales | Simulado (`Alura_Forum_ONE_G10`); acceso real evaluado y descartado por riesgo |
 | GitHub | GitHub REST/GraphQL API o webhooks de repos (issues, PRs, discussions) con Personal Access Token | Webhook (tiempo real) o polling API (lote) | No implementado, solo conceptual |
 | Formularios (Google Forms/Typeform) | Export CSV manual, o Google Sheets API / webhook de respuestas del formulario | CSV en lote o webhook por respuesta | Simulado (`Formulario_Feedback_ONE_G10`); acceso real conceptual |
 | **Reddit** | Feeds RSS/Atom públicos de Reddit — sin API key ni cuenta de desarrollador | Batch: posts nuevos (`/new/.rss`) + comentarios por post (`/comments/<id>/.rss`) | **Implementado** (`src/data/ingesta_reddit.py`) — diferencial opcional |
@@ -48,17 +49,25 @@ para esta parte.
 
 **Paso 3 — Ejecutar:**
 ```
-python src/data/ingesta_reddit.py --subreddit webdev --posts 5 --comentarios-por-post 20
+python src/data/ingesta_reddit.py --subreddit programacion --posts 5 --comentarios-por-post 20
 ```
+El default es `r/programacion` (comunidad en español de programación/
+desarrollo). Se puede apuntar a cualquier otro subreddit con `--subreddit`;
+si no es hispanohablante, pasar también `--idioma en` (u otro código) para no
+mal-etiquetar el idioma.
 
-**Esquema de salida:** `src/data/mensajes_reddit_webdev.json`, mismo esquema que
+**Esquema de salida:** `src/data/mensajes_reddit.json` (nombre genérico, no
+atado a un subreddit — cada corrida agrega un lote nuevo distinguido por
+`origen_comunidad`, ej. `Reddit_r_programacion`), mismo esquema que
 `src/data/mensajes_comunidad_simulados.json` (`metadata` + `lotes[]` con
-`origen_comunidad`/`periodo_referencia`/`interacciones`). Cada corrida añade un
-lote nuevo, no sobrescribe los anteriores.
+`origen_comunidad`/`periodo_referencia`/`interacciones`).
 
 **Limitaciones conocidas / decisiones tomadas:**
-- `idioma` queda fijo en `"en"` por defecto (Reddit es mayormente en inglés); no
-  hay detección real de idioma todavía.
+- `idioma` se asigna con el flag `--idioma` (default `"es"`, porque el
+  subreddit por defecto — r/programacion — es hispanohablante); no hay
+  detección automática de idioma. Si se apunta a un subreddit en otro idioma
+  hay que pasar `--idioma` explícito, o cada interacción quedará mal
+  etiquetada.
 - `tipo` se asigna con heurística simple (`?` en el texto → `pregunta_tecnica`,
   si no `comentario`); la clasificación fina la hace el pipeline de IA del
   Sub-equipo 2.
@@ -90,20 +99,58 @@ lote nuevo, no sobrescribe los anteriores.
    comentario borrado), sin red.
 3. `python src/data/ingesta_reddit.py --help` — confirma que el CLI arranca
    sin ninguna configuración previa.
-4. **Validado contra Reddit real** (16 de septiembre 2026): se corrió
-   `python src/data/ingesta_reddit.py --subreddit webdev --posts 1 --comentarios-por-post 5`
-   contra `r/webdev` real. Se confirmó: estructura del feed Atom idéntica a lo
-   asumido en los fixtures (el primer `<entry>` del feed de comentarios es el
-   post mismo con fullname `t3_`, seguido de comentarios `t1_`), texto limpio
-   sin residuos de HTML, tildes/comillas UTF-8 preservadas correctamente, y el
-   manejo de `429` funcionando (esperó y reintentó exitosamente). Resultado
-   conservado como evidencia en `tests/fixtures/prueba_reddit_controlada.json`
-   (datos reales de Reddit, sin anonimizar).
+4. **Validado contra Reddit real** (16 de septiembre 2026): primero se probó
+   contra `r/webdev` (inglés, prueba de concepto inicial) y luego, tras
+   decidir usar una comunidad en español, contra `r/programacion` con
+   `python src/data/ingesta_reddit.py --subreddit programacion --posts 1 --comentarios-por-post 5`.
+   Se confirmó: estructura del feed Atom idéntica a lo asumido en los
+   fixtures (el primer `<entry>` del feed de comentarios es el post mismo con
+   fullname `t3_`, seguido de comentarios `t1_`), texto limpio sin residuos de
+   HTML, y — caso nuevo que no se pudo probar con contenido en inglés —
+   **tildes, ñ y signos de interrogación invertidos (¿) preservados
+   correctamente en UTF-8** (ej. "básico", "¿En qué capítulo...", "Raúl
+   González"). El manejo de `429` volvió a activarse (esperó 52s y reintentó
+   exitosamente). Resultado conservado como evidencia en
+   `tests/fixtures/prueba_reddit_controlada.json` (datos reales de Reddit,
+   sin anonimizar; reemplaza la corrida anterior de r/webdev).
 
 **Nota:** esta integración es un **diferencial opcional** según el checklist del
 brief oficial; el requisito obligatorio del MVP (ingestión funcional con datos
 simulados) ya está cubierto por `src/data/mensajes_comunidad_simulados.json` y no
 depende de esta fuente.
+
+## Foro de Alura — por qué no se implementó acceso real
+
+Se evaluó el foro de Alura (`app.aluracursos.com/forum/`) como fuente
+adicional real, dado que el programa ONE se dicta en esa plataforma.
+Verificación directa contra la página: **requiere login obligatorio**
+(redirige a `/loginForm` con el mensaje "¿Todavía no tienes acceso? ¡Estudie
+con nosotros!"); no se encontró RSS, API JSON, ni ningún endpoint público sin
+autenticación. Las rutas observadas (`/forum/todos/1`,
+`/forum/topico-<nombre>-<id>`, `/forum/categoria-<nombre>`,
+`/forum/subcategoria-<nombre>`, `/user/<nombre>`) sugieren un foro a medida
+(no Discourse/phpBB), sin documentación pública de API.
+
+**Por qué no se construyó un scraper autenticado:**
+- Requeriría guardar/usar credenciales personales de Alura de un integrante
+  del equipo — riesgo de seguridad y de exposición de una cuenta personal.
+- Probablemente viola los Términos de Servicio de una plataforma paga
+  (scraping de contenido detrás de login).
+- Es frágil: HTML no documentado ni versionado, sujeto a romperse con
+  cualquier cambio de la plataforma.
+- No hay forma de verificar cumplimiento (p. ej. "respetar eliminaciones",
+  igual que se hace con Reddit) sin acceso documentado a una API.
+
+**Decisión:** tratar Alura como una fuente **simulada**, igual que
+Discord/LinkedIn/Formulario, con el lote `Alura_Forum_ONE_G10` en
+`src/data/mensajes_comunidad_simulados.json` (5 interacciones: preguntas
+técnicas, testimonio, comentario y feedback, con `canal` inspirado en las
+rutas reales de categorías/subcategorías observadas).
+
+**Trabajo futuro opcional (fuera de este PR):** si el equipo decide
+explícitamente asumir el riesgo, una vía menos riesgosa sería usar una
+**cuenta de prueba dedicada** (no personal) con aprobación explícita del
+equipo/organizadores antes de construir cualquier scraper autenticado.
 
 ## Cumplimiento y privacidad (Reddit)
 
@@ -126,7 +173,7 @@ aplican las mismas reglas de la plataforma sobre los datos de los usuarios:
   implementa `comentario_fue_eliminado(...)`, que descarta cualquier
   comentario cuyo texto sea literalmente `"[deleted]"`/`"[removed]"` (o cuyo
   autor aparezca como `"[deleted]"`) **antes** de transformarlo o guardarlo —
-  no llegan a `src/data/mensajes_reddit_webdev.json`.
+  no llegan a `src/data/mensajes_reddit.json`.
 - **Sin perfilado de características personales:** el proyecto no infiere ni
   almacena atributos protegidos de los usuarios (etnia, opiniones políticas,
   salud, orientación sexual, etc.). La única clasificación que se hace es

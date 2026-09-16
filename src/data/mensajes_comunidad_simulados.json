@@ -182,6 +182,57 @@
           "idioma": "es"
         }
       ]
+    },
+    {
+      "origen_comunidad": "Alura_Forum_ONE_G10",
+      "periodo_referencia": "Semana_00",
+      "interacciones": [
+        {
+          "id": "int-017",
+          "autor": "Marcos Villalba",
+          "canal": "categoria-python",
+          "tipo": "pregunta_tecnica",
+          "texto": "Estoy atascado con un error de indentación en un bucle for anidado con pandas, ¿alguien puede revisar mi código en el tópico que abrí?",
+          "fecha": "2026-09-14T09:12:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-018",
+          "autor": "Estefanía Roldán",
+          "canal": "categoria-data-science",
+          "tipo": "testimonio",
+          "texto": "Terminé la formación de Data Science y ya estoy aplicando lo aprendido en un proyecto real de mi trabajo, el foro fue clave para resolver dudas rápido.",
+          "fecha": "2026-09-14T18:40:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-019",
+          "autor": "Joaquín Beltrán",
+          "canal": "subcategoria-javascript",
+          "tipo": "comentario",
+          "texto": "Buen material el de la última clase de funciones asíncronas, muy claro con los ejemplos.",
+          "fecha": "2026-09-15T12:05:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-020",
+          "autor": "Lucía Paredes",
+          "canal": "categoria-programacion-basica",
+          "tipo": "feedback",
+          "texto": "Sugiero agregar más ejercicios prácticos antes de pasar al módulo de estructuras de datos, se siente un salto grande.",
+          "fecha": "2026-09-15T20:30:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-021",
+          "autor": "Tomás Ibáñez",
+          "canal": "categoria-front-end",
+          "tipo": "pregunta_tecnica",
+          "texto": "¿Cuál es la diferencia práctica entre usar Grid y Flexbox para un layout de dashboard? En el tópico nadie me respondió todavía.",
+          "fecha": "2026-09-15T21:10:00Z",
+          "idioma": "es"
+        }
+      ]
     }
   ]
 }

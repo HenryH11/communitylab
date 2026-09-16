@@ -16,12 +16,19 @@ Fuentes RSS usadas:
   - Comentarios de un post especifico: https://www.reddit.com/r/<sub>/comments/<post_id36>/.rss
 
 Uso:
-    python src/data/ingesta_reddit.py --subreddit webdev --posts 5 --comentarios-por-post 20
+    python src/data/ingesta_reddit.py --subreddit programacion --posts 5 --comentarios-por-post 20
+
+El subreddit por defecto es r/programacion (comunidad en espanol de
+programacion/desarrollo, mas representativa del publico del proyecto que
+r/webdev en ingles, usado solo como prueba de concepto inicial). El idioma
+asignado a las interacciones se controla con --idioma (default "es") ya que
+no hay deteccion automatica de idioma.
 
 Sin dependencias externas: solo libreria estandar (urllib, xml.etree).
 
-Nota: validado en desarrollo contra r/webdev real (ver docs/fuentes_de_datos_acceso.md).
-La logica de parseo tambien se prueba sin red con fixtures de XML en
+Nota: validado en desarrollo contra r/webdev (ingles) y r/programacion
+(espanol) reales (ver docs/fuentes_de_datos_acceso.md). La logica de parseo
+tambien se prueba sin red con fixtures de XML en
 tests/verificar_transformacion_reddit.py.
 """
 
@@ -38,11 +45,14 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
-IDIOMA_POR_DEFECTO = "en"
+# r/programacion (default) es hispanohablante; si se apunta a un subreddit en
+# otro idioma hay que pasar --idioma explicito (no hay deteccion automatica).
+IDIOMA_POR_DEFECTO = "es"
 # Relativo a este archivo (no al directorio desde donde se invoque el script),
 # para que "python src/data/ingesta_reddit.py" desde la raiz del repo escriba
-# en src/data/ y no en un data/ nuevo en la raiz.
-RUTA_SALIDA_POR_DEFECTO = Path(__file__).resolve().parent / "mensajes_reddit_webdev.json"
+# en src/data/ y no en un data/ nuevo en la raiz. Nombre generico (no atado a
+# un subreddit): el archivo acumula un lote por cada corrida/subreddit.
+RUTA_SALIDA_POR_DEFECTO = Path(__file__).resolve().parent / "mensajes_reddit.json"
 USER_AGENT_POR_DEFECTO = "communitylab-ingesta-rss/1.0 (hackathon ONE G10, uso educativo)"
 PAUSA_ENTRE_PETICIONES_SEGUNDOS = 2.0
 REINTENTOS_429_MAX = 3
@@ -172,14 +182,19 @@ def comentario_fue_eliminado(entrada):
     return texto in CONTENIDO_ELIMINADO or autor == "[deleted]"
 
 
-def transformar_entrada(entrada, subreddit_nombre):
+def transformar_entrada(entrada, subreddit_nombre, idioma=IDIOMA_POR_DEFECTO):
     """Mapea una entrada de comentario ya parseada al esquema de interaccion
-    del proyecto (ver data/mensajes_comunidad_simulados.json). Funcion pura."""
+    del proyecto (ver data/mensajes_comunidad_simulados.json). Funcion pura.
+
+    idioma se recibe como parametro explicito (no se lee la constante global
+    directamente) para que quede correcto sin importar que subreddit se use:
+    si alguien corre --subreddit webdev de nuevo, debe pasar --idioma en."""
     autor = entrada.get("autor") or "usuario_eliminado"
     texto = entrada.get("texto") or ""
 
     # Heuristica simple y explicitamente provisional: la clasificacion fina
     # (sentimiento/temas/tipo real) la hace el pipeline de IA del Sub-equipo 2.
+    # Funciona igual en espanol e ingles: ambos usan "?" para preguntas.
     tipo = "pregunta_tecnica" if "?" in texto else "comentario"
 
     fullname = entrada.get("fullname") or "sin-id"
@@ -191,7 +206,7 @@ def transformar_entrada(entrada, subreddit_nombre):
         "tipo": tipo,
         "texto": texto,
         "fecha": _normalizar_fecha(entrada.get("fecha_raw")),
-        "idioma": IDIOMA_POR_DEFECTO,
+        "idioma": idioma,
     }
 
 
@@ -212,11 +227,11 @@ def cargar_o_crear_estructura_salida(ruta_salida):
             "descripcion": (
                 "Lotes de interacciones reales ingeridas desde los feeds RSS/Atom "
                 "publicos de Reddit (sin OAuth), con el mismo esquema que "
-                "data/mensajes_comunidad_simulados.json (diferencial opcional, "
+                "src/data/mensajes_comunidad_simulados.json (diferencial opcional, "
                 "no forma parte del MVP obligatorio)."
             ),
-            "version": "0.2.0-borrador",
-            "generado_por": "Gustavo Vasquez (Data Analyst, Sub-equipo 3) via scripts/ingesta_reddit.py",
+            "version": "0.3.0-borrador",
+            "generado_por": "Gustavo Vasquez (Data Analyst, Sub-equipo 3) via src/data/ingesta_reddit.py",
             "fuente": "Reddit RSS/Atom (sin API key)",
         },
         "lotes": [],
@@ -233,7 +248,15 @@ def guardar_lote(ruta_salida, nuevo_lote):
     return estructura
 
 
-def ejecutar_ingesta(subreddit_nombre, num_posts, comentarios_por_post, periodo_referencia, ruta_salida, user_agent):
+def ejecutar_ingesta(
+    subreddit_nombre,
+    num_posts,
+    comentarios_por_post,
+    periodo_referencia,
+    ruta_salida,
+    user_agent,
+    idioma=IDIOMA_POR_DEFECTO,
+):
     url_posts = construir_url_posts_nuevos(subreddit_nombre, num_posts)
     try:
         xml_posts = descargar_xml(url_posts, user_agent)
@@ -263,7 +286,7 @@ def ejecutar_ingesta(subreddit_nombre, num_posts, comentarios_por_post, periodo_
         for comentario in comentarios[:comentarios_por_post]:
             if comentario_fue_eliminado(comentario):
                 continue
-            interacciones.append(transformar_entrada(comentario, subreddit_nombre))
+            interacciones.append(transformar_entrada(comentario, subreddit_nombre, idioma=idioma))
 
     if interacciones:
         lote = construir_lote(subreddit_nombre, periodo_referencia, interacciones)
@@ -277,12 +300,18 @@ def construir_parser_argumentos():
     parser = argparse.ArgumentParser(
         description="Ingesta de interacciones de Reddit via RSS/Atom publico (sin API key)."
     )
-    parser.add_argument("--subreddit", default="webdev", help="Subreddit sin 'r/' (default: webdev).")
+    parser.add_argument("--subreddit", default="programacion", help="Subreddit sin 'r/' (default: programacion).")
     parser.add_argument("--posts", type=int, default=5, help="Cantidad de posts recientes a recorrer.")
     parser.add_argument("--comentarios-por-post", type=int, default=20, help="Max. comentarios a tomar por post.")
     parser.add_argument("--periodo-referencia", default="Semana_00")
     parser.add_argument("--salida", default=str(RUTA_SALIDA_POR_DEFECTO))
     parser.add_argument("--user-agent", default=USER_AGENT_POR_DEFECTO)
+    parser.add_argument(
+        "--idioma",
+        default=IDIOMA_POR_DEFECTO,
+        help=f"Codigo ISO 639-1 a asignar a las interacciones (default: {IDIOMA_POR_DEFECTO}). "
+        "No hay deteccion automatica: si el subreddit esta en otro idioma, pasalo explicito.",
+    )
     return parser
 
 
@@ -296,6 +325,7 @@ def main():
         args.periodo_referencia,
         Path(args.salida),
         args.user_agent,
+        idioma=args.idioma,
     )
 
 

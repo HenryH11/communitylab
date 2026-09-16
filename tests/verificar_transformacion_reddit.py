@@ -102,6 +102,13 @@ def test_transformar_entrada_comentario_normal():
     assert resultado["canal"] == "r/webdev"
     assert resultado["tipo"] == "comentario"
     assert resultado["fecha"] == "2026-09-16T09:15:00Z"
+    assert resultado["idioma"] == "es"  # default actual (r/programacion es hispanohablante)
+
+
+def test_transformar_entrada_respeta_idioma_explicito():
+    entradas = parsear_entradas_atom(FIXTURE_COMENTARIOS)
+    normal = next(e for e in entradas if e["fullname"] == "t1_def456")
+    resultado = transformar_entrada(normal, "webdev", idioma="en")
     assert resultado["idioma"] == "en"
 
 
@@ -124,6 +131,7 @@ if __name__ == "__main__":
     test_comentario_fue_eliminado_detecta_borrado()
     test_comentario_normal_no_se_descarta()
     test_transformar_entrada_comentario_normal()
+    test_transformar_entrada_respeta_idioma_explicito()
     test_transformar_entrada_detecta_pregunta_tecnica()
     test_transformar_entrada_sin_autor_usa_placeholder()
     print("OK: todas las pruebas de parseo/transformacion RSS pasaron.")

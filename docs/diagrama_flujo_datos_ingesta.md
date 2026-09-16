@@ -21,8 +21,11 @@ flowchart TD
 
 1. **Fuentes de la comunidad**: según el brief oficial del proyecto
    (`proyecto_3_community_lab.md`), el sistema debe poder ingerir datos de Discord,
-   Slack, foros, GitHub o formularios. En Semana 0 se simulan tres orígenes
-   representativos: Discord, LinkedIn y un formulario de feedback.
+   Slack, foros, GitHub o formularios. En Semana 0 se simulan cuatro orígenes
+   representativos: Discord, LinkedIn, un formulario de feedback y el foro de
+   Alura (este último simulado porque requiere login y no expone API/RSS
+   pública — ver [`fuentes_de_datos_acceso.md`](./fuentes_de_datos_acceso.md)).
+   Además, Reddit se ingiere de forma **real** (no simulada) vía RSS público.
 2. **Ingesta por lote**: cada lote de entrada respeta el esquema exacto especificado
    por el cliente: `origen_comunidad` (plataforma de origen), `periodo_referencia`
    (semana/periodo cubierto) e `interacciones` (lista de mensajes con `autor`,

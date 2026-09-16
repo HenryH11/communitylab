@@ -1,0 +1,187 @@
+{
+  "metadata": {
+    "descripcion": "Lotes de interacciones simuladas de la comunidad, siguiendo el esquema de entrada definido en proyecto_3_community_lab.md (origen_comunidad / periodo_referencia / interacciones).",
+    "version": "0.2.0-borrador",
+    "generado_por": "Gustavo Vasquez (Data Analyst, Sub-equipo 3)",
+    "fecha_generacion": "2026-09-15",
+    "esquema_lote": {
+      "origen_comunidad": "identificador de la plataforma/canal de origen, ej. Discord_Grupo_ONE_G10",
+      "periodo_referencia": "periodo cubierto por el lote, ej. Semana_00",
+      "interacciones": "lista de interacciones (ver esquema_interaccion)"
+    },
+    "esquema_interaccion": {
+      "id": "identificador unico de la interaccion (extension del equipo, no forma parte del contrato original)",
+      "autor": "nombre del autor del mensaje",
+      "canal": "sub-canal o hilo especifico dentro del origen_comunidad, ej. #logros-y-empleos",
+      "tipo": "testimonio | pregunta_tecnica | comentario | feedback",
+      "texto": "contenido del mensaje",
+      "fecha": "fecha ISO 8601 (extension del equipo)",
+      "idioma": "codigo ISO 639-1 (extension del equipo)"
+    },
+    "nota_tipos": "Taxonomia de 'tipo' definida por Sub-equipo 3 para cubrir los 4 casos de uso del proyecto: testimonio -> Detector de Historias de Exito / Generador de RRSS; pregunta_tecnica -> Motor de FAQ Dinamico; comentario y feedback -> Dashboard de Salud y Sentimiento."
+  },
+  "lotes": [
+    {
+      "origen_comunidad": "Discord_Grupo_ONE_G10",
+      "periodo_referencia": "Semana_00",
+      "interacciones": [
+        {
+          "id": "int-001",
+          "autor": "Camila Restrepo",
+          "canal": "#logros-y-empleos",
+          "tipo": "testimonio",
+          "texto": "Comunidad, gracias a este programa conseguí mi primer trabajo como analista de datos en menos de 3 meses. El proyecto final de mi portfolio fue clave en la entrevista técnica.",
+          "fecha": "2026-09-10T14:32:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-002",
+          "autor": "Diego Fernández",
+          "canal": "#dudas-langgraph",
+          "tipo": "pregunta_tecnica",
+          "texto": "Tengo dudas sobre cómo estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. ¿Alguien tiene un ejemplo práctico de router?",
+          "fecha": "2026-09-10T15:05:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-003",
+          "autor": "Andrés Kuri",
+          "canal": "#logros-y-empleos",
+          "tipo": "testimonio",
+          "texto": "Pasé de no saber programar a construir mi primer modelo de clasificación en 6 semanas, muy agradecido con la comunidad y los mentores.",
+          "fecha": "2026-09-12T11:30:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-004",
+          "autor": "Sofía Torres",
+          "canal": "#soporte-tecnico",
+          "tipo": "pregunta_tecnica",
+          "texto": "¿El certificado final tiene costo adicional o está incluido en el programa?",
+          "fecha": "2026-09-12T08:15:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-005",
+          "autor": "Valentina Ríos",
+          "canal": "#general",
+          "tipo": "comentario",
+          "texto": "El servidor de Discord se siente muy activo, se nota el compromiso del equipo organizador.",
+          "fecha": "2026-09-12T13:47:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-006",
+          "autor": "Ricardo Mena",
+          "canal": "#feedback-programa",
+          "tipo": "feedback",
+          "texto": "Sería genial tener más talleres prácticos sobre despliegue de modelos en la nube antes del hackathon.",
+          "fecha": "2026-09-13T14:22:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-007",
+          "autor": "Héctor Prado",
+          "canal": "#dudas-hackathon",
+          "tipo": "pregunta_tecnica",
+          "texto": "¿Hasta cuándo puedo inscribirme al hackathon si me integro después de la semana 0?",
+          "fecha": "2026-09-14T10:11:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-008",
+          "autor": "Daniela Uriarte",
+          "canal": "#general",
+          "tipo": "comentario",
+          "texto": "Buena onda el equipo de mentores, siempre responden rápido en el canal de dudas.",
+          "fecha": "2026-09-14T16:55:00Z",
+          "idioma": "es"
+        }
+      ]
+    },
+    {
+      "origen_comunidad": "LinkedIn_ONE_G10",
+      "periodo_referencia": "Semana_00",
+      "interacciones": [
+        {
+          "id": "int-009",
+          "autor": "Mariana Botero",
+          "canal": "#post-lanzamiento-programa",
+          "tipo": "comentario",
+          "texto": "Excelente iniciativa, ojalá sigan creciendo este tipo de comunidades en Latinoamérica.",
+          "fecha": "2026-09-10T16:20:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-010",
+          "autor": "Pedro Álvarez",
+          "canal": "#post-lanzamiento-programa",
+          "tipo": "pregunta_tecnica",
+          "texto": "Interesante propuesta, ¿tienen alguna alianza con empresas para prácticas profesionales?",
+          "fecha": "2026-09-11T18:02:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-011",
+          "autor": "Gabriela Núñez",
+          "canal": "#historias-egresados",
+          "tipo": "testimonio",
+          "texto": "El networking que generé en este programa me abrió puertas para colaborar en proyectos open source.",
+          "fecha": "2026-09-13T17:40:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-012",
+          "autor": "Felipe Contreras",
+          "canal": "#historias-egresados",
+          "tipo": "testimonio",
+          "texto": "Gracias a este bootcamp cambié de carrera a los 35 años y hoy trabajo en análisis de datos en una fintech.",
+          "fecha": "2026-09-15T08:30:00Z",
+          "idioma": "es"
+        }
+      ]
+    },
+    {
+      "origen_comunidad": "Formulario_Feedback_ONE_G10",
+      "periodo_referencia": "Semana_00",
+      "interacciones": [
+        {
+          "id": "int-013",
+          "autor": "Javier Fernández",
+          "canal": "#formulario-dudas",
+          "tipo": "pregunta_tecnica",
+          "texto": "¿Cómo puedo acceder a las grabaciones de las clases si me perdí una sesión en vivo?",
+          "fecha": "2026-09-10T15:05:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-014",
+          "autor": "Laura Ocampo",
+          "canal": "#formulario-testimonios",
+          "tipo": "testimonio",
+          "texto": "El acompañamiento del mentor fue clave para entender conceptos de machine learning que antes me costaban mucho.",
+          "fecha": "2026-09-11T10:45:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-015",
+          "autor": "Carlos Mena",
+          "canal": "#formulario-dudas",
+          "tipo": "pregunta_tecnica",
+          "texto": "¿Cuál es la diferencia entre las rutas de Data Analyst y Data Scientist dentro del programa?",
+          "fecha": "2026-09-12T20:05:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-016",
+          "autor": "Isabel Quiroga",
+          "canal": "#formulario-testimonios",
+          "tipo": "testimonio",
+          "texto": "Nunca pensé que podría aprender SQL y Python al mismo tiempo, pero la metodología del curso lo hizo posible.",
+          "fecha": "2026-09-13T09:00:00Z",
+          "idioma": "es"
+        }
+      ]
+    }
+  ]
+}

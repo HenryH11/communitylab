@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "descripcion": "Lotes de interacciones reales ingeridas desde los feeds RSS/Atom publicos de Reddit (sin OAuth), con el mismo esquema que data/mensajes_comunidad_simulados.json (diferencial opcional, no forma parte del MVP obligatorio).",
+    "version": "0.2.0-borrador",
+    "generado_por": "Gustavo Vasquez (Data Analyst, Sub-equipo 3) via scripts/ingesta_reddit.py",
+    "fuente": "Reddit RSS/Atom (sin API key)"
+  },
+  "lotes": [
+    {
+      "origen_comunidad": "Reddit_r_webdev",
+      "periodo_referencia": "Semana_00",
+      "interacciones": [
+        {
+          "id": "reddit-t1_pa3afno",
+          "autor": "SupaSlide",
+          "canal": "r/webdev",
+          "tipo": "comentario",
+          "texto": "Best practice would be to avoid Lovable. If you can’t do that, read https://docs.lovable.dev/features/secrets#secrets-vs-vite\\_-environment-variables Their Node build system seems to rely on .env existing and they can’t/don’t want to create it themselves. They’re not wrong that secrets are best kept in a secrets manager.",
+          "fecha": "2026-09-16T03:09:12Z",
+          "idioma": "en"
+        },
+        {
+          "id": "reddit-t1_pa3bcgi",
+          "autor": "Chicharoh",
+          "canal": "r/webdev",
+          "tipo": "comentario",
+          "texto": "I appreciate your response!",
+          "fecha": "2026-09-16T03:14:50Z",
+          "idioma": "en"
+        },
+        {
+          "id": "reddit-t1_pa3bpla",
+          "autor": "SupaSlide",
+          "canal": "r/webdev",
+          "tipo": "comentario",
+          "texto": "Also, no, your raw .env file is not sent to users (unless you really fuck up your server setup). The VITE prefixed ones do get bundled into the frontend because there is a step to look at all the .env keys and grab the VITE ones. That’s why only publishable keys should get VITE prefixed. But that’s not just some inherent truth to how a .env file works. It’s just a text file that people have all agreed to name and use in similar ways. I think you really, REALLY need to take a step back and learn the very basics first. Lovable is a fucking joke. You’re not a joke for using it, but they are garbage.",
+          "fecha": "2026-09-16T03:17:04Z",
+          "idioma": "en"
+        },
+        {
+          "id": "reddit-t1_pa3c97n",
+          "autor": "HovercraftNo7372",
+          "canal": "r/webdev",
+          "tipo": "comentario",
+          "texto": "Agreed. Using codex or claude code to walk through a toy web app might be good. I am biased cuz i use python / flask mainly, but ai is pretty good at flask and can make it as simple as needed for learning.",
+          "fecha": "2026-09-16T03:20:30Z",
+          "idioma": "en"
+        },
+        {
+          "id": "reddit-t1_pa3cp1d",
+          "autor": "Chicharoh",
+          "canal": "r/webdev",
+          "tipo": "comentario",
+          "texto": "thank you, yeah, I am actually spending more time on learning wtf I'm doing. A month ago this wasn't even in my radar. I'm starting with getting familiar with all the source code files and I spent a lot of time learning what npm/bun is and Node.js... a good chunk goes over my head but I've also learned a lot and just accepting what Claude tells you is definitely not the proper way to learn",
+          "fecha": "2026-09-16T03:23:16Z",
+          "idioma": "en"
+        }
+      ]
+    }
+  ]
+}

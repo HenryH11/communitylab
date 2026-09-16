@@ -6,11 +6,12 @@ Este documento tiene dos públicos distintos, porque les toca a cada uno algo
 diferente de acá:
 
 - **Jhonattan** (Sub-equipo 3, conmigo): para que continúes y refines el
-  proceso de ingesta — puntualmente lo que falta con el foro de Alura y el
-  criterio de relevancia.
+  proceso de ingesta — el criterio de relevancia, y en conjunto con Arthur,
+  el foro de Alura.
 - **Arthur** (encabeza Sub-equipo 2, Data Science): para que sepas qué datos
   tenés disponibles, con qué esquema, y qué cuidados tener al consumirlos
-  desde el pipeline de LangGraph.
+  desde el pipeline de LangGraph — y porque el foro de Alura fue idea tuya,
+  te pido una mano ahí junto con Jhonattan (ver más abajo).
 
 Andá directo a tu sección si no te interesa el resto.
 
@@ -48,13 +49,14 @@ está en [`../../docs/arquitectura_general_sistema.md`](../../docs/arquitectura_
 
 ---
 
-## Para Jhonattan — continuar el proceso de ingesta
+## Para Jhonattan y Arthur juntos — foro de Alura
 
-Dos cosas quedan abiertas de nuestro sub-equipo:
+Arthur, esta fuente fue idea tuya — quedó anotado que la recomendaste como
+posible ingesta real. Te pido tu apoyo acá junto con Jhonattan para dar con
+un mecanismo viable, sumando tu mirada de Sub-equipo 2 (qué te serviría
+recibir de ahí) a la investigación técnica que ya hizo Jhonattan revisando.
 
-### 1. Ingesta real del foro de Alura
-
-Investigué si se podía ingerir el foro de Alura
+Lo que ya investigué yo: se puede ingerir el foro de Alura
 (`app.aluracursos.com/forum/`) igual que Reddit (acceso público, sin
 credenciales) y **no es posible tal cual**:
 
@@ -74,24 +76,26 @@ lote `Alura_Forum_ONE_G10` simulado en `mensajes_comunidad_simulados.json`
 como placeholder, con `canal` inspirado en las rutas reales que vi
 (`categoria-python`, `categoria-data-science`, etc.).
 
-**Qué te pediría que evalúes:**
+**Qué les pediría que evalúen entre los dos:**
 
-1. **Leé primero** `docs/fuentes_de_datos_acceso.md` (sección de Alura) para
+1. **Lean primero** `docs/fuentes_de_datos_acceso.md` (sección de Alura) para
    no repetir la misma investigación.
-2. Si el equipo decide que vale la pena el acceso real, la vía menos
-   riesgosa sería con una **cuenta de prueba dedicada** (no la personal de
-   nadie), y con aprobación explícita del equipo antes de escribir cualquier
-   scraper — quedó anotado como "trabajo futuro opcional" en el doc.
-3. Si se construye, seguí el mismo patrón que `ingesta_reddit.py`: funciones
+2. Si deciden que vale la pena el acceso real, la vía menos riesgosa sería
+   con una **cuenta de prueba dedicada** (no la personal de nadie), y con
+   aprobación explícita del equipo antes de escribir cualquier scraper —
+   quedó anotado como "trabajo futuro opcional" en el doc.
+3. Si se construye, seguir el mismo patrón que `ingesta_reddit.py`: funciones
    puras de transformación (testeables con fixtures, sin red) separadas de
    las funciones que hacen requests, mismo esquema de salida, y filtrar
    contenido borrado/eliminado antes de guardarlo (mismo criterio de
    cumplimiento que usamos con Reddit).
 4. Si no se consigue acceso real a tiempo, no pasa nada — el lote simulado ya
-   cubre el requisito del MVP; podés simplemente mejorar/ampliar esos datos
-   de ejemplo si hace falta más variedad.
+   cubre el requisito del MVP; se puede mejorar/ampliar esos datos de
+   ejemplo si hace falta más variedad.
 
-### 2. Implementar el criterio de relevancia en código
+---
+
+## Para Jhonattan — implementar el criterio de relevancia
 
 `docs/criterio_puntuacion_relevancia.md` tiene el diseño (señales, regla de
 decisión) pero **todavía no está implementado en código** — es justo lo

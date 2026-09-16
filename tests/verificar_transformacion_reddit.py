@@ -2,10 +2,11 @@
 
 Ejecutar (desde la raiz del repo): python tests/verificar_transformacion_reddit.py
 
-Los fixtures de XML replican la estructura real de los feeds Atom de Reddit
-(namespace, author/name, content HTML, id con fullname t1_/t3_) — confirmada
-contra r/webdev real en desarrollo (ver docs/fuentes_de_datos_acceso.md y el
-snapshot de evidencia en tests/fixtures/prueba_reddit_controlada.json).
+Los fixtures de XML (con datos de ejemplo de "webdev") replican la estructura
+real de los feeds Atom de Reddit (namespace, author/name, content HTML, id
+con fullname t1_/t3_) — confirmada contra r/webdev y r/programacion reales en
+desarrollo (ver docs/fuentes_de_datos_acceso.md y el snapshot de evidencia
+real en tests/fixtures/prueba_reddit_controlada.json).
 """
 
 import sys

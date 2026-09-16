@@ -1,11 +1,59 @@
-# Proyecto de CommunityLab MotorInteligente - Equipo 39 - PROGRAMA ONE ALURA LATAM GRUPO 10
+# 🚀 Proyecto de CommunityLab MotorInteligente - Equipo 39 - PROGRAMA ONE ALURA LATAM GRUPO 10
 
-Este repositorio contiene el esqueleto base y la arquitectura inicial para el desarrollo del MVP de CommunityLab.
+¡Bienvenidos a **CommunityLab**! Este proyecto es el MVP (Producto Mínimo Viable) desarrollado por el Equipo 39 del Programa ONE G10 con No Country. Es un motor inteligente diseñado para potenciar la interacción y gestión dentro de comunidades de aprendizaje en Latinoamérica, integrando arquitectura en la nube y agentes de Inteligencia Artificial.
 
-## 📁 Estructura del Proyecto
-* **.github/workflows:** Automatizaciones y despliegue continuo (CI/CD).
-* **config:** Archivos de configuración del entorno.
-* **src/data:** Gestión y almacenamiento de datos locales o semiestructurados.
-* **src/agents:** Lógica de los agentes de Inteligencia Artificial.
-* **src/app:** Código de la aplicación principal.
-* **tests:** Pruebas unitarias y de integración.
+---
+
+## 📁 Estructura General del Proyecto
+
+El esqueleto técnico ha sido desplegado bajo los más altos estándares de gobernanza:
+
+*   **`.github/workflows/`**: Configuraciones de integración y despliegue continuo (CI/CD).
+*   **`config/`**: Módulos y variables de entorno para la inicialización del ecosistema.
+*   **`src/data/`**: Gestión, ingesta y almacenamiento de datos semiestructurados.
+*   **`src/agents/`**: Lógica central, prompts y orquestación de los Agentes de IA.
+*   **`src/app/`**: Interfaz de usuario y flujos principales de la aplicación del MVP.
+*   **`tests/`**: Pruebas unitarias, automatizadas y de integración de software.
+
+---
+
+## 🛠️ Tecnologías y Herramientas (Semana 0)
+*   **Lenguaje:** Python 3.11+
+*   **Control de Versiones:** Git & GitHub
+*   **Infraestructura Nube:** Oracle Cloud Infrastructure (OCI)
+
+---
+
+## 👥 Miembros del Equipo 39 (ONE G10 LATAM)
+
+### 💼 Project Manager
+*   **Hernández Godoy Enrique** - *Project Manager*
+
+### 📊 Data Analyst
+*   **Benavides Concha Jhonattan Gabriel** - *Data Analyst*
+*   **Vásquez Gustavo** - *Data Analyst*
+
+### 🧪 Data Scientist
+*   **Bustinza Arnold** - *Data Scientist*
+*   **González Portillo Danny de Jesús** - *Data Scientist*
+*   **Pinto Arthur** - *Data Scientist*
+
+### 💻 Software Engineer / Solution Architect
+*   **Aviles Nelson Ramses** - *Software Engineer / Solution Architect*
+*   **Peralta Ocampos Sebastián** - *Software Engineer / Solution Architect*
+
+### ☁️ Cloud Engineer / DevOps
+*   **Preda Renato** - *Cloud Engineer*
+*   **Soto Marco** - *Cloud Engineer*
+
+---
+
+## 🛡️ Flujo de Trabajo para el Equipo (Gobernanza)
+
+La rama `main` está **protegida**. No se permiten cambios directos. Para colaborar, sigue estos pasos desde tu terminal:
+
+1. **Clonar el proyecto:** `git clone https://github.com`
+2. **Crear una rama de trabajo:** `git checkout -b feature/tu-nombre-tarea`
+3. **Guardar cambios locales:** `git add .` y `git commit -m "feat: breve descripción"`
+4. **Subir tu rama a GitHub:** `git push -u origin feature/tu-nombre-tarea`
+5. **Abrir un Pull Request (PR)** en la web para revisión y aprobación del equipo (requiere 1 aprobación mínima).

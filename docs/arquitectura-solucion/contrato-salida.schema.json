@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://communitylab.one-g10/schemas/contrato-salida.json",
+  "title": "CommunityLab - Contrato de Salida",
+  "description": "Respuesta estructurada: análisis consolidado del lote y activos de distribución generados.",
+  "type": "object",
+  "required": ["status", "resumen_comunidad", "activos_distribucion_generados", "almacenamiento_oci"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["exito", "parcial", "error"]
+    },
+    "resumen_comunidad": {
+      "type": "object",
+      "required": ["total_interacciones_procesadas", "sentimiento_predominante", "temas_principales"],
+      "additionalProperties": false,
+      "properties": {
+        "total_interacciones_procesadas": { "type": "integer", "minimum": 0 },
+        "sentimiento_predominante": {
+          "type": "string",
+          "enum": ["Altamente Positivo", "Positivo", "Neutral", "Negativo", "Altamente Negativo", "Mixto"]
+        },
+        "temas_principales": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    },
+    "activos_distribucion_generados": {
+      "type": "object",
+      "description": "Debe incluir al menos 2 tipos de activos (requisito del MVP del hackathon).",
+      "minProperties": 2,
+      "additionalProperties": false,
+      "properties": {
+        "post_linkedin": { "$ref": "#/$defs/post_linkedin" },
+        "post_x": { "$ref": "#/$defs/post_x" },
+        "destaque_newsletter_semanal": { "$ref": "#/$defs/newsletter" },
+        "sugerencia_contenido_faq": { "$ref": "#/$defs/faq" },
+        "caso_testimonio": { "$ref": "#/$defs/testimonio" }
+      }
+    },
+    "almacenamiento_oci": {
+      "type": "object",
+      "required": ["bucket", "ruta_objeto", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "bucket": { "type": "string" },
+        "ruta_objeto": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["guardado_con_exito", "error_almacenamiento", "pendiente"]
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "description": "Presente solo cuando status = \"error\".",
+      "required": ["codigo", "mensaje"],
+      "additionalProperties": false,
+      "properties": {
+        "codigo": { "type": "string" },
+        "mensaje": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "post_linkedin": {
+      "type": "object",
+      "required": ["titulo", "copy", "canal_recomendado", "potencial_engagement"],
+      "additionalProperties": false,
+      "properties": {
+        "titulo": { "type": "string" },
+        "copy": { "type": "string" },
+        "canal_recomendado": { "type": "string" },
+        "potencial_engagement": { "type": "string", "enum": ["Alto", "Medio", "Bajo"] }
+      }
+    },
+    "post_x": {
+      "type": "object",
+      "description": "[Propuesto] Formato breve para X/Twitter, no incluido en el ejemplo original del documento.",
+      "required": ["copy", "canal_recomendado"],
+      "additionalProperties": false,
+      "properties": {
+        "copy": { "type": "string" },
+        "canal_recomendado": { "type": "string" }
+      }
+    },
+    "newsletter": {
+      "type": "object",
+      "required": ["seccion", "titular", "resumen"],
+      "additionalProperties": false,
+      "properties": {
+        "seccion": { "type": "string" },
+        "titular": { "type": "string" },
+        "resumen": { "type": "string" }
+      }
+    },
+    "faq": {
+      "type": "object",
+      "required": ["tema", "origen", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "tema": { "type": "string" },
+        "origen": { "type": "string" },
+        "status": { "type": "string", "enum": ["derivado_a_mentoria", "publicado", "pendiente"] }
+      }
+    },
+    "testimonio": {
+      "type": "object",
+      "description": "[Propuesto] Caso de testimonio independiente del post de LinkedIn, para cuando el equipo prefiera separarlos.",
+      "required": ["autor", "cita_destacada", "logro"],
+      "additionalProperties": false,
+      "properties": {
+        "autor": { "type": "string" },
+        "cita_destacada": { "type": "string" },
+        "logro": { "type": "string" },
+        "canal_recomendado": { "type": "string" }
+      }
+    }
+  }
+}

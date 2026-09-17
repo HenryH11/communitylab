@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://communitylab.one-g10/schemas/contrato-intermedio-ingesta.json",
+  "title": "CommunityLab - Contrato Intermedio (Ingesta -> IA)",
+  "description": "Estructura de src/data/mensajes_comunidad_simulados.json, el archivo que produce Sub-equipo 3 (Ingesta/Limpieza: Gustavo Vasquez y Jhonattan Benavides) y consume Sub-equipo 2 (LangGraph: Danny y Arnold) para analisis de sentimiento, temas y generacion de copy. Mantiene los mismos nombres de campo que el Contrato de Entrada (autor, canal, tipo, texto) y agrega 3 extensiones internas (id, fecha, idioma) sin romper el contrato oficial con el cliente.",
+  "type": "object",
+  "required": ["origen_comunidad", "periodo_referencia", "interacciones"],
+  "additionalProperties": false,
+  "properties": {
+    "origen_comunidad": {
+      "type": "string",
+      "description": "Se propaga sin cambios desde el Contrato de Entrada."
+    },
+    "periodo_referencia": {
+      "type": "string",
+      "description": "Se propaga sin cambios desde el Contrato de Entrada."
+    },
+    "interacciones": {
+      "type": "array",
+      "minItems": 0,
+      "description": "Ya pasadas por limpieza y puntuacion de relevancia; puede venir vacio si ningun mensaje del lote fue relevante.",
+      "items": { "$ref": "#/$defs/interaccion_enriquecida" }
+    }
+  },
+  "$defs": {
+    "interaccion_enriquecida": {
+      "type": "object",
+      "required": ["id", "autor", "canal", "tipo", "texto", "fecha", "idioma"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador unico asignado en la etapa de ingesta (no viene del cliente)."
+        },
+        "autor": { "type": "string" },
+        "canal": { "type": "string" },
+        "tipo": {
+          "type": "string",
+          "enum": ["testimonio", "pregunta_tecnica", "comentario", "feedback"]
+        },
+        "texto": {
+          "type": "string",
+          "description": "Texto ya normalizado: minusculas y espacios homogeneizados, sin HTML ni ruido, deduplicado contra otras interacciones del lote.",
+          "minLength": 1
+        },
+        "fecha": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha/hora de la interaccion original, asignada en ingesta."
+        },
+        "idioma": {
+          "type": "string",
+          "description": "Codigo de idioma detectado automaticamente.",
+          "examples": ["es", "en", "pt"]
+        }
+      }
+    }
+  }
+}

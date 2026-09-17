@@ -1,7 +1,7 @@
 {
   "metadata": {
     "descripcion": "Lotes de interacciones simuladas de la comunidad, siguiendo el esquema de entrada definido en proyecto_3_community_lab.md (origen_comunidad / periodo_referencia / interacciones).",
-    "version": "0.2.0-borrador",
+    "version": "0.3.0-borrador",
     "generado_por": "Gustavo Vasquez (Data Analyst, Sub-equipo 3)",
     "fecha_generacion": "2026-09-15",
     "esquema_lote": {
@@ -18,7 +18,9 @@
       "fecha": "fecha ISO 8601 (extension del equipo)",
       "idioma": "codigo ISO 639-1 (extension del equipo)"
     },
-    "nota_tipos": "Taxonomia de 'tipo' definida por Sub-equipo 3 para cubrir los 4 casos de uso del proyecto: testimonio -> Detector de Historias de Exito / Generador de RRSS; pregunta_tecnica -> Motor de FAQ Dinamico; comentario y feedback -> Dashboard de Salud y Sentimiento."
+    "nota_tipos": "Taxonomia de 'tipo' definida por Sub-equipo 3 para cubrir los 4 casos de uso del proyecto: testimonio -> Detector de Historias de Exito / Generador de RRSS; pregunta_tecnica -> Motor de FAQ Dinamico; comentario y feedback -> Dashboard de Salud y Sentimiento.",
+    "actualizado_por": "Jhonattan Benavides (Data Analyst, Sub-equipo 3)",
+    "nota_actualizacion": "Se agregan los dos casos del brief conservando las 21 interacciones anteriores."
   },
   "lotes": [
     {
@@ -95,6 +97,24 @@
           "tipo": "comentario",
           "texto": "Buena onda el equipo de mentores, siempre responden rápido en el canal de dudas.",
           "fecha": "2026-09-14T16:55:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-022",
+          "autor": "Mariana Souza",
+          "canal": "#logros-y-empleos",
+          "tipo": "testimonio",
+          "texto": "Comunidad, quede seleccionada para el puesto de Desarrolladora Junior de IA! El proyecto del curso de LangChain y OCI que construi en mi portfolio marco toda la diferencia en la entrevista tecnica. Muy agradecida con la comunidad por todo el apoyo!",
+          "fecha": "2026-09-16T15:00:00Z",
+          "idioma": "es"
+        },
+        {
+          "id": "int-023",
+          "autor": "Lucas Albuquerque",
+          "canal": "#dudas-langgraph",
+          "tipo": "pregunta_tecnica",
+          "texto": "Tengo dudas sobre como estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. Alguien tiene un ejemplo practico de router?",
+          "fecha": "2026-09-16T16:00:00Z",
           "idioma": "es"
         }
       ]

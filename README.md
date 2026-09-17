@@ -22,6 +22,25 @@ El esqueleto técnico ha sido desplegado bajo los más altos estándares de gobe
 *   **Control de Versiones:** Git & GitHub
 *   **Infraestructura Nube:** Oracle Cloud Infrastructure (OCI)
 
+## Ingesta y relevancia (aporte de Jhonattan)
+
+Con Python 3.11+, desde la raíz, sin instalar dependencias para este módulo:
+
+```sh
+python -m src.data.ingest --config config/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z
+python -m unittest discover -s tests -p "test_*.py" -v
+python tests/verificar_transformacion_reddit.py
+```
+
+La primera orden genera datos seleccionados y un informe de decisiones en
+`output/datos/`. La fecha fija permite reproducir la demo; para datos actuales,
+indicar otra fecha o quitar `--fecha-referencia` para usar UTC actual.
+
+Consultar el [criterio](docs/criterio_puntuacion_relevancia.md), el
+[contrato para IA](docs/contrato_datos_ingesta.md) y el
+[avance de Jhonattan](docs/avance_jhonattan_semana1.md). Los pesos y el contrato
+se entregan como propuestas para validación del equipo.
+
 ---
 
 ## 👥 Miembros del Equipo 39 (ONE G10 LATAM)

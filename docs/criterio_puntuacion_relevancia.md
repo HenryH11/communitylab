@@ -1,46 +1,104 @@
-# Criterio de puntuación de relevancia — Sub-equipo 3 (Datos)
+# Criterio de puntuación de relevancia
 
-Primer borrador de diseño (sin implementación de código todavía) del mecanismo para
-puntuar y filtrar los mejores testimonios y dudas de la comunidad antes de pasarlos
-al pipeline de IA. Responsables: Gustavo Vásquez y Jhonattan Benavides.
+Implementación de Jhonattan Benavides sobre el diseño inicial de Gustavo Vásquez.
+Versión `1.0-propuesta`, 17 de septiembre de 2026. Los pesos son una propuesta
+funcional para revisión conjunta con Gustavo y el subequipo de IA; no representan
+un acuerdo ya aprobado ni resultados de una evaluación con usuarios reales.
 
-## Objetivo
+## Función dentro del proyecto
 
-El brief oficial del proyecto (`proyecto_3_community_lab.md`) pide explícitamente un
-"mecanismo de puntuación de relevancia para seleccionar los mejores momentos de la
-comunidad". Dado el lote de interacciones ya limpias (ver
-[`diagrama_flujo_datos_ingesta.md`](./diagrama_flujo_datos_ingesta.md)), este criterio
-asigna un puntaje a cada `interacción` para quedarnos con los testimonios, preguntas
-técnicas y piezas de feedback más representativos, evitando que el pipeline de IA
-(Sub-equipo 2) procese ruido o contenido de bajo valor.
+`src/data/ingest.py` lee JSON, valida el contrato, limpia los textos y usa
+`src/data/relevancia.py` para seleccionar mensajes para la generación de contenido.
+Funciona con datos simulados y con la salida JSON de la ingesta de Reddit de Gustavo.
+Usa solamente la biblioteca estándar de Python 3.11+ y no hace peticiones de red.
 
-## Señales propuestas
+La selección devuelve el mismo formato de entrada y un informe separado con puntaje,
+desglose, palabras clave encontradas, advertencias y motivos de descarte de cada
+interacción. La función de Python no modifica la entrada. La CLI impide escribir
+las salidas sobre el archivo de entrada o de configuración.
 
-| Señal | Descripción | Efecto en el puntaje |
-| --- | --- | --- |
-| Longitud del mensaje | Mensajes muy cortos (ej. "gracias", "ok") aportan poco contexto | Penaliza mensajes por debajo de un mínimo de caracteres/palabras |
-| Palabras clave del dominio | Presencia de términos relevantes al programa (ej. "aprendí", "trabajo", "certificado", "mentor", "proyecto") | Suma puntaje por cada palabra clave detectada |
-| Señal de sentimiento | Mensajes con carga emocional clara (positiva o negativa) suelen ser más útiles como testimonio o alerta | Suma puntaje a mensajes con sentimiento marcado; neutros puntúan más bajo |
-| Tipo de interacción | `testimonio` y `pregunta_tecnica` son más valiosos para los objetivos del proyecto (casos de éxito y FAQ) que `comentario`/`feedback` genérico | Pondera tipo `testimonio`/`pregunta_tecnica` por encima de `comentario`/`feedback` |
-| Duplicados / spam | Mensajes repetidos o con patrones de spam (enlaces sueltos, texto repetido) | Descarta o penaliza fuertemente |
-| Frescura | Mensajes más recientes reflejan mejor el estado actual de la comunidad | Suma un pequeño bonus a mensajes de los últimos días |
+## Reglas implementadas
 
-## Regla de decisión (borrador)
+El puntaje por defecto está entre 0 y 100. Los parámetros se pueden cambiar en
+`config/relevancia.json`; la suma máxima de los pesos configurados debe ser <= 100.
 
-1. Calcular un puntaje combinado (suma ponderada de las señales anteriores).
-2. Descartar automáticamente mensajes marcados como duplicado/spam o por debajo del
-   mínimo de longitud.
-3. Ordenar el resto por puntaje descendente y quedarse con el top N (a definir según
-   volumen real de mensajes, ej. top 20%) para pasar al pipeline de IA.
+| Señal | Regla inicial |
+| --- | --- |
+| Tipo | `testimonio`: 40; `pregunta_tecnica`: 40; `feedback`: 30; `comentario`: 10 |
+| Longitud | 1 punto por palabra hasta 20. Con otro peso: `floor(min(palabras, 20) * puntos_longitud / 20)` |
+| Palabras clave | 5 puntos por término distinto hasta 30. Comparación de palabras completas sin distinguir mayúsculas ni tildes; no hay stemming |
+| Frescura | 10 puntos si la fecha está entre el instante de referencia y 7 días antes, incluidos ambos extremos |
 
-## Pendientes para Semana 1
+Las URLs no suman palabras ni palabras clave. Repetir `python` muchas veces no
+incrementa el bonus de dominio. Se priorizan testimonios y preguntas por el objetivo
+de producir historias de éxito y FAQ. Una queja útil puede conservarse como feedback.
 
-- Definir los pesos exactos de cada señal junto con Sub-equipo 2 (para que el
-  puntaje sea útil como entrada del análisis de sentimiento, no lo duplique).
-- Implementar la lógica en Python como parte del script de limpieza/ingesta.
-- Validar el criterio contra el archivo `src/data/mensajes_comunidad_simulados.json`.
+Se excluyen mensajes con cualquiera de estas condiciones:
 
-## Notas
+- Menos de 20 caracteres después de la limpieza (`texto_corto`).
+- Uno o varios enlaces sin texto que aporte contexto (`solo_enlaces`).
+- La misma palabra repetida 6 o más veces sin otras palabras (`texto_repetitivo`).
+- Marcadores `[deleted]` / `[removed]`, o autor `[deleted]` (`contenido_eliminado`).
+- ID ya visto en el mismo lote, o el mismo autor, canal y texto normalizados
+  (`duplicado`). Se conserva la primera aparición. No se deduplica entre lotes;
+  preguntas iguales de autores distintos se conservan para analizar recurrencia.
+- Puntaje inferior a 40 (`bajo_umbral`).
 
-Borrador de Semana 0, validado contra la documentación oficial del proyecto
-(`proyecto_3_community_lab.md`). Pendiente de afinar pesos junto con Sub-equipo 2.
+Los candidatos se ordenan por puntaje descendente, manteniendo el orden original
+en los empates. `top_n` limita la cantidad **por lote**, después de los descartes;
+los demás reciben `fuera_top_n`. Por defecto es `null`: pasan todos los que cumplen
+el umbral. No se fuerza un top 20% con una muestra pequeña y aún sin calibrar.
+Un lote sin candidatos se conserva con `interacciones: []`.
+
+## Decisiones y límites
+
+- **Sentimiento:** se pospone la señal emocional del borrador. No se inventan
+  etiquetas ni se duplica el análisis con LLM que corresponde a IA. El sentimiento
+  general de la comunidad debe calcularse sobre los datos completos: usar únicamente
+  la selección de marketing sesgaría sus métricas.
+- **Fechas:** una fecha ausente, inválida, sin zona o futura no recibe bonus. Se
+  registra una advertencia y no se sustituye por la fecha actual. Una fecha antigua
+  válida simplemente recibe cero. La referencia es obligatoria en la API de Python;
+  la CLI usa UTC actual si no se indica. Para comparar resultados, fijarla siempre.
+- **Texto:** se conserva capitalización, tildes y emojis. Se quita HTML común,
+  scripts/estilos, caracteres de control, U+FFFD y espacios repetidos. No se intenta
+  reconstruir texto dañado ni detectar idioma. La limpieza aplana saltos de línea;
+  los originales quedan en el archivo de entrada para revisar código multilínea.
+- **Heurísticas:** no hay detección semántica de spam ni de duplicados. Una pregunta
+  breve y válida puede quedar bajo el mínimo: revisar los descartes y ajustar pesos
+  con el equipo. El vocabulario inicial se orienta al español y al programa ONE.
+
+## Cómo ejecutar y comprobar
+
+Desde la raíz del repositorio:
+
+```sh
+python -m src.data.ingest --config config/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z
+python -m unittest discover -s tests -p "test_*.py" -v
+python tests/verificar_transformacion_reddit.py
+```
+
+Salidas locales (ignoradas por Git):
+
+- `output/datos/mensajes_filtrados.json`: lotes para el equipo de IA.
+- `output/datos/informe_relevancia.json`: decisiones trazables por lote, índice
+  original de interacción (base cero) e ID, si existe; incluye configuración y fecha.
+
+También se admite `python src/data/ingest.py`. Los caminos predeterminados se
+resuelven desde el repositorio, aunque se ejecute desde otra carpeta. Los caminos
+proporcionados por el usuario son relativos a su directorio actual. Las salidas
+existentes se reemplazan; usar rutas distintas para conservar varias corridas.
+
+Ejemplo con la muestra real de Gustavo y máximo de tres mensajes por lote:
+
+```sh
+python -m src.data.ingest --entrada tests/fixtures/prueba_reddit_controlada.json --salida output/reddit/mensajes_filtrados.json --informe output/reddit/informe_relevancia.json --top-n 3 --fecha-referencia 2026-09-17T12:00:00Z
+```
+
+## Integración pendiente de validación del equipo
+
+Arthur, Danny y Arnold pueden consumir los lotes siguiendo
+`docs/contrato_datos_ingesta.md`. Ramses debe validar el contrato propuesto.
+Corresponde revisar conjuntamente pesos, mínimo de longitud, umbral y cantidad
+máxima por lote. La implementación y sus pruebas ya permiten hacer esa revisión
+sin desarrollar otro filtro.

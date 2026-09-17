@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://communitylab.one-g10/schemas/contrato-entrada.json",
+  "title": "CommunityLab - Contrato de Entrada (Cliente)",
+  "description": "Payload oficial de entrada tal como lo definen las bases del proyecto (paginas 4-5). Es el limite que no debe romperse: las extensiones internas del equipo (id, fecha, idioma) NO viven aqui, viven en el contrato intermedio post-ingesta (contrato-intermedio-ingesta.schema.json). Confirmado por Sub-equipo 3 (Ingesta/Limpieza).",
+  "type": "object",
+  "required": ["origen_comunidad", "periodo_referencia", "interacciones"],
+  "additionalProperties": false,
+  "properties": {
+    "origen_comunidad": {
+      "type": "string",
+      "description": "Plataforma y grupo de origen del lote.",
+      "examples": ["Discord_Grupo_ONE_G10"]
+    },
+    "periodo_referencia": {
+      "type": "string",
+      "description": "Periodo que agrupa las interacciones del lote.",
+      "examples": ["Semana_04", "Semana_0"]
+    },
+    "interacciones": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/interaccion" }
+    }
+  },
+  "$defs": {
+    "interaccion": {
+      "type": "object",
+      "required": ["autor", "canal", "tipo", "texto"],
+      "additionalProperties": false,
+      "properties": {
+        "autor": {
+          "type": "string",
+          "description": "Nombre o alias del autor del mensaje."
+        },
+        "canal": {
+          "type": "string",
+          "description": "Canal de origen del mensaje.",
+          "examples": ["#logros-y-empleos", "#dudas-langgraph"]
+        },
+        "tipo": {
+          "type": "string",
+          "description": "Clasificacion de la interaccion. Implementada por Sub-equipo 3 con 4 valores; el brief original tambien menciona 'entregas de proyecto' y 'debates de foro' como fuentes de valor -- pendiente confirmar si caen dentro de estas 4 categorias o si se necesitan mas.",
+          "enum": ["testimonio", "pregunta_tecnica", "comentario", "feedback"]
+        },
+        "texto": {
+          "type": "string",
+          "description": "Contenido textual de la interaccion, tal como llega de la fuente (sin limpiar todavia).",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

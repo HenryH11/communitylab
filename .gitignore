@@ -11,3 +11,7 @@ Thumbs.db
 # Cache de Python
 __pycache__/
 *.pyc
+
+# Credenciales locales de Oracle Cloud
+*.pem
+.oci/

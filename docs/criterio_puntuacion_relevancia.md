@@ -50,6 +50,46 @@ los demás reciben `fuera_top_n`. Por defecto es `null`: pasan todos los que cum
 el umbral. No se fuerza un top 20% con una muestra pequeña y aún sin calibrar.
 Un lote sin candidatos se conserva con `interacciones: []`.
 
+## Criterio de clasificación: `pregunta_tecnica` vs. `comentario`
+
+Definición oficial acordada entre Gustavo y Jhonattan (2026-09-20), a raíz de
+una pregunta de Arnold (Sub-equipo 2) sobre cómo distinguir ambos tipos antes
+de construir el `AgentState` de LangGraph:
+
+- **`pregunta_tecnica`**: duda sobre **código, herramientas o plataforma
+  técnica** (ej. "¿cómo estructuro nodos condicionales en LangGraph?",
+  "error de indentación en un bucle for con pandas", "diferencia entre Grid
+  y Flexbox"). Alimenta el Motor de FAQ Dinámico.
+- **`comentario`**: todo lo demás que no sea testimonio, feedback ni duda
+  técnica — **incluye dudas administrativas o de programa** (costo de
+  certificado, plazos de inscripción, alianzas con empresas, acceso a
+  grabaciones, diferencias entre rutas del programa), además de elogios y
+  observaciones generales sin propuesta de mejora concreta (ver regla
+  comentario/feedback más abajo).
+
+Al aplicar este criterio se encontraron y corrigieron 5 interacciones mal
+etiquetadas como `pregunta_tecnica` en `mensajes_comunidad_simulados.json`
+(eran dudas administrativas): `int-004`, `int-007`, `int-010`, `int-013` e
+`int-015`. Quedaron reclasificadas como `comentario`.
+
+**Nota para Nelson (no bloqueante):** `docs/arquitectura-solucion/
+contrato-intermedio-ingesta.schema.json` ya señala que el brief original
+menciona "entregas de proyecto" y "debates de foro" como posibles fuentes de
+valor adicionales. Si más adelante el equipo decide que las dudas
+administrativas merecen su propia categoría (ej. `pregunta_administrativa`),
+sería una ampliación del enum de `tipo` a coordinar con Nelson — no bloquea
+la clasificación actual, que ya es consistente dentro de las 4 categorías
+existentes.
+
+**Regla comentario vs. feedback** (validada contra las interacciones del
+dataset, incluidas las 5 recién reclasificadas): `feedback` es una
+sugerencia, crítica o propuesta de mejora concreta (ej. "sería genial tener
+más talleres prácticos", "sugiero agregar más ejercicios antes del módulo de
+estructuras de datos"); `comentario` es un elogio general, observación o
+pregunta administrativa sin propuesta de mejora (ej. "buena onda el equipo
+de mentores", "¿el certificado tiene costo adicional?"). Ningún caso del
+dataset actual queda ambiguo bajo esta regla.
+
 ## Decisiones y límites
 
 - **Sentimiento:** se pospone la señal emocional del borrador. No se inventan

@@ -20,7 +20,7 @@
     },
     "nota_tipos": "Taxonomia de 'tipo' definida por Sub-equipo 3 para cubrir los 4 casos de uso del proyecto: testimonio -> Detector de Historias de Exito / Generador de RRSS; pregunta_tecnica -> Motor de FAQ Dinamico; comentario y feedback -> Dashboard de Salud y Sentimiento.",
     "actualizado_por": "Jhonattan Benavides (Data Analyst, Sub-equipo 3)",
-    "nota_actualizacion": "Se agregan los dos casos del brief conservando las 21 interacciones anteriores."
+    "nota_actualizacion": "Se agregan los dos casos del brief conservando las 21 interacciones anteriores. Se reclasifican int-004, int-007, int-010, int-013 e int-015 de pregunta_tecnica a comentario: eran dudas administrativas/de programa (certificado, inscripcion, alianzas, grabaciones, diferencia de rutas), no dudas tecnicas de codigo/plataforma. Ver docs/criterio_puntuacion_relevancia.md para el criterio."
   },
   "lotes": [
     {
@@ -58,7 +58,7 @@
           "id": "int-004",
           "autor": "Sofía Torres",
           "canal": "#soporte-tecnico",
-          "tipo": "pregunta_tecnica",
+          "tipo": "comentario",
           "texto": "¿El certificado final tiene costo adicional o está incluido en el programa?",
           "fecha": "2026-09-12T08:15:00Z",
           "idioma": "es"
@@ -85,7 +85,7 @@
           "id": "int-007",
           "autor": "Héctor Prado",
           "canal": "#dudas-hackathon",
-          "tipo": "pregunta_tecnica",
+          "tipo": "comentario",
           "texto": "¿Hasta cuándo puedo inscribirme al hackathon si me integro después de la semana 0?",
           "fecha": "2026-09-14T10:11:00Z",
           "idioma": "es"
@@ -136,7 +136,7 @@
           "id": "int-010",
           "autor": "Pedro Álvarez",
           "canal": "#post-lanzamiento-programa",
-          "tipo": "pregunta_tecnica",
+          "tipo": "comentario",
           "texto": "Interesante propuesta, ¿tienen alguna alianza con empresas para prácticas profesionales?",
           "fecha": "2026-09-11T18:02:00Z",
           "idioma": "es"
@@ -169,7 +169,7 @@
           "id": "int-013",
           "autor": "Javier Fernández",
           "canal": "#formulario-dudas",
-          "tipo": "pregunta_tecnica",
+          "tipo": "comentario",
           "texto": "¿Cómo puedo acceder a las grabaciones de las clases si me perdí una sesión en vivo?",
           "fecha": "2026-09-10T15:05:00Z",
           "idioma": "es"
@@ -187,7 +187,7 @@
           "id": "int-015",
           "autor": "Carlos Mena",
           "canal": "#formulario-dudas",
-          "tipo": "pregunta_tecnica",
+          "tipo": "comentario",
           "texto": "¿Cuál es la diferencia entre las rutas de Data Analyst y Data Scientist dentro del programa?",
           "fecha": "2026-09-12T20:05:00Z",
           "idioma": "es"

@@ -1,0 +1,21 @@
+{
+  "min_caracteres": 20,
+  "min_puntaje": 40,
+  "top_n": null,
+  "puntos_tipo": {
+    "testimonio": 40,
+    "pregunta_tecnica": 40,
+    "feedback": 30,
+    "comentario": 10
+  },
+  "puntos_longitud": 20,
+  "puntos_palabra": 5,
+  "tope_palabras": 30,
+  "puntos_frescura": 10,
+  "dias_frescura": 7,
+  "palabras_clave": [
+    "aprendi", "trabajo", "empleo", "certificado", "mentor", "mentores",
+    "proyecto", "proyectos", "python", "sql", "oci", "langchain",
+    "langgraph", "llm", "datos", "curso", "portfolio", "error"
+  ]
+}

@@ -68,7 +68,7 @@ La organización interna del equipo fue optimizada por la Dirección de Proyecto
 Durante la Semana 0 (Fase de Cimientos, Datos y Arquitectura de Sistemas), el equipo alcanzó el **100% de cumplimiento** de las metas planteadas en el cronograma quirúrgico:
 
 * **🟢 Hito de Gobernanza:** Inicialización del repositorio remoto con bloqueo y protección de la rama `main`. Creación y publicación de la rama de integración **`develop`** como el estándar operativo para evitar conflictos de código (*Merge Conflicts*).
-* **🟢 Hito de Datos:** Construcción del set de simulación local obligatorio `tests/mock_community_data.json` que contiene los casos fijos de la rúbrica (Mariana Souza y Lucas Albuquerque) y 8 casos alternativos. Como **valor agregado diferencial**, se desarrolló un script de 333 líneas en `src/data/ingesta_reddit.py` con manejo exponencial de errores de red (Error 429) y limpieza de cadenas con expresiones regulares.
+* **🟢 Hito de Datos:** Construcción del set de simulación local obligatorio `src/data/mensajes_comunidad_simulados.json` que contiene 23 interacciones, incluidos los casos fijos de la rúbrica (Mariana Souza y Lucas Albuquerque). Como **valor agregado diferencial**, se desarrolló un script de 333 líneas en `src/data/ingesta_reddit.py` con manejo exponencial de errores de red (Error 429) y limpieza de cadenas con expresiones regulares.
 * **🟢 Hito de Infraestructura Cloud:** Aprovisionamiento del Bucket Always Free `communitylab-activos-marketing` en la consola de Oracle Cloud (Región São Paulo). Despliegue seguro de `src/config/test_oci_connection.py` para validar la persistencia asíncrona sin exponer llaves privadas.
 * **🟢 Hito de Arquitectura:** Integración del primer Pull Request formal del proyecto elaborado por el arquitecto Nelson Ramses, estableciendo el contrato de datos JSON fijo para la comunicación limpia entre módulos.
 
@@ -105,3 +105,24 @@ git push -u origin feature/nombre_subequipo_tarea
 
 ### Paso 5: Abrir un Pull Request (PR)
 Ingresar de forma web al repositorio en GitHub, abre un Pull Request desde tu rama apuntando exclusivamente hacia la rama **`develop`**. Notificae en el canal de Discord. Todo PR requiere la auditoría técnica y aprobación mínima del Project Manager o del Solution Architect antes de fusionarse.
+
+---
+
+## Ingesta y relevancia de Datos
+
+Con Python 3.11+, desde la raíz, sin instalar dependencias para este módulo:
+
+```sh
+python -m src.data.ingest --config config/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z
+python -m unittest discover -s tests -p "test_*.py" -v
+python tests/verificar_transformacion_reddit.py
+```
+
+La primera orden genera datos seleccionados y un informe de decisiones en
+`output/datos/`. La fecha fija permite reproducir la demo; para datos actuales,
+indicar otra fecha o quitar `--fecha-referencia` para usar UTC actual.
+
+Consultar el [criterio](docs/criterio_puntuacion_relevancia.md), el
+[contrato para IA](docs/contrato_datos_ingesta.md) y el
+[avance de Jhonattan](docs/avance_jhonattan_semana1.md). Los pesos y el contrato
+se entregan como propuestas para validación del equipo.

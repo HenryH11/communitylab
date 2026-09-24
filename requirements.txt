@@ -1,1 +1,2 @@
 # Librerías iniciales del proyecto (se añadirán en la Semana 0 [14-20 Septiembre 2026]).
+pytest>=8,<10

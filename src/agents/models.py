@@ -1,41 +1,56 @@
-"AnalisisMensaje"
-"AgentState"
-
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
+Sentimiento = Literal[
+    "muy_positivo",
+    "positivo",
+    "neutral",
+    "negativo",
+    "muy_negativo",
+]
+
+
+TipoInteraccion = Literal[
+    "testimonio",
+    "pregunta_tecnica",
+    "feedback",
+    "comentario",
+]
+
+
+TemaPrincipal = Literal[
+    "empleabilidad",
+    "aprendizaje",
+    "programacion",
+    "datos_ia",
+    "plataforma",
+    "comunidad",
+    "mentoria",
+    "cloud_infraestructura",
+    "certificacion",
+    "programa_hackathon",
+    "otros",
+]
+
+
 class AnalisisMensaje(BaseModel):
-    sentimiento: Literal[
-        "muy_positivo",
-        "positivo",
-        "neutral",
-        "negativo",
-        "muy_negativo",
-    ] = Field(
+    sentimiento: Sentimiento = Field(
         description="Sentimiento principal expresado en el mensaje."
     )
 
-    tema: str = Field(
+    tema_principal: TemaPrincipal = Field(
+        description="Categoría general y normalizada del tema principal."
+    )
+
+    subtema: str = Field(
         description=(
-            "Tema principal del mensaje expresado como una categoría "
-            "breve, general y normalizada, preferentemente entre 1 y 3 palabras."
+            "Detalle breve y específico del tema principal, "
+            "preferentemente entre 1 y 5 palabras."
         )
     )
 
-    tipo_detectado: Literal[
-        "testimonio",
-        "pregunta_tecnica",
-        "feedback",
-        "comentario",
-    ] = Field(
-        description="Clasificación semántica del tipo de interacción."
+    tipo_detectado: TipoInteraccion = Field(
+        description="Clasificación semántica realizada por la IA."
     )
-
-    #Ejemplo de salida de la clase AnalisisMensaje
-    """AnalisisMensaje(
-        sentimiento="muy_positivo",
-        tema="empleabilidad",
-        tipo_detectado="testimonio"
-    )"""

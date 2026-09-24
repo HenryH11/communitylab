@@ -62,3 +62,26 @@ def test_baja_relevancia_no_genera_activo():
     resultado = determinar_rutas(state)
 
     assert resultado["rutas"] == []
+
+def test_testimonio_neutral_da_solo_caso_exito():
+    state = {
+        "tipo_detectado": "testimonio",
+        "sentimiento": "neutral",
+        "score_relevancia": 90,
+    }
+
+    resultado = determinar_rutas(state)
+
+    assert resultado["rutas"] == ["caso_exito"]
+
+
+def test_score_ausente_no_bloquea():
+    state = {
+        "tipo_detectado": "pregunta_tecnica",
+        "sentimiento": "neutral",
+        "score_relevancia": None,
+    }
+
+    resultado = determinar_rutas(state)
+
+    assert resultado["rutas"] == ["faq"]

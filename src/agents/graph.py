@@ -3,7 +3,7 @@ from typing import Literal
 from langgraph.graph import END, START, StateGraph
 
 from src.agents.nodes.analyzer_node import analizar_mensaje
-from src.agents.nodes.generator_nodes import generar_activos_mock
+from src.agents.nodes.generator_nodes import generar_activos
 from src.agents.nodes.router_node import determinar_rutas
 from src.agents.state import AgentState
 
@@ -50,9 +50,8 @@ def construir_grafo():
 
     workflow.add_node(
         "generar_activos",
-        generar_activos_mock,
+        generar_activos,
     )
-
     # Inicio
     workflow.add_edge(
         START,

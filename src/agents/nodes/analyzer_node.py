@@ -8,15 +8,19 @@ def analizar_mensaje(state: AgentState) -> dict:
 
     Recibe el estado actual y devuelve únicamente
     los nuevos campos generados por la IA.
+
+    Si ocurre un error, lo registra en AgentState
+    para que LangGraph pueda finalizar el flujo
+    de forma controlada.
     """
 
     try:
         resultado = cadena_analisis.invoke(
             {
-                "origen": state["origen"],
-                "canal": state["canal"],
-                "idioma": state["idioma"],
-                "tipo_original": state["tipo_original"],
+                "origen": state.get("origen", ""),
+                "canal": state.get("canal", ""),
+                "idioma": state.get("idioma", "es"),
+                "tipo_original": state.get("tipo_original", ""),
                 "texto": state["texto"],
             }
         )
@@ -32,7 +36,8 @@ def analizar_mensaje(state: AgentState) -> dict:
         errores = list(state.get("errores", []))
 
         errores.append(
-            f"Error durante el análisis del mensaje: {error}"
+            f"analizar_mensaje: "
+            f"{type(error).__name__}: {error}"
         )
 
         return {

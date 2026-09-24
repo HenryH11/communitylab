@@ -11,26 +11,25 @@ from src.data.relevancia import (
 )
 
 
-RUTA_DATASET = Path("src/data/mensajes_comunidad_simulados.json")
-CANTIDAD_MENSAJES = 3
+RUTA_DATASET = Path(
+    "src/data/mensajes_comunidad_simulados.json"
+)
+
+IDS_PRUEBA = {
+    "int-022",
+    "int-002",
+}
 
 
 def cargar_dataset():
-    with RUTA_DATASET.open("r", encoding="utf-8") as archivo:
+    with RUTA_DATASET.open(
+        "r",
+        encoding="utf-8",
+    ) as archivo:
         return json.load(archivo)
 
 
 def obtener_lotes(dataset):
-    """
-    Admite dos formatos:
-
-    1. Dataset con varios lotes:
-       {"lotes": [...]}
-
-    2. Un único lote:
-       {"origen_comunidad": ..., "interacciones": [...]}
-    """
-
     if "lotes" in dataset:
         return dataset["lotes"]
 
@@ -38,26 +37,28 @@ def obtener_lotes(dataset):
         return [dataset]
 
     raise ValueError(
-        "El dataset no contiene ni 'lotes' ni 'interacciones'."
+        "El dataset no contiene "
+        "'lotes' ni 'interacciones'."
     )
 
 
 def obtener_fecha_referencia(lotes):
-    """
-    Obtiene la fecha válida más reciente de todos los lotes.
-    """
-
     fechas_validas = []
 
     for lote in lotes:
-        for mensaje in lote.get("interacciones", []):
+        for mensaje in lote.get(
+            "interacciones",
+            [],
+        ):
             fecha = mensaje.get("fecha")
 
             if not fecha:
                 continue
 
             try:
-                fechas_validas.append(leer_fecha(fecha))
+                fechas_validas.append(
+                    leer_fecha(fecha)
+                )
             except ValueError:
                 continue
 
@@ -69,50 +70,32 @@ def obtener_fecha_referencia(lotes):
 
 def main():
     print("=" * 80)
-    print("PRUEBA DE 3 MENSAJES DEL DATASET")
+    print("PRUEBA DE 2 MENSAJES REALES")
     print("=" * 80)
-
-    # --------------------------------------------------
-    # 1. Cargar dataset
-    # --------------------------------------------------
 
     dataset = cargar_dataset()
     lotes = obtener_lotes(dataset)
 
-    total_interacciones = sum(
-        len(lote.get("interacciones", []))
-        for lote in lotes
-    )
-
-    print()
-    print(f"Lotes encontrados: {len(lotes)}")
-    print(f"Mensajes encontrados: {total_interacciones}")
-
-    # --------------------------------------------------
-    # 2. Configuración de relevancia
-    # --------------------------------------------------
-
     config = ConfigRelevancia()
 
-    fecha_referencia = obtener_fecha_referencia(lotes)
-
-    print(
-        "Fecha de referencia:",
-        fecha_referencia.isoformat(),
+    fecha_referencia = (
+        obtener_fecha_referencia(lotes)
     )
 
-    # --------------------------------------------------
-    # 3. Procesar relevancia lote por lote
-    # --------------------------------------------------
+    casos = []
 
-    mensajes_relevantes = []
+    # --------------------------------------------------
+    # Buscar los dos mensajes reales
+    # y calcular su relevancia
+    # --------------------------------------------------
 
     for lote in lotes:
-
-        seleccionados, evaluaciones = seleccionar_lote(
-            lote,
-            config,
-            fecha_referencia,
+        seleccionados, evaluaciones = (
+            seleccionar_lote(
+                lote,
+                config,
+                fecha_referencia,
+            )
         )
 
         evaluaciones_por_id = {
@@ -121,16 +104,22 @@ def main():
             if evaluacion["id"] is not None
         }
 
-        for mensaje in seleccionados:
-
+        for mensaje in lote.get(
+            "interacciones",
+            [],
+        ):
             mensaje_id = mensaje.get("id")
 
-            mensajes_relevantes.append(
+            if mensaje_id not in IDS_PRUEBA:
+                continue
+
+            casos.append(
                 {
                     "mensaje": mensaje,
-                    "evaluacion": evaluaciones_por_id.get(
-                        mensaje_id,
-                        {},
+                    "evaluacion": (
+                        evaluaciones_por_id[
+                            mensaje_id
+                        ]
                     ),
                     "origen": lote.get(
                         "origen_comunidad",
@@ -143,45 +132,62 @@ def main():
                 }
             )
 
-    print(
-        f"Mensajes que superaron relevancia: "
-        f"{len(mensajes_relevantes)}"
+    if len(casos) != len(IDS_PRUEBA):
+        encontrados = {
+            item["mensaje"]["id"]
+            for item in casos
+        }
+
+        faltantes = (
+            IDS_PRUEBA - encontrados
+        )
+
+        raise ValueError(
+            f"No se encontraron "
+            f"los IDs: {faltantes}"
+        )
+
+    # Para que la salida sea siempre
+    # int-022 y luego int-002
+    orden = {
+        "int-022": 1,
+        "int-002": 2,
+    }
+
+    casos.sort(
+        key=lambda item: orden[
+            item["mensaje"]["id"]
+        ]
     )
 
     # --------------------------------------------------
-    # 4. Tomar solo 3
-    # --------------------------------------------------
-
-    mensajes_prueba = mensajes_relevantes[
-        :CANTIDAD_MENSAJES
-    ]
-
-    print(
-        f"Mensajes enviados al grafo: "
-        f"{len(mensajes_prueba)}"
-    )
-
-    # --------------------------------------------------
-    # 5. Ejecutar uno por uno
+    # Procesar uno por uno
     # --------------------------------------------------
 
     for numero, item in enumerate(
-        mensajes_prueba,
+        casos,
         start=1,
     ):
-
         mensaje = item["mensaje"]
         evaluacion = item["evaluacion"]
 
-        mensaje_id = mensaje.get("id")
-        score = evaluacion.get("puntaje")
+        score = evaluacion["puntaje"]
 
         estado_inicial: AgentState = {
-            "id": mensaje_id,
-            "autor": mensaje.get("autor", ""),
-            "canal": mensaje.get("canal", ""),
+            "id": mensaje["id"],
+            "autor": mensaje.get(
+                "autor",
+                "",
+            ),
+            "canal": mensaje.get(
+                "canal",
+                "",
+            ),
             "origen": item["origen"],
-            "idioma": mensaje.get("idioma", "es"),
+            "idioma": mensaje.get(
+                "idioma",
+                "es",
+            ),
             "texto": mensaje["texto"],
             "tipo_original": mensaje.get(
                 "tipo",
@@ -196,20 +202,26 @@ def main():
         print()
         print("=" * 80)
         print(
-            f"MENSAJE {numero} "
-            f"DE {len(mensajes_prueba)}"
+            f"CASO {numero}: "
+            f"{mensaje['id']}"
         )
         print("=" * 80)
 
-        print("ID:", mensaje_id)
-        print("Origen:", item["origen"])
-        print("Periodo:", item["periodo"])
-        print("Autor:", mensaje.get("autor"))
-        print("Canal:", mensaje.get("canal"))
-        print("Texto:", mensaje["texto"])
+        print(
+            "Autor:",
+            mensaje.get("autor"),
+        )
+        print(
+            "Canal:",
+            mensaje.get("canal"),
+        )
+        print(
+            "Texto:",
+            mensaje["texto"],
+        )
 
         print()
-        print("DATOS / RELEVANCIA")
+        print("DATOS")
         print("-" * 80)
 
         print(
@@ -222,12 +234,8 @@ def main():
         )
         print(
             "Desglose:",
-            evaluacion.get("desglose"),
-        )
-        print(
-            "Palabras clave:",
             evaluacion.get(
-                "palabras_clave"
+                "desglose"
             ),
         )
 
@@ -237,17 +245,9 @@ def main():
             "LangChain + LangGraph..."
         )
 
-        # --------------------------------------------------
-        # 6. Ejecutar grafo
-        # --------------------------------------------------
-
         resultado = grafo.invoke(
             estado_inicial
         )
-
-        # --------------------------------------------------
-        # 7. Resultado
-        # --------------------------------------------------
 
         print()
         print("RESULTADO IA")
@@ -255,7 +255,9 @@ def main():
 
         print(
             "Sentimiento:",
-            resultado.get("sentimiento"),
+            resultado.get(
+                "sentimiento"
+            ),
         )
         print(
             "Tema principal:",
@@ -265,7 +267,9 @@ def main():
         )
         print(
             "Subtema:",
-            resultado.get("subtema"),
+            resultado.get(
+                "subtema"
+            ),
         )
         print(
             "Tipo detectado:",
@@ -282,15 +286,35 @@ def main():
             "Rutas:",
             resultado.get("rutas"),
         )
-        print(
-            "Activos:",
-            resultado.get(
-                "activos_generados"
-            ),
+
+        print()
+        print("ACTIVOS GENERADOS")
+        print("-" * 80)
+
+        activos = resultado.get(
+            "activos_generados",
+            {},
         )
+
+        for ruta, activo in (
+            activos.items()
+        ):
+            print()
+            print(f"[{ruta}]")
+
+            for clave, valor in (
+                activo.items()
+            ):
+                print(
+                    f"{clave}: {valor}"
+                )
+
+        print()
         print(
             "Errores:",
-            resultado.get("errores"),
+            resultado.get(
+                "errores"
+            ),
         )
 
     print()

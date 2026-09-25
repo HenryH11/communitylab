@@ -10,7 +10,7 @@ la comunidad hasta que sale como JSON listo para el pipeline de IA (Sub-equipo 2
 ```mermaid
 flowchart TD
     A[Fuentes de la comunidad<br/>Discord / Slack / Foros / GitHub / Formularios] --> B[Ingesta por lote<br/>origen_comunidad + periodo_referencia + interacciones]
-    B --> C[Limpieza<br/>normalizar texto, quitar ruido/HTML,<br/>deduplicar, detectar idioma]
+    B --> C[Limpieza<br/>quitar ruido/HTML, deduplicar,<br/>detectar idioma]
     C --> D[Puntuación de relevancia<br/>tipo: testimonio / pregunta_tecnica / comentario / feedback]
     D --> E[JSON de salida<br/>mensajes_comunidad_simulados.json]
     E --> F[Pipeline de IA - Sub-equipo 2<br/>LangGraph: sentimiento, temas y generación de copy]
@@ -31,9 +31,9 @@ flowchart TD
    (semana/periodo cubierto) e `interacciones` (lista de mensajes con `autor`,
    `canal`, `tipo` y `texto`). El equipo añade `id`, `fecha` e `idioma` como
    extensiones internas, sin romper el contrato original.
-3. **Limpieza**: normalización de texto (minúsculas, espacios), eliminación de ruido
-   (HTML, emojis rotos), deduplicado de interacciones repetidas y detección de
-   idioma.
+3. **Limpieza**: eliminación de ruido (HTML, emojis rotos), conversión a texto plano, 
+   deduplicado de interacciones repetidas y detección de idioma. Se conserva el texto original 
+   (mayúsculas, tildes y emojis) para no perder contexto semántico en el pipeline de IA.
 4. **Puntuación de relevancia**: aplica el criterio descrito en
    [`criterio_puntuacion_relevancia.md`](./criterio_puntuacion_relevancia.md) para
    priorizar los mejores testimonios, preguntas técnicas o piezas de feedback antes

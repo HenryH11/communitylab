@@ -4,15 +4,20 @@ from copy import deepcopy
 from datetime import datetime
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 
-from src.data.ingest import limpiar_texto, procesar_datos
+from src.data.ingest import (
+    construir_ciclos, construir_estado_agente, construir_estados_agente,
+    guardar_ciclos, limpiar_texto, procesar_datos,
+)
 from src.data.relevancia import ConfigRelevancia
 
 
@@ -156,6 +161,123 @@ class SeleccionTests(unittest.TestCase):
                 ConfigRelevancia(**opciones)
 
 
+class MapeoAgentStateTests(unittest.TestCase):
+    def test_construir_estado_agente_mapea_claves_exactas_de_agentstate(self):
+        interaccion = mensaje(autor="Ana", canal="#dudas", tipo="pregunta_tecnica", texto="¿Cómo uso LangGraph?")
+        estado = construir_estado_agente(interaccion, puntaje=77, origen="Discord_Grupo_ONE_G10")
+        self.assertEqual(estado, {
+            "autor": "Ana", "canal": "#dudas", "origen": "Discord_Grupo_ONE_G10",
+            "texto": "¿Cómo uso LangGraph?", "tipo_original": "pregunta_tecnica",
+            "score_relevancia": 77, "id": interaccion["id"], "idioma": "es",
+        })
+
+    def test_construir_estado_agente_no_toca_tipo_ni_fabrica_id_o_idioma(self):
+        interaccion = {"autor": "Ana", "canal": "#dudas", "tipo": "comentario", "texto": "ok"}
+        estado = construir_estado_agente(interaccion, puntaje=10, origen="LinkedIn_ONE_G10")
+        self.assertNotIn("id", estado)
+        self.assertNotIn("idioma", estado)
+        self.assertEqual(interaccion["tipo"], "comentario")
+        self.assertEqual(estado["tipo_original"], "comentario")
+
+    def test_construir_estados_agente_aplana_lotes_seleccionados_en_orden_de_puntaje(self):
+        entrada = lote(
+            mensaje("bajo", texto="ok"),
+            mensaje("alto", texto="¿Cómo despliego un proyecto con Python y OCI langchain?"),
+            mensaje("medio", texto="Aprendi mucho del curso, gracias mentores"),
+        )
+        salida, informe = procesar(entrada, min_puntaje=0)
+        estados = construir_estados_agente(salida, informe)
+        self.assertEqual(len(estados), len(salida["interacciones"]))
+        puntajes = [e["score_relevancia"] for e in estados]
+        self.assertEqual(puntajes, sorted(puntajes, reverse=True))
+        for estado, interaccion in zip(estados, salida["interacciones"]):
+            self.assertEqual(estado["origen"], "Discord")
+            self.assertEqual(estado["texto"], interaccion["texto"])
+            self.assertEqual(estado["tipo_original"], interaccion["tipo"])
+
+    def test_construir_estados_agente_soporta_envoltorio_de_lotes(self):
+        entrada = {"metadata": {}, "lotes": [lote(mensaje("uno")), lote(mensaje("dos"))]}
+        salida, informe = procesar(entrada)
+        estados = construir_estados_agente(salida, informe)
+        self.assertEqual(len(estados), 2)
+        self.assertEqual({e["id"] for e in estados}, {"uno", "dos"})
+
+
+class ChunkingTests(unittest.TestCase):
+    def test_construir_ciclos_parte_en_grupos_consecutivos_por_lote(self):
+        entrada = lote(*(mensaje(str(i), texto=f"Aprendi mucho del curso {i}, gracias mentores") for i in range(7)))
+        salida, _ = procesar(entrada, min_puntaje=0)
+        ciclos = construir_ciclos(salida, tamano_ciclo=3)
+        self.assertEqual([c["cantidad"] for c in ciclos], [3, 3, 1])
+        self.assertEqual([c["ciclo_indice"] for c in ciclos], [0, 1, 2])
+        self.assertTrue(all(c["lote_indice"] == 0 for c in ciclos))
+        for c in ciclos:
+            self.assertEqual(set(c["contenido"]), {"origen_comunidad", "periodo_referencia", "interacciones"})
+
+    def test_construir_ciclos_lote_vacio_no_genera_archivos(self):
+        entrada = lote(mensaje(texto="ok"))
+        salida, _ = procesar(entrada)
+        self.assertEqual(salida["interacciones"], [])
+        self.assertEqual(construir_ciclos(salida, tamano_ciclo=10), [])
+
+    def test_construir_ciclos_rechaza_tamano_invalido(self):
+        salida, _ = procesar(lote(mensaje()))
+        for tamano in (0, -1, "10", 1.5, True):
+            with self.subTest(tamano=tamano), self.assertRaises(ValueError):
+                construir_ciclos(salida, tamano)
+
+    def test_construir_ciclos_respeta_envoltorio_de_lotes(self):
+        entrada = {"metadata": {}, "lotes": [lote(mensaje("uno"), mensaje("dos", autor="Otro"))]}
+        salida, _ = procesar(entrada)
+        ciclos = construir_ciclos(salida, tamano_ciclo=1)
+        self.assertEqual(len(ciclos), 2)
+        self.assertEqual([c["contenido"]["interacciones"][0]["id"] for c in ciclos], ["uno", "dos"])
+
+    def test_construir_ciclos_proyecta_al_contrato_de_nelson_sin_campos_extra(self):
+        entrada = lote(mensaje(enlace="referencia", nota_interna="borrar antes de entregar"))
+        salida, _ = procesar(entrada)
+        ciclos = construir_ciclos(salida, tamano_ciclo=10)
+        interaccion_entregada = ciclos[0]["contenido"]["interacciones"][0]
+        self.assertEqual(set(interaccion_entregada), {"id", "autor", "canal", "tipo", "texto", "fecha", "idioma"})
+
+    def test_construir_ciclos_exige_los_siete_campos_del_contrato_de_entrega(self):
+        entrada = lote({"autor": "Ana", "canal": "#faq", "tipo": "pregunta_tecnica", "texto": "¿Cómo configuro los reintentos del LLM en LangGraph?"})
+        salida, _ = procesar(entrada)
+        with self.assertRaises(ValueError):
+            construir_ciclos(salida, tamano_ciclo=10)
+
+    def test_nombre_de_archivo_sanea_caracteres_inseguros(self):
+        entrada = {"origen_comunidad": "../../etc", "periodo_referencia": "Semana 00!", "interacciones": [mensaje()]}
+        salida, _ = procesar(entrada)
+        ciclos = construir_ciclos(salida, tamano_ciclo=10)
+        self.assertEqual(len(ciclos), 1)
+        nombre = ciclos[0]["archivo"]
+        self.assertNotIn("/", nombre)
+        self.assertNotIn("..", nombre)
+
+    def test_guardar_ciclos_rechaza_directorio_fuera_de_output(self):
+        with tempfile.TemporaryDirectory() as temporal:
+            fuera = Path(temporal) / "fuera_de_output"
+            with self.assertRaises(ValueError):
+                guardar_ciclos(fuera, [])
+
+    def test_guardar_ciclos_limpia_archivos_viejos_y_escribe_manifest(self):
+        with tempfile.TemporaryDirectory() as temporal:
+            directorio = Path(temporal) / "output" / "datos" / "entregas"
+            directorio.mkdir(parents=True)
+            (directorio / "huerfano.json").write_text("{}", encoding="utf-8")
+            entrada = lote(*(mensaje(str(i), texto=f"Aprendi mucho del curso {i}, gracias mentores") for i in range(4)))
+            salida, _ = procesar(entrada, min_puntaje=0)
+            ciclos = construir_ciclos(salida, tamano_ciclo=2)
+            with mock.patch("src.data.ingest.RAIZ", Path(temporal)):
+                ruta_manifest = guardar_ciclos(directorio, ciclos)
+            self.assertFalse((directorio / "huerfano.json").exists())
+            manifest = json.loads(ruta_manifest.read_text(encoding="utf-8"))
+            self.assertEqual(len(manifest["ciclos"]), 2)
+            for entrada_manifest in manifest["ciclos"]:
+                self.assertTrue((directorio / entrada_manifest["archivo"]).exists())
+
+
 class IntegracionTests(unittest.TestCase):
     def test_dataset_mvp_contiene_y_selecciona_casos_obligatorios(self):
         entrada = json.loads((RAIZ / "src/data/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
@@ -219,6 +341,58 @@ class IntegracionTests(unittest.TestCase):
             corrida = self.ejecutar_cli(temporal, "--entrada", entrada, "--salida", entrada)
             self.assertEqual(corrida.returncode, 2)
             self.assertEqual(entrada.read_bytes(), original)
+
+    def test_cli_tamano_ciclo_es_opt_in_no_cambia_la_salida_por_defecto(self):
+        with tempfile.TemporaryDirectory() as temporal:
+            carpeta = Path(temporal)
+            entrada = carpeta / "entrada.json"
+            salida = carpeta / "salida.json"
+            informe = carpeta / "informe.json"
+            entrada.write_text(json.dumps(lote(mensaje())), encoding="utf-8")
+            args = ("--entrada", entrada, "--salida", salida, "--informe", informe, "--fecha-referencia", FECHA)
+            sin_flag = self.ejecutar_cli(carpeta, *args)
+            self.assertEqual(sin_flag.returncode, 0, sin_flag.stderr)
+            self.assertNotIn("Ciclos:", sin_flag.stdout)
+            referencia = (salida.read_bytes(), informe.read_bytes())
+            self.assertEqual(self.ejecutar_cli(carpeta, *args).returncode, 0)
+            self.assertEqual((salida.read_bytes(), informe.read_bytes()), referencia)
+
+    def test_cli_con_tamano_ciclo_genera_archivos_y_manifest(self):
+        directorio_ciclos = RAIZ / "output" / "datos" / "entregas_prueba_tmp"
+        self.addCleanup(shutil.rmtree, directorio_ciclos, ignore_errors=True)
+        with tempfile.TemporaryDirectory() as temporal:
+            carpeta = Path(temporal)
+            entrada = carpeta / "entrada.json"
+            salida = carpeta / "salida.json"
+            informe = carpeta / "informe.json"
+            mensajes = (mensaje(str(i), texto=f"Aprendi mucho del curso {i}, gracias mentores") for i in range(3))
+            entrada.write_text(json.dumps(lote(*mensajes)), encoding="utf-8")
+            args = (
+                "--entrada", entrada, "--salida", salida, "--informe", informe,
+                "--fecha-referencia", FECHA, "--tamano-ciclo", "2", "--ciclos", directorio_ciclos,
+            )
+            corrida = self.ejecutar_cli(carpeta, *args)
+            self.assertEqual(corrida.returncode, 0, corrida.stderr)
+            self.assertIn("Ciclos:", corrida.stdout)
+            manifest = json.loads((directorio_ciclos / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(sum(c["cantidad"] for c in manifest["ciclos"]), 3)
+            for c in manifest["ciclos"]:
+                self.assertTrue((directorio_ciclos / c["archivo"]).exists())
+
+    def test_cli_rechaza_ciclos_coincidente_con_entrada(self):
+        with tempfile.TemporaryDirectory() as temporal:
+            carpeta = Path(temporal)
+            entrada = carpeta / "entrada.json"
+            salida = carpeta / "salida.json"
+            informe = carpeta / "informe.json"
+            entrada.write_text(json.dumps(lote(mensaje())), encoding="utf-8")
+            args = (
+                "--entrada", entrada, "--salida", salida, "--informe", informe,
+                "--fecha-referencia", FECHA, "--tamano-ciclo", "5", "--ciclos", carpeta,
+            )
+            corrida = self.ejecutar_cli(carpeta, *args)
+            self.assertEqual(corrida.returncode, 2)
+            self.assertFalse((carpeta / "manifest.json").exists())
 
 
 if __name__ == "__main__":

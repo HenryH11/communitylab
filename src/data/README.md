@@ -25,6 +25,28 @@ El foro de Alura sigue representado por datos simulados; la evaluación de una
 fuente real con Arthur es opcional. El resto de esta guía conserva el contexto
 de entrega de Gustavo, con los pendientes de relevancia actualizados.
 
+## Actualización de Gustavo (Semana 1) — entrega en ciclos y mapeo a AgentState
+
+Dos entregables nuevos de Semana 1, opt-in (nada de esto cambia el comportamiento
+por defecto si no se usan estos flags/funciones):
+
+- **`--tamano-ciclo N` / `--ciclos DIR`**: parte la salida ya seleccionada de cada
+  lote en archivos-ciclo de a lo sumo `N` interacciones (reparte primero lo más
+  relevante), cada uno ya validado contra el schema plano oficial de Nelson, más
+  un `manifest.json` que los enumera. `DIR` por defecto es
+  `output/datos/entregas/` y debe quedar dentro de `output/` (se limpia en cada
+  corrida). Ejemplo:
+
+  ```sh
+  python -m src.data.ingest --fecha-referencia 2026-09-17T12:00:00Z --tamano-ciclo 20
+  ```
+
+- **`construir_estados_agente(seleccion, informe)`**: traduce la salida al
+  subconjunto de entrada de `AgentState` que espera Data Science
+  (`score_relevancia`, `origen` por interacción, `tipo_original` como copia de
+  `tipo`). Ver la tabla completa de correspondencia de campos en
+  [`contrato_datos_ingesta.md`](../../docs/contrato_datos_ingesta.md#mapeo-a-agentstate-sub-equipo-2).
+
 ---
 
 Hola Jhonattan y Arthur 👋

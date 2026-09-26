@@ -205,10 +205,10 @@ class MapeoAgentStateTests(unittest.TestCase):
 
 class ChunkingTests(unittest.TestCase):
     def test_construir_ciclos_parte_en_grupos_consecutivos_por_lote(self):
-        entrada = lote(*(mensaje(str(i), texto=f"Aprendi mucho del curso {i}, gracias mentores") for i in range(7)))
+        entrada = lote(*(mensaje(str(i), texto=f"Aprendi mucho del curso {i}, gracias mentores") for i in range(21)))
         salida, _ = procesar(entrada, min_puntaje=0)
-        ciclos = construir_ciclos(salida, tamano_ciclo=3)
-        self.assertEqual([c["cantidad"] for c in ciclos], [3, 3, 1])
+        ciclos = construir_ciclos(salida, tamano_ciclo=10)
+        self.assertEqual([c["cantidad"] for c in ciclos], [10, 10, 1])
         self.assertEqual([c["ciclo_indice"] for c in ciclos], [0, 1, 2])
         self.assertTrue(all(c["lote_indice"] == 0 for c in ciclos))
         for c in ciclos:
@@ -222,16 +222,16 @@ class ChunkingTests(unittest.TestCase):
 
     def test_construir_ciclos_rechaza_tamano_invalido(self):
         salida, _ = procesar(lote(mensaje()))
-        for tamano in (0, -1, "10", 1.5, True):
+        for tamano in (0, -1, 1, 9, 31, "10", 1.5, True):
             with self.subTest(tamano=tamano), self.assertRaises(ValueError):
                 construir_ciclos(salida, tamano)
 
     def test_construir_ciclos_respeta_envoltorio_de_lotes(self):
         entrada = {"metadata": {}, "lotes": [lote(mensaje("uno"), mensaje("dos", autor="Otro"))]}
         salida, _ = procesar(entrada)
-        ciclos = construir_ciclos(salida, tamano_ciclo=1)
-        self.assertEqual(len(ciclos), 2)
-        self.assertEqual([c["contenido"]["interacciones"][0]["id"] for c in ciclos], ["uno", "dos"])
+        ciclos = construir_ciclos(salida, tamano_ciclo=10)
+        self.assertEqual(len(ciclos), 1)
+        self.assertEqual([m["id"] for m in ciclos[0]["contenido"]["interacciones"]], ["uno", "dos"])
 
     def test_construir_ciclos_proyecta_al_contrato_de_nelson_sin_campos_extra(self):
         entrada = lote(mensaje(enlace="referencia", nota_interna="borrar antes de entregar"))
@@ -261,19 +261,23 @@ class ChunkingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 guardar_ciclos(fuera, [])
 
-    def test_guardar_ciclos_limpia_archivos_viejos_y_escribe_manifest(self):
+    def test_guardar_ciclos_solo_retira_archivos_del_manifest_anterior(self):
         with tempfile.TemporaryDirectory() as temporal:
             directorio = Path(temporal) / "output" / "datos" / "entregas"
             directorio.mkdir(parents=True)
             (directorio / "huerfano.json").write_text("{}", encoding="utf-8")
+            anterior = "Discord_Semana_00_lote0_ciclo99.json"
+            (directorio / anterior).write_text("{}", encoding="utf-8")
+            (directorio / "manifest.json").write_text(json.dumps({"ciclos": [{"archivo": anterior}]}), encoding="utf-8")
             entrada = lote(*(mensaje(str(i), texto=f"Aprendi mucho del curso {i}, gracias mentores") for i in range(4)))
             salida, _ = procesar(entrada, min_puntaje=0)
-            ciclos = construir_ciclos(salida, tamano_ciclo=2)
+            ciclos = construir_ciclos(salida, tamano_ciclo=10)
             with mock.patch("src.data.ingest.RAIZ", Path(temporal)):
                 ruta_manifest = guardar_ciclos(directorio, ciclos)
-            self.assertFalse((directorio / "huerfano.json").exists())
+            self.assertTrue((directorio / "huerfano.json").exists())
+            self.assertFalse((directorio / anterior).exists())
             manifest = json.loads(ruta_manifest.read_text(encoding="utf-8"))
-            self.assertEqual(len(manifest["ciclos"]), 2)
+            self.assertEqual(len(manifest["ciclos"]), 1)
             for entrada_manifest in manifest["ciclos"]:
                 self.assertTrue((directorio / entrada_manifest["archivo"]).exists())
 
@@ -369,7 +373,7 @@ class IntegracionTests(unittest.TestCase):
             entrada.write_text(json.dumps(lote(*mensajes)), encoding="utf-8")
             args = (
                 "--entrada", entrada, "--salida", salida, "--informe", informe,
-                "--fecha-referencia", FECHA, "--tamano-ciclo", "2", "--ciclos", directorio_ciclos,
+                "--fecha-referencia", FECHA, "--tamano-ciclo", "10", "--ciclos", directorio_ciclos,
             )
             corrida = self.ejecutar_cli(carpeta, *args)
             self.assertEqual(corrida.returncode, 0, corrida.stderr)

@@ -11,7 +11,7 @@ Desde la raíz del repositorio:
 
 ```sh
 python -m src.data.ingest --config config/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z
-python -m unittest discover -s tests -p "test_*.py" -v
+python -m unittest discover -s tests -p "test_ingest_relevancia.py" -v
 python tests/verificar_transformacion_reddit.py
 ```
 
@@ -25,27 +25,47 @@ El foro de Alura sigue representado por datos simulados; la evaluación de una
 fuente real con Arthur es opcional. El resto de esta guía conserva el contexto
 de entrega de Gustavo, con los pendientes de relevancia actualizados.
 
-## Actualización de Gustavo (Semana 1) — entrega en ciclos y mapeo a AgentState
+## Semana 1 — entrega consolidada de Gustavo y Jhonattan (26 de septiembre)
 
-Dos entregables nuevos de Semana 1, opt-in (nada de esto cambia el comportamiento
-por defecto si no se usan estos flags/funciones):
+El comando de entrega conserva todos los mensajes válidos para sentimiento y
+separa su elegibilidad para contenido. Reutiliza el adaptador de Gustavo a
+AgentState y valida los puntajes por ID y contexto.
 
-- **`--tamano-ciclo N` / `--ciclos DIR`**: parte la salida ya seleccionada de cada
-  lote en archivos-ciclo de a lo sumo `N` interacciones (reparte primero lo más
-  relevante), cada uno ya validado contra el schema plano oficial de Nelson, más
-  un `manifest.json` que los enumera. `DIR` por defecto es
-  `output/datos/entregas/` y debe quedar dentro de `output/` (se limpia en cada
-  corrida). Ejemplo:
+```sh
+python -m src.data.ingest --config config/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z --entrega-ia output/datos/ia --tamano-ciclo 20
+```
 
-  ```sh
-  python -m src.data.ingest --fecha-referencia 2026-09-17T12:00:00Z --tamano-ciclo 20
-  ```
+Con esa referencia: **23 estados para sentimiento, 14 seleccionados para contenido
+y ciclos operativos de 12 y 11 mensajes**. El paquete incluye:
+- Selección e informe en output/datos.
+- Población completa, estados de IA y plan de procesamiento en output/datos/ia.
+- Fragmentos planos por origen y manifest en output/datos/entregas.
 
-- **`construir_estados_agente(seleccion, informe)`**: traduce la salida al
-  subconjunto de entrada de `AgentState` que espera Data Science
-  (`score_relevancia`, `origen` por interacción, `tipo_original` como copia de
-  `tipo`). Ver la tabla completa de correspondencia de campos en
-  [`contrato_datos_ingesta.md`](../../docs/contrato_datos_ingesta.md#mapeo-a-agentstate-sub-equipo-2).
+Los fragmentos por origen pueden ser menores de 10. El plan operativo agrupa
+estados de 10 a 30 conservando cada origen; cualquier remanente queda pendiente.
+Sin `--entrega-ia`, se conserva la selección de contenido por defecto.
+`--tamano-ciclo` acepta ahora únicamente enteros de 10 a 30.
+Los IDs para entrega deben ser globalmente únicos y las fechas válidas.
+
+El guardado solo retira fragmentos del manifest previo; conserva archivos ajenos
+y rechaza rutas o colisiones inseguras. No se usa output como carpeta de ciclos.
+No hay llamadas a Gemini ni OCI en esta entrega.
+
+Pruebas de Datos sin dependencias externas ni servicios cloud:
+
+```sh
+python -m unittest discover -s tests -p "test_ingest_relevancia.py"
+python -m unittest discover -s tests -p "test_entrega_ia.py"
+python -m unittest discover -s tests -p "test_reddit_original.py"
+```
+
+Para DS: `preparar_paquete_ia` devuelve estados con las claves existentes
+`score_relevancia`, `origen` y `tipo_original`. El plan conserva
+`ids_contenido` por separado; DS debe respetarlos al generar activos.
+La conexión al grafo y aprobación del contrato siguen pendientes.
+Ver [contrato, archivos y ejemplo de consumo](../../docs/contrato_datos_ingesta.md).
+
+El texto siguiente conserva el contexto original del aporte de Gustavo.
 
 ---
 

@@ -1,5 +1,29 @@
 # Avance de Jhonattan: preparación de Semana 1
 
+## Actualización del 26 de septiembre de 2026
+
+La entrega de Semana 0 se integró en develop mediante el PR #3 el 23 de
+septiembre. El avance local posterior (6fdee5c) no se había publicado.
+Se recuperaron sus validaciones y la separación sentimiento/contenido sobre
+la rama compartida `feature/gustavo-ingesta-datos-semana0`, partiendo de eca67b5.
+
+- Se conserva el adaptador de Gustavo a AgentState y se cruza por ID/contexto.
+- La entrega estricta valida los siete campos, fechas e identidad global.
+- Con referencia fija 2026-09-17T12:00:00Z: 23 para sentimiento, 14 para contenido.
+- El plan con máximo 20 organiza 12 y 11 mensajes; los remanentes menores de 10
+  quedan explícitos para el siguiente ciclo. No se fabrican ni eliminan casos.
+- La escritura de fragmentos protege entradas, informes y archivos ajenos.
+- La consola común es `python -m src.data.ingest --entrega-ia DIR`.
+
+Se ejecutaron 65 pruebas de Datos sin red: 39 de ingesta/relevancia, 18 de entrega
+y 8 originales de RSS. No se ejecutaron Gemini ni OCI. El grafo y las decisiones
+de sentimiento/routing siguen a cargo de DS. Contrato y pendientes de integración:
+[contrato_datos_ingesta.md](contrato_datos_ingesta.md).
+
+## Registro histórico del 17 de septiembre
+
+Los estados de ramas, cifras y pendientes siguientes corresponden a esa fecha.
+
 Fecha: 17 de septiembre de 2026. Rama local:
 `feature/jhonattan-relevancia-datos`, basada en
 `origin/feature/gustavo-ingesta-datos-semana0` (`677ffba`).

@@ -10,9 +10,10 @@ la comunidad hasta que sale como JSON listo para el pipeline de IA (Sub-equipo 2
 ```mermaid
 flowchart TD
     A[Fuentes de la comunidad<br/>Discord / Slack / Foros / GitHub / Formularios] --> B[Ingesta por lote<br/>origen_comunidad + periodo_referencia + interacciones]
-    B --> C[Limpieza<br/>quitar ruido/HTML, deduplicar,<br/>detectar idioma]
+    B --> C[Validar y limpiar JSON<br/>HTML común, controles y espacios]
     C --> D[Puntuación de relevancia<br/>tipo: testimonio / pregunta_tecnica / comentario / feedback]
-    D --> E[JSON de salida<br/>mensajes_comunidad_simulados.json]
+    D --> E[JSON de salida<br/>output/datos/mensajes_filtrados.json]
+    D --> R[Informe separado<br/>puntajes y motivos de descarte]
     E --> F[Pipeline de IA - Sub-equipo 2<br/>LangGraph: sentimiento, temas y generación de copy]
     F --> G[OCI Object Storage<br/>bucket Always Free - paquete de activos]
 ```
@@ -31,16 +32,18 @@ flowchart TD
    (semana/periodo cubierto) e `interacciones` (lista de mensajes con `autor`,
    `canal`, `tipo` y `texto`). El equipo añade `id`, `fecha` e `idioma` como
    extensiones internas, sin romper el contrato original.
-3. **Limpieza**: eliminación de ruido (HTML, emojis rotos), conversión a texto plano, 
-   deduplicado de interacciones repetidas y detección de idioma. Se conserva el texto original 
-   (mayúsculas, tildes y emojis) para no perder contexto semántico en el pipeline de IA.
+3. **Limpieza**: `ingest.py` valida campos y limpia HTML común, caracteres de
+   control y espacios. Conserva mayúsculas, tildes y emojis. El idioma proviene
+   de la fuente, no se detecta automáticamente. La deduplicación por lote se
+   aplica durante la selección y queda explicada en el informe.
 4. **Puntuación de relevancia**: aplica el criterio descrito en
    [`criterio_puntuacion_relevancia.md`](./criterio_puntuacion_relevancia.md) para
    priorizar los mejores testimonios, preguntas técnicas o piezas de feedback antes
    de pasarlos a la IA.
-5. **JSON de salida**: estructura final (`src/data/mensajes_comunidad_simulados.json`)
-   que consume el Sub-equipo 2 para el análisis de sentimiento, clasificación de
-   temas y generación de copy en LangGraph.
+5. **JSON de salida**: `output/datos/mensajes_filtrados.json` conserva el esquema
+   de entrada con las interacciones seleccionadas para generar contenido. El
+   archivo simulado original se conserva. Para sentimiento general se debe usar
+   la entrada completa limpiada, evitando el sesgo de la selección de marketing.
 6. **Entrega a IA y almacenamiento**: punto de integración con el trabajo de Danny y
    Arnold (Sub-equipo 2) y con la persistencia obligatoria en OCI Object Storage
    (Sub-equipo 4), ambos fuera del alcance de este sub-equipo.

@@ -1,5 +1,32 @@
 # Sub-equipo 3 — Ingesta y Procesamiento de Datos
 
+## Actualización de Jhonattan (17 de septiembre de 2026)
+
+La selección de relevancia está implementada en `ingest.py` y `relevancia.py`.
+El dataset tiene 23 mensajes: los 21 de Gustavo más Mariana Souza y Lucas
+Albuquerque, con los textos del brief. Los pesos de `config/relevancia.json`
+son una propuesta pendiente de validación con Gustavo e IA.
+
+Desde la raíz del repositorio:
+
+```sh
+python -m src.data.ingest --config config/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z
+python -m unittest discover -s tests -p "test_*.py" -v
+python tests/verificar_transformacion_reddit.py
+```
+
+Se generan `output/datos/mensajes_filtrados.json` y un informe separado con
+puntajes y descartes. El JSON simulado sigue siendo la entrada completa; no
+está prefiltrado. Para integrar, ver el
+[contrato de datos](../../docs/contrato_datos_ingesta.md) y el
+[criterio implementado](../../docs/criterio_puntuacion_relevancia.md).
+
+El foro de Alura sigue representado por datos simulados; la evaluación de una
+fuente real con Arthur es opcional. El resto de esta guía conserva el contexto
+de entrega de Gustavo, con los pendientes de relevancia actualizados.
+
+---
+
 Hola Jhonattan y Arthur 👋
 
 Este documento tiene dos públicos distintos, porque les toca a cada uno algo
@@ -97,12 +124,10 @@ como placeholder, con `canal` inspirado en las rutas reales que vi
 
 ## Para Jhonattan — implementar el criterio de relevancia
 
-`docs/criterio_puntuacion_relevancia.md` tiene el diseño (señales, regla de
-decisión) pero **todavía no está implementado en código** — es justo lo
-próximo en la lista de pendientes de ese documento (Semana 1, vos y yo).
-Hasta que esto exista, ningún dato del dataset está filtrado o puntuado por
-relevancia — es importante que lo tengas claro antes de tocar el pipeline, y
-que Arthur lo sepa también (ver su sección abajo).
+El diseño inicial de `docs/criterio_puntuacion_relevancia.md` ya cuenta con
+implementación y pruebas en esta rama. Se ejecuta mediante `ingest.py` y
+genera una selección separada; no reemplaza el dataset original. Falta
+validar conjuntamente los pesos y conectar la selección con el grafo de IA.
 
 ---
 
@@ -136,13 +161,12 @@ ISO 639-1, mayormente `"es"`).
 
 **Cuidados importantes antes de asumir cosas:**
 
-- **Nada viene pre-filtrado por relevancia todavía.** El criterio está
-  diseñado en `docs/criterio_puntuacion_relevancia.md` pero no implementado
-  en código (ver sección de Jhonattan arriba) — tu pipeline va a recibir
-  todas las interacciones, incluidas las de bajo valor (mensajes cortos,
-  posible ruido). Si necesitás coordinar los pesos de ese criterio para que
-  no se pise con tu propio análisis de sentimiento, ese doc es el punto de
-  partida.
+- **El dataset original contiene todas las interacciones.** Para generar
+  contenido con mensajes seleccionados, ejecutar `ingest.py` o llamar a
+  `procesar_datos`. Para medir sentimiento general y recurrencia, usar la
+  entrada completa limpiada con `validar_y_limpiar`; el ranking de marketing
+  no representa la distribución de toda la comunidad. Los pesos y la
+  propuesta de contrato están documentados para revisión conjunta.
 - `tests/fixtures/prueba_reddit_controlada.json` tiene comentarios reales de
   Reddit sin filtrar de lenguaje — puede incluir groserías. Es contenido
   público sin editar a propósito; la curaduría final es responsabilidad del

@@ -24,6 +24,50 @@ El foro de Alura sigue representado por datos simulados; la evaluación de una
 fuente real con Arthur es opcional. El resto de esta guía conserva el contexto
 de entrega de Gustavo, con los pendientes de relevancia actualizados.
 
+## Semana 1 — entrega consolidada de Gustavo y Jhonattan (26 de septiembre)
+
+El comando de entrega conserva todos los mensajes válidos para sentimiento y
+separa su elegibilidad para contenido. Reutiliza el adaptador de Gustavo a
+`EstadoAgente` y valida los puntajes por ID y contexto.
+
+```sh
+python -m src.datos.ingesta --configuracion configuracion/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z --entrega-ia salida/datos/ia --tamano-ciclo 20
+```
+
+Con esa referencia: **23 estados para sentimiento, 14 seleccionados para contenido
+y ciclos operativos de 12 y 11 mensajes**. El paquete incluye:
+
+- Selección e informe en `salida/datos`.
+- Población completa, estados de IA y plan de procesamiento en `salida/datos/ia`.
+- Fragmentos planos por origen y manifiesto en `salida/datos/entregas`.
+
+Los fragmentos por origen pueden ser menores de 10. El plan operativo agrupa
+estados de 10 a 30 conservando cada origen; cualquier remanente queda pendiente.
+Sin `--entrega-ia`, se conserva la selección de contenido por defecto.
+`--tamano-ciclo` acepta ahora únicamente enteros de 10 a 30.
+Los IDs para entrega deben ser globalmente únicos y las fechas válidas.
+
+El guardado solo retira fragmentos del manifiesto previo; conserva archivos ajenos
+y rechaza rutas o colisiones inseguras. No se usa `salida/` como carpeta de ciclos.
+No hay llamadas a Gemini ni OCI en esta entrega.
+
+Pruebas de Datos sin dependencias externas ni servicios cloud:
+
+```sh
+python -m pytest tests/test_procesamiento_datos.py
+python -m pytest tests/test_entrega_ia.py
+python -m pytest tests/test_ingesta_reddit.py
+```
+
+Para Ciencia de Datos: `preparar_paquete_ia` devuelve estados con las claves existentes
+`score_relevancia`, `origen` y `tipo_original`. El plan conserva
+`ids_contenido` por separado; DS debe respetarlos al generar activos.
+El grafo ya consume ciclos por ID y conserva los remanentes; la aprobación formal
+del contrato continúa pendiente.
+Ver [contrato, archivos y ejemplo de consumo](../../docs/contrato_datos_ingesta.md).
+
+El texto siguiente conserva el contexto original del aporte de Gustavo.
+
 ---
 
 Hola Jhonattan y Arthur 👋

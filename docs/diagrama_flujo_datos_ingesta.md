@@ -14,8 +14,13 @@ flowchart TD
     C --> D[Puntuación de relevancia<br/>tipo: testimonio / pregunta_tecnica / comentario / feedback]
     D --> E[JSON de salida<br/>salida/datos/mensajes_filtrados.json]
     D --> R[Informe separado<br/>puntajes y motivos de descarte]
-   E --> F[Flujo de IA - Sub-equipo 2<br/>LangGraph: sentimiento, temas y generación de textos]
-   F --> G[OCI Object Storage<br/>contenedor Always Free - paquete de activos]
+    D --> P[Población válida completa<br/>incluye críticas breves y bajo puntaje]
+   P --> S[EstadoAgente por ID<br/>plan de ciclos de 10 a 30]
+   S --> F[Flujo de IA por lotes<br/>sentimiento y temas]
+    E --> H[Elegibilidad por ID<br/>para generación de contenido]
+    F --> H
+   H --> G[Generación de contenido<br/>preguntas frecuentes, casos de éxito y boletín]
+   G --> O[OCI Object Storage<br/>persistencia de activos]
 ```
 
 ## Descripción de cada etapa
@@ -44,7 +49,12 @@ flowchart TD
    de entrada con las interacciones seleccionadas para generar contenido. El
    archivo simulado original se conserva. Para sentimiento general se debe usar
    la entrada completa limpiada, evitando el sesgo de la selección de marketing.
-6. **Entrega a IA y almacenamiento**: punto de integración con el trabajo de Danny y
+6. **Entrega de Semana 1**: `--entrega-ia DIR` exporta población válida, estados
+   iniciales de IA y un plan por IDs. Los fragmentos planos preservan el origen;
+   los ciclos operativos agrupan estados de 10 a 30, con remanentes explícitos.
+   El algoritmo no ejecuta IA. DS debe usar la población completa para análisis
+   y los IDs elegibles para generación. Véase el [contrato](contrato_datos_ingesta.md).
+7. **Ejecución y almacenamiento**: punto de integración con el trabajo de Danny y
    Arnold (Sub-equipo 2) y con la persistencia obligatoria en OCI Object Storage
    (Sub-equipo 4), ambos fuera del alcance de este sub-equipo.
 

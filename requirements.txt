@@ -10,3 +10,5 @@ python-dotenv>=1.0
 
 # Testing
 pytest>=8,<10
+oci
+streamlit

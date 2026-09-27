@@ -3,12 +3,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.agents.graph import grafo
-from src.agents.state import AgentState
-from src.data.relevancia import (
-    ConfigRelevancia,
-    leer_fecha,
-    seleccionar_lote,
-)
+from src.data.entrega_ia import preparar_paquete_ia
+from src.data.relevancia import ConfigRelevancia, leer_fecha
 
 
 RUTA_DATASET = Path(
@@ -68,176 +64,143 @@ def obtener_fecha_referencia(lotes):
     return datetime.now(timezone.utc)
 
 
+def obtener_evaluaciones_por_id(informe):
+    evaluaciones = {}
+
+    for lote in informe["lotes"]:
+        for evaluacion in lote["evaluaciones"]:
+            mensaje_id = evaluacion.get("id")
+
+            if mensaje_id:
+                evaluaciones[mensaje_id] = evaluacion
+
+    return evaluaciones
+
+
 def main():
     print("=" * 80)
-    print("PRUEBA DE 2 MENSAJES REALES")
+    print("PRUEBA DATA -> DATA SCIENCE -> LANGGRAPH")
     print("=" * 80)
 
     dataset = cargar_dataset()
     lotes = obtener_lotes(dataset)
-
     config = ConfigRelevancia()
 
-    fecha_referencia = (
-        obtener_fecha_referencia(lotes)
+    fecha_referencia = obtener_fecha_referencia(
+        lotes
     )
 
-    casos = []
+    paquete = preparar_paquete_ia(
+        dataset,
+        fecha_referencia=fecha_referencia,
+        config=config,
+    )
 
-    # --------------------------------------------------
-    # Buscar los dos mensajes reales
-    # y calcular su relevancia
-    # --------------------------------------------------
-
-    for lote in lotes:
-        seleccionados, evaluaciones = (
-            seleccionar_lote(
-                lote,
-                config,
-                fecha_referencia,
-            )
-        )
-
-        evaluaciones_por_id = {
-            evaluacion["id"]: evaluacion
-            for evaluacion in evaluaciones
-            if evaluacion["id"] is not None
-        }
-
-        for mensaje in lote.get(
-            "interacciones",
-            [],
-        ):
-            mensaje_id = mensaje.get("id")
-
-            if mensaje_id not in IDS_PRUEBA:
-                continue
-
-            casos.append(
-                {
-                    "mensaje": mensaje,
-                    "evaluacion": (
-                        evaluaciones_por_id[
-                            mensaje_id
-                        ]
-                    ),
-                    "origen": lote.get(
-                        "origen_comunidad",
-                        "",
-                    ),
-                    "periodo": lote.get(
-                        "periodo_referencia",
-                        "",
-                    ),
-                }
-            )
-
-    if len(casos) != len(IDS_PRUEBA):
-        encontrados = {
-            item["mensaje"]["id"]
-            for item in casos
-        }
-
-        faltantes = (
-            IDS_PRUEBA - encontrados
-        )
-
-        raise ValueError(
-            f"No se encontraron "
-            f"los IDs: {faltantes}"
-        )
-
-    # Para que la salida sea siempre
-    # int-022 y luego int-002
-    orden = {
-        "int-022": 1,
-        "int-002": 2,
+    estados_por_id = {
+        estado["id"]: estado
+        for estado in paquete["estados"]
     }
 
-    casos.sort(
-        key=lambda item: orden[
-            item["mensaje"]["id"]
-        ]
+    evaluaciones_por_id = (
+        obtener_evaluaciones_por_id(
+            paquete["informe"]
+        )
     )
 
-    # --------------------------------------------------
-    # Procesar uno por uno
-    # --------------------------------------------------
+    ids_contenido = set(
+        paquete["plan"]["ids_contenido"]
+    )
 
-    for numero, item in enumerate(
-        casos,
+    faltantes = (
+        IDS_PRUEBA - estados_por_id.keys()
+    )
+
+    if faltantes:
+        raise ValueError(
+            f"No se encontraron "
+            f"los IDs en AgentState: "
+            f"{faltantes}"
+        )
+
+    orden = [
+        "int-022",
+        "int-002",
+    ]
+
+    for numero, mensaje_id in enumerate(
+        orden,
         start=1,
     ):
-        mensaje = item["mensaje"]
-        evaluacion = item["evaluacion"]
+        estado_inicial = (
+            estados_por_id[mensaje_id]
+        )
 
-        score = evaluacion["puntaje"]
-
-        estado_inicial: AgentState = {
-            "id": mensaje["id"],
-            "autor": mensaje.get(
-                "autor",
-                "",
-            ),
-            "canal": mensaje.get(
-                "canal",
-                "",
-            ),
-            "origen": item["origen"],
-            "idioma": mensaje.get(
-                "idioma",
-                "es",
-            ),
-            "texto": mensaje["texto"],
-            "tipo_original": mensaje.get(
-                "tipo",
-                "",
-            ),
-            "score_relevancia": score,
-            "rutas": [],
-            "activos_generados": {},
-            "errores": [],
-        }
+        evaluacion = (
+            evaluaciones_por_id[mensaje_id]
+        )
 
         print()
         print("=" * 80)
         print(
             f"CASO {numero}: "
-            f"{mensaje['id']}"
+            f"{mensaje_id}"
         )
         print("=" * 80)
 
         print(
             "Autor:",
-            mensaje.get("autor"),
+            estado_inicial.get("autor"),
         )
         print(
             "Canal:",
-            mensaje.get("canal"),
+            estado_inicial.get("canal"),
+        )
+        print(
+            "Origen:",
+            estado_inicial.get("origen"),
         )
         print(
             "Texto:",
-            mensaje["texto"],
+            estado_inicial.get("texto"),
         )
 
         print()
-        print("DATOS")
+        print("ENTREGA DATA -> DATA SCIENCE")
         print("-" * 80)
 
         print(
             "Tipo original:",
-            mensaje.get("tipo"),
+            estado_inicial.get(
+                "tipo_original"
+            ),
         )
         print(
             "Score relevancia:",
-            score,
+            estado_inicial.get(
+                "score_relevancia"
+            ),
+        )
+        print(
+            "Incluido sentimiento:",
+            evaluacion.get(
+                "incluido_sentimiento"
+            ),
+        )
+        print(
+            "Elegible contenido:",
+            mensaje_id in ids_contenido,
         )
         print(
             "Desglose:",
-            evaluacion.get(
-                "desglose"
-            ),
+            evaluacion.get("desglose"),
         )
+
+        print()
+        print(
+            "AgentState recibido "
+            "desde Data:"
+        )
+        print(estado_inicial)
 
         print()
         print(
@@ -255,9 +218,7 @@ def main():
 
         print(
             "Sentimiento:",
-            resultado.get(
-                "sentimiento"
-            ),
+            resultado.get("sentimiento"),
         )
         print(
             "Tema principal:",
@@ -267,9 +228,7 @@ def main():
         )
         print(
             "Subtema:",
-            resultado.get(
-                "subtema"
-            ),
+            resultado.get("subtema"),
         )
         print(
             "Tipo detectado:",
@@ -296,15 +255,11 @@ def main():
             {},
         )
 
-        for ruta, activo in (
-            activos.items()
-        ):
+        for ruta, activo in activos.items():
             print()
             print(f"[{ruta}]")
 
-            for clave, valor in (
-                activo.items()
-            ):
+            for clave, valor in activo.items():
                 print(
                     f"{clave}: {valor}"
                 )
@@ -312,9 +267,7 @@ def main():
         print()
         print(
             "Errores:",
-            resultado.get(
-                "errores"
-            ),
+            resultado.get("errores"),
         )
 
     print()

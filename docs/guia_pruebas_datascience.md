@@ -1,229 +1,268 @@
-# Guía rápida de pruebas — Data Science V2
+# Guía de pruebas — Data Science
 
-Esta guía corresponde al flujo actualizado de **LangChain + Gemini + LangGraph con generación real de activos**.
+Esta guía está dirigida a los integrantes del proyecto que quieran probar la rama actualizada de Data Science.
 
-## Flujo actual
+> No es necesario crear, copiar ni modificar archivos. Todos los scripts, pruebas y archivos necesarios ya forman parte de la rama.
 
-```text
-Mensaje
-  ↓
-AgentState
-  ↓
-LangChain + Gemini
-  ↓
-sentimiento + tema + subtema + tipo_detectado
-  ↓
-LangGraph
-  ↓
-routing
-  ↓
-Caso de éxito / LinkedIn / FAQ
-  ↓
-contenido generado con Gemini
-```
-
----
 
 ## 1. Preparar el entorno
-
-Desde la raíz del proyecto:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
 
-El archivo local `.env` debe contener:
+Para las pruebas que utilizan Gemini, cada integrante debe tener localmente un archivo `.env` con:
 
 ```env
-GEMINI_API_KEY=TU_API_KEY
+GEMINI_API_KEY=SU_API_KEY
 ```
 
-> `.env` está excluido mediante `.gitignore`.
+El `.env` no debe subirse al repositorio.
 
----
-
-## 2. Ejecutar las pruebas automáticas
-
-Primero comprobar que el código determinista sigue funcionando:
+## 2. Pruebas automáticas
 
 ```powershell
 python -m pytest -v
 ```
 
-Todos los tests deben finalizar como `PASSED`.
+### ¿Para qué sirve?
 
-Estas pruebas no deberían depender de una respuesta real de Gemini.
+Comprueba la lógica determinista del proyecto:
 
----
+- routing;
+- relevancia;
+- limpieza e ingesta;
+- contrato Data → Data Science;
+- separación entre población de sentimiento y población de contenido.
 
-## 3. Probar solamente la Chain de análisis
+### Resultado esperado
+
+Todas las pruebas deben finalizar como `PASSED`.
+
+
+## 3. Probar únicamente el análisis con Gemini
 
 ```powershell
 python -m scripts.probar_chain_actualizada
 ```
 
-Esta prueba valida únicamente el análisis semántico:
+### ¿Para qué sirve?
 
-- sentimiento;
-- tema principal;
-- subtema;
-- tipo detectado.
+Comprueba únicamente:
 
-No prueba el routing ni los generadores finales.
+```text
+mensaje
+→ Gemini
+→ sentimiento
+→ tema principal
+→ subtema
+→ tipo_detectado
+```
 
----
+No prueba routing ni generación de activos.
 
-## 4. Probar el grafo completo con un solo mensaje
+## 4. Probar el grafo completo con un mensaje controlado
 
 ```powershell
 python -m scripts.probar_grafo
 ```
 
-Esta es una prueba end-to-end con un mensaje controlado.
+### ¿Para qué sirve?
 
-Valida:
+Comprueba:
 
 ```text
-mensaje
-→ análisis Gemini
-→ AgentState
+AgentState
+→ análisis
 → router
-→ generación real
+→ generación
 ```
 
-Para un testimonio relevante y muy positivo se espera:
+### Qué revisar
 
-```text
-Rutas:
-['caso_exito', 'linkedin']
-```
+- análisis correcto;
+- rutas coherentes;
+- activos reales;
+- `Errores: []`.
 
-Y en `Activos` deben aparecer contenidos reales, no:
-
-```text
-status: mock
-```
-
-El resultado debería incluir estructuras similares a:
-
-```text
-caso_exito:
-  titular
-  resumen
-
-linkedin:
-  titulo
-  contenido
-  canal_recomendado
-```
-
----
-
-## 5. Probar 2 mensajes del dataset de Datos
-
-Archivo:
-
-```text
-scripts/probar_grafo_2_mensajes_reales.py
-```
-
-Ejecutar:
+## 5. Probar integración Data → Data Science con mensajes reales
 
 ```powershell
 python -m scripts.probar_grafo_2_mensajes_reales
 ```
 
-La prueba utiliza dos interacciones existentes en:
+### ¿Para qué sirve?
+
+Es la prueba principal de integración entre Data y Data Science:
 
 ```text
-src/data/mensajes_comunidad_simulados.json
+dataset
+→ limpieza y relevancia
+→ preparar_paquete_ia()
+→ AgentState generado por Data
+→ LangGraph
+→ análisis
+→ routing
+→ generación de activos
 ```
 
 ### Caso `int-022`
 
-Es un testimonio relevante.
-
 Se espera aproximadamente:
 
 ```text
-tipo_detectado: testimonio
-sentimiento: muy_positivo
-rutas:
-- caso_exito
-- linkedin
+Score relevancia: 95
+Incluido sentimiento: True
+Elegible contenido: True
+
+Sentimiento: muy_positivo
+Tipo detectado: testimonio
+Rutas: ['caso_exito', 'linkedin']
+Errores: []
 ```
 
-Además deben generarse ambos activos con Gemini.
+Deben generarse `caso_exito` y `linkedin`.
 
 ### Caso `int-002`
 
-Es una pregunta técnica relevante.
-
 Se espera aproximadamente:
 
 ```text
-tipo_detectado: pregunta_tecnica
-sentimiento: neutral
-rutas:
-- faq
+Score relevancia: 80
+Incluido sentimiento: True
+Elegible contenido: True
+
+Sentimiento: neutral
+Tipo detectado: pregunta_tecnica
+Rutas: ['faq']
+Errores: []
 ```
 
-Debe generarse una FAQ real con Gemini.
+Debe generarse una `faq`.
 
----
+## 6. Probar sentimiento sin generación de contenido
 
-## 6. Importante sobre tiempos y llamadas
+```powershell
+python -m scripts.probar_grafo_sentimiento_sin_contenido
+```
 
-Esta prueba realiza varias llamadas a Gemini.
+### ¿Para qué sirve?
 
-Aproximadamente:
+Comprueba una regla importante:
+
+> Un mensaje puede ser válido para medir sentimiento aunque no sea suficientemente relevante para generar contenido.
+
+La prueba utiliza `int-008`.
+
+Se espera:
 
 ```text
-int-022
-1 análisis
-1 caso de éxito
-1 LinkedIn
-= 3 llamadas
-
-int-002
-1 análisis
-1 FAQ
-= 2 llamadas
+Score relevancia: 39
+Incluido en sentimiento: True
+Elegible para contenido: False
 ```
 
-Total aproximado:
+Después del análisis:
 
 ```text
-5 llamadas a Gemini
+Rutas: []
+Activos: {}
+Errores: []
 ```
 
-Por ello la ejecución puede tardar más que `probar_chain_actualizada`.
+Y al final:
 
-Si aparecen errores `503 ServiceUnavailable`, puede tratarse de disponibilidad temporal de la API.
+```text
+VALIDACIÓN: OK
+```
 
----
+## 7. Orden recomendado
 
-## 7. Qué revisar en el resultado
-
-Para cada interacción comprobar:
-
-1. `Errores: []`
-2. `tipo_detectado` coherente con el mensaje.
-3. `tema_principal` y `subtema` razonables.
-4. `rutas` acordes al tipo y score.
-5. Los activos generados no inventan información factual.
-6. No aparece `status: mock`.
-
----
-
-## Orden recomendado de pruebas
+Validación completa:
 
 ```powershell
 python -m pytest -v
 python -m scripts.probar_chain_actualizada
 python -m scripts.probar_grafo
 python -m scripts.probar_grafo_2_mensajes_reales
+python -m scripts.probar_grafo_sentimiento_sin_contenido
 ```
 
-Este orden permite detectar primero errores locales y luego probar progresivamente las llamadas reales al LLM.
+Validación rápida sin consumir Gemini:
+
+```powershell
+python -m pytest -v
+```
+
+## 8. Aclaraciones
+
+### Las respuestas de Gemini pueden variar
+
+No se debe esperar que títulos, resúmenes o textos generados sean exactamente iguales entre ejecuciones.
+
+Revisar principalmente:
+
+- clasificación coherente;
+- rutas correctas;
+- estructura de los activos;
+- ausencia de errores;
+- no invención de hechos ajenos al mensaje original.
+
+### Algunas pruebas pueden tardar
+
+Cuando aparezca:
+
+```text
+Procesando con LangChain + LangGraph...
+```
+
+ya comenzaron las llamadas externas a Gemini.
+
+La prueba de dos mensajes realiza aproximadamente 5 llamadas:
+
+```text
+int-022:
+1 análisis
+1 caso de éxito
+1 LinkedIn
+
+int-002:
+1 análisis
+1 FAQ
+```
+
+Durante la validación del equipo esta prueba tardó alrededor de 3 minutos. El tiempo puede variar.
+
+### Error 429 / ResourceExhausted
+
+Normalmente indica límite de cuota o frecuencia de Gemini.
+
+Esperar el tiempo indicado por la API y volver a ejecutar.
+
+### Error 503 / ServiceUnavailable
+
+Puede corresponder a indisponibilidad temporal del proveedor.
+
+Esperar unos minutos y volver a ejecutar antes de asumir que hay un error en la lógica del proyecto.
+
+## 9. Qué se valida finalmente
+
+```text
+DATA
+├── limpieza
+├── relevancia
+├── preparación de poblaciones
+└── construcción del AgentState
+        ↓
+DATA SCIENCE
+├── sentimiento
+├── tema y subtema
+├── tipo_detectado
+├── routing
+└── generación de activos
+```
+
+La relevancia controla la generación de contenido.
+
+El análisis de sentimiento utiliza una población más amplia y no se limita únicamente a los mensajes seleccionados para generación.

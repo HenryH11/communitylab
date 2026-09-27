@@ -4,8 +4,39 @@ Esta guía está dirigida a los integrantes del proyecto que quieran probar la r
 
 > No es necesario crear, copiar ni modificar archivos. Todos los scripts, pruebas y archivos necesarios ya forman parte de la rama.
 
+## 1. Qué se actualizó
 
-## 1. Preparar el entorno
+La integración entre Data y Data Science ya utiliza directamente la salida preparada por Data.
+
+Antes, algunos scripts calculaban relevancia y construían el `AgentState` manualmente.
+
+Ahora el flujo es:
+
+```text
+dataset
+→ Data limpia y calcula relevancia
+→ preparar_paquete_ia()
+→ construir_estados_agente()
+→ AgentState
+→ Data Science
+→ análisis
+→ routing
+→ generación
+```
+
+También se separaron explícitamente dos poblaciones:
+
+```text
+Sentimiento
+→ mensajes válidos para analizar la salud de la comunidad
+
+Contenido
+→ mensajes con relevancia suficiente para generar activos
+```
+
+Por eso un mensaje puede analizarse para sentimiento aunque no genere contenido.
+
+## 2. Preparar el entorno
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
@@ -20,7 +51,7 @@ GEMINI_API_KEY=SU_API_KEY
 
 El `.env` no debe subirse al repositorio.
 
-## 2. Pruebas automáticas
+## 3. Pruebas automáticas
 
 ```powershell
 python -m pytest -v
@@ -38,10 +69,15 @@ Comprueba la lógica determinista del proyecto:
 
 ### Resultado esperado
 
+En la versión actual validada:
+
+```text
+33 passed
+```
+
 Todas las pruebas deben finalizar como `PASSED`.
 
-
-## 3. Probar únicamente el análisis con Gemini
+## 4. Probar únicamente el análisis con Gemini
 
 ```powershell
 python -m scripts.probar_chain_actualizada
@@ -62,7 +98,7 @@ mensaje
 
 No prueba routing ni generación de activos.
 
-## 4. Probar el grafo completo con un mensaje controlado
+## 5. Probar el grafo completo con un mensaje controlado
 
 ```powershell
 python -m scripts.probar_grafo
@@ -86,7 +122,7 @@ AgentState
 - activos reales;
 - `Errores: []`.
 
-## 5. Probar integración Data → Data Science con mensajes reales
+## 6. Probar integración Data → Data Science con mensajes reales
 
 ```powershell
 python -m scripts.probar_grafo_2_mensajes_reales
@@ -94,7 +130,11 @@ python -m scripts.probar_grafo_2_mensajes_reales
 
 ### ¿Para qué sirve?
 
-Es la prueba principal de integración entre Data y Data Science:
+Es la prueba principal de integración entre Data y Data Science.
+
+En esta versión, el script ya no construye manualmente el `AgentState`. Consume directamente los estados preparados por Data.
+
+El flujo probado es:
 
 ```text
 dataset
@@ -141,7 +181,7 @@ Errores: []
 
 Debe generarse una `faq`.
 
-## 6. Probar sentimiento sin generación de contenido
+## 7. Probar sentimiento sin generación de contenido
 
 ```powershell
 python -m scripts.probar_grafo_sentimiento_sin_contenido
@@ -177,7 +217,9 @@ Y al final:
 VALIDACIÓN: OK
 ```
 
-## 7. Orden recomendado
+Esto confirma que el mensaje sí es analizado por Data Science, pero al no superar el umbral de relevancia no activa ninguna ruta de generación.
+
+## 8. Orden recomendado
 
 Validación completa:
 
@@ -185,8 +227,8 @@ Validación completa:
 python -m pytest -v
 python -m scripts.probar_chain_actualizada
 python -m scripts.probar_grafo
-python -m scripts.probar_grafo_2_mensajes_reales
-python -m scripts.probar_grafo_sentimiento_sin_contenido
+python -m scripts.probar_grafo_2_mensajes_reales   ------------ESTA ES LA PRINCIPAL PARA VER TODO
+python -m scripts.probar_grafo_sentimiento_sin_contenido   ------------ESTA ES LA PRINCIPAL PARA VER TODO
 ```
 
 Validación rápida sin consumir Gemini:
@@ -195,7 +237,7 @@ Validación rápida sin consumir Gemini:
 python -m pytest -v
 ```
 
-## 8. Aclaraciones
+## 9. Aclaraciones
 
 ### Las respuestas de Gemini pueden variar
 
@@ -232,7 +274,7 @@ int-002:
 1 FAQ
 ```
 
-Durante la validación del equipo esta prueba tardó alrededor de 3 minutos. El tiempo puede variar.
+Durante la validación esta prueba tardó alrededor de 3 minutos. El tiempo puede variar.
 
 ### Error 429 / ResourceExhausted
 
@@ -246,7 +288,7 @@ Puede corresponder a indisponibilidad temporal del proveedor.
 
 Esperar unos minutos y volver a ejecutar antes de asumir que hay un error en la lógica del proyecto.
 
-## 9. Qué se valida finalmente
+## 10. Qué se valida finalmente
 
 ```text
 DATA

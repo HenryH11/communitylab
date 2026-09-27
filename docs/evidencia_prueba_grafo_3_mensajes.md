@@ -1,12 +1,16 @@
-# Evidencia de integración Data + LangChain + LangGraph
+# Evidencia de integración Datos + LangChain + LangGraph
 
 ## Objetivo
 
-Validar el flujo de Data Science utilizando mensajes del dataset real de prueba:
+> Esta evidencia conserva las salidas literales de una ejecución anterior. En
+> esa versión la ruta `faq` se llamaba así; la implementación actual usa
+> `preguntas_frecuentes`.
 
-`src/data/mensajes_comunidad_simulados.json`
+Validar el flujo de Ciencia de Datos utilizando mensajes del conjunto de datos real de prueba:
 
-El dataset contiene:
+`src/datos/mensajes_comunidad_simulados.json`
+
+El conjunto de datos contiene:
 
 - 4 lotes
 - 23 mensajes
@@ -17,13 +21,13 @@ Para esta validación se procesaron 3 mensajes relevantes.
 ## Flujo probado
 
 ```text
-Dataset
+Conjunto de datos
   ↓
 relevancia.py
   ↓
 score_relevancia
   ↓
-AgentState
+EstadoAgente
   ↓
 LangChain + Gemini
   ↓
@@ -31,13 +35,13 @@ sentimiento + tema + subtema + tipo_detectado
   ↓
 LangGraph
   ↓
-routing
+enrutamiento
   ↓
-activos MOCK
+activos simulados
 
-#Resultado prueba
+#Resultado de la prueba
 ================================================================================
-PRUEBA DE 3 MENSAJES DEL DATASET
+PRUEBA DE 3 MENSAJES DEL CONJUNTO DE DATOS
 ================================================================================
 
 Lotes encontrados: 4
@@ -59,7 +63,7 @@ Texto: Comunidad, quede seleccionada para el puesto de Desarrolladora Junior de 
 DATOS / RELEVANCIA
 --------------------------------------------------------------------------------
 Tipo original: testimonio
-Score relevancia: 95
+Puntaje relevancia: 95
 Desglose: {'tipo': 40, 'longitud': 20, 'palabras_clave': 25, 'frescura': 10}
 Palabras clave: ['curso', 'langchain', 'oci', 'portfolio', 'proyecto']
 
@@ -72,10 +76,10 @@ Tema principal: empleabilidad
 Subtema: empleo Desarrolladora Junior IA
 Tipo detectado: testimonio
 
-ROUTING
+ENRUTAMIENTO
 --------------------------------------------------------------------------------
 Rutas: ['caso_exito', 'linkedin']
-Activos: {'caso_exito': {'status': 'mock', 'mensaje': 'Aquí se generará un caso de éxito.'}, 'linkedin': {'status': 'mock', 'mensaje': 'Aquí se generará un post de LinkedIn.'}}Errores: []
+Activos: {'caso_exito': {'estado': 'simulado', 'mensaje': 'Aquí se generará un caso de éxito.'}, 'linkedin': {'estado': 'simulado', 'mensaje': 'Aquí se generará una publicación de LinkedIn.'}}Errores: []
 
 ================================================================================
 MENSAJE 2 DE 3
@@ -90,7 +94,7 @@ Texto: Comunidad, gracias a este programa conseguí mi primer trabajo como anali
 DATOS / RELEVANCIA
 --------------------------------------------------------------------------------
 Tipo original: testimonio
-Score relevancia: 90
+Puntaje relevancia: 90
 Desglose: {'tipo': 40, 'longitud': 20, 'palabras_clave': 20, 'frescura': 10}
 Palabras clave: ['datos', 'portfolio', 'proyecto', 'trabajo']
 
@@ -103,10 +107,10 @@ Tema principal: empleabilidad
 Subtema: primer empleo analista de datos
 Tipo detectado: testimonio
 
-ROUTING
+ENRUTAMIENTO
 --------------------------------------------------------------------------------
 Rutas: ['caso_exito', 'linkedin']
-Activos: {'caso_exito': {'status': 'mock', 'mensaje': 'Aquí se generará un caso de éxito.'}, 'linkedin': {'status': 'mock', 'mensaje': 'Aquí se generará un post de LinkedIn.'}}Errores: []
+Activos: {'caso_exito': {'estado': 'simulado', 'mensaje': 'Aquí se generará un caso de éxito.'}, 'linkedin': {'estado': 'simulado', 'mensaje': 'Aquí se generará una publicación de LinkedIn.'}}Errores: []
 
 ================================================================================
 MENSAJE 3 DE 3
@@ -116,12 +120,12 @@ Origen: Discord_Grupo_ONE_G10
 Periodo: Semana_00
 Autor: Diego Fernández
 Canal: #dudas-langgraph
-Texto: Tengo dudas sobre cómo estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. ¿Alguien tiene un ejemplo práctico de router?
+Texto: Tengo dudas sobre cómo estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. ¿Alguien tiene un ejemplo práctico de enrutador?
 
 DATOS / RELEVANCIA
 --------------------------------------------------------------------------------
 Tipo original: pregunta_tecnica
-Score relevancia: 80
+Puntaje relevancia: 80
 Desglose: {'tipo': 40, 'longitud': 20, 'palabras_clave': 10, 'frescura': 10}
 Palabras clave: ['langgraph', 'llm']
 
@@ -134,15 +138,20 @@ Tema principal: datos_ia
 Subtema: nodos condicionales LangGraph
 Tipo detectado: pregunta_tecnica
 
-ROUTING
+ENRUTAMIENTO
 --------------------------------------------------------------------------------
 Rutas: ['faq']
-Activos: {'faq': {'status': 'mock', 'mensaje': 'Aquí se generará una FAQ.'}}
+Activos: {'faq': {'estado': 'simulado', 'mensaje': 'Aquí se generará una FAQ.'}}
 Errores: []
 
 ================================================================================
 PRUEBA FINALIZADA
 ================================================================================
 
-# Para realizar esta prueba ejecutar
-"python -m scripts.probar_grafo_3_mensajes"
+Este documento conserva la evidencia histórica del flujo simulado de tres mensajes;
+el script mencionado ya no forma parte del árbol actual. Para reproducir la
+integración vigente de dos mensajes con análisis lote y generación real:
+
+```powershell
+python -m scripts.demostracion_lotes_ciencia_datos
+```

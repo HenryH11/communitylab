@@ -1,13 +1,17 @@
-# Evidencia de generación real de activos con LLM
+# Evidencia de generación real de contenido con Gemini
 
 ## Objetivo
 
-Validar que el pipeline de Data Science puede analizar una interacción,
+> Esta evidencia conserva las salidas literales de una ejecución anterior. En
+> esa versión la ruta `faq` se llamaba así; la implementación actual usa
+> `preguntas_frecuentes`.
+
+Validar que el flujo de Ciencia de Datos puede analizar una interacción,
 determinar las rutas correspondientes mediante LangGraph y generar activos
 reales utilizando Gemini.
 
 Esta prueba reemplaza la etapa anterior en la que los nodos generadores
-devolvían contenido MOCK.
+devolvían contenido SIMULADO.
 
 ---
 
@@ -16,7 +20,7 @@ devolvían contenido MOCK.
 ```text
 Mensaje
   ↓
-AgentState
+EstadoAgente
   ↓
 LangChain + Gemini
   ↓
@@ -24,15 +28,15 @@ Análisis semántico
   ↓
 LangGraph
   ↓
-Router
+Enrutador
   ↓
 Generadores con Gemini
   ↓
 Activos estructurados
+```
 
-
-
-""esto se logra ejecutnado  python -m scripts.probar_grafo_2_mensajes_reales" IMPORTANTE
+Para reproducir la integración actual, ejecutar
+`python -m scripts.demostracion_lotes_ciencia_datos` desde la raíz del repositorio.
 
 Caso 1 — int-022
 
@@ -46,14 +50,14 @@ Comunidad, quede seleccionada para el puesto de Desarrolladora Junior de IA! El 
 Datos provenientes del módulo de relevancia:
 
 Tipo original: testimonio
-Score relevancia: 95
+Puntaje relevancia: 95
 
 Desglose:
 tipo: 40
 longitud: 20
 palabras_clave: 25
 frescura: 10
-Resultado del análisis con LLM
+Resultado del análisis con el modelo de lenguaje
 Sentimiento: muy_positivo
 Tema principal: empleabilidad
 Subtema: empleo Desarrolladora Junior de IA
@@ -61,7 +65,7 @@ Tipo detectado: testimonio
 
 El análisis mantuvo correctamente la clasificación semántica del mensaje como testimonio y detectó su relación con empleabilidad.
 
-Routing
+Enrutamiento
 
 LangGraph determinó:
 
@@ -95,8 +99,8 @@ entrevista técnica.
 frutos. Gracias por ser parte de ONE G10 y compartir tu logro con
 nosotros. 🚀
 
-#ONEG10 #IA #DesarrolloProfesional #Empleabilidad
-#OrgulloComunidad #Tech
+`#ONEG10 #IA #DesarrolloProfesional #Empleabilidad`
+`#OrgulloComunidad #Tech`
 
 Canal recomendado:
 LinkedIn Oficial
@@ -108,7 +112,7 @@ Errores: []
 Por lo tanto:
 
 int-022
-→ score relevancia 95
+→ puntaje relevancia 95
 → testimonio
 → muy_positivo
 → empleabilidad
@@ -120,20 +124,20 @@ Autor: Diego Fernández
 Canal: #dudas-langgraph
 
 Mensaje original:
-
-Tengo dudas sobre cómo estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. ¿Alguien tiene un ejemplo práctico de router?
+Resultado del análisis con el modelo de lenguaje
+Tengo dudas sobre cómo estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. ¿Alguien tiene un ejemplo práctico de enrutador?
 
 Datos provenientes del módulo de relevancia:
 
 Tipo original: pregunta_tecnica
-Score relevancia: 80
+Puntaje relevancia: 80
 
 Desglose:
 tipo: 40
 longitud: 20
 palabras_clave: 10
 frescura: 10
-Resultado del análisis con LLM
+Resultado del análisis con el modelo de lenguaje
 Sentimiento: neutral
 Tema principal: datos_ia
 Subtema: nodos condicionales LangGraph
@@ -142,25 +146,24 @@ Tipo detectado: pregunta_tecnica
 El modelo identificó correctamente una consulta relacionada con una
 implementación técnica de LangGraph.
 
-Routing
-
+Enrutamiento
 LangGraph determinó:
 
 ['faq']
 
-Por tanto, únicamente se ejecutó el generador correspondiente a FAQ.
+Por tanto, únicamente se ejecutó el generador de preguntas frecuentes.
 
 FAQ generada
 Tema:
 Tip Rápido: Nodos condicionales y reintentos en LangGraph
 
 Respuesta:
-En LangGraph, un router condicional evalúa el estado actual (por ejemplo,
-la respuesta de un LLM) mediante una función de decisión. Si la respuesta
-no es válida o necesita corrección, la función devuelve elnombre del nodo
-de reintento ("retry_node"); si es correcta, dirige al nodo final
-("end_node"). Esto se implementa usando 'add_conditional_edges' conectando
-el nodo del LLM con el router.
+En LangGraph, un enrutador condicional evalúa el estado actual (por ejemplo,
+la respuesta de un modelo de lenguaje) mediante una función de decisión. Si
+la respuesta no es válida o requiere corrección, la función dirige al nodo de
+reintento (`nodo_reintento`); si es correcta, continúa al nodo final
+(`nodo_final`). Esto se implementa con `add_conditional_edges`, conectando
+el nodo del modelo de lenguaje con el enrutador.
 
 Resultado de ejecución:
 
@@ -169,7 +172,7 @@ Errores: []
 Por lo tanto:
 
 int-002
-→ score relevancia 80
+→ puntaje relevancia 80
 → pregunta_tecnica
 → neutral
 → datos_ia
@@ -182,13 +185,13 @@ Datos
   ↓
 Relevancia
   ↓
-AgentState
+EstadoAgente
   ↓
 Gemini
   ↓
 LangGraph
   ↓
-Routing
+Enrutamiento
   ↓
 Generación real
 
@@ -203,8 +206,8 @@ int-002
 
 Errores: []
 
-Esta prueba valida además el comportamiento de multirouting, ya que
+Esta prueba valida además el comportamiento de multienrutamiento, ya que
 int-022 produjo dos activos diferentes a partir de una sola interacción.
 
 También confirma que el score_relevancia calculado por el módulo de Datos
-es consumido por el flujo de IA sin ser recalculado por el LLM.
+es consumido por el flujo de IA sin ser recalculado por el modelo de lenguaje.

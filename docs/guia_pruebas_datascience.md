@@ -1,37 +1,37 @@
-# Guía de pruebas — Data Science
+# Guía de pruebas — Ciencia de Datos
 
-Esta guía está dirigida a los integrantes del proyecto que quieran probar la rama actualizada de Data Science.
+Esta guía está dirigida a los integrantes del proyecto que quieran probar la rama actualizada de Ciencia de Datos.
 
 > No es necesario crear, copiar ni modificar archivos. Todos los scripts, pruebas y archivos necesarios ya forman parte de la rama.
 
 ## 1. Qué se actualizó
 
-La integración entre Data y Data Science ya utiliza directamente la salida preparada por Data.
+La integración entre Datos y Ciencia de Datos consume directamente el paquete preparado por el equipo de Datos.
 
-Antes, algunos scripts calculaban relevancia y construían el `AgentState` manualmente.
+Antes, algunos programas auxiliares calculaban la relevancia y construían el `EstadoAgente` manualmente.
 
 Ahora el flujo es:
 
 ```text
-dataset
-→ Data limpia y calcula relevancia
+conjunto de datos
+→ Datos limpia y calcula la relevancia
 → preparar_paquete_ia()
 → construir_estados_agente()
-→ AgentState
-→ Data Science
-→ análisis
-→ routing
-→ generación
+→ EstadoAgente
+→ plan de ciclos por ID
+→ análisis por lotes
+→ elegibilidad de contenido por ID
+→ enrutamiento y generación individuales
 ```
 
 También se separaron explícitamente dos poblaciones:
 
 ```text
-Sentimiento
-→ mensajes válidos para analizar la salud de la comunidad
+Análisis de sentimiento
+→ mensajes válidos para medir la salud de la comunidad
 
 Contenido
-→ mensajes con relevancia suficiente para generar activos
+→ mensajes autorizados por ID para generar contenido
 ```
 
 Por eso un mensaje puede analizarse para sentimiento aunque no genere contenido.
@@ -61,29 +61,22 @@ python -m pytest -v
 
 Comprueba la lógica determinista del proyecto:
 
-- routing;
+- enrutamiento;
 - relevancia;
 - limpieza e ingesta;
-- contrato Data → Data Science;
+- contrato Datos → Ciencia de Datos;
 - separación entre población de sentimiento y población de contenido.
 
-### Resultado esperado
+Todas las pruebas deben finalizar como `PASSED`. La suite no necesita una clave
+Gemini: las llamadas reales se reservan para los demos manuales.
 
-En la versión actual validada:
-
-```text
-33 passed
-```
-
-Todas las pruebas deben finalizar como `PASSED`.
-
-## 4. Probar únicamente el análisis con Gemini
+## 4. Probar únicamente la clasificación con Gemini
 
 ```powershell
-python -m scripts.probar_chain_actualizada
+python -m scripts.demostracion_cadena_analisis
 ```
 
-### ¿Para qué sirve?
+### Qué comprueba
 
 Comprueba únicamente:
 
@@ -96,22 +89,22 @@ mensaje
 → tipo_detectado
 ```
 
-No prueba routing ni generación de activos.
+No prueba el enrutamiento ni la generación de contenido.
 
 ## 5. Probar el grafo completo con un mensaje controlado
 
 ```powershell
-python -m scripts.probar_grafo
+python -m scripts.demostracion_grafo_mensaje_unico
 ```
 
-### ¿Para qué sirve?
+### Flujo que valida
 
 Comprueba:
 
 ```text
-AgentState
+EstadoAgente
 → análisis
-→ router
+→ enrutador
 → generación
 ```
 
@@ -122,28 +115,29 @@ AgentState
 - activos reales;
 - `Errores: []`.
 
-## 6. Probar integración Data → Data Science con mensajes reales
+## 6. Probar integración Datos → Ciencia de Datos con mensajes reales
 
 ```powershell
-python -m scripts.probar_grafo_2_mensajes_reales
+python -m scripts.demostracion_lotes_ciencia_datos
 ```
 
-### ¿Para qué sirve?
+### Qué valida la demostración
 
-Es la prueba principal de integración entre Data y Data Science.
+Es la prueba principal de integración entre Datos y Ciencia de Datos.
 
-En esta versión, el script ya no construye manualmente el `AgentState`. Consume directamente los estados preparados por Data.
+La demostración toma los estados y `ids_contenido` de `preparar_paquete_ia()`.
+Analiza `int-022` e `int-002` en una misma solicitud por lotes, y el ID decide
+qué mensajes pueden generar contenido.
 
 El flujo probado es:
 
 ```text
-dataset
+conjunto de datos
 → limpieza y relevancia
 → preparar_paquete_ia()
-→ AgentState generado por Data
-→ LangGraph
-→ análisis
-→ routing
+→ EstadoAgente generado por Datos
+→ análisis por lotes con resultados asociados por ID
+→ enrutamiento individual con `ids_contenido`
 → generación de activos
 ```
 
@@ -152,7 +146,7 @@ dataset
 Se espera aproximadamente:
 
 ```text
-Score relevancia: 95
+Puntaje de relevancia: 95
 Incluido sentimiento: True
 Elegible contenido: True
 
@@ -169,25 +163,25 @@ Deben generarse `caso_exito` y `linkedin`.
 Se espera aproximadamente:
 
 ```text
-Score relevancia: 80
+Puntaje de relevancia: 80
 Incluido sentimiento: True
 Elegible contenido: True
 
 Sentimiento: neutral
 Tipo detectado: pregunta_tecnica
-Rutas: ['faq']
+Rutas: ['preguntas_frecuentes']
 Errores: []
 ```
 
-Debe generarse una `faq`.
+Debe generarse contenido para `preguntas_frecuentes`.
 
 ## 7. Probar sentimiento sin generación de contenido
 
 ```powershell
-python -m scripts.probar_grafo_sentimiento_sin_contenido
+python -m scripts.demostracion_analisis_sin_contenido
 ```
 
-### ¿Para qué sirve?
+### Regla que comprueba
 
 Comprueba una regla importante:
 
@@ -198,7 +192,7 @@ La prueba utiliza `int-008`.
 Se espera:
 
 ```text
-Score relevancia: 39
+Puntaje de relevancia: 39
 Incluido en sentimiento: True
 Elegible para contenido: False
 ```
@@ -217,7 +211,8 @@ Y al final:
 VALIDACIÓN: OK
 ```
 
-Esto confirma que el mensaje sí es analizado por Data Science, pero al no superar el umbral de relevancia no activa ninguna ruta de generación.
+Esto confirma que el mensaje sí se analiza para sentimiento, pero al no estar
+en `ids_contenido` no activa ninguna ruta de generación.
 
 ## 8. Orden recomendado
 
@@ -225,10 +220,10 @@ Validación completa:
 
 ```powershell
 python -m pytest -v
-python -m scripts.probar_chain_actualizada
-python -m scripts.probar_grafo
-python -m scripts.probar_grafo_2_mensajes_reales   ------------ESTA ES LA PRINCIPAL PARA VER TODO
-python -m scripts.probar_grafo_sentimiento_sin_contenido   ------------ESTA ES LA PRINCIPAL PARA VER TODO
+python -m scripts.demostracion_cadena_analisis
+python -m scripts.demostracion_grafo_mensaje_unico
+python -m scripts.demostracion_lotes_ciencia_datos
+python -m scripts.demostracion_analisis_sin_contenido
 ```
 
 Validación rápida sin consumir Gemini:
@@ -271,7 +266,7 @@ int-022:
 
 int-002:
 1 análisis
-1 FAQ
+1 pregunta frecuente
 ```
 
 Durante la validación esta prueba tardó alrededor de 3 minutos. El tiempo puede variar.
@@ -295,13 +290,13 @@ DATA
 ├── limpieza
 ├── relevancia
 ├── preparación de poblaciones
-└── construcción del AgentState
+└── construcción del EstadoAgente
         ↓
-DATA SCIENCE
+CIENCIA DE DATOS
 ├── sentimiento
 ├── tema y subtema
 ├── tipo_detectado
-├── routing
+├── enrutamiento
 └── generación de activos
 ```
 

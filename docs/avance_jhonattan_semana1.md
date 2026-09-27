@@ -6,11 +6,11 @@ Fecha: 17 de septiembre de 2026. Rama local:
 
 ## Aporte
 
-- Lectura y validación de los JSON de Gustavo y del lote individual del brief.
+- Lectura y validación de los JSON de Gustavo y del lote individual de la especificación.
 - Limpieza y puntuación de relevancia con parámetros revisables y explicación de
   cada selección/descarte. No requiere dependencias externas ni credenciales.
 - Pruebas automáticas de calidad, filtros, contrato y uso por consola.
-- Incorporación de Mariana Souza y Lucas Albuquerque con los textos del brief.
+- Incorporación de Mariana Souza y Lucas Albuquerque con los textos de la especificación.
   Se conservan las 21 interacciones de Gustavo: ahora hay 23, de las cuales 10
   pertenecen al lote de Discord. Las fechas e IDs añadidos son datos simulados.
 - Propuesta de contrato para que Arquitectura e IA revisen la integración.
@@ -23,7 +23,7 @@ datos con el cálculo del ranking.
 
 Se revisó la investigación de Gustavo en `docs/fuentes_de_datos_acceso.md`.
 Para esta entrega se mantiene el lote simulado y se verifica que pueda procesarse
-con el mismo contrato. No se construyó un scraper autenticado ni se verificó de
+con el mismo contrato. No se construyó un recolector automatizado autenticado ni se verificó de
 nuevo el acceso a Alura. La decisión sobre una fuente real sigue siendo opcional
 y conjunta con Arthur: una exportación autorizada que respete este contrato
 podría procesarse sin cambiar el filtro.
@@ -53,9 +53,9 @@ Con referencia fija `2026-09-17T12:00:00Z` y los pesos propuestos:
 
 - Pasaron las 23 pruebas nuevas de `unittest` y las 8 comprobaciones originales
   de transformación RSS de Gustavo.
-- Dataset simulado: 23 entradas, 19 seleccionadas y 4 bajo el umbral. Mariana
+- Conjunto de datos simulado: 23 entradas, 19 seleccionadas y 4 bajo el umbral. Mariana
   Souza obtuvo 95 puntos y Lucas Albuquerque 80; ambos fueron seleccionados.
-- Snapshot de Reddit, con `top_n=3`: 5 entradas, 3 seleccionadas, un enlace sin
+- Captura de Reddit, con `maximo_por_lote=3`: 5 entradas, 3 seleccionadas, un enlace sin
   contexto descartado y un comentario bajo el umbral.
 - Se compararon las 21 interacciones originales con la rama de Gustavo y todas
   permanecen iguales. La configuración JSON coincide con los valores del módulo.

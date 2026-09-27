@@ -3,29 +3,31 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+from unittest.mock import patch
 
-from src.data.entrega_ia import preparar_paquete_ia
-from src.data.relevancia import ConfigRelevancia, leer_fecha
+from src.agentes.grafo import procesar_paquete_entrega
+from src.datos.entrega_ia import preparar_paquete_ia
+from src.datos.relevancia import ConfiguracionRelevancia, leer_fecha
 
 
-RUTA_DATASET = Path(
-    "src/data/mensajes_comunidad_simulados.json"
+RUTA_CONJUNTO_DATOS = Path(
+    "src/datos/mensajes_comunidad_simulados.json"
 )
 
 UMBRAL_RELEVANCIA = 40
 
 
-def _obtener_lotes(dataset):
-    if "lotes" in dataset:
-        return dataset["lotes"]
+def _obtener_lotes(conjunto_datos):
+    if "lotes" in conjunto_datos:
+        return conjunto_datos["lotes"]
 
-    return [dataset]
+    return [conjunto_datos]
 
 
-def _fecha_referencia(dataset):
+def _fecha_referencia(conjunto_datos):
     fechas = []
 
-    for lote in _obtener_lotes(dataset):
+    for lote in _obtener_lotes(conjunto_datos):
         for mensaje in lote.get(
             "interacciones",
             [],
@@ -50,22 +52,22 @@ def _fecha_referencia(dataset):
 
 @pytest.fixture(scope="module")
 def paquete():
-    with RUTA_DATASET.open(
+    with RUTA_CONJUNTO_DATOS.open(
         "r",
         encoding="utf-8",
     ) as archivo:
-        dataset = json.load(archivo)
+        conjunto_datos = json.load(archivo)
 
     return preparar_paquete_ia(
-        dataset,
+        conjunto_datos,
         fecha_referencia=_fecha_referencia(
-            dataset
+            conjunto_datos
         ),
-        config=ConfigRelevancia(),
+        configuracion=ConfiguracionRelevancia(),
     )
 
 
-def test_agentstate_respeta_contrato_data_science(
+def test_estado_agente_respeta_contrato_ciencia_datos(
     paquete,
 ):
     estados = {
@@ -141,3 +143,42 @@ def test_tipo_original_se_conserva(
         estados["int-008"]["tipo_original"]
         == "comentario"
     )
+
+
+def test_grafo_consume_ciclos_de_datos_por_id_y_conserva_pendientes(
+    paquete,
+):
+    def procesar_estados_sin_llm(estados, *, ids_contenido, tamano_lote):
+        assert tamano_lote == 10
+        return [
+            {
+                **estado,
+                "sentimiento": "neutral",
+                "rutas": [],
+                "activos_generados": {},
+            }
+            for estado in estados
+        ]
+
+    with patch(
+        "src.agentes.grafo.procesar_estados_por_lotes",
+        side_effect=procesar_estados_sin_llm,
+    ):
+        resultado = procesar_paquete_entrega(paquete)
+
+    ids_en_ciclos = [
+        mensaje_id
+        for ciclo in paquete["plan"]["ciclos"]
+        for mensaje_id in ciclo["ids"]
+    ]
+    ids_procesados = [
+        estado["id"]
+        for estado in resultado["resultados"]
+    ]
+
+    assert ids_procesados == ids_en_ciclos
+    assert resultado["ids_pendientes"] == paquete["plan"]["pendientes"]
+    assert {
+        estado["id"]
+        for estado in resultado["pendientes"]
+    } == set(paquete["plan"]["pendientes"])

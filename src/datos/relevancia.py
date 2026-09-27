@@ -27,18 +27,18 @@ def leer_fecha(texto):
 
 
 @dataclass(frozen=True)
-class ConfigRelevancia:
-    min_caracteres: int = 20
-    min_puntaje: int = 40
-    top_n: int | None = None
-    puntos_tipo: dict = field(default_factory=lambda: {
+class ConfiguracionRelevancia:
+    caracteres_minimos: int = 20
+    puntaje_minimo: int = 40
+    maximo_por_lote: int | None = None
+    puntos_por_tipo: dict = field(default_factory=lambda: {
         "testimonio": 40, "pregunta_tecnica": 40, "feedback": 30, "comentario": 10,
     })
-    puntos_longitud: int = 20
-    puntos_palabra: int = 5
-    tope_palabras: int = 30
-    puntos_frescura: int = 10
-    dias_frescura: int = 7
+    puntos_por_longitud: int = 20
+    puntos_por_palabra: int = 5
+    maximo_palabras: int = 30
+    puntos_por_frescura: int = 10
+    dias_de_frescura: int = 7
     palabras_clave: tuple = (
         "aprendi", "trabajo", "empleo", "certificado", "mentor", "mentores",
         "proyecto", "proyectos", "python", "sql", "oci", "langchain",
@@ -47,22 +47,22 @@ class ConfigRelevancia:
 
     def __post_init__(self):
         for nombre in (
-            "min_caracteres", "min_puntaje", "puntos_longitud", "puntos_palabra",
-            "tope_palabras", "puntos_frescura", "dias_frescura",
+            "caracteres_minimos", "puntaje_minimo", "puntos_por_longitud", "puntos_por_palabra",
+            "maximo_palabras", "puntos_por_frescura", "dias_de_frescura",
         ):
             valor = getattr(self, nombre)
             if type(valor) is not int or valor < 0:
                 raise ValueError(f"{nombre} debe ser un entero no negativo")
-        if self.min_caracteres < 1 or self.min_puntaje > 100:
-            raise ValueError("min_caracteres debe ser >= 1 y min_puntaje <= 100")
-        if self.top_n is not None and (type(self.top_n) is not int or self.top_n < 1):
-            raise ValueError("top_n debe ser null o un entero positivo")
-        if not isinstance(self.puntos_tipo, dict) or set(self.puntos_tipo) != TIPOS:
-            raise ValueError("puntos_tipo debe contener los cuatro tipos admitidos")
-        if any(type(v) is not int or v < 0 for v in self.puntos_tipo.values()):
+        if self.caracteres_minimos < 1 or self.puntaje_minimo > 100:
+            raise ValueError("caracteres_minimos debe ser >= 1 y puntaje_minimo <= 100")
+        if self.maximo_por_lote is not None and (type(self.maximo_por_lote) is not int or self.maximo_por_lote < 1):
+            raise ValueError("maximo_por_lote debe ser null o un entero positivo")
+        if not isinstance(self.puntos_por_tipo, dict) or set(self.puntos_por_tipo) != TIPOS:
+            raise ValueError("puntos_por_tipo debe contener los cuatro tipos admitidos")
+        if any(type(v) is not int or v < 0 for v in self.puntos_por_tipo.values()):
             raise ValueError("Los pesos de tipo deben ser enteros no negativos")
-        maximo = (max(self.puntos_tipo.values()) + self.puntos_longitud
-                  + self.tope_palabras + self.puntos_frescura)
+        maximo = (max(self.puntos_por_tipo.values()) + self.puntos_por_longitud
+                  + self.maximo_palabras + self.puntos_por_frescura)
         if maximo > 100:
             raise ValueError("La suma máxima de los pesos no puede superar 100")
         if not isinstance(self.palabras_clave, (list, tuple)) or any(
@@ -74,15 +74,15 @@ class ConfigRelevancia:
         return asdict(self)
 
 
-def puntuar_interaccion(interaccion, config, fecha_referencia):
+def puntuar_interaccion(interaccion, configuracion, fecha_referencia):
     """Devuelve evidencia del puntaje y exclusiones, sin modificar la entrada."""
     texto = interaccion["texto"]
     palabras = re.findall(r"\b\w+\b", normalizar_busqueda(URL.sub(" ", texto)))
-    claves = {normalizar_busqueda(p) for p in config.palabras_clave}
+    claves = {normalizar_busqueda(p) for p in configuracion.palabras_clave}
     encontradas = sorted(set(palabras) & claves)
     motivos = []
     advertencias = []
-    if len(texto) < config.min_caracteres:
+    if len(texto) < configuracion.caracteres_minimos:
         motivos.append("texto_corto")
     if URL.search(texto) and not re.search(r"\w", URL.sub(" ", texto)):
         motivos.append("solo_enlaces")
@@ -99,18 +99,18 @@ def puntuar_interaccion(interaccion, config, fecha_referencia):
             edad = (fecha_referencia - leer_fecha(fecha)).total_seconds()
             if edad < 0:
                 advertencias.append("fecha_futura")
-            elif edad <= config.dias_frescura * 86400:
-                frescura = config.puntos_frescura
+            elif edad <= configuracion.dias_de_frescura * 86400:
+                frescura = configuracion.puntos_por_frescura
         except ValueError:
             advertencias.append("fecha_invalida")
     desglose = {
-        "tipo": config.puntos_tipo[interaccion["tipo"]],
-        "longitud": min(len(palabras), 20) * config.puntos_longitud // 20,
-        "palabras_clave": min(len(encontradas) * config.puntos_palabra, config.tope_palabras),
+        "tipo": configuracion.puntos_por_tipo[interaccion["tipo"]],
+        "longitud": min(len(palabras), 20) * configuracion.puntos_por_longitud // 20,
+        "palabras_clave": min(len(encontradas) * configuracion.puntos_por_palabra, configuracion.maximo_palabras),
         "frescura": frescura,
     }
     puntaje = sum(desglose.values())
-    if puntaje < config.min_puntaje:
+    if puntaje < configuracion.puntaje_minimo:
         motivos.append("bajo_umbral")
     return {
         "puntaje": puntaje, "desglose": desglose, "palabras_clave": encontradas,
@@ -118,13 +118,13 @@ def puntuar_interaccion(interaccion, config, fecha_referencia):
     }
 
 
-def seleccionar_lote(lote, config, fecha_referencia):
+def seleccionar_lote(lote, configuracion, fecha_referencia):
     """Filtra por lote; orden estable por puntaje y posición original."""
     vistos_id = set()
     vistos_texto = set()
     evaluaciones = []
     for indice, mensaje in enumerate(lote["interacciones"]):
-        evaluacion = puntuar_interaccion(mensaje, config, fecha_referencia)
+        evaluacion = puntuar_interaccion(mensaje, configuracion, fecha_referencia)
         clave = tuple(normalizar_busqueda(mensaje[c]) for c in ("autor", "canal", "texto"))
         identificador = mensaje.get("id")
         if clave in vistos_texto or (identificador is not None and identificador in vistos_id):
@@ -138,9 +138,9 @@ def seleccionar_lote(lote, config, fecha_referencia):
         (e for e in evaluaciones if not e["motivos"]),
         key=lambda e: (-e["puntaje"], e["indice"]),
     )
-    elegidos = candidatos if config.top_n is None else candidatos[:config.top_n]
+    elegidos = candidatos if configuracion.maximo_por_lote is None else candidatos[:configuracion.maximo_por_lote]
     for e in elegidos:
         e["seleccionado"] = True
     for e in candidatos[len(elegidos):]:
-        e["motivos"].append("fuera_top_n")
+        e["motivos"].append("fuera_maximo_por_lote")
     return [lote["interacciones"][e["indice"]] for e in elegidos], evaluaciones

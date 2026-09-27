@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "descripcion": "Lotes de interacciones reales ingeridas desde los feeds RSS/Atom publicos de Reddit (sin OAuth), con el mismo esquema que src/data/mensajes_comunidad_simulados.json (diferencial opcional, no forma parte del MVP obligatorio).",
+    "descripcion": "Lotes de interacciones reales obtenidas de los canales RSS/Atom públicos de Reddit (sin OAuth), con el mismo esquema que src/datos/mensajes_comunidad_simulados.json (mejora opcional, no forma parte del PMV obligatorio).",
     "version": "0.3.0-borrador",
-    "generado_por": "Gustavo Vasquez (Data Analyst, Sub-equipo 3) via src/data/ingesta_reddit.py",
-    "fuente": "Reddit RSS/Atom (sin API key)"
+    "generado_por": "Gustavo Vásquez (Analista de datos, Sub-equipo 3), mediante src/datos/ingesta_reddit.py",
+    "fuente": "Reddit RSS/Atom (sin clave API)"
   },
   "lotes": [
     {

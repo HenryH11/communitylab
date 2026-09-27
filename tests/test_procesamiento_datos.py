@@ -12,8 +12,8 @@ import unittest
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 
-from src.data.ingest import limpiar_texto, procesar_datos
-from src.data.relevancia import ConfigRelevancia
+from src.datos.ingesta import limpiar_texto, procesar_datos
+from src.datos.relevancia import ConfiguracionRelevancia
 
 
 FECHA = "2026-09-17T12:00:00Z"
@@ -34,10 +34,10 @@ def lote(*mensajes):
 
 
 def procesar(datos, **opciones):
-    return procesar_datos(datos, fecha_referencia=FECHA, config=ConfigRelevancia(**opciones))
+    return procesar_datos(datos, fecha_referencia=FECHA, configuracion=ConfiguracionRelevancia(**opciones))
 
 
-class SeleccionTests(unittest.TestCase):
+class PruebasSeleccion(unittest.TestCase):
     def test_limpieza_preserva_espanol_emoji_y_expresiones_tecnicas(self):
         texto = "<p>¡Qué  útil! 👩‍💻 &amp; Python</p>\x00 a < b; List<T>\ufffd"
         self.assertEqual(limpiar_texto(texto), "¡Qué útil! 👩‍💻 & Python a < b; List<T>")
@@ -55,7 +55,7 @@ class SeleccionTests(unittest.TestCase):
         self.assertEqual(salida["lotes"][0]["interacciones"][0]["enlace"], "referencia")
 
     def test_soporta_contrato_oficial_sin_extensiones(self):
-        entrada = lote({"autor": "Ana", "canal": "#faq", "tipo": "pregunta_tecnica", "texto": "¿Cómo configuro los reintentos del LLM en LangGraph?"})
+        entrada = lote({"autor": "Ana", "canal": "#ayuda", "tipo": "pregunta_tecnica", "texto": "¿Cómo configuro los reintentos del modelo de lenguaje en LangGraph?"})
         salida, informe = procesar(entrada)
         self.assertEqual(salida, entrada)
         self.assertIn("sin_fecha", informe["lotes"][0]["evaluaciones"][0]["advertencias"])
@@ -93,11 +93,11 @@ class SeleccionTests(unittest.TestCase):
         salida, _ = procesar(lote(mensaje(tipo="feedback", texto="Estoy frustrada porque el curso de Python tiene un error y el mentor no responde.")))
         self.assertEqual(len(salida["interacciones"]), 1)
 
-    def test_top_n_por_lote_orden_estable_y_razon_de_corte(self):
+    def test_maximo_por_lote_por_lote_orden_estable_y_razon_de_corte(self):
         entrada = {"lotes": [lote(mensaje("uno"), mensaje("dos", autor="Otra")), lote(mensaje("tres"))]}
-        salida, informe = procesar(entrada, top_n=1)
+        salida, informe = procesar(entrada, maximo_por_lote=1)
         self.assertEqual([l["interacciones"][0]["id"] for l in salida["lotes"]], ["uno", "tres"])
-        self.assertIn("fuera_top_n", informe["lotes"][0]["evaluaciones"][1]["motivos"])
+        self.assertIn("fuera_maximo_por_lote", informe["lotes"][0]["evaluaciones"][1]["motivos"])
 
     def test_orden_por_puntaje_no_por_posicion(self):
         salida, _ = procesar(lote(mensaje("bajo", tipo="comentario"), mensaje("alto", autor="Otra")))
@@ -106,7 +106,7 @@ class SeleccionTests(unittest.TestCase):
     def test_configuracion_cambia_seleccion(self):
         entrada = lote(mensaje(tipo="comentario", texto="Este mensaje aporta contexto sobre el encuentro comunitario."))
         normal, _ = procesar(entrada)
-        flexible, _ = procesar(entrada, min_puntaje=0)
+        flexible, _ = procesar(entrada, puntaje_minimo=0)
         self.assertFalse(normal["interacciones"])
         self.assertEqual(len(flexible["interacciones"]), 1)
 
@@ -151,14 +151,14 @@ class SeleccionTests(unittest.TestCase):
                 procesar(entrada)
 
     def test_rechaza_configuracion_invalida(self):
-        for opciones in ({"top_n": 0}, {"top_n": True}, {"min_puntaje": -1}, {"min_caracteres": 0}, {"puntos_longitud": 200}, {"puntos_tipo": {}}, {"palabras_clave": "python"}, {"dias_frescura": 1.5}):
+        for opciones in ({"maximo_por_lote": 0}, {"maximo_por_lote": True}, {"puntaje_minimo": -1}, {"caracteres_minimos": 0}, {"puntos_por_longitud": 200}, {"puntos_por_tipo": {}}, {"palabras_clave": "python"}, {"dias_de_frescura": 1.5}):
             with self.subTest(opciones=opciones), self.assertRaises(ValueError):
-                ConfigRelevancia(**opciones)
+                ConfiguracionRelevancia(**opciones)
 
 
-class IntegracionTests(unittest.TestCase):
-    def test_dataset_mvp_contiene_y_selecciona_casos_obligatorios(self):
-        entrada = json.loads((RAIZ / "src/data/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
+class PruebasIntegracion(unittest.TestCase):
+    def test_conjunto_datos_pmv_contiene_y_selecciona_casos_obligatorios(self):
+        entrada = json.loads((RAIZ / "src/datos/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
         mensajes = [m for l in entrada["lotes"] for m in l["interacciones"]]
         self.assertGreaterEqual(len(mensajes), 10)
         self.assertEqual(len({m["id"] for m in mensajes}), len(mensajes))
@@ -177,25 +177,25 @@ class IntegracionTests(unittest.TestCase):
 
     def ejecutar_cli(self, carpeta, *argumentos):
         return subprocess.run(
-            [sys.executable, "-X", "utf8", str(RAIZ / "src/data/ingest.py"), *map(str, argumentos)],
+            [sys.executable, "-X", "utf8", str(RAIZ / "src/datos/ingesta.py"), *map(str, argumentos)],
             cwd=carpeta, capture_output=True, text=True, encoding="utf-8",
         )
 
-    def test_cli_desde_otro_directorio_config_y_json_reproducibles(self):
+    def test_cli_desde_otro_directorio_configuracion_y_json_reproducibles(self):
         with tempfile.TemporaryDirectory() as temporal:
             carpeta = Path(temporal)
             entrada = carpeta / "entrada.json"
             salida = carpeta / "salida.json"
             informe = carpeta / "informe.json"
-            config = carpeta / "config.json"
+            configuracion = carpeta / "configuracion.json"
             entrada.write_text(json.dumps(lote(mensaje("uno"), mensaje("dos", autor="Otro"))), encoding="utf-8")
-            config.write_text('{"top_n": 1}', encoding="utf-8")
-            args = ("--entrada", entrada, "--salida", salida, "--informe", informe, "--config", config, "--fecha-referencia", FECHA)
-            corrida = self.ejecutar_cli(carpeta, *args)
+            configuracion.write_text('{"maximo_por_lote": 1}', encoding="utf-8")
+            argumentos_cli = ("--entrada", entrada, "--salida", salida, "--informe", informe, "--config", configuracion, "--fecha-referencia", FECHA)
+            corrida = self.ejecutar_cli(carpeta, *argumentos_cli)
             self.assertEqual(corrida.returncode, 0, corrida.stderr)
             self.assertEqual(len(json.loads(salida.read_text(encoding="utf-8"))["interacciones"]), 1)
             primera = (salida.read_bytes(), informe.read_bytes())
-            self.assertEqual(self.ejecutar_cli(carpeta, *args).returncode, 0)
+            self.assertEqual(self.ejecutar_cli(carpeta, *argumentos_cli).returncode, 0)
             self.assertEqual(primera, (salida.read_bytes(), informe.read_bytes()))
 
     def test_cli_rechaza_archivo_invalido_sin_crear_salidas(self):

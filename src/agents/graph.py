@@ -69,7 +69,7 @@ def construir_grafo():
         },
     )
 
-    # Si existen rutas, generamos los MOCK.
+    # Si existen rutas, generamos los activos.
     # Si no existen, finalizamos.
     workflow.add_conditional_edges(
         "determinar_rutas",

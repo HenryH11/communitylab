@@ -14,11 +14,18 @@ def determinar_rutas(state: AgentState) -> dict:
 
     rutas = []
 
+    elegible_contenido = state.get("elegible_contenido")
+    if elegible_contenido is False:
+        return {"rutas": []}
+
     score = state.get("score_relevancia")
 
-    # Si conocemos el score y no alcanza el umbral,
-    # el mensaje no genera activos.
-    if score is not None and score < UMBRAL_RELEVANCIA:
+    # Estados antiguos sin la decisión por ID conservan el umbral de respaldo.
+    if (
+        elegible_contenido is None
+        and score is not None
+        and score < UMBRAL_RELEVANCIA
+    ):
         return {"rutas": []}
 
     tipo = state.get("tipo_detectado")

@@ -25,6 +25,7 @@ class AgentState(TypedDict, total=False):
 
     # Relevancia calculada por el equipo de Datos
     score_relevancia: float | None
+    elegible_contenido: bool
 
     # -----------------------------
     # Resultado de LangChain / Gemini

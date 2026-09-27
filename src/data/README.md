@@ -11,7 +11,8 @@ Desde la raíz del repositorio:
 
 ```sh
 python -m src.data.ingest --config config/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z
-python -m pytest -v
+python -m unittest discover -s tests -p "test_*.py" -v
+python tests/verificar_transformacion_reddit.py
 ```
 
 Se generan `output/datos/mensajes_filtrados.json` y un informe separado con
@@ -180,7 +181,7 @@ ISO 639-1, mayormente `"es"`).
 
 ```
 python -m py_compile src/data/ingesta_reddit.py
-python -m pytest tests/test_reddit_ingestion.py -v
+python tests/verificar_transformacion_reddit.py
 python src/data/ingesta_reddit.py --help
 python -m json.tool src/data/mensajes_comunidad_simulados.json
 ```

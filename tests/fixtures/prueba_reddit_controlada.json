@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "descripcion": "Lotes de interacciones reales ingeridas desde los feeds RSS/Atom publicos de Reddit (sin OAuth), con el mismo esquema que src/data/mensajes_comunidad_simulados.json (diferencial opcional, no forma parte del MVP obligatorio).",
+    "version": "0.3.0-borrador",
+    "generado_por": "Gustavo Vasquez (Data Analyst, Sub-equipo 3) via src/data/ingesta_reddit.py",
+    "fuente": "Reddit RSS/Atom (sin API key)"
+  },
+  "lotes": [
+    {
+      "origen_comunidad": "Reddit_r_programacion",
+      "periodo_referencia": "Semana_00",
+      "interacciones": [
+        {
+          "id": "reddit-t1_pa2x0zs",
+          "autor": "Carlangueitor",
+          "canal": "r/programacion",
+          "tipo": "comentario",
+          "texto": "Primero deberías dejar de esperas que un solo libro te de conocimiento básico intermedio y avanzado, no existe. Luego podrías probar con éste: https://libropython.es/",
+          "fecha": "2026-09-16T01:52:13Z",
+          "idioma": "es"
+        },
+        {
+          "id": "reddit-t1_pa59yf0",
+          "autor": "nabou1501",
+          "canal": "r/programacion",
+          "tipo": "pregunta_tecnica",
+          "texto": "Ese libro también es básico. O en que capítulo se vuelve complejo?",
+          "fecha": "2026-09-16T12:00:07Z",
+          "idioma": "es"
+        },
+        {
+          "id": "reddit-t1_pa338ud",
+          "autor": "Least_Chicken_9561",
+          "canal": "r/programacion",
+          "tipo": "pregunta_tecnica",
+          "texto": "https://www.instagram.com/p/Da4hS5sDwQI/?img_index=16&stkn=MW15NXlwdjN0NWF2Mw==",
+          "fecha": "2026-09-16T02:26:35Z",
+          "idioma": "es"
+        },
+        {
+          "id": "reddit-t1_pa3kp49",
+          "autor": "EconomySerious",
+          "canal": "r/programacion",
+          "tipo": "comentario",
+          "texto": "python for dummies, o python para tontos",
+          "fecha": "2026-09-16T04:15:52Z",
+          "idioma": "es"
+        },
+        {
+          "id": "reddit-t1_pa673os",
+          "autor": "Still-Board1065",
+          "canal": "r/programacion",
+          "tipo": "comentario",
+          "texto": "Te recomiendo “Python para todos”, de Raúl González Duque, para empezar desde cero. Después puedes seguir con “Python Cookbook” o “Fluent Python” si ya tienes una base sólida; estos últimos son más avanzados y algunos recursos están en inglés.",
+          "fecha": "2026-09-16T14:40:17Z",
+          "idioma": "es"
+        }
+      ]
+    }
+  ]
+}

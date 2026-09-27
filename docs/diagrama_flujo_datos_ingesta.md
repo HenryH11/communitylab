@@ -1,9 +1,9 @@
 # Diagrama de flujo de datos — Ingesta y Procesamiento (Sub-equipo 3)
 
-Aporte de Gustavo Vásquez y Jhonattan Benavides (Data Analysts) al diagrama de flujo
-general del sistema que coordina Nelson Ramses Avilés (Solution Architect). Cubre
+Aporte de Gustavo Vásquez y Jhonattan Benavides (Analistas de datos) al diagrama de flujo
+general del sistema que coordina Nelson Ramses Avilés (Arquitecto de soluciones). Cubre
 únicamente el tramo de **ingesta y limpieza de datos**, desde que llega un mensaje de
-la comunidad hasta que sale como JSON listo para el pipeline de IA (Sub-equipo 2).
+la comunidad hasta que sale como JSON listo para el flujo de IA (Sub-equipo 2).
 
 ## Diagrama
 
@@ -12,23 +12,24 @@ flowchart TD
     A[Fuentes de la comunidad<br/>Discord / Slack / Foros / GitHub / Formularios] --> B[Ingesta por lote<br/>origen_comunidad + periodo_referencia + interacciones]
     B --> C[Validar y limpiar JSON<br/>HTML común, controles y espacios]
     C --> D[Puntuación de relevancia<br/>tipo: testimonio / pregunta_tecnica / comentario / feedback]
-    D --> E[JSON de salida<br/>output/datos/mensajes_filtrados.json]
+    D --> E[JSON de salida<br/>salida/datos/mensajes_filtrados.json]
     D --> R[Informe separado<br/>puntajes y motivos de descarte]
     D --> P[Población válida completa<br/>incluye críticas breves y bajo puntaje]
-    P --> S[AgentState por ID<br/>plan de ciclos de 10 a 30]
-    S --> F[Pipeline de IA - Sub-equipo 2<br/>sentimiento y temas]
+   P --> S[EstadoAgente por ID<br/>plan de ciclos de 10 a 30]
+   S --> F[Flujo de IA por lotes<br/>sentimiento y temas]
     E --> H[Elegibilidad por ID<br/>para generación de contenido]
     F --> H
-    H --> G[Generación y persistencia por DS/CE<br/>OCI Object Storage]
+   H --> G[Generación de contenido<br/>preguntas frecuentes, casos de éxito y boletín]
+   G --> O[OCI Object Storage<br/>persistencia de activos]
 ```
 
 ## Descripción de cada etapa
 
-1. **Fuentes de la comunidad**: según el brief oficial del proyecto
+1. **Fuentes de la comunidad**: según la descripción oficial del proyecto
    (`proyecto_3_community_lab.md`), el sistema debe poder ingerir datos de Discord,
    Slack, foros, GitHub o formularios. En Semana 0 se simulan cuatro orígenes
    representativos: Discord, LinkedIn, un formulario de feedback y el foro de
-   Alura (este último simulado porque requiere login y no expone API/RSS
+   Alura (este último simulado porque requiere inicio de sesión y no expone API/RSS
    pública — ver [`fuentes_de_datos_acceso.md`](./fuentes_de_datos_acceso.md)).
    Además, Reddit se ingiere de forma **real** (no simulada) vía RSS público.
 2. **Ingesta por lote**: cada lote de entrada respeta el esquema exacto especificado
@@ -42,9 +43,9 @@ flowchart TD
    aplica durante la selección y queda explicada en el informe.
 4. **Puntuación de relevancia**: aplica el criterio descrito en
    [`criterio_puntuacion_relevancia.md`](./criterio_puntuacion_relevancia.md) para
-   priorizar los mejores testimonios, preguntas técnicas o piezas de feedback antes
+   priorizar los mejores testimonios, preguntas técnicas o piezas del tipo `feedback` antes
    de pasarlos a la IA.
-5. **JSON de salida**: `output/datos/mensajes_filtrados.json` conserva el esquema
+5. **JSON de salida**: `salida/datos/mensajes_filtrados.json` conserva el esquema
    de entrada con las interacciones seleccionadas para generar contenido. El
    archivo simulado original se conserva. Para sentimiento general se debe usar
    la entrada completa limpiada, evitando el sesgo de la selección de marketing.
@@ -63,6 +64,6 @@ flowchart TD
   Nelson integra este tramo con arquitectura, frontend (Sebastián) y nube (Marco y
   Renato) para el diagrama general.
 - Validado contra la documentación oficial del proyecto
-  (`proyecto_3_community_lab.md`): el esquema de `src/data/mensajes_comunidad_simulados.json`
+  (`proyecto_3_community_lab.md`): el esquema de `src/datos/mensajes_comunidad_simulados.json`
   se ajustó para calzar exactamente con el ejemplo de solicitud (`origen_comunidad`,
   `periodo_referencia`, `interacciones`) definido por el cliente.

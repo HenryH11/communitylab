@@ -11,16 +11,16 @@ from unittest import mock
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
-from src.data.entrega_ia import construir_plan_procesamiento, preparar_entrega, preparar_paquete_ia
-from src.data.ingest import construir_estados_agente, construir_ciclos, guardar_ciclos, main
-from src.data.ingesta_reddit import parsear_entradas_atom, transformar_entrada, comentario_fue_eliminado, construir_lote
-from src.data.relevancia import ConfigRelevancia
-from test_ingest_relevancia import FECHA, lote, mensaje
-from verificar_transformacion_reddit import FIXTURE_COMENTARIOS
+from src.datos.entrega_ia import construir_plan_procesamiento, preparar_entrega, preparar_paquete_ia
+from src.datos.ingesta import construir_estados_agente, construir_ciclos, guardar_ciclos, principal
+from src.datos.ingesta_reddit import parsear_entradas_atom, transformar_entrada, comentario_fue_eliminado, construir_lote
+from src.datos.relevancia import ConfiguracionRelevancia
+from test_ingesta_reddit import EJEMPLO_COMENTARIOS
+from test_procesamiento_datos import FECHA, lote, mensaje
 
 class EntregaTests(unittest.TestCase):
     def preparar(self, datos, **opciones):
-        return preparar_entrega(datos, fecha_referencia=FECHA, config=ConfigRelevancia(**opciones))
+        return preparar_entrega(datos, fecha_referencia=FECHA, configuracion=ConfiguracionRelevancia(**opciones))
 
     def test_queja_breve_y_bajo_puntaje_permanecen_en_sentimiento(self):
         completos, contenido, informe = self.preparar(lote(
@@ -32,8 +32,8 @@ class EntregaTests(unittest.TestCase):
         self.assertEqual([m["id"] for m in contenido["lotes"][0]["interacciones"]], ["util"])
         self.assertEqual(informe["resumen_sentimiento"], {"total": 3, "incluidas": 3, "excluidas_calidad": 0})
 
-    def test_top_n_no_reduce_poblacion_de_sentimiento(self):
-        completos, contenido, _ = self.preparar(lote(mensaje("uno"), mensaje("dos", autor="Otra")), top_n=1)
+    def test_maximo_por_lote_no_reduce_poblacion_de_sentimiento(self):
+        completos, contenido, _ = self.preparar(lote(mensaje("uno"), mensaje("dos", autor="Otra")), maximo_por_lote=1)
         self.assertEqual(len(completos["lotes"][0]["interacciones"]), 2)
         self.assertEqual(len(contenido["lotes"][0]["interacciones"]), 1)
 
@@ -120,7 +120,7 @@ class EntregaTests(unittest.TestCase):
             construir_estados_agente(completos, informe, poblacion="sentimiento")
 
     def test_dataset_23_sentimiento_14_contenido_dos_ciclos(self):
-        datos = json.loads((RAIZ / "src/data/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
+        datos = json.loads((RAIZ / "src/datos/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
         paquete = preparar_paquete_ia(datos, fecha_referencia=FECHA)
         self.assertEqual(len(paquete["estados"]), 23)
         self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 14)
@@ -135,7 +135,7 @@ class EntregaTests(unittest.TestCase):
         self.assertTrue(all(set(e) == claves for e in paquete["estados"]))
 
     def test_reddit_original_se_conecta_al_mismo_adaptador(self):
-        entradas = parsear_entradas_atom(FIXTURE_COMENTARIOS)
+        entradas = parsear_entradas_atom(EJEMPLO_COMENTARIOS)
         mensajes = [transformar_entrada(e, "webdev", idioma="en") for e in entradas if not comentario_fue_eliminado(e)]
         paquete = preparar_paquete_ia(construir_lote("webdev", "Semana_00", mensajes), fecha_referencia=FECHA)
         self.assertEqual(len(paquete["estados"]), 2)
@@ -169,23 +169,23 @@ class EntregaTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             construir_ciclos({"lotes": [lote(mensaje()), lote(mensaje())]}, 20)
 
-    def test_guardado_rechaza_raiz_output_y_manifest_con_ruta_ajena(self):
-        with tempfile.TemporaryDirectory() as temporal, mock.patch("src.data.ingest.RAIZ", Path(temporal)):
-            output = Path(temporal) / "output"
-            destino = output / "entregas"
+    def test_guardado_rechaza_raiz_salida_y_manifiesto_con_ruta_ajena(self):
+        with tempfile.TemporaryDirectory() as temporal, mock.patch("src.datos.ingesta.RAIZ", Path(temporal)):
+            salida = Path(temporal) / "salida"
+            destino = salida / "entregas"
             destino.mkdir(parents=True)
-            ajeno = output / "mensajes_filtrados.json"
+            ajeno = salida / "mensajes_filtrados.json"
             ajeno.write_text("preservar", encoding="utf-8")
             with self.assertRaises(ValueError):
-                guardar_ciclos(output, [])
-            (destino / "manifest.json").write_text(json.dumps({"ciclos": [{"archivo": "../mensajes_filtrados.json"}]}), encoding="utf-8")
+                guardar_ciclos(salida, [])
+            (destino / "manifiesto.json").write_text(json.dumps({"ciclos": [{"archivo": "../mensajes_filtrados.json"}]}), encoding="utf-8")
             with self.assertRaises(ValueError):
                 guardar_ciclos(destino, [])
             self.assertEqual(ajeno.read_text(encoding="utf-8"), "preservar")
 
     def test_guardado_rechaza_colision_con_archivo_no_administrado(self):
-        with tempfile.TemporaryDirectory() as temporal, mock.patch("src.data.ingest.RAIZ", Path(temporal)):
-            destino = Path(temporal) / "output/entregas"
+        with tempfile.TemporaryDirectory() as temporal, mock.patch("src.datos.ingesta.RAIZ", Path(temporal)):
+            destino = Path(temporal) / "salida/entregas"
             destino.mkdir(parents=True)
             ciclos = construir_ciclos(lote(mensaje()), 20)
             archivo = destino / ciclos[0]["archivo"]
@@ -199,24 +199,24 @@ class EntregaTests(unittest.TestCase):
                 "--informe", str(carpeta / "informe.json"), "--entrega-ia", str(carpeta / "ia"),
                 "--fecha-referencia", FECHA, *map(str, extra)]
         with redirect_stdout(io.StringIO()):
-            main(args)
+            principal(args)
 
     def test_cli_entrega_reproducible_y_fragmentos_completos(self):
-        with tempfile.TemporaryDirectory() as temporal, mock.patch("src.data.ingest.RAIZ", Path(temporal)):
+        with tempfile.TemporaryDirectory() as temporal, mock.patch("src.datos.ingesta.RAIZ", Path(temporal)):
             carpeta = Path(temporal)
-            datos = json.loads((RAIZ / "src/data/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
+            datos = json.loads((RAIZ / "src/datos/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
             (carpeta / "entrada.json").write_text(json.dumps(datos), encoding="utf-8")
-            args = ("--tamano-ciclo", 20, "--ciclos", carpeta / "output/entregas")
+            args = ("--tamano-ciclo", 20, "--ciclos", carpeta / "salida/entregas")
             self.ejecutar_cli(carpeta, *args)
             primera = {p.relative_to(carpeta).as_posix(): p.read_bytes() for p in carpeta.rglob("*.json")}
             self.ejecutar_cli(carpeta, *args)
             self.assertEqual(primera, {p.relative_to(carpeta).as_posix(): p.read_bytes() for p in carpeta.rglob("*.json")})
-            manifest = json.loads((carpeta / "output/entregas/manifest.json").read_text(encoding="utf-8"))
-            self.assertEqual(sum(c["cantidad"] for c in manifest["ciclos"]), 23)
+            manifiesto = json.loads((carpeta / "salida/entregas/manifiesto.json").read_text(encoding="utf-8"))
+            self.assertEqual(sum(c["cantidad"] for c in manifiesto["ciclos"]), 23)
             self.assertEqual(len(json.loads((carpeta / "ia/estados_agente.json").read_text(encoding="utf-8"))), 23)
 
     def test_cli_errores_de_validacion_no_modifican_salidas(self):
-        with tempfile.TemporaryDirectory() as temporal, mock.patch("src.data.ingest.RAIZ", Path(temporal)):
+        with tempfile.TemporaryDirectory() as temporal, mock.patch("src.datos.ingesta.RAIZ", Path(temporal)):
             carpeta = Path(temporal)
             entrada = carpeta / "entrada.json"
             salida = carpeta / "filtrados.json"
@@ -228,7 +228,7 @@ class EntregaTests(unittest.TestCase):
             self.assertEqual(salida.read_text(encoding="utf-8"), "preservar")
             self.assertFalse((carpeta / "informe.json").exists())
             entrada.write_text(json.dumps(lote(mensaje())), encoding="utf-8")
-            for destino in (carpeta / "output", carpeta):
+            for destino in (carpeta / "salida", carpeta):
                 with self.assertRaises(SystemExit):
                     self.ejecutar_cli(carpeta, "--tamano-ciclo", 20, "--ciclos", destino)
                 self.assertEqual(salida.read_text(encoding="utf-8"), "preservar")

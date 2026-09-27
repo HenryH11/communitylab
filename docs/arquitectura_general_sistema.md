@@ -2,7 +2,7 @@
 
 Aproximación de la arquitectura completa del proyecto (los 4 sub-equipos definidos
 en la reunión de Semana 0), para ubicar el aporte de Ingesta y Procesamiento de
-Datos (Sub-equipo 3: Gustavo Vásquez y Jhonattan Benavides) dentro del pipeline
+Datos (Sub-equipo 3: Gustavo Vásquez y Jhonattan Benavides) dentro del flujo
 general. El diagrama detallado del tramo de ingesta está en
 [`diagrama_flujo_datos_ingesta.md`](./diagrama_flujo_datos_ingesta.md); este
 documento da la vista de conjunto.
@@ -22,16 +22,16 @@ flowchart TD
     subgraph S2["Sub-equipo 2 · Cerebro de IA (Arthur, Danny, Arnold)"]
         E[Grafo LangGraph/LangChain]
         F[Análisis de sentimiento<br/>y clasificación de temas]
-        G[Generación de copy<br/>LinkedIn / Newsletter / FAQ]
+        G[Generación de textos<br/>LinkedIn / boletín / preguntas frecuentes]
         E --> F --> G
     end
 
     subgraph S1["Sub-equipo 1 · Dirección, Arquitectura y Front-End (Enrique, Nelson, Sebastián)"]
-        H[Interfaz Streamlit/Gradio<br/>panel de curaduría y aprobación]
+        H[Interfaz Streamlit/Gradio<br/>panel de revisión y aprobación]
     end
 
     subgraph S4["Sub-equipo 4 · Infraestructura y Nube (Marco, Renato)"]
-        I[OCI Object Storage<br/>bucket Always Free]
+        I[OCI Object Storage<br/>contenedor del nivel Always Free]
         J[OCI Compute Instance<br/>opcional: despliegue completo]
     end
 
@@ -47,7 +47,7 @@ flowchart TD
 
 ## Ubicación de nuestro aporte
 
-Sub-equipo 3 es el **punto de entrada** del pipeline: todo lo que llega de la
+Sub-equipo 3 es el **punto de entrada** del flujo: todo lo que llega de la
 comunidad pasa primero por nuestro tramo (ingesta → limpieza → puntuación de
 relevancia) antes de convertirse en el JSON que consume el Sub-equipo 2 para el
 análisis de IA. Cualquier problema de calidad de datos aquí se propaga a todo el
@@ -59,5 +59,5 @@ más críticas de esta etapa.
 
 - Vista de conjunto en Semana 0, basada en la estructura de sub-equipos y el flujo
   descrito en `proyecto_3_community_lab.md` y en la reunión del 14 de septiembre.
-- Nelson (Solution Architect) es quien valida/ajusta el diagrama de arquitectura
+- Nelson (Arquitecto de soluciones) es quien valida/ajusta el diagrama de arquitectura
   definitivo del sistema; este documento es el aporte de datos a esa definición.

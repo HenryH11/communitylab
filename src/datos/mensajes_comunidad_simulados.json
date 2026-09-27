@@ -2,7 +2,7 @@
   "metadata": {
     "descripcion": "Lotes de interacciones simuladas de la comunidad, siguiendo el esquema de entrada definido en proyecto_3_community_lab.md (origen_comunidad / periodo_referencia / interacciones).",
     "version": "0.3.0-borrador",
-    "generado_por": "Gustavo Vasquez (Data Analyst, Sub-equipo 3)",
+    "generado_por": "Gustavo Vásquez (Analista de datos, Sub-equipo 3)",
     "fecha_generacion": "2026-09-15",
     "esquema_lote": {
       "origen_comunidad": "identificador de la plataforma/canal de origen, ej. Discord_Grupo_ONE_G10",
@@ -18,9 +18,9 @@
       "fecha": "fecha ISO 8601 (extension del equipo)",
       "idioma": "codigo ISO 639-1 (extension del equipo)"
     },
-    "nota_tipos": "Taxonomia de 'tipo' definida por Sub-equipo 3 para cubrir los 4 casos de uso del proyecto: testimonio -> Detector de Historias de Exito / Generador de RRSS; pregunta_tecnica -> Motor de FAQ Dinamico; comentario y feedback -> Dashboard de Salud y Sentimiento.",
-    "actualizado_por": "Jhonattan Benavides (Data Analyst, Sub-equipo 3)",
-    "nota_actualizacion": "Se agregan los dos casos del brief conservando las 21 interacciones anteriores. Se reclasifican int-004, int-007, int-010, int-013 e int-015 de pregunta_tecnica a comentario: eran dudas administrativas/de programa (certificado, inscripcion, alianzas, grabaciones, diferencia de rutas), no dudas tecnicas de codigo/plataforma. Ver docs/criterio_puntuacion_relevancia.md para el criterio."
+    "nota_tipos": "Taxonomía de 'tipo' definida por el Sub-equipo 3 para cubrir los 4 casos de uso: testimonio -> detector de historias de éxito / generador para redes sociales; pregunta_tecnica -> motor de preguntas frecuentes; comentario y feedback -> panel de salud y sentimiento.",
+    "actualizado_por": "Jhonattan Benavides (Analista de datos, Sub-equipo 3)",
+  "nota_actualizacion": "Se agregan los dos casos de la especificación conservando las 21 interacciones anteriores. También se reclasifican int-004, int-007, int-010, int-013 e int-015 como comentario: eran dudas administrativas o del programa, no dudas técnicas de código o plataforma. Ver docs/criterio_puntuacion_relevancia.md para el criterio."
   },
   "lotes": [
     {

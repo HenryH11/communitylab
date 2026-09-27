@@ -73,13 +73,13 @@ def main() -> int:
     """
     bucket_name = os.getenv("OCI_BUCKET_NAME", "communitylab-activos-marketing")
     profile_name = os.getenv("OCI_PROFILE", "DEFAULT")
-    
+
     target_object = "activos/2026-semana-00/prueba-inicial.json"
     test_content = '{"status": "exito", "mensaje": "Conexion OCI establecida."}'
 
     try:
         client, namespace = get_oci_client(profile_name)
-        
+
         display_bucket_info(client, namespace, bucket_name)
         upload_object(client, namespace, bucket_name, target_object, test_content)
 

@@ -1,4 +1,4 @@
-"""Lectura, validación, limpieza y selección de JSON para el pipeline de IA."""
+"""Lectura, validación, limpieza y selección de JSON para el flujo de IA."""
 
 import argparse
 from copy import deepcopy
@@ -10,9 +10,9 @@ import re
 import unicodedata
 
 if __package__:
-    from .relevancia import ConfigRelevancia, leer_fecha, seleccionar_lote
+    from .relevancia import ConfiguracionRelevancia, leer_fecha, seleccionar_lote
 else:
-    from relevancia import ConfigRelevancia, leer_fecha, seleccionar_lote
+    from relevancia import ConfiguracionRelevancia, leer_fecha, seleccionar_lote
 
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -90,9 +90,9 @@ def validar_y_limpiar(datos):
     return resultado
 
 
-def procesar_datos(datos, *, fecha_referencia, config=None):
+def procesar_datos(datos, *, fecha_referencia, configuracion=None):
     """Devuelve (datos seleccionados, informe). No modifica datos ni usa red/reloj."""
-    config = config if config is not None else ConfigRelevancia()
+    configuracion = configuracion if configuracion is not None else ConfiguracionRelevancia()
     if isinstance(fecha_referencia, str):
         fecha_referencia = leer_fecha(fecha_referencia)
     if not isinstance(fecha_referencia, datetime) or fecha_referencia.tzinfo is None:
@@ -102,12 +102,12 @@ def procesar_datos(datos, *, fecha_referencia, config=None):
     informe = {
         "version_criterio": "1.0-propuesta",
         "fecha_referencia": fecha_referencia.astimezone(timezone.utc).isoformat(),
-        "configuracion": config.como_dict(),
+        "configuracion": configuracion.como_dict(),
         "resumen": {"total": 0, "seleccionadas": 0, "descartadas": 0},
         "lotes": [],
     }
     for indice, lote in enumerate(lotes):
-        seleccionadas, evaluaciones = seleccionar_lote(lote, config, fecha_referencia)
+        seleccionadas, evaluaciones = seleccionar_lote(lote, configuracion, fecha_referencia)
         lote["interacciones"] = seleccionadas
         informe["lotes"].append({
             "indice": indice, "origen_comunidad": lote["origen_comunidad"],
@@ -120,19 +120,19 @@ def procesar_datos(datos, *, fecha_referencia, config=None):
 
 
 def construir_estado_agente(mensaje, puntaje, origen):
-    """Traduce una interacción ya depurada al subconjunto de entrada de `AgentState`
-    (ver `src/agents/state.py`, Sub-equipo 2), confirmado con Data Science:
+    """Traduce una interacción ya depurada al subconjunto de entrada de `EstadoAgente`
+    (ver `src/agentes/estado_agente.py`, Sub-equipo 2), confirmado con Ciencia de Datos:
 
     - `autor`, `canal`, `texto`: sin cambios.
     - `tipo` no se modifica ni se renombra; se copia (no se reemplaza) hacia
-      `tipo_original`, que Data Science usa para comparar contra su propia
+    `tipo_original`, que Ciencia de Datos usa para comparar contra su propia
       clasificación posterior.
     - `puntaje` (de `relevancia.py`) se expone como `score_relevancia`.
     - `origen` viene de `origen_comunidad` del lote, bajado a nivel de interacción.
     - `id`/`idioma` se incluyen solo si la interacción los trae (son opcionales en
       el contrato); no se fabrica ningún valor por defecto.
 
-    No incluye campos que produce Data Science (`sentimiento`, `rutas`,
+    No incluye campos que produce Ciencia de Datos (`sentimiento`, `rutas`,
     `activos_generados`, etc.) — esos se agregan más adelante en su propio grafo.
     """
     estado = {
@@ -195,7 +195,7 @@ def _interaccion_para_entrega(interaccion, *, permitir_texto_vacio=False):
     exactamente `id`/`autor`/`canal`/`tipo`/`texto`/`fecha`/`idioma`, los siete
     obligatorios y sin campos adicionales (`additionalProperties: false`). Los
     campos internos nuestros (o cualquier extensión ajena) no cruzan esta
-    frontera. Falla si falta alguno — en el dataset real de hoy los siete están
+    frontera. Falla si falta alguno — en el conjunto_datos real de hoy los siete están
     presentes en el 100% de los casos, así que cumplirlo no cuesta nada."""
     faltantes = [campo for campo in _CAMPOS_CONTRATO_NELSON if campo not in interaccion]
     if faltantes:
@@ -264,9 +264,9 @@ def construir_ciclos(salida, tamano_ciclo):
 def validar_destino_ciclos(directorio_ciclos, ciclos):
     """Comprueba rutas y propiedad de archivos antes de escribir o retirar nada."""
     directorio_ciclos = Path(directorio_ciclos).resolve()
-    raiz_output = (RAIZ / "output").resolve()
-    if raiz_output not in directorio_ciclos.parents:
-        raise ValueError("directorio_ciclos debe ser una subcarpeta dentro de output/")
+    raiz_salida = (RAIZ / "salida").resolve()
+    if raiz_salida not in directorio_ciclos.parents:
+        raise ValueError("directorio_ciclos debe estar dentro de salida/")
     if directorio_ciclos.exists() and not directorio_ciclos.is_dir():
         raise ValueError("El destino de ciclos no es un directorio")
     def ruta_archivo(nombre):
@@ -276,40 +276,40 @@ def validar_destino_ciclos(directorio_ciclos, ciclos):
         if ruta.is_symlink() or ruta.resolve().parent != directorio_ciclos or (ruta.exists() and not ruta.is_file()):
             raise ValueError("Ruta de fragmento no segura")
         return ruta
-    manifest = directorio_ciclos / "manifest.json"
-    if manifest.is_symlink() or (manifest.exists() and not manifest.is_file()):
-        raise ValueError("Ruta de manifest no segura")
+    ruta_manifiesto = directorio_ciclos / "manifiesto.json"
+    if ruta_manifiesto.is_symlink() or (ruta_manifiesto.exists() and not ruta_manifiesto.is_file()):
+        raise ValueError("La ruta del manifiesto no es segura")
     anteriores = set()
-    if manifest.exists():
-        previo = cargar_json(manifest)
+    if ruta_manifiesto.exists():
+        previo = cargar_json(ruta_manifiesto)
         if not isinstance(previo, dict) or not isinstance(previo.get("ciclos"), list):
-            raise ValueError("Manifest anterior inválido; no se modifica la carpeta")
+            raise ValueError("El manifiesto anterior no es válido; no se modifica la carpeta")
         for entrada in previo["ciclos"]:
             if not isinstance(entrada, dict) or "archivo" not in entrada:
-                raise ValueError("Manifest anterior inválido")
+                raise ValueError("El manifiesto anterior no es válido")
             anteriores.add(ruta_archivo(entrada["archivo"]))
     nuevos = [ruta_archivo(c["archivo"]) for c in ciclos]
     if len(set(nuevos)) != len(nuevos):
         raise ValueError("Nombres de fragmentos repetidos")
     if any(p.exists() and p not in anteriores for p in nuevos):
-        raise ValueError("Un fragmento sobrescribiría un archivo ajeno al manifest")
+        raise ValueError("Un fragmento sobrescribiría un archivo ajeno al manifiesto")
     return directorio_ciclos, anteriores, set(nuevos)
 
 
 def guardar_ciclos(directorio_ciclos, ciclos):
-    """Actualiza fragmentos; solo retira archivos enumerados en el manifest previo."""
+    """Actualiza fragmentos y solo retira archivos del manifiesto anterior."""
     directorio_ciclos, anteriores, nuevos = validar_destino_ciclos(directorio_ciclos, ciclos)
     directorio_ciclos.mkdir(parents=True, exist_ok=True)
     for ciclo in ciclos:
         guardar_json(directorio_ciclos / ciclo["archivo"], ciclo["contenido"])
-    ruta_manifest = directorio_ciclos / "manifest.json"
-    guardar_json(ruta_manifest, {"ciclos": [
+    ruta_manifiesto = directorio_ciclos / "manifiesto.json"
+    guardar_json(ruta_manifiesto, {"ciclos": [
         {"archivo": c["archivo"], "lote_indice": c["lote_indice"], "ciclo_indice": c["ciclo_indice"], "cantidad": c["cantidad"]}
         for c in ciclos
     ]})
     for anterior in anteriores - nuevos:
         anterior.unlink(missing_ok=True)
-    return ruta_manifest
+    return ruta_manifiesto
 
 
 def cargar_json(ruta):
@@ -322,76 +322,117 @@ def guardar_json(ruta, datos):
     ruta.write_text(json.dumps(datos, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def main(argv=None):
+def principal(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--entrada", type=Path, default=RAIZ / "src/data/mensajes_comunidad_simulados.json")
-    parser.add_argument("--salida", type=Path, default=RAIZ / "output/datos/mensajes_filtrados.json")
-    parser.add_argument("--informe", type=Path, default=RAIZ / "output/datos/informe_relevancia.json")
-    parser.add_argument("--config", type=Path, help="JSON con parámetros de ConfigRelevancia")
+    parser.add_argument("--entrada", type=Path, default=RAIZ / "src/datos/mensajes_comunidad_simulados.json")
+    parser.add_argument("--salida", type=Path, default=RAIZ / "salida/datos/mensajes_filtrados.json")
+    parser.add_argument("--informe", type=Path, default=RAIZ / "salida/datos/informe_relevancia.json")
+    parser.add_argument(
+        "--configuracion",
+        dest="configuracion",
+        type=Path,
+        help="Archivo JSON con parámetros de relevancia",
+    )
+    parser.add_argument(
+        "--config",
+        dest="configuracion",
+        type=Path,
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
     parser.add_argument("--fecha-referencia", help="ISO 8601 con zona; por defecto, instante actual UTC")
-    parser.add_argument("--top-n", type=int, help="Máximo de mensajes por lote tras aplicar el umbral")
-    parser.add_argument("--min-puntaje", type=int, help="Umbral de selección de 0 a 100")
+    parser.add_argument(
+        "--maximo-por-lote",
+        dest="maximo_por_lote",
+        type=int,
+        help="Máximo de mensajes por lote tras aplicar el umbral",
+    )
+    parser.add_argument(
+        "--top-n",
+        dest="maximo_por_lote",
+        type=int,
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--puntaje-minimo",
+        dest="puntaje_minimo",
+        type=int,
+        help="Umbral de selección de 0 a 100",
+    )
+    parser.add_argument(
+        "--min-puntaje",
+        dest="puntaje_minimo",
+        type=int,
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
     parser.add_argument("--tamano-ciclo", type=int, help="Máximo N entre 10 y 30 para fragmentos y plan de entrega; activa archivos por origen")
-    parser.add_argument("--ciclos", type=Path, default=RAIZ / "output/datos/entregas", help="Directorio de los archivos-ciclo; solo se usa junto con --tamano-ciclo")
-    parser.add_argument("--entrega-ia", type=Path, metavar="DIR", help="Exporta población completa, AgentState y plan de ciclos en DIR, sin llamar a IA")
-    args = parser.parse_args(argv)
+    parser.add_argument("--ciclos", type=Path, default=RAIZ / "salida/datos/entregas", help="Directorio de fragmentos por ciclo; se usa junto con --tamano-ciclo")
+    parser.add_argument(
+        "--entrega-ia",
+        type=Path,
+        metavar="CARPETA",
+        help="Exporta la población completa, los estados y el plan de ciclos sin llamar a IA",
+    )
+    argumentos = parser.parse_args(argv)
     try:
-        salidas = [args.salida.resolve(), args.informe.resolve()]
+        salidas = [argumentos.salida.resolve(), argumentos.informe.resolve()]
         adicionales = []
-        if args.entrega_ia is not None:
-            adicionales = [args.entrega_ia / nombre for nombre in (
+        if argumentos.entrega_ia is not None:
+            adicionales = [argumentos.entrega_ia / nombre for nombre in (
                 "mensajes_limpios_completos.json", "estados_agente.json", "plan_procesamiento.json",
             )]
             salidas.extend(p.resolve() for p in adicionales)
-        entradas = [args.entrada.resolve()] + ([args.config.resolve()] if args.config else [])
+        entradas = [argumentos.entrada.resolve()] + ([argumentos.configuracion.resolve()] if argumentos.configuracion else [])
         if len(set(salidas)) != len(salidas) or any(p in entradas for p in salidas):
             raise ValueError("Entrada, configuración, salida e informe deben usar archivos distintos")
         if any(p.exists() and not p.is_file() for p in salidas):
             raise ValueError("Una salida coincide con un directorio")
         if any(p in q.parents for p in salidas + entradas for q in salidas):
             raise ValueError("Un archivo no puede usarse como directorio de salida")
-        if args.tamano_ciclo is not None:
-            validar_tamano_ciclo(args.tamano_ciclo)
-            ciclos_resuelto = args.ciclos.resolve()
+        if argumentos.tamano_ciclo is not None:
+            validar_tamano_ciclo(argumentos.tamano_ciclo)
+            ciclos_resuelto = argumentos.ciclos.resolve()
             if any(p == ciclos_resuelto or ciclos_resuelto in p.parents for p in entradas + salidas):
                 raise ValueError("--ciclos no puede coincidir con la entrada, configuración, salida o informe")
-        opciones = cargar_json(args.config) if args.config else {}
+        opciones = cargar_json(argumentos.configuracion) if argumentos.configuracion else {}
         if not isinstance(opciones, dict):
             raise ValueError("La configuración debe ser un objeto JSON")
-        for campo in ("top_n", "min_puntaje"):
-            if getattr(args, campo) is not None:
-                opciones[campo] = getattr(args, campo)
-        config = ConfigRelevancia(**opciones)
-        referencia = args.fecha_referencia or datetime.now(timezone.utc).isoformat()
-        datos = cargar_json(args.entrada)
+        for campo in ("maximo_por_lote", "puntaje_minimo"):
+            if getattr(argumentos, campo) is not None:
+                opciones[campo] = getattr(argumentos, campo)
+        configuracion = ConfiguracionRelevancia(**opciones)
+        referencia = argumentos.fecha_referencia or datetime.now(timezone.utc).isoformat()
+        datos = cargar_json(argumentos.entrada)
         paquete = None
-        if args.entrega_ia is not None:
+        if argumentos.entrega_ia is not None:
             if not __package__:
                 import sys
                 sys.path.insert(0, str(RAIZ))
-            from src.data.entrega_ia import preparar_paquete_ia
-            paquete = preparar_paquete_ia(datos, fecha_referencia=referencia, config=config,
-                                          tamano_ciclo=args.tamano_ciclo if args.tamano_ciclo is not None else 20)
+            from src.datos.entrega_ia import preparar_paquete_ia
+            paquete = preparar_paquete_ia(datos, fecha_referencia=referencia, configuracion=configuracion,
+                                          tamano_ciclo=argumentos.tamano_ciclo if argumentos.tamano_ciclo is not None else 20)
             salida, informe = paquete["contenido"], paquete["informe"]
         else:
-            salida, informe = procesar_datos(datos, fecha_referencia=referencia, config=config)
+            salida, informe = procesar_datos(datos, fecha_referencia=referencia, configuracion=configuracion)
         # Validar toda la entrega antes de escribir la primera salida.
         ciclos = None
-        if args.tamano_ciclo is not None:
-            ciclos = construir_ciclos(paquete["completos"] if paquete else salida, args.tamano_ciclo)
-            validar_destino_ciclos(args.ciclos, ciclos)
-        guardar_json(args.salida, salida)
-        guardar_json(args.informe, informe)
+        if argumentos.tamano_ciclo is not None:
+            ciclos = construir_ciclos(paquete["completos"] if paquete else salida, argumentos.tamano_ciclo)
+            validar_destino_ciclos(argumentos.ciclos, ciclos)
+        guardar_json(argumentos.salida, salida)
+        guardar_json(argumentos.informe, informe)
         if paquete:
             for ruta, clave in zip(adicionales, ("completos", "estados", "plan")):
                 guardar_json(ruta, paquete[clave])
         ruta_manifest = None
         if ciclos is not None:
-            ruta_manifest = guardar_ciclos(args.ciclos, ciclos)
+            ruta_manifest = guardar_ciclos(argumentos.ciclos, ciclos)
     except (OSError, ValueError, TypeError) as error:
         parser.exit(2, f"Error: {error}\n")
     print(json.dumps(informe["resumen"], ensure_ascii=False))
-    print(f"Datos: {args.salida}\nInforme: {args.informe}")
+    print(f"Datos: {argumentos.salida}\nInforme: {argumentos.informe}")
     if ruta_manifest is not None:
         print(f"Ciclos: {ruta_manifest}")
     if paquete:
@@ -403,4 +444,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    main()
+    principal()

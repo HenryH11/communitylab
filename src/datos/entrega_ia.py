@@ -1,6 +1,6 @@
 """Prepara población, estados y plan de entrega; no llama a IA ni escribe archivos."""
 
-from .ingest import (
+from .ingesta import (
     _interaccion_para_entrega, construir_estados_agente, procesar_datos,
     validar_tamano_ciclo, validar_y_limpiar,
 )
@@ -37,16 +37,16 @@ def _proyectar_lote(lote, mensajes):
     }
 
 
-def preparar_entrega(datos, *, fecha_referencia, config=None):
+def preparar_entrega(datos, *, fecha_referencia, configuracion=None):
     """Devuelve completos, contenido e informe sin mutar la entrada.
 
-    Conserva críticas breves, bajo puntaje y mensajes fuera del top_n para
+    Conserva críticas breves, bajo puntaje y mensajes fuera del maximo_por_lote para
     sentimiento. Solo excluye ruido/duplicación documentados. Requiere IDs
     globales únicos y metadatos válidos para esta entrega.
     """
     limpios = validar_y_limpiar(datos)
     _validar_identidad_y_contexto(limpios)
-    seleccion, informe = procesar_datos(limpios, fecha_referencia=fecha_referencia, config=config)
+    seleccion, informe = procesar_datos(limpios, fecha_referencia=fecha_referencia, configuracion=configuracion)
     completos = {"lotes": []}
     contenido = {"lotes": []}
     informe["version_entrega"] = "1.1-propuesta"
@@ -100,9 +100,9 @@ def construir_plan_procesamiento(estados, tamano_ciclo=20):
     }
 
 
-def preparar_paquete_ia(datos, *, fecha_referencia, config=None, tamano_ciclo=20):
-    """Reutiliza el adaptador de Gustavo; elegibilidad separada de AgentState."""
-    completos, contenido, informe = preparar_entrega(datos, fecha_referencia=fecha_referencia, config=config)
+def preparar_paquete_ia(datos, *, fecha_referencia, configuracion=None, tamano_ciclo=20):
+    """Reutiliza el adaptador de Gustavo; elegibilidad separada de EstadoAgente."""
+    completos, contenido, informe = preparar_entrega(datos, fecha_referencia=fecha_referencia, configuracion=configuracion)
     estados = construir_estados_agente(completos, informe, poblacion="sentimiento")
     plan = construir_plan_procesamiento(estados, tamano_ciclo)
     plan["ids_contenido"] = [m["id"] for lote in contenido["lotes"] for m in lote["interacciones"]]

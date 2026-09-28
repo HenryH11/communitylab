@@ -7,6 +7,7 @@ import html
 import json
 from pathlib import Path
 import re
+import time
 import unicodedata
 
 if __package__:
@@ -90,6 +91,31 @@ def validar_y_limpiar(datos):
     return resultado
 
 
+def estimar_tokens(texto):
+    """Aproxima el consumo de tokens de un texto (~4 caracteres por token).
+
+    Es una heurÃ­stica, no el tokenizador real de Gemini: sirve para que Ciencia
+    de Datos dimensione cuotas antes de llamar al LLM, no como cifra exacta de
+    facturaciÃ³n.
+    """
+    return max(1, round(len(texto) / 4)) if texto else 0
+
+
+_CATEGORIAS_CONTROL = {"Cc", "Cf"}
+
+
+def contar_caracteres_no_ascii(texto):
+    """Cuenta caracteres no ASCII 'significativos' (tildes, Ã±, emojis, etc.),
+
+    excluyendo control/formato invisibles que `limpiar_texto` sÃ­ debe remover
+    a propÃ³sito (esos no cuentan como "corrupciÃ³n" si desaparecen).
+    """
+    return sum(
+        1 for c in texto
+        if ord(c) > 127 and unicodedata.category(c) not in _CATEGORIAS_CONTROL
+    )
+
+
 def procesar_datos(datos, *, fecha_referencia, configuracion=None):
     """Devuelve (datos seleccionados, informe). No modifica datos ni usa red/reloj."""
     configuracion = configuracion if configuracion is not None else ConfiguracionRelevancia()
@@ -99,6 +125,7 @@ def procesar_datos(datos, *, fecha_referencia, configuracion=None):
         raise ValueError("fecha_referencia debe incluir zona horaria")
     salida = validar_y_limpiar(datos)
     lotes = salida["lotes"] if "lotes" in salida else [salida]
+    lotes_originales = datos["lotes"] if "lotes" in datos else [datos]
     informe = {
         "version_criterio": "1.0-propuesta",
         "fecha_referencia": fecha_referencia.astimezone(timezone.utc).isoformat(),
@@ -106,8 +133,17 @@ def procesar_datos(datos, *, fecha_referencia, configuracion=None):
         "resumen": {"total": 0, "seleccionadas": 0, "descartadas": 0},
         "lotes": [],
     }
+    rendimiento_lotes = []
     for indice, lote in enumerate(lotes):
+        caracteres_preservados = all(
+            contar_caracteres_no_ascii(limpio["texto"]) >= contar_caracteres_no_ascii(original["texto"])
+            for original, limpio in zip(lotes_originales[indice]["interacciones"], lote["interacciones"])
+        )
         seleccionadas, evaluaciones = seleccionar_lote(lote, configuracion, fecha_referencia)
+        # Tokens estimados solo de lo que avanza hacia Ciencia de Datos (seleccionadas),
+        # no del lote completo: es lo que de verdad consumirÃ­a cuota de la API. Es una
+        # cifra determinista (largo de texto), sin reloj de por medio.
+        tokens_estimados = sum(estimar_tokens(m["texto"]) for m in seleccionadas)
         lote["interacciones"] = seleccionadas
         informe["lotes"].append({
             "indice": indice, "origen_comunidad": lote["origen_comunidad"],
@@ -115,7 +151,23 @@ def procesar_datos(datos, *, fecha_referencia, configuracion=None):
         })
         informe["resumen"]["total"] += len(evaluaciones)
         informe["resumen"]["seleccionadas"] += len(seleccionadas)
+        rendimiento_lotes.append({
+            "indice": indice,
+            "origen_comunidad": informe["lotes"][-1]["origen_comunidad"],
+            "interacciones_seleccionadas": len(seleccionadas),
+            "tokens_estimados": tokens_estimados,
+            "caracteres_especiales_preservados": caracteres_preservados,
+        })
     informe["resumen"]["descartadas"] = informe["resumen"]["total"] - informe["resumen"]["seleccionadas"]
+    # Deliberadamente sin tiempos de reloj aquÃ­: procesar_datos debe seguir siendo
+    # reproducible byte a byte (ver PruebasSeleccion.test_reproducible_con_referencia_fija
+    # y PruebasIntegracion.test_cli_tamano_ciclo_es_opt_in_no_cambia_la_salida_por_defecto).
+    # La latencia se mide en principal(), al nivel del CLI, no aquÃ­.
+    informe["rendimiento"] = {
+        "tokens_estimados_total": sum(r["tokens_estimados"] for r in rendimiento_lotes),
+        "lotes_con_alerta_caracteres": [r["indice"] for r in rendimiento_lotes if not r["caracteres_especiales_preservados"]],
+        "lotes": rendimiento_lotes,
+    }
     return salida, informe
 
 
@@ -406,6 +458,7 @@ def principal(argv=None):
         referencia = argumentos.fecha_referencia or datetime.now(timezone.utc).isoformat()
         datos = cargar_json(argumentos.entrada)
         paquete = None
+        tiempo_procesamiento_inicio = time.perf_counter()
         if argumentos.entrega_ia is not None:
             if not __package__:
                 import sys
@@ -416,6 +469,9 @@ def principal(argv=None):
             salida, informe = paquete["contenido"], paquete["informe"]
         else:
             salida, informe = procesar_datos(datos, fecha_referencia=referencia, configuracion=configuracion)
+        # Latencia medida aquÃ­, al nivel del CLI, no dentro de procesar_datos: ese
+        # nÃºcleo debe seguir siendo puro/reproducible (ver comentario en su definiciÃ³n).
+        tiempo_procesamiento_seg = round(time.perf_counter() - tiempo_procesamiento_inicio, 6)
         # Validar toda la entrega antes de escribir la primera salida.
         ciclos = None
         if argumentos.tamano_ciclo is not None:
@@ -432,6 +488,12 @@ def principal(argv=None):
     except (OSError, ValueError, TypeError) as error:
         parser.exit(2, f"Error: {error}\n")
     print(json.dumps(informe["resumen"], ensure_ascii=False))
+    rendimiento = informe["rendimiento"]
+    print(json.dumps({
+        "tiempo_procesamiento_seg": tiempo_procesamiento_seg,
+        "tokens_estimados_total": rendimiento["tokens_estimados_total"],
+        "lotes_con_alerta_caracteres": rendimiento["lotes_con_alerta_caracteres"],
+    }, ensure_ascii=False))
     print(f"Datos: {argumentos.salida}\nInforme: {argumentos.informe}")
     if ruta_manifest is not None:
         print(f"Ciclos: {ruta_manifest}")

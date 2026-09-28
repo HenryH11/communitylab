@@ -18,6 +18,8 @@ from src.datos.ingesta import (
     construir_ciclos,
     construir_estado_agente,
     construir_estados_agente,
+    contar_caracteres_no_ascii,
+    estimar_tokens,
     guardar_ciclos,
     limpiar_texto,
     procesar_datos,
@@ -401,6 +403,57 @@ class PruebasIntegracion(unittest.TestCase):
             corrida = self.ejecutar_cli(carpeta, *args)
             self.assertEqual(corrida.returncode, 2)
             self.assertFalse((carpeta / "manifiesto.json").exists())
+
+
+class PruebasRendimiento(unittest.TestCase):
+    def test_estimar_tokens_es_determinista_y_proporcional_al_largo(self):
+        self.assertEqual(estimar_tokens(""), 0)
+        self.assertEqual(estimar_tokens("hola"), estimar_tokens("hola"))
+        self.assertGreater(estimar_tokens("x" * 40), estimar_tokens("x" * 4))
+
+    def test_contar_caracteres_no_ascii_cuenta_tildes_y_emoji_sin_contar_control(self):
+        self.assertEqual(contar_caracteres_no_ascii("hola mundo"), 0)
+        self.assertEqual(contar_caracteres_no_ascii("café 👩"), 2)
+        self.assertEqual(contar_caracteres_no_ascii("sin control\x00aqui"), 0)
+
+    def test_informe_incluye_rendimiento_con_tokens_y_sin_alertas_en_caso_normal(self):
+        entrada = lote(
+            mensaje("uno", texto="¿Cómo configuro Python con LangGraph? 🙂"),
+            mensaje("dos", texto="Gracias por la ayuda, mentores"),
+        )
+        salida, informe = procesar(entrada)
+        rendimiento = informe["rendimiento"]
+        self.assertIn("tokens_estimados_total", rendimiento)
+        self.assertGreater(rendimiento["tokens_estimados_total"], 0)
+        self.assertEqual(rendimiento["lotes_con_alerta_caracteres"], [])
+        self.assertEqual(len(rendimiento["lotes"]), 1)
+        registro = rendimiento["lotes"][0]
+        self.assertEqual(registro["origen_comunidad"], "Discord")
+        self.assertTrue(registro["caracteres_especiales_preservados"])
+        self.assertEqual(registro["interacciones_seleccionadas"], len(salida["interacciones"]))
+
+    def test_rendimiento_no_usa_reloj_dentro_de_procesar_datos(self):
+        """`procesar_datos` debe seguir siendo puro (sin timestamps ni duraciones
+        embebidas en el informe), para no romper las pruebas de reproducibilidad
+        byte a byte del CLI y de `PruebasSeleccion.test_reproducible_con_referencia_fija`."""
+        entrada = lote(mensaje())
+        _, informe = procesar(entrada)
+        self.assertEqual(procesar(entrada)[1], informe)
+        for clave in informe["rendimiento"]:
+            self.assertNotIn("tiempo", clave)
+        for registro in informe["rendimiento"]["lotes"]:
+            for clave in registro:
+                self.assertNotIn("tiempo", clave)
+
+    def test_detecta_alerta_si_la_limpieza_pierde_caracteres_especiales(self):
+        """Simula una regresiÃ³n futura en `limpiar_texto` (que empiece a tirar
+        tildes/emoji) para confirmar que el log de rendimiento la detectarÃ­a."""
+        entrada = lote(mensaje("uno", texto="Gracias por la ayuda con el código, mentores"))
+        limpiador_con_bug = lambda texto: texto.encode("ascii", errors="ignore").decode("ascii")
+        with mock.patch("src.datos.ingesta.limpiar_texto", side_effect=limpiador_con_bug):
+            _, informe = procesar(entrada)
+        self.assertEqual(informe["rendimiento"]["lotes_con_alerta_caracteres"], [0])
+        self.assertFalse(informe["rendimiento"]["lotes"][0]["caracteres_especiales_preservados"])
 
 
 if __name__ == "__main__":

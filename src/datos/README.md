@@ -66,6 +66,23 @@ El grafo ya consume ciclos por ID y conserva los remanentes; la aprobación form
 del contrato continúa pendiente.
 Ver [contrato, archivos y ejemplo de consumo](../../docs/contrato_datos_ingesta.md).
 
+## Semana 2 — logs de rendimiento (tokens y latencia)
+
+`procesar_datos` agrega una clave `rendimiento` al informe, con un registro por
+lote: `tokens_estimados` (aproximación de ~4 caracteres por token sobre las
+interacciones seleccionadas — **no** es el tokenizador real de Gemini, sirve
+para que Ciencia de Datos dimensione cuota antes de llamar al LLM) y
+`caracteres_especiales_preservados` (compara tildes/emoji antes y después de
+`limpiar_texto`; si baja, se marca `false` y el índice del lote queda en
+`rendimiento.lotes_con_alerta_caracteres`, como alerta temprana de una
+regresión en la limpieza).
+
+`procesar_datos` sigue sin usar el reloj — es puro y reproducible byte a byte
+(lo exigen las pruebas de no-regresión del CLI). La latencia (`tiempo_procesamiento_seg`)
+se mide aparte, en `principal()`, y solo se imprime en consola junto con
+`tokens_estimados_total` y `lotes_con_alerta_caracteres`; no se persiste en
+`informe_relevancia.json`.
+
 El texto siguiente conserva el contexto original del aporte de Gustavo.
 
 ---

@@ -1,174 +1,120 @@
 # 🚀 Proyecto CommunityLab — Motor Inteligente de Transformación y Distribución para Comunidades Digitales
 
-¡Bienvenidos a **CommunityLab**! Este proyecto es el producto mínimo viable desarrollado por el Equipo 39 del Programa ONE G10 con No Country. Es un motor inteligente diseñado para potenciar la interacción y gestión dentro de comunidades de aprendizaje en Latinoamérica mediante agentes de inteligencia artificial y servicios en la nube.
+¡Bienvenidos a **CommunityLab**! Este proyecto es el Producto Mínimo Viable (MVP) desarrollado por el equipo **EnhanceIA Studio (EIAS - Equipo 39)** para la fase práctica de simulación laboral del programa **Oracle Next Education (ONE) G10 - LATAM**, en conjunto con la plataforma **No Country**.
 
-La solución ingiere conversaciones, debates y testimonios de comunidades digitales; los analiza con LangGraph y LangChain para generar materiales de difusión y preguntas frecuentes. El repositorio también incluye un panel inicial de curaduría en Streamlit y dependencias para OCI Object Storage.
+Nuestra solución opera como una línea de ensamblaje inteligente: ingiere conversaciones desestructuradas, debates y testimonios orgánicos de canales digitales (ruido), los limpia mediante algoritmos matemáticos de relevancia semántica, y los procesa mediante **Modelos de Lenguaje de Gran Escala (LLMs)** y grafos de decisión dirigidos en **LangGraph** para empaquetarlos automáticamente en activos de marketing de alto impacto (MarTech) y entradas dinámicas de FAQ. La persistencia de los reportes se ejecuta de forma nativa e integral en la capa gratuita Always Free de **Oracle Cloud Infrastructure (OCI) Object Storage**.
 
 ---
 
-## 📁 Estructura general del proyecto
+## 📁 1. Estructura General del Proyecto
 
 El esqueleto arquitectónico del repositorio ha sido desplegado bajo estrictos estándares de gobernanza y separación de dominios:
 
-* **`.github/workflows/`**: Configuraciones de integración y despliegue continuo (CI/CD).
-* **`configuracion/`**: Módulos y variables de entorno para inicializar el ecosistema.
-* **`src/datos/`**: Gestión, ingesta y almacenamiento de datos semiestructurados.
-* **`src/agentes/`**: Lógica central, instrucciones y coordinación de agentes de IA.
-* **`src/app/`**: Interfaz inicial de usuario y panel de curaduría.
-* **`tests/`**: Pruebas unitarias, automatizadas y de integración.
-* **`scripts/`**: Demostraciones y herramientas de evaluación.
-* **`docs/`**: Documentación técnica, contratos y guías del proyecto.
+```text
+communitylab/
+├── .gitignore               # CRÍTICO: Exclusión de credenciales privadas de Oracle (.oci/, *.pem) y entornos locales.
+├── README.md                # Documentación e informe técnico institucional del proyecto.
+├── requirements.txt         # Dependencias del ecosistema unificado (Streamlit, LangGraph, OCI SDK).
+├── configuracion/           # Módulos globales de configuración y entornos locales.
+│   └── relevancia.json      # Pesos y parámetros analíticos del algoritmo de selección de datos.
+├── docs/                    # Documentación técnica, contratos de datos y especificaciones.
+│   ├── arquitectura_general_sistema.md
+│   ├── avance_jhonattan_semana1.md
+│   ├── contrato_datos_ingesta.md
+│   ├── criterio_puntuacion_relevancia.md
+│   └── diagrama_flujo_datos_ingesta.md
+├── scripts/                 # Herramientas de evaluación analítica y simulaciones de control.
+│   ├── evaluar_casos_ambiguos.py
+│   ├── evaluar_conjunto_datos.py
+│   └── inspeccionar_estado_agente.py
+├── src/                     # Código fuente principal del sistema.
+│   ├── agentes/             # Grafos, lógica analítica y prompts de LangGraph (Cerebro IA).
+│   │   ├── nodos/           # Nodos enrutadores y generadores de activos MarTech.
+│   │   ├── cadenas.py       # Inicialización y configuración de modelos de lenguaje LLM.
+│   │   ├── estado_agente.py # Definición de la clase tipada del estado global del sistema.
+│   │   └── grafo.py         # Orquestador del flujo de agentes secuenciales.
+│   ├── app/                 # Interfaz gráfica de usuario y panel de curaduría (Frontend).
+│   │   └── app.py           # Andamio gráfico inicial montado en Streamlit.
+│   └── datos/               # Módulos de ingesta, parseo y limpieza de texto (Analistas).
+│       ├── ingest.py        # Orquestador modular del flujo de datos de entrada.
+│       ├── ingesta_reddit.py# Pipeline extractor con limpieza por expresiones regulares.
+│       └── relevancia.py    # Algoritmo matemático de puntuación analítica de mensajes.
+└── tests/                   # Lotes de datos JSON de prueba y suite de validación QA.
+    ├── agents/              # Pruebas automatizadas sobre nodos y procesamiento de lotes.
+    ├── fixtures/            # Sets de datos controlados para simulación de contingencias.
+    ├── test_ingest_relevancia.py # Pruebas unitarias de calidad sobre el flujo de ingesta.
+    └── test_storage.py      # Pruebas unitarias de conectividad transparente con el OCI Bucket.
+```
 
 ---
 
-## 🛠️ Tecnologías y herramientas
+## 🛠️ 2. Tecnologías y Herramientas (Ecosistema Core)
 
-* **Lenguaje:** Python 3.11+
-* **Control de versiones:** Git y GitHub
-* **Infraestructura en la nube:** Oracle Cloud Infrastructure (OCI)
-
-* **Orquestación de agentes y modelos de lenguaje:** LangGraph / LangChain Core
-* **Interfaz de usuario:** Streamlit (panel de curaduría y aprobación humana)
-* **Almacenamiento en la nube:** OCI Object Storage
-* **Gobernanza de código:** Git y GitHub (Git Flow)
+* **Lenguaje de Programación:** Python 3.11+
+* **Orquestación de Agentes y LLM:** LangGraph / LangChain Core
+* **Interfaz de Usuario (UI):** Streamlit (Panel de Curaduría y Aprobación Humana)
+* **Infraestructura y Nube:** Oracle Cloud Infrastructure (OCI SDK) – Capa Always Free
+* **Gobernanza de Código:** Git & GitHub (Estrategia Git Flow Terminal)
 
 ---
 
 ## 👥 3. Estructura General del Equipo (Reconfiguración Estratégica)
 
-La organización interna del equipo distribuye el trabajo entre dirección, arquitectura, IA, datos e infraestructura.
+La organización interna del equipo fue optimizada equilibradamente por la Dirección de Proyecto para blindar el desarrollo, agrupando a los líderes técnicos en frentes críticos de código Python y reubicando los perfiles de soporte para maximizar el avance del MVP.
 
-### 💼 3.1. Área 1. Dirección, Arquitectura e Interfaz Front-End
+### 3.1. Área de Dirección y Gestión de Repositorio (Área PM)
+* **Enrique Hernández Godoy (Project Manager - Líder General):** Dirección general del roadmap de 6 semanas, control del checklist del MVP, administración de la gobernanza de ramas en GitHub mediante Pull Requests y resolución de incidencias en la línea base.
 
-* **Enrique Hernández Godoy (responsable de proyecto):** Dirección del plan de seis semanas, seguimiento de la lista de verificación del producto mínimo viable, gobernanza de ramas en GitHub y calidad de los entregables.
-* **Nelson Ramses Aviles (arquitecto de soluciones):** Modelado del flujo integral, definición de los contratos de datos y validación de la arquitectura.
-* **Sebastián Peralta Ocampos (ingeniero de software):** Desarrollo inicial de la interfaz en Streamlit (`src/app/app.py`).
-* **Alejandro Alberto Landa (ingeniero de software):** Apoyo en documentación y diagramas de `docs/`.
+### 3.2. Área de Arquitectura de Soluciones y Aseguramiento (Área SS)
+* **Nelson Ramses Aviles (Solution Architect - Líder Técnico):** Modelado conceptual del pipeline completo (E2E), definición analítica de las estructuras fijas de intercambio de datos (Data Contracts) y validación arquitectónica del sistema distribuido.
+* **Eduardo Salvador Martínez Hernández (QA Tester):** Configuración de la suite de pruebas automáticas, ejecución de validaciones sintácticas bajo pytest, control de calidad y auditoría de documentos Markdown.
 
-### 🔬 3.2. Área 2. Cerebro de Inteligencia Artificial (Data Science)
+### 3.3. Área de Cerebro de Inteligencia Artificial (Área DS)
+* **Arnold Bustinza (Data Scientist - Líder Técnico):** Diseño técnico de los flujos condicionales de control y orquestación del estado global de memoria (`EstadoAgente`) en el entorno unificado de LangGraph.
+* **Alfrek Arthur Pinto García (Full Stack Developer):** Programación y acoplamiento de las llamadas a los modelos de lenguaje (LLM) y validación de compatibilidad con las salidas del sistema.
+* **Alejandro Alberto Landa (Backend Developer):** Reubicado dinámicamente en esta célula para la asistencia en la integración lógica en Python de los nodos y limpieza de payloads sintácticos.
+* **Danny de Jesús González Portillo (Data Scientist):** Ingeniería y calibración de las plantillas de prompts de entrenamiento corto (Few-Shot Learning) y verificación de consistencia en el procesamiento.
 
-* **Arnold Bustinza (científico de datos):** Diseño de flujos condicionales y del estado global (`EstadoAgente`) en LangGraph.
-* **Danny de Jesús González Portillo (científico de datos):** Evaluación de llamadas a modelos de lenguaje y diseño inicial de instrucciones.
-* **Alfrek Arthur Pinto García (desarrollador de pila completa):** Validación de compatibilidad entre las salidas de IA, la interfaz y el almacenamiento.
+### 3.4. Área de Ingesta y Procesamiento de Datos (Área DA)
+* **Gustavo Vásquez Serey (Data Analyst - Líder Técnico):** Desarrollo de pipelines automatizados de transformación de texto crudo, control del manejador de errores de red y curaduría del set de datos simulados locales.
+* **Jhonattan Gabriel Benavides Concha (Data Analyst):** Codificación matemática del algoritmo de puntuación de relevancia semántica, ingestión de lotes de payloads estructurados y control de cuotas de APIs.
 
-### 📊 3.3. Área 3. Ingesta y Procesamiento de Datos (Data Analytics)
+### 3.5. Área de Infraestructura y Despliegue Cloud (Área CE)
+* **Renato Preda (Cloud Engineer - Líder Técnico):** Aprovisionamiento y administración de las políticas de seguridad del almacenamiento, control del Bucket OCI y validación de la autenticación cloud.
+* **Marco Soto (Cloud Engineer):** Configuración del entorno de automatización del SDK oficial de Oracle (`oci`), dockerización completa del ecosistema y planeación de la VM Linux de OCI Compute.
 
-* **Gustavo Vásquez (analista de datos):** Desarrollo de flujos de transformación de texto y generación de datos simulados.
-* **Jhonattan Gabriel Benavides Concha (analista de datos):** Diseño de la puntuación de relevancia y análisis de cargas estructuradas.
-* **Edward Santiago May Restrepo (desarrollador de sistemas):** Apoyo en la carga y validación de datos sintéticos.
-
-### ☁️ 3.4. Área 4. Infraestructura y Despliegue en la Nube
-
-* **Renato Preda (ingeniero de nube):** Aprovisionamiento y administración de políticas de seguridad en Oracle Cloud Infrastructure (OCI).
-* **Marco Soto (ingeniero de nube):** Configuración del SDK de Oracle (`oci`), creación de contenedores y planeación de máquinas virtuales Linux en OCI Compute.
+*(Nota Operativa Administrativa: Los perfiles de Sebastián Peralta y Edward Santiago continuan declarados como miembros de soporte (inactivos) de las actividades operativas por falta de reporte técnico).*
 
 ---
 
-## 📈 4. Estado de Control e Hitos Cumplidos (Semana 0)
+## 📈 4. Estado de Control e Hitos Cumplidos
 
-Durante la Semana 0 (cimientos, datos y arquitectura), el equipo completó las metas establecidas:
+### Semana 0 (Fase de Cimientos, Datos y Arquitectura de Sistemas)
+* **Hito de Gobernanza:** Inicialización del repositorio remoto con bloqueo y protección de la rama `main`. Creación y publicación de la rama de integración `develop` como el estándar operativo para evitar conflictos de código (`Merge Conflicts`).
+* **Hito de Arquitectura:** Integración del primer Pull Request formal del proyecto elaborado por el arquitecto Nelson Ramses, estableciendo el contrato de datos JSON fijo para la comunicación limpia entre módulos.
+* **Hito de Infraestructura Cloud:** Aprovisionamiento del Bucket Always Free `communitylab-activos-marketing` en la consola de Oracle Cloud (Región São Paulo). Despliegue seguro de `src/config/test_oci_connection.py` para validar la persistencia asíncrona sin exponer llaves privadas.
 
-* **Gobernanza:** Protección de `main` y creación de `develop` como rama de integración.
-* **Datos:** Conjunto simulado de 23 interacciones en `src/datos/mensajes_comunidad_simulados.json` y herramienta opcional de ingesta Reddit en `src/datos/ingesta_reddit.py`.
-* **Nube:** Bucket `communitylab-activos-marketing` en OCI Object Storage. La utilidad `tests/test_storage.py` permite comprobar manualmente la conexión y realizar una carga de prueba.
-* **Arquitectura:** Contrato de datos JSON para la comunicación entre módulos.
+### Semana 1 (Procesamiento, Filtrado Temático y Estructura IA Core) — ESTADO ACTUAL
+* **Hito de Pipeline de Datos (100% Completado):** Sincronización e integración de las ramas de la célula de analistas. Ya residen en `develop` los códigos de limpieza analítica, el calculador matemático de relevancia basado en configuraciones JSON y el set maestro con los 23 casos del MVP.
+* **Hito de Tolerancia a Fallas QA:** Inyección de scripts extractores robustecidos con técnicas de filtrado por expresiones regulares y control activo de excepciones de red, previniendo caídas del pipeline ante saturaciones de peticiones externas (Error 429).
+* **Estado de Integración de IA:** El andamiaje del cerebro cognitivo y el flujo secuencial de enrutamiento han sido correctamente unificados en `src/agentes/grafo.py`. La autopista lógica está abierta.
 
 ---
 
 ## 🛡️ 5. Flujo de Trabajo Operativo para el Equipo (Gobernanza Git Flow)
 
-Las ramas `main` (producción) y `develop` (integración) están protegidas. No se permiten commits directos; cada integrante debe seguir estos pasos:
+La rama `main` (Producción final) y la rama `develop` (Integración de código) están protegidas. Está estrictamente prohibido realizar commits directos sobre ellas. Todo miembro del equipo debe trabajar bajo las siguientes directrices terminales:
 
 ### Paso 1: Clonar y actualizar el entorno local
-
 ```bash
-git clone https://github.com/HenryH11/communitylab.git
+git clone https://github.com
 cd communitylab
 git checkout develop
 git pull origin develop
 ```
 
-### Paso 2: Crear una rama de trabajo desde develop
-
+### Paso 2: Crear una rama de tarea (Feature Branch) desde develop
 ```bash
 git checkout -b feature/nombre_subequipo_tarea
-# Ejemplo: feature/grafo-ia-ds o feature/streamlit-ui-ss
+# Ejemplo: git checkout -b feature/grafo-ia-ds o feature/streamlit-ui-ss
 ```
-
-### Paso 3: Guardar y registrar cambios de forma local
-
-```bash
-git add .
-git commit -m "feat: breve descripción técnica del cambio implementado"
-```
-
-### Paso 4: Publicar la rama en el servidor de GitHub
-
-```bash
-git push -u origin feature/nombre_subequipo_tarea
-```
-
-### Paso 5: Abrir un Pull Request (PR)
-
-Abre un PR desde tu rama hacia **`develop`** y avisa al equipo. Antes de fusionarse, requiere revisión técnica y aprobación del responsable de proyecto o del arquitecto de soluciones.
-
----
-
-## Ingesta y relevancia de Datos
-
-Con Python 3.11+, desde la raíz, sin instalar dependencias para este módulo:
-
-```sh
-python -m src.datos.ingesta --configuracion configuracion/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z
-python -m pytest -v
-```
-
-La primera orden genera datos seleccionados y un informe de decisiones en
-`salida/datos/`. La fecha fija permite reproducir la demostración; para datos actuales,
-indicar otra fecha o quitar `--fecha-referencia` para usar UTC actual.
-
-Consultar el [criterio](docs/criterio_puntuacion_relevancia.md), el
-[contrato para IA](docs/contrato_datos_ingesta.md) y el
-[avance de Jhonattan](docs/avance_jhonattan_semana1.md). Los pesos y el contrato
-se entregan como propuestas para validación del equipo.
-
----
-
-## 👥 Integrantes del equipo 39 (ONE G10 LATAM)
-
-### 💼 Responsable de proyecto
-
-* **Hernández Godoy Enrique** — *Responsable de proyecto*
-
-### 📊 Analista de datos
-
-* **Benavides Concha Jhonattan Gabriel** — *Analista de datos*
-* **Vásquez Gustavo** — *Analista de datos*
-
-### 🧪 Científico de datos
-
-* **Bustinza Arnold** — *Científico de datos*
-* **González Portillo Danny de Jesús** — *Científico de datos*
-* **Pinto Arthur** — *Científico de datos*
-
-### 💻 Ingeniero de software / Arquitecto de soluciones
-
-* **Aviles Nelson Ramses** — *Ingeniero de software / Arquitecto de soluciones*
-* **Peralta Ocampos Sebastián** — *Ingeniero de software / Arquitecto de soluciones*
-
-### ☁️ Ingeniero de nube / DevOps
-
-* **Preda Renato** — *Ingeniero de nube*
-* **Soto Marco** — *Ingeniero de nube*
-
----
-
-## 🛡️ Flujo de Trabajo para el Equipo (Gobernanza)
-
-La rama `main` está **protegida**. No se permiten cambios directos. Para colaborar, sigue estos pasos desde tu terminal:
-
-1. **Clonar el proyecto:** `git clone https://github.com`
-2. **Crear una rama de funcionalidad:** `git checkout -b feature/tu-nombre-tarea`
-3. **Preparar y guardar los cambios:** `git add .` y `git commit -m "feat: breve descripción"`
-4. **Publicar la rama en GitHub:** `git push -u origin feature/tu-nombre-tarea`
-5. **Abrir una solicitud de incorporación (Pull Request o PR)** para revisión y aprobación del equipo (requiere al menos una aprobación).

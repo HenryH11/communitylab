@@ -83,6 +83,16 @@ se mide aparte, en `principal()`, y solo se imprime en consola junto con
 `tokens_estimados_total` y `lotes_con_alerta_caracteres`; no se persiste en
 `informe_relevancia.json`.
 
+**Compatibilidad verificada con Ciencia de Datos (29 sep):** la rama
+`feature/DS-Semana2` (Arnold, commit `6bb3c3e`) agrega un test de integración
+E2E real (`tests/integracion/prueba_paquete_completo_datos.py`) que consume
+`preparar_paquete_ia()`/`procesar_datos()` de este módulo a través de
+`scripts/apoyo_demostraciones.py`. Ese helper solo lee `informe["lotes"]`,
+nunca `informe["rendimiento"]` — la clave nueva de esta sección es aditiva y
+no afecta su flujo. Sin conflictos de merge entre ambas ramas (verificado con
+`git merge-tree`); pendiente aún de conocer si el conteo de caracteres que
+falta (ver tarea de Jhonattan) les interesa consumir a futuro.
+
 El texto siguiente conserva el contexto original del aporte de Gustavo.
 
 ---

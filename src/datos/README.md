@@ -66,34 +66,37 @@ El grafo ya consume ciclos por ID y conserva los remanentes; la aprobación form
 del contrato continúa pendiente.
 Ver [contrato, archivos y ejemplo de consumo](../../docs/contrato_datos_ingesta.md).
 
-## Semana 2 — logs de rendimiento (tokens y latencia)
+## Semana 2 — caracteres, estimación de tokens y tiempo
 
-`procesar_datos` agrega una clave `rendimiento` al informe, con un registro por
-lote: `tokens_estimados` (aproximación de ~4 caracteres por token sobre las
-interacciones seleccionadas — **no** es el tokenizador real de Gemini, sirve
-para que Ciencia de Datos dimensione cuota antes de llamar al LLM) y
-`caracteres_especiales_preservados` (compara tildes/emoji antes y después de
-`limpiar_texto`; si baja, se marca `false` y el índice del lote queda en
-`rendimiento.lotes_con_alerta_caracteres`, como alerta temprana de una
-regresión en la limpieza).
+El informe incluye `rendimiento` con caracteres de entrada, después de limpiar,
+para análisis y para contenido, por lote y en total. `preparar_paquete_ia`
+calcula ambas poblaciones; `procesar_datos` deja las métricas de análisis en
+`null`, porque solo prepara la selección para contenido.
 
-`procesar_datos` sigue sin usar el reloj — es puro y reproducible byte a byte
-(lo exigen las pruebas de no-regresión del CLI). La latencia (`tiempo_procesamiento_seg`)
-se mide aparte, en `principal()`, y solo se imprime en consola junto con
-`tokens_estimados_total` y `lotes_con_alerta_caracteres`; no se persiste en
-`informe_relevancia.json`.
+La estimación de tokens usa el largo de los textos. Excluye prompts, metadatos,
+respuestas y reintentos; no mide cuota ni facturación. Se conservan las claves
+de Gustavo: `tokens_estimados` y `tokens_estimados_total` siguen refiriéndose
+al contenido seleccionado.
 
-**Compatibilidad verificada con Ciencia de Datos (29 sep):** la rama
-`feature/DS-Semana2` (Arnold, commit `6bb3c3e`) agrega un test de integración
-E2E real (`tests/integracion/prueba_paquete_completo_datos.py`) que consume
-`preparar_paquete_ia()`/`procesar_datos()` de este módulo a través de
-`scripts/apoyo_demostraciones.py`. Ese helper solo lee `informe["lotes"]`,
-nunca `informe["rendimiento"]` — la clave nueva de esta sección es aditiva y
-no afecta su flujo. Sin conflictos de merge entre ambas ramas (verificado con
-`git merge-tree`); pendiente aún de conocer si el conteo de caracteres que
-falta (ver tarea de Jhonattan) les interesa consumir a futuro.
+La revisión de caracteres compara identidad y orden de tildes, eñes y emojis
+tras normalizar HTML y Unicode. Las alertas indican los índices de lote e
+interacción afectados. También se rechazan cadenas no representables en UTF-8.
+
+El tiempo se mide en el CLI. Puede guardarse con `--registro-rendimiento` en
+un JSON separado; el informe de relevancia conserva su reproducibilidad:
+
+```sh
+python -m src.datos.ingesta --configuracion configuracion/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z --entrega-ia salida/datos/ia --tamano-ciclo 20 --registro-rendimiento salida/datos/rendimiento_ejecucion.json
+python -m pytest tests/test_rendimiento_datos.py tests/test_integracion_ciencia_datos.py -v
+```
+
+Las métricas permanecen en `informe["rendimiento"]`; no añaden campos a
+`EstadoAgente` ni modifican el plan que consume Ciencia de Datos. Ver
+[alcance, campos y comprobaciones de Semana 2](../../docs/rendimiento_datos_semana2.md).
 
 El texto siguiente conserva el contexto original del aporte de Gustavo.
+Reddit queda fuera del flujo acordado para Semana 2; las referencias a su
+ingesta son históricas.
 
 ---
 

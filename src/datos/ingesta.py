@@ -33,10 +33,15 @@ def _nombre_seguro(texto):
     return limpio or "sin_nombre"
 
 
-def limpiar_texto(texto):
+def _texto_visible(texto):
+    """Decodifica HTML y elimina solo el marcado que la limpieza admite."""
     texto = unicodedata.normalize("NFC", html.unescape(texto))
     texto = re.sub(r"<(script|style)\b[^>]*>.*?</\1\s*>", " ", texto, flags=re.I | re.S)
-    texto = ETIQUETAS.sub(" ", texto)
+    return ETIQUETAS.sub(" ", texto)
+
+
+def limpiar_texto(texto):
+    texto = _texto_visible(texto)
     texto = "".join(
         " " if unicodedata.category(c) == "Cc" or c == "\ufffd" else c
         for c in texto if c not in {"\u200b", "\ufeff"}
@@ -48,6 +53,10 @@ def _cadena(objeto, campo, ruta, vacia=False):
     valor = objeto.get(campo)
     if not isinstance(valor, str) or (not vacia and not valor.strip()):
         raise ValueError(f"{ruta}.{campo}: se esperaba texto" + (" no vacío" if not vacia else ""))
+    try:
+        valor.encode("utf-8", errors="strict")
+    except UnicodeEncodeError as error:
+        raise ValueError(f"{ruta}.{campo}: texto no representable en UTF-8") from error
 
 
 def validar_y_limpiar(datos):
@@ -94,9 +103,8 @@ def validar_y_limpiar(datos):
 def estimar_tokens(texto):
     """Aproxima el consumo de tokens de un texto (~4 caracteres por token).
 
-    Es una heurÃ­stica, no el tokenizador real de Gemini: sirve para que Ciencia
-    de Datos dimensione cuotas antes de llamar al LLM, no como cifra exacta de
-    facturaciÃ³n.
+    Solo estima el texto. No incluye prompts, metadatos, respuestas ni
+    reintentos, por lo que no representa cuota ni facturación de Gemini.
     """
     return max(1, round(len(texto) / 4)) if texto else 0
 
@@ -105,15 +113,53 @@ _CATEGORIAS_CONTROL = {"Cc", "Cf"}
 
 
 def contar_caracteres_no_ascii(texto):
-    """Cuenta caracteres no ASCII 'significativos' (tildes, Ã±, emojis, etc.),
+    """Cuenta caracteres no ASCII 'significativos' (tildes, ñ, emojis, etc.),
 
-    excluyendo control/formato invisibles que `limpiar_texto` sÃ­ debe remover
-    a propÃ³sito (esos no cuentan como "corrupciÃ³n" si desaparecen).
+    excluyendo control/formato invisibles. Es un conteo auxiliar, no una
+    garantía de conservación del texto.
     """
     return sum(
         1 for c in texto
         if ord(c) > 127 and unicodedata.category(c) not in _CATEGORIAS_CONTROL
     )
+
+
+def caracteres_especiales_preservados(original, limpio):
+    """Compara identidad y orden de Unicode visible, normalizado a NFC.
+
+    Admite la retirada de HTML, scripts, controles y espacios. Conserva los
+    unidores de emojis. U+FFFD avisa de una pérdida previa de información.
+    No detecta todos los casos posibles de texto previamente mal decodificado.
+    """
+    visible = _texto_visible(original)
+    if "\ufffd" in visible or "\ufffd" in limpio:
+        return False
+
+    def secuencia(texto):
+        return [c for c in unicodedata.normalize("NFC", texto)
+                if ord(c) > 127 and not c.isspace()
+                and unicodedata.category(c) != "Cc"
+                and c not in {"\u200b", "\ufeff"}]
+
+    return secuencia(visible) == secuencia(limpio)
+
+
+def actualizar_totales_rendimiento(rendimiento):
+    """Suma cada población sin interpretar una medición ausente como cero."""
+    for campo in (
+        "caracteres_entrada", "caracteres_limpios", "caracteres_contenido",
+        "tokens_estimados_contenido", "interacciones_analisis",
+        "caracteres_analisis", "tokens_estimados_analisis",
+    ):
+        valores = [lote[campo] for lote in rendimiento["lotes"]]
+        rendimiento[campo + "_total"] = (
+            sum(valores) if all(v is not None for v in valores) else None
+        )
+    if not rendimiento["analisis_disponible"]:
+        for campo in ("interacciones_analisis", "caracteres_analisis", "tokens_estimados_analisis"):
+            rendimiento[campo + "_total"] = None
+    # Alias de Gustavo: sigue midiendo exclusivamente candidatos para contenido.
+    rendimiento["tokens_estimados_total"] = rendimiento["tokens_estimados_contenido_total"]
 
 
 def procesar_datos(datos, *, fecha_referencia, configuracion=None):
@@ -135,14 +181,12 @@ def procesar_datos(datos, *, fecha_referencia, configuracion=None):
     }
     rendimiento_lotes = []
     for indice, lote in enumerate(lotes):
-        caracteres_preservados = all(
-            contar_caracteres_no_ascii(limpio["texto"]) >= contar_caracteres_no_ascii(original["texto"])
-            for original, limpio in zip(lotes_originales[indice]["interacciones"], lote["interacciones"])
-        )
+        originales = lotes_originales[indice]["interacciones"]
+        interacciones = lote["interacciones"]
+        alertas = [numero for numero, (original, limpio) in enumerate(zip(originales, interacciones))
+                   if not caracteres_especiales_preservados(original["texto"], limpio["texto"])]
         seleccionadas, evaluaciones = seleccionar_lote(lote, configuracion, fecha_referencia)
-        # Tokens estimados solo de lo que avanza hacia Ciencia de Datos (seleccionadas),
-        # no del lote completo: es lo que de verdad consumirÃ­a cuota de la API. Es una
-        # cifra determinista (largo de texto), sin reloj de por medio.
+        # Estimación de texto candidato. El paquete completo mide análisis aparte.
         tokens_estimados = sum(estimar_tokens(m["texto"]) for m in seleccionadas)
         lote["interacciones"] = seleccionadas
         informe["lotes"].append({
@@ -156,18 +200,31 @@ def procesar_datos(datos, *, fecha_referencia, configuracion=None):
             "origen_comunidad": informe["lotes"][-1]["origen_comunidad"],
             "interacciones_seleccionadas": len(seleccionadas),
             "tokens_estimados": tokens_estimados,
-            "caracteres_especiales_preservados": caracteres_preservados,
+            "caracteres_especiales_preservados": not alertas,
+            "interacciones_con_alerta_caracteres": alertas,
+            "caracteres_entrada": sum(len(m["texto"]) for m in originales),
+            "caracteres_limpios": sum(len(m["texto"]) for m in interacciones),
+            "caracteres_contenido": sum(len(m["texto"]) for m in seleccionadas),
+            "tokens_estimados_contenido": tokens_estimados,
+            "interacciones_analisis": None,
+            "caracteres_analisis": None,
+            "tokens_estimados_analisis": None,
         })
     informe["resumen"]["descartadas"] = informe["resumen"]["total"] - informe["resumen"]["seleccionadas"]
-    # Deliberadamente sin tiempos de reloj aquÃ­: procesar_datos debe seguir siendo
+    # Deliberadamente sin tiempos de reloj aquí: procesar_datos debe seguir siendo
     # reproducible byte a byte (ver PruebasSeleccion.test_reproducible_con_referencia_fija
     # y PruebasIntegracion.test_cli_tamano_ciclo_es_opt_in_no_cambia_la_salida_por_defecto).
-    # La latencia se mide en principal(), al nivel del CLI, no aquÃ­.
+    # La latencia se mide en principal(), al nivel del CLI, no aquí.
     informe["rendimiento"] = {
-        "tokens_estimados_total": sum(r["tokens_estimados"] for r in rendimiento_lotes),
+        "version": "1.1",
+        "unidad_caracteres": "puntos_de_codigo_unicode",
+        "metodo_tokens": "aproximacion_caracteres_4",
+        "alcance_tokens": "Solo texto; excluye prompts, metadatos, respuestas y reintentos",
+        "analisis_disponible": False,
         "lotes_con_alerta_caracteres": [r["indice"] for r in rendimiento_lotes if not r["caracteres_especiales_preservados"]],
         "lotes": rendimiento_lotes,
     }
+    actualizar_totales_rendimiento(informe["rendimiento"])
     return salida, informe
 
 
@@ -380,6 +437,10 @@ def principal(argv=None):
     parser.add_argument("--salida", type=Path, default=RAIZ / "salida/datos/mensajes_filtrados.json")
     parser.add_argument("--informe", type=Path, default=RAIZ / "salida/datos/informe_relevancia.json")
     parser.add_argument(
+        "--registro-rendimiento", type=Path,
+        help="JSON opcional de ejecución con tiempo y métricas, separado del informe reproducible",
+    )
+    parser.add_argument(
         "--configuracion",
         dest="configuracion",
         type=Path,
@@ -430,6 +491,8 @@ def principal(argv=None):
     argumentos = parser.parse_args(argv)
     try:
         salidas = [argumentos.salida.resolve(), argumentos.informe.resolve()]
+        if argumentos.registro_rendimiento is not None:
+            salidas.append(argumentos.registro_rendimiento.resolve())
         adicionales = []
         if argumentos.entrega_ia is not None:
             adicionales = [argumentos.entrega_ia / nombre for nombre in (
@@ -469,8 +532,7 @@ def principal(argv=None):
             salida, informe = paquete["contenido"], paquete["informe"]
         else:
             salida, informe = procesar_datos(datos, fecha_referencia=referencia, configuracion=configuracion)
-        # Latencia medida aquÃ­, al nivel del CLI, no dentro de procesar_datos: ese
-        # nÃºcleo debe seguir siendo puro/reproducible (ver comentario en su definiciÃ³n).
+        # Mide preparación, sin lectura, escritura, exportación de fragmentos ni IA.
         tiempo_procesamiento_seg = round(time.perf_counter() - tiempo_procesamiento_inicio, 6)
         # Validar toda la entrega antes de escribir la primera salida.
         ciclos = None
@@ -485,6 +547,13 @@ def principal(argv=None):
         ruta_manifest = None
         if ciclos is not None:
             ruta_manifest = guardar_ciclos(argumentos.ciclos, ciclos)
+        if argumentos.registro_rendimiento is not None:
+            guardar_json(argumentos.registro_rendimiento, {
+                "version": "1.0",
+                "alcance_tiempo": "preparacion_datos_sin_lectura_escritura_fragmentos_ni_ia",
+                "tiempo_procesamiento_seg": tiempo_procesamiento_seg,
+                "rendimiento": informe["rendimiento"],
+            })
     except (OSError, ValueError, TypeError) as error:
         parser.exit(2, f"Error: {error}\n")
     print(json.dumps(informe["resumen"], ensure_ascii=False))
@@ -492,9 +561,17 @@ def principal(argv=None):
     print(json.dumps({
         "tiempo_procesamiento_seg": tiempo_procesamiento_seg,
         "tokens_estimados_total": rendimiento["tokens_estimados_total"],
+        "tokens_estimados_analisis_total": rendimiento["tokens_estimados_analisis_total"],
+        "tokens_estimados_contenido_total": rendimiento["tokens_estimados_contenido_total"],
+        "caracteres_entrada_total": rendimiento["caracteres_entrada_total"],
+        "caracteres_limpios_total": rendimiento["caracteres_limpios_total"],
+        "caracteres_analisis_total": rendimiento["caracteres_analisis_total"],
+        "caracteres_contenido_total": rendimiento["caracteres_contenido_total"],
         "lotes_con_alerta_caracteres": rendimiento["lotes_con_alerta_caracteres"],
     }, ensure_ascii=False))
     print(f"Datos: {argumentos.salida}\nInforme: {argumentos.informe}")
+    if argumentos.registro_rendimiento is not None:
+        print(f"Rendimiento: {argumentos.registro_rendimiento}")
     if ruta_manifest is not None:
         print(f"Ciclos: {ruta_manifest}")
     if paquete:

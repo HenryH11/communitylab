@@ -94,6 +94,14 @@ Las métricas permanecen en `informe["rendimiento"]`; no añaden campos a
 `EstadoAgente` ni modifican el plan que consume Ciencia de Datos. Ver
 [alcance, campos y comprobaciones de Semana 2](../../docs/rendimiento_datos_semana2.md).
 
+**Compatibilidad verificada con Ciencia de Datos (29–30 sep):** la rama
+`feature/DS-Semana2` (Arnold, commit `6bb3c3e`) agrega un test de integración
+E2E real que consume `preparar_paquete_ia()`/`procesar_datos()` de este módulo
+a través de `scripts/apoyo_demostraciones.py`. Ese helper solo lee
+`informe["lotes"]`, nunca `informe["rendimiento"]` — ni los campos originales
+de Gustavo ni las extensiones de Jhonattan les afectan. Sin conflictos de
+merge entre ramas (verificado con `git merge-tree`).
+
 El texto siguiente conserva el contexto original del aporte de Gustavo.
 Reddit queda fuera del flujo acordado para Semana 2; las referencias a su
 ingesta son históricas.

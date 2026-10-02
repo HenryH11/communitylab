@@ -1,9 +1,12 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 import streamlit as st
 import json
-import tempfile
 
-from src.data.ingest import cargar_json
-from src.data.entrega_ia import preparar_paquete_ia
+from src.datos.entrega_ia import preparar_paquete_ia
 from src.agentes.grafo import procesar_paquete_entrega
 
 st.set_page_config(page_title="CommunityLab", layout="wide")
@@ -20,12 +23,8 @@ if archivo_subido is not None:
     if st.button("🚀 Procesar con IA (Gemini + LangGraph)"):
         with st.spinner("Procesando mensajes... esto puede tomar unos segundos."):
             try:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8") as tmp:
-                    json.dump(datos, tmp, ensure_ascii=False, indent=2)
-                    ruta_temporal = tmp.name
-                
                 paquete = preparar_paquete_ia(
-                    cargar_json(ruta_temporal),
+                    datos,
                     fecha_referencia="2026-09-17T12:00:00Z",
                     tamano_ciclo=20,
                 )

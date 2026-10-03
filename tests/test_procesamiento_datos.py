@@ -24,7 +24,12 @@ from src.datos.ingesta import (
     limpiar_texto,
     procesar_datos,
 )
-from src.datos.relevancia import ConfiguracionRelevancia
+from src.datos.relevancia import (
+    ConfiguracionRelevancia,
+    es_pregunta_completa,
+    leer_fecha,
+    puntuar_interaccion,
+)
 
 
 FECHA = "2026-09-17T12:00:00Z"
@@ -174,7 +179,7 @@ class PruebasMapeoEstadoAgente(unittest.TestCase):
         self.assertEqual(estado, {
             "autor": "Ana", "canal": "#dudas", "origen": "Discord_Grupo_ONE_G10",
             "texto": "¿Cómo uso LangGraph?", "tipo_original": "pregunta_tecnica",
-            "score_relevancia": 77, "id": interaccion["id"], "idioma": "es",
+            "score_relevancia": 77, "id": interaccion["id"], "idioma": "es", "elegible_faq": False,
         })
 
     def test_construir_estado_agente_no_toca_tipo_ni_fabrica_id_o_idioma(self):
@@ -403,6 +408,69 @@ class PruebasIntegracion(unittest.TestCase):
             corrida = self.ejecutar_cli(carpeta, *args)
             self.assertEqual(corrida.returncode, 2)
             self.assertFalse((carpeta / "manifiesto.json").exists())
+
+
+class PruebasPreguntaPrograma(unittest.TestCase):
+    TEXTO_INT_004 = "¿El certificado final tiene costo adicional o está incluido en el programa?"
+
+    def puntuar(self, texto, tipo="pregunta_programa", **cambios):
+        interaccion = mensaje("x", tipo=tipo, texto=texto, fecha="2026-09-12T08:15:00Z", **cambios)
+        return puntuar_interaccion(interaccion, ConfiguracionRelevancia(), leer_fecha(FECHA))
+
+    def test_pregunta_completa_se_detecta_con_signos_o_palabra_interrogativa(self):
+        self.assertTrue(es_pregunta_completa(self.TEXTO_INT_004))
+        self.assertTrue(es_pregunta_completa("Interesante propuesta, ¿tienen alguna alianza con empresas para prácticas profesionales?"))
+        self.assertTrue(es_pregunta_completa("Hasta cuándo puedo inscribirme al hackathon?"))
+
+    def test_afirmacion_fragmento_o_pregunta_breve_no_son_pregunta_completa(self):
+        self.assertFalse(es_pregunta_completa("El certificado final tiene costo adicional?"))
+        self.assertFalse(es_pregunta_completa("¿El certificado final tiene costo adicional o"))
+        self.assertFalse(es_pregunta_completa("¿Cuándo empieza?"))
+
+    def test_int_004_etiquetada_pregunta_programa_es_elegible_faq_con_bonus(self):
+        resultado = self.puntuar(self.TEXTO_INT_004)
+        self.assertEqual(resultado["puntaje"], 62)
+        self.assertEqual(resultado["desglose"]["pregunta_completa"], 25)
+        self.assertTrue(resultado["elegible_faq"])
+        self.assertEqual(resultado["advertencias"], [])
+
+    def test_mismo_texto_etiquetado_comentario_no_recibe_bonus_y_avisa(self):
+        resultado = self.puntuar(self.TEXTO_INT_004, tipo="comentario")
+        self.assertEqual(resultado["puntaje"], 37)
+        self.assertFalse(resultado["elegible_faq"])
+        self.assertIn("pregunta_no_etiquetada", resultado["advertencias"])
+
+    def test_pregunta_breve_o_fuera_de_tema_no_recibe_bonus(self):
+        self.assertFalse(self.puntuar("¿Cuándo empieza?")["elegible_faq"])
+        resultado = self.puntuar("¿Cómo se llama el mejor restaurante de la ciudad hoy?")
+        self.assertEqual(resultado["desglose"]["pregunta_completa"], 0)
+        self.assertFalse(resultado["elegible_faq"])
+
+    def test_pregunta_tecnica_con_tema_de_programa_no_recibe_bonus_y_avisa(self):
+        resultado = self.puntuar("¿Cómo configuro el curso de LangGraph en Python?", tipo="pregunta_tecnica")
+        self.assertEqual(resultado["desglose"]["pregunta_completa"], 0)
+        self.assertFalse(resultado["elegible_faq"])
+        self.assertIn("pregunta_no_etiquetada", resultado["advertencias"])
+
+    def test_prefijo_de_palabras_programa_no_marca_practica_tecnica(self):
+        resultado = self.puntuar("¿Cuál es la diferencia práctica entre usar Grid y Flexbox para un layout?", tipo="pregunta_tecnica")
+        self.assertNotIn("pregunta_no_etiquetada", resultado["advertencias"])
+
+    def test_duplicado_no_es_elegible_faq_aunque_cumpla_la_regla(self):
+        entrada = lote(
+            mensaje("a", tipo="pregunta_programa", autor="Sofía", canal="#soporte", texto=self.TEXTO_INT_004, fecha="2026-09-12T08:15:00Z"),
+            mensaje("b", tipo="pregunta_programa", autor="Sofía", canal="#soporte", texto=self.TEXTO_INT_004, fecha="2026-09-12T08:15:00Z"),
+        )
+        _, informe = procesar(entrada)
+        por_id = {e["id"]: e for e in informe["lotes"][0]["evaluaciones"]}
+        self.assertTrue(por_id["a"]["elegible_faq"])
+        self.assertFalse(por_id["b"]["elegible_faq"])
+
+    def test_configuracion_rechaza_bonus_que_supera_el_maximo_de_100(self):
+        with self.assertRaises(ValueError):
+            ConfiguracionRelevancia(puntos_por_pregunta_completa=60)
+        with self.assertRaises(ValueError):
+            ConfiguracionRelevancia(palabras_programa=("certificado", "123"))
 
 
 class PruebasRendimiento(unittest.TestCase):

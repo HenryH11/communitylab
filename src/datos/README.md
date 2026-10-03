@@ -34,7 +34,7 @@ separa su elegibilidad para contenido. Reutiliza el adaptador de Gustavo a
 python -m src.datos.ingesta --configuracion configuracion/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z --entrega-ia salida/datos/ia --tamano-ciclo 20
 ```
 
-Con esa referencia: **23 estados para sentimiento, 14 seleccionados para contenido
+Con esa referencia: **23 estados para sentimiento, 19 seleccionados para contenido
 y ciclos operativos de 12 y 11 mensajes**. El paquete incluye:
 
 - Selección e informe en `salida/datos`.
@@ -144,8 +144,8 @@ Andá directo a tu sección si no te interesa el resto.
   }
   ```
 
-  `tipo` es uno de: `testimonio` | `pregunta_tecnica` | `comentario` |
-  `feedback`. Hoy tiene 4 lotes simulados: Discord, LinkedIn, Formulario de
+  `tipo` es uno de: `testimonio` | `pregunta_tecnica` | `pregunta_programa` |
+  `comentario` | `feedback`. Hoy tiene 4 lotes simulados: Discord, LinkedIn, Formulario de
   comentarios, y **Alura_Forum_ONE_G10** (simulado, ver sección de Jhonattan).
 
 - **`ingesta_reddit.py`** — ingesta **real** (no simulada) desde Reddit
@@ -241,7 +241,13 @@ ISO 639-1, mayormente `"es"`).
 | --- | --- |
 | `testimonio` | Detector de Historias de Éxito / Generador de contenido para RRSS |
 | `pregunta_tecnica` | Motor de FAQ Dinámico |
+| `pregunta_programa` | FAQ del programa cuando `elegible_faq` es `true` (pregunta completa, tema de programa y score >= umbral) |
 | `comentario` / `feedback` | Panel de salud y sentimiento de la comunidad |
+
+`elegible_faq` lo calcula `relevancia.py`: solo para `pregunta_programa`, con
+un bonus de +25 por pregunta completa (`¿...?`, al menos 4 palabras) y tema del
+programa. Si un texto cumple esa regla con otro tipo, se registra la advertencia
+`pregunta_no_etiquetada` y no recibe el bonus.
 
 **Cuidados importantes antes de asumir cosas:**
 

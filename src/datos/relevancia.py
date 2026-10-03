@@ -6,8 +6,15 @@ import re
 import unicodedata
 
 
-TIPOS = {"testimonio", "pregunta_tecnica", "comentario", "feedback"}
+TIPOS = {"testimonio", "pregunta_tecnica", "pregunta_programa", "comentario", "feedback"}
 URL = re.compile(r"(?:https?://|www\.)\S+", re.IGNORECASE)
+# Oración interrogativa completa: abre con ¿ y cierra con ?.
+PREGUNTA_ABIERTA = re.compile(r"¿[^?¿]*\?")
+PALABRAS_INTERROGATIVAS = {
+    "como", "que", "cual", "cuales", "cuando", "donde", "quien", "quienes",
+    "cuanto", "cuanta", "cuantos", "cuantas", "hasta", "puedo", "puedes",
+    "tienen", "tiene", "hay", "existe", "es", "son", "se",
+}
 
 
 def normalizar_busqueda(texto):
@@ -32,23 +39,33 @@ class ConfiguracionRelevancia:
     puntaje_minimo: int = 40
     maximo_por_lote: int | None = None
     puntos_por_tipo: dict = field(default_factory=lambda: {
-        "testimonio": 40, "pregunta_tecnica": 40, "feedback": 30, "comentario": 10,
+        "testimonio": 40, "pregunta_tecnica": 40, "pregunta_programa": 10,
+        "feedback": 30, "comentario": 10,
     })
     puntos_por_longitud: int = 20
     puntos_por_palabra: int = 5
     maximo_palabras: int = 30
     puntos_por_frescura: int = 10
     dias_de_frescura: int = 7
+    # Bonus solo para pregunta_programa completa y de tema programa: mantiene el máximo en 100.
+    puntos_por_pregunta_completa: int = 25
+    minimo_palabras_pregunta: int = 4
     palabras_clave: tuple = (
         "aprendi", "trabajo", "empleo", "certificado", "mentor", "mentores",
         "proyecto", "proyectos", "python", "sql", "oci", "langchain",
         "langgraph", "llm", "datos", "curso", "portfolio", "error",
+    )
+    # Terminar en * indica prefijo: "inscri*" cubre inscribir, inscripción, etc.
+    palabras_programa: tuple = (
+        "certificado", "inscri*", "grabaci*", "programa", "hackathon", "ruta*",
+        "costo", "practicas", "profesionales", "alianza*", "clase*", "curso",
     )
 
     def __post_init__(self):
         for nombre in (
             "caracteres_minimos", "puntaje_minimo", "puntos_por_longitud", "puntos_por_palabra",
             "maximo_palabras", "puntos_por_frescura", "dias_de_frescura",
+            "puntos_por_pregunta_completa", "minimo_palabras_pregunta",
         ):
             valor = getattr(self, nombre)
             if type(valor) is not int or valor < 0:
@@ -61,7 +78,9 @@ class ConfiguracionRelevancia:
             raise ValueError("puntos_por_tipo debe contener los cuatro tipos admitidos")
         if any(type(v) is not int or v < 0 for v in self.puntos_por_tipo.values()):
             raise ValueError("Los pesos de tipo deben ser enteros no negativos")
-        maximo = (max(self.puntos_por_tipo.values()) + self.puntos_por_longitud
+        peso_sin_bonus = max(v for t, v in self.puntos_por_tipo.items() if t != "pregunta_programa")
+        peso_programa = self.puntos_por_tipo["pregunta_programa"] + self.puntos_por_pregunta_completa
+        maximo = (max(peso_sin_bonus, peso_programa) + self.puntos_por_longitud
                   + self.maximo_palabras + self.puntos_por_frescura)
         if maximo > 100:
             raise ValueError("La suma máxima de los pesos no puede superar 100")
@@ -69,9 +88,33 @@ class ConfiguracionRelevancia:
             not isinstance(p, str) or not p.isalpha() for p in self.palabras_clave
         ):
             raise ValueError("palabras_clave debe ser una lista de palabras individuales")
+        if not isinstance(self.palabras_programa, (list, tuple)) or any(
+            not isinstance(p, str) or not p.rstrip("*").isalpha() for p in self.palabras_programa
+        ):
+            raise ValueError("palabras_programa debe ser palabras, con * final opcional para prefijos")
 
     def como_dict(self):
         return asdict(self)
+
+
+def es_pregunta_completa(texto, minimo_palabras=4):
+    """Pregunta completa: oración interrogativa cerrada (¿...?) o que abre con palabra interrogativa y cierra con ?."""
+    abierta = PREGUNTA_ABIERTA.search(texto)
+    if abierta:
+        oracion = abierta.group(0)
+    else:
+        oracion = texto.strip()
+        primera = re.findall(r"\w+", normalizar_busqueda(oracion))[:1]
+        if not oracion.endswith("?") or not primera or primera[0] not in PALABRAS_INTERROGATIVAS:
+            return False
+    return len(re.findall(r"\w+", normalizar_busqueda(oracion))) >= minimo_palabras
+
+
+def tema_programa(palabras, configuracion):
+    """True si alguna palabra del texto corresponde al vocabulario del programa (con prefijos marcados con *)."""
+    prefijos = tuple(normalizar_busqueda(p[:-1]) for p in configuracion.palabras_programa if p.endswith("*"))
+    exactas = {normalizar_busqueda(p) for p in configuracion.palabras_programa if not p.endswith("*")}
+    return any(p in exactas or (prefijos and p.startswith(prefijos)) for p in palabras)
 
 
 def puntuar_interaccion(interaccion, configuracion, fecha_referencia):
@@ -80,8 +123,13 @@ def puntuar_interaccion(interaccion, configuracion, fecha_referencia):
     palabras = re.findall(r"\b\w+\b", normalizar_busqueda(URL.sub(" ", texto)))
     claves = {normalizar_busqueda(p) for p in configuracion.palabras_clave}
     encontradas = sorted(set(palabras) & claves)
+    pregunta = es_pregunta_completa(texto, configuracion.minimo_palabras_pregunta)
+    programa = tema_programa(palabras, configuracion)
+    es_programa = interaccion["tipo"] == "pregunta_programa"
     motivos = []
     advertencias = []
+    if pregunta and programa and not es_programa:
+        advertencias.append("pregunta_no_etiquetada")
     if len(texto) < configuracion.caracteres_minimos:
         motivos.append("texto_corto")
     if URL.search(texto) and not re.search(r"\w", URL.sub(" ", texto)):
@@ -103,18 +151,21 @@ def puntuar_interaccion(interaccion, configuracion, fecha_referencia):
                 frescura = configuracion.puntos_por_frescura
         except ValueError:
             advertencias.append("fecha_invalida")
+    bonus = configuracion.puntos_por_pregunta_completa if pregunta and programa and es_programa else 0
     desglose = {
         "tipo": configuracion.puntos_por_tipo[interaccion["tipo"]],
         "longitud": min(len(palabras), 20) * configuracion.puntos_por_longitud // 20,
         "palabras_clave": min(len(encontradas) * configuracion.puntos_por_palabra, configuracion.maximo_palabras),
         "frescura": frescura,
+        "pregunta_completa": bonus,
     }
     puntaje = sum(desglose.values())
     if puntaje < configuracion.puntaje_minimo:
         motivos.append("bajo_umbral")
+    elegible_faq = bool(bonus) and puntaje >= configuracion.puntaje_minimo and not motivos
     return {
         "puntaje": puntaje, "desglose": desglose, "palabras_clave": encontradas,
-        "motivos": motivos, "advertencias": advertencias,
+        "motivos": motivos, "advertencias": advertencias, "elegible_faq": elegible_faq,
     }
 
 
@@ -129,6 +180,7 @@ def seleccionar_lote(lote, configuracion, fecha_referencia):
         identificador = mensaje.get("id")
         if clave in vistos_texto or (identificador is not None and identificador in vistos_id):
             evaluacion["motivos"].append("duplicado")
+            evaluacion["elegible_faq"] = False
         vistos_texto.add(clave)
         if identificador is not None:
             vistos_id.add(identificador)

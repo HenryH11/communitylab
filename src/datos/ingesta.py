@@ -11,9 +11,9 @@ import time
 import unicodedata
 
 if __package__:
-    from .relevancia import ConfiguracionRelevancia, leer_fecha, seleccionar_lote
+    from .relevancia import TIPOS, ConfiguracionRelevancia, leer_fecha, seleccionar_lote
 else:
-    from relevancia import ConfiguracionRelevancia, leer_fecha, seleccionar_lote
+    from relevancia import TIPOS, ConfiguracionRelevancia, leer_fecha, seleccionar_lote
 
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -88,7 +88,7 @@ def validar_y_limpiar(datos):
                 raise ValueError(f"{ubicacion}: se esperaba un objeto")
             for campo in ("autor", "canal", "tipo", "texto"):
                 _cadena(mensaje, campo, ubicacion, vacia=campo == "texto")
-            if mensaje["tipo"] not in {"testimonio", "pregunta_tecnica", "comentario", "feedback"}:
+            if mensaje["tipo"] not in TIPOS:
                 raise ValueError(f"{ubicacion}.tipo: valor no admitido")
             for campo in ("id", "fecha", "idioma"):
                 if campo in mensaje:
@@ -228,7 +228,7 @@ def procesar_datos(datos, *, fecha_referencia, configuracion=None):
     return salida, informe
 
 
-def construir_estado_agente(mensaje, puntaje, origen):
+def construir_estado_agente(mensaje, puntaje, origen, elegible_faq=False):
     """Traduce una interacción ya depurada al subconjunto de entrada de `EstadoAgente`
     (ver `src/agentes/estado_agente.py`, Sub-equipo 2), confirmado con Ciencia de Datos:
 
@@ -240,6 +240,9 @@ def construir_estado_agente(mensaje, puntaje, origen):
     - `origen` viene de `origen_comunidad` del lote, bajado a nivel de interacción.
     - `id`/`idioma` se incluyen solo si la interacción los trae (son opcionales en
       el contrato); no se fabrica ningún valor por defecto.
+    - `elegible_faq` viene de `relevancia.py` (pregunta completa del programa con
+      score suficiente). Es un campo para Ciencia de Datos; no cruza el contrato de
+      entrega de Nelson, que mantiene sus siete campos.
 
     No incluye campos que produce Ciencia de Datos (`sentimiento`, `rutas`,
     `activos_generados`, etc.) — esos se agregan más adelante en su propio grafo.
@@ -251,6 +254,7 @@ def construir_estado_agente(mensaje, puntaje, origen):
         "texto": mensaje["texto"],
         "tipo_original": mensaje["tipo"],
         "score_relevancia": puntaje,
+        "elegible_faq": elegible_faq,
     }
     for campo in ("id", "idioma"):
         if campo in mensaje:
@@ -289,7 +293,10 @@ def construir_estados_agente(salida, informe, *, poblacion="contenido"):
             contexto, evaluacion = evaluaciones[identificador]
             if any(lote[c] != contexto[c] for c in ("origen_comunidad", "periodo_referencia")):
                 raise ValueError(f"Contexto incompatible para {identificador}")
-            estados.append(construir_estado_agente(interaccion, evaluacion["puntaje"], lote["origen_comunidad"]))
+            estados.append(construir_estado_agente(
+                interaccion, evaluacion["puntaje"], lote["origen_comunidad"],
+                elegible_faq=evaluacion["elegible_faq"],
+            ))
     if recibidos != esperados:
         raise ValueError("Faltan IDs de la población indicada por el informe")
     return estados
@@ -314,7 +321,7 @@ def _interaccion_para_entrega(interaccion, *, permitir_texto_vacio=False):
         )
     for campo in _CAMPOS_CONTRATO_NELSON:
         _cadena(interaccion, campo, "interaccion", vacia=campo == "texto" and permitir_texto_vacio)
-    if interaccion["tipo"] not in {"testimonio", "pregunta_tecnica", "comentario", "feedback"}:
+    if interaccion["tipo"] not in TIPOS:
         raise ValueError("Tipo no admitido en la entrega")
     if interaccion["id"] != interaccion["id"].strip():
         raise ValueError("ID con espacios exteriores")

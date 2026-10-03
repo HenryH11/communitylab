@@ -108,12 +108,12 @@ referencia `2026-09-17T12:00:00Z` y tamaño de ciclo 20:
 | Resultado | Valor |
 | --- | ---: |
 | Estados preparados para análisis | 23 |
-| Candidatos para contenido | 14 |
+| Candidatos para contenido | 19 |
 | Ciclos | 12 y 11 |
 | Pendientes | 0 |
 | Caracteres de entrada / limpios / análisis | 2704 / 2704 / 2704 |
-| Caracteres de contenido | 1940 |
-| Tokens estimados de análisis / contenido | 677 / 486 |
+| Caracteres de contenido | 2360 |
+| Tokens estimados de análisis / contenido | 677 / 591 |
 | Lotes con alertas de caracteres | 0 |
 
 Se comparó la salida con el código de `6463086`: en esta muestra coinciden

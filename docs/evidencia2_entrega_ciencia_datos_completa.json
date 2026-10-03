@@ -1,0 +1,1108 @@
+{
+  "version_contrato": "1.1",
+  "resumen_comunidad": {
+    "total_interacciones_procesadas": 23,
+    "total_pendientes": 0,
+    "total_elegibles_contenido": 19,
+    "total_elegibles_faq": 5,
+    "total_con_activos": 19,
+    "total_activos_generados": 35,
+    "total_con_errores": 0,
+    "sentimiento_predominante": "neutral",
+    "sentimientos_predominantes": [
+      "neutral"
+    ],
+    "distribucion_sentimientos": {
+      "neutral": 11,
+      "muy_positivo": 8,
+      "positivo": 4
+    },
+    "temas_principales": [
+      {
+        "tema": "empleabilidad",
+        "cantidad": 4
+      },
+      {
+        "tema": "aprendizaje",
+        "cantidad": 3
+      },
+      {
+        "tema": "comunidad",
+        "cantidad": 3
+      }
+    ],
+    "distribucion_temas": {
+      "empleabilidad": 4,
+      "aprendizaje": 3,
+      "comunidad": 3,
+      "datos_ia": 3,
+      "programacion": 3,
+      "mentoria": 2,
+      "programa_hackathon": 2,
+      "certificacion": 1,
+      "cloud_infraestructura": 1,
+      "plataforma": 1
+    },
+    "distribucion_tipos_detectados": {
+      "testimonio": 8,
+      "pregunta_programa": 5,
+      "comentario": 4,
+      "pregunta_tecnica": 4,
+      "feedback": 2
+    }
+  },
+  "interacciones": [
+    {
+      "id": "int-001",
+      "autor": "Camila Restrepo",
+      "canal": "#logros-y-empleos",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "Comunidad, gracias a este programa conseguí mi primer trabajo como analista de datos en menos de 3 meses. El proyecto final de mi portfolio fue clave en la entrevista técnica.",
+      "tipo_original": "testimonio",
+      "score_relevancia": 90,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "muy_positivo",
+      "tema_principal": "empleabilidad",
+      "subtema": "primer trabajo analista de datos",
+      "tipo_detectado": "testimonio",
+      "rutas": [
+        "caso_exito",
+        "boletin",
+        "linkedin"
+      ],
+      "activos_generados": {
+        "caso_exito": {
+          "titular": "Camila Restrepo consigue su primer trabajo como analista de datos en menos de 3 meses",
+          "resumen": "Camila señala que consiguió su primer trabajo como analista de datos en menos de 3 meses gracias a este programa. También indica que el proyecto final de su portfolio fue clave en la entrevista técnica."
+        },
+        "boletin": {
+          "seccion": "Logro de la comunidad",
+          "titular": "Camila consigue su primer trabajo como analista de datos",
+          "resumen": "Camila consiguió su primer trabajo como analista de datos en menos de 3 meses gracias al programa. Señaló que el proyecto final de su portfolio fue clave en la entrevista técnica."
+        },
+        "linkedin": {
+          "titulo": "Camila Restrepo consigue su primer trabajo como analista de datos",
+          "contenido": "Compartimos el logro de Camila Restrepo, quien consiguió su primer trabajo como analista de datos en menos de 3 meses gracias a este programa. Según su testimonio, el proyecto final de su portfolio fue clave en la entrevista técnica.",
+          "hashtags": [
+            "#AnalistaDeDatos",
+            "#Empleabilidad",
+            "#DataAnalytics"
+          ],
+          "canal_recomendado": "LinkedIn Oficial"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-002",
+      "autor": "Diego Fernández",
+      "canal": "#dudas-langgraph",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "Tengo dudas sobre cómo estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. ¿Alguien tiene un ejemplo práctico de router?",
+      "tipo_original": "pregunta_tecnica",
+      "score_relevancia": 80,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "neutral",
+      "tema_principal": "datos_ia",
+      "subtema": "nodos condicionales LangGraph",
+      "tipo_detectado": "pregunta_tecnica",
+      "rutas": [
+        "preguntas_frecuentes"
+      ],
+      "activos_generados": {
+        "preguntas_frecuentes": {
+          "tema": "Estructuración de nodos condicionales y reintentos en LangGraph",
+          "respuesta": "Para estructurar nodos condicionales en LangGraph que manejen reintentos basados en la respuesta de un LLM, se suele utilizar una función de enrutamiento que evalúa el estado actual y decide si el flujo debe dirigirse hacia un nodo de procesamiento posterior o regresar al nodo del LLM. Dado que no se cuenta con el código ni con la estructura exacta del grafo actual, sería necesario revisar dichos detalles para ofrecer una implementación específica."
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-003",
+      "autor": "Andrés Kuri",
+      "canal": "#logros-y-empleos",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "Pasé de no saber programar a construir mi primer modelo de clasificación en 6 semanas, muy agradecido con la comunidad y los mentores.",
+      "tipo_original": "testimonio",
+      "score_relevancia": 75,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "muy_positivo",
+      "tema_principal": "aprendizaje",
+      "subtema": "modelo de clasificacion",
+      "tipo_detectado": "testimonio",
+      "rutas": [
+        "caso_exito",
+        "boletin",
+        "linkedin"
+      ],
+      "activos_generados": {
+        "caso_exito": {
+          "titular": "Andrés Kuri construye su primer modelo de clasificación en 6 semanas tras pasar de no saber programar",
+          "resumen": "Andrés Kuri pasó de no saber programar a construir su primer modelo de clasificación en 6 semanas. Asimismo, expresó su agradecimiento hacia la comunidad y los mentores."
+        },
+        "boletin": {
+          "seccion": "Logro de la comunidad",
+          "titular": "Andrés construye su primer modelo de clasificación",
+          "resumen": "Andrés pasó de no saber programar a construir su primer modelo de clasificación en 6 semanas y expresó su agradecimiento a la comunidad y los mentores."
+        },
+        "linkedin": {
+          "titulo": "Andrés Kuri construye su primer modelo de clasificación en seis semanas",
+          "contenido": "Compartimos el recorrido de Andrés Kuri, quien logró construir su primer modelo de clasificación en seis semanas tras iniciar sin conocimientos previos de programación. Según su testimonio, Andrés expresó su agradecimiento hacia la comunidad y los mentores.",
+          "hashtags": [
+            "#ModeloDeClasificacion",
+            "#Programacion",
+            "#Aprendizaje"
+          ],
+          "canal_recomendado": "LinkedIn Oficial"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-004",
+      "autor": "Sofía Torres",
+      "canal": "#soporte-tecnico",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "¿El certificado final tiene costo adicional o está incluido en el programa?",
+      "tipo_original": "pregunta_programa",
+      "score_relevancia": 62,
+      "elegible_contenido": true,
+      "elegible_faq": true,
+      "sentimiento": "neutral",
+      "tema_principal": "certificacion",
+      "subtema": "costo del certificado",
+      "tipo_detectado": "pregunta_programa",
+      "rutas": [
+        "preguntas_frecuentes"
+      ],
+      "activos_generados": {
+        "preguntas_frecuentes": {
+          "tema": "Costo del certificado final",
+          "respuesta": "La información sobre si el certificado final tiene un costo adicional o se encuentra incluido debe confirmarse directamente con los canales de atención oficiales del programa."
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-005",
+      "autor": "Valentina Ríos",
+      "canal": "#general",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "El servidor de Discord se siente muy activo, se nota el compromiso del equipo organizador.",
+      "tipo_original": "comentario",
+      "score_relevancia": 35,
+      "elegible_contenido": false,
+      "elegible_faq": false,
+      "sentimiento": "positivo",
+      "tema_principal": "comunidad",
+      "subtema": "actividad en Discord",
+      "tipo_detectado": "comentario",
+      "rutas": [],
+      "activos_generados": {},
+      "errores": []
+    },
+    {
+      "id": "int-006",
+      "autor": "Ricardo Mena",
+      "canal": "#feedback-programa",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "Sería genial tener más talleres prácticos sobre despliegue de modelos en la nube antes del hackathon.",
+      "tipo_original": "feedback",
+      "score_relevancia": 56,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "neutral",
+      "tema_principal": "cloud_infraestructura",
+      "subtema": "talleres de despliegue",
+      "tipo_detectado": "feedback",
+      "rutas": [
+        "insight_mejora"
+      ],
+      "activos_generados": {
+        "insight_mejora": {
+          "hallazgo": "Se señala la necesidad de contar con más talleres prácticos sobre despliegue de modelos en la nube antes del hackathon.",
+          "sugerencia_detectada": "Tener más talleres prácticos sobre despliegue de modelos en la nube antes del hackathon.",
+          "area": "cloud_infraestructura"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-007",
+      "autor": "Héctor Prado",
+      "canal": "#dudas-hackathon",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "¿Hasta cuándo puedo inscribirme al hackathon si me integro después de la semana 0?",
+      "tipo_original": "pregunta_programa",
+      "score_relevancia": 59,
+      "elegible_contenido": true,
+      "elegible_faq": true,
+      "sentimiento": "neutral",
+      "tema_principal": "programa_hackathon",
+      "subtema": "fecha limite de inscripcion",
+      "tipo_detectado": "pregunta_programa",
+      "rutas": [
+        "preguntas_frecuentes"
+      ],
+      "activos_generados": {
+        "preguntas_frecuentes": {
+          "tema": "Fecha límite de inscripción al hackathon",
+          "respuesta": "La posibilidad de inscribirse al hackathon después de la semana 0 y su fecha límite correspondiente deben confirmarse directamente con la información oficial y vigente del programa."
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-008",
+      "autor": "Daniela Uriarte",
+      "canal": "#general",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "Buena onda el equipo de mentores, siempre responden rápido en el canal de dudas.",
+      "tipo_original": "comentario",
+      "score_relevancia": 39,
+      "elegible_contenido": false,
+      "elegible_faq": false,
+      "sentimiento": "positivo",
+      "tema_principal": "mentoria",
+      "subtema": "respuesta de mentores",
+      "tipo_detectado": "comentario",
+      "rutas": [],
+      "activos_generados": {},
+      "errores": []
+    },
+    {
+      "id": "int-022",
+      "autor": "Mariana Souza",
+      "canal": "#logros-y-empleos",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "Comunidad, quede seleccionada para el puesto de Desarrolladora Junior de IA! El proyecto del curso de LangChain y OCI que construi en mi portfolio marco toda la diferencia en la entrevista tecnica. Muy agradecida con la comunidad por todo el apoyo!",
+      "tipo_original": "testimonio",
+      "score_relevancia": 95,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "muy_positivo",
+      "tema_principal": "empleabilidad",
+      "subtema": "Desarrolladora Junior de IA",
+      "tipo_detectado": "testimonio",
+      "rutas": [
+        "caso_exito",
+        "boletin",
+        "linkedin"
+      ],
+      "activos_generados": {
+        "caso_exito": {
+          "titular": "Mariana es seleccionada para el puesto de Desarrolladora Junior de IA",
+          "resumen": "Mariana fue seleccionada para el puesto de Desarrolladora Junior de IA. Señala que el proyecto del curso de LangChain y OCI que construyó en su portfolio marcó la diferencia en la entrevista técnica. Asimismo, expresó su agradecimiento con la comunidad por el apoyo."
+        },
+        "boletin": {
+          "seccion": "Logro de la comunidad",
+          "titular": "Mariana es seleccionada como Desarrolladora Junior de IA",
+          "resumen": "Mariana quedó seleccionada para el puesto de Desarrolladora Junior de IA y expresó su agradecimiento a la comunidad. Según su testimonio, el proyecto del curso de LangChain y OCI en su portfolio marcó la diferencia en la entrevista técnica."
+        },
+        "linkedin": {
+          "titulo": "Mariana Souza es seleccionada como Desarrolladora Junior de IA",
+          "contenido": "Mariana Souza fue seleccionada para el puesto de Desarrolladora Junior de IA. Según su testimonio, el proyecto del curso de LangChain y OCI que construyó en su portfolio marcó toda la diferencia en la entrevista técnica. Mariana expresó su agradecimiento con la comunidad por todo el apoyo.",
+          "hashtags": [
+            "#LangChain",
+            "#OCI",
+            "#InteligenciaArtificial",
+            "#Empleabilidad"
+          ],
+          "canal_recomendado": "LinkedIn Oficial"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-023",
+      "autor": "Lucas Albuquerque",
+      "canal": "#dudas-langgraph",
+      "origen": "Discord_Grupo_ONE_G10",
+      "idioma": "es",
+      "texto": "Tengo dudas sobre como estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. Alguien tiene un ejemplo practico de router?",
+      "tipo_original": "pregunta_tecnica",
+      "score_relevancia": 80,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "neutral",
+      "tema_principal": "datos_ia",
+      "subtema": "nodos condicionales LangGraph",
+      "tipo_detectado": "pregunta_tecnica",
+      "rutas": [
+        "preguntas_frecuentes"
+      ],
+      "activos_generados": {
+        "preguntas_frecuentes": {
+          "tema": "Estructuración de nodos condicionales y router para reintentos en LangGraph",
+          "respuesta": "Para implementar un router o nodo condicional que maneje reintentos basados en la respuesta de un LLM en LangGraph, se evalúa el estado actual del flujo para decidir el siguiente nodo a ejecutar (por ejemplo, volver al nodo del LLM si se requiere un reintento). Como no se especificó la estructura exacta del grafo ni la lógica de validación, es necesario conocer estos detalles para brindar un ejemplo de código adaptado."
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-009",
+      "autor": "Mariana Botero",
+      "canal": "#post-lanzamiento-programa",
+      "origen": "LinkedIn_ONE_G10",
+      "idioma": "es",
+      "texto": "Excelente iniciativa, ojalá sigan creciendo este tipo de comunidades en Latinoamérica.",
+      "tipo_original": "comentario",
+      "score_relevancia": 31,
+      "elegible_contenido": false,
+      "elegible_faq": false,
+      "sentimiento": "positivo",
+      "tema_principal": "comunidad",
+      "subtema": "crecimiento de comunidades en Latinoamérica",
+      "tipo_detectado": "comentario",
+      "rutas": [],
+      "activos_generados": {},
+      "errores": []
+    },
+    {
+      "id": "int-010",
+      "autor": "Pedro Álvarez",
+      "canal": "#post-lanzamiento-programa",
+      "origen": "LinkedIn_ONE_G10",
+      "idioma": "es",
+      "texto": "Interesante propuesta, ¿tienen alguna alianza con empresas para prácticas profesionales?",
+      "tipo_original": "pregunta_programa",
+      "score_relevancia": 55,
+      "elegible_contenido": true,
+      "elegible_faq": true,
+      "sentimiento": "neutral",
+      "tema_principal": "empleabilidad",
+      "subtema": "alianza con empresas para prácticas",
+      "tipo_detectado": "pregunta_programa",
+      "rutas": [
+        "preguntas_frecuentes"
+      ],
+      "activos_generados": {
+        "preguntas_frecuentes": {
+          "tema": "Alianzas con empresas para prácticas profesionales",
+          "respuesta": "La disponibilidad de alianzas con empresas para prácticas profesionales debe confirmarse consultando la información institucional oficial vigente del programa."
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-011",
+      "autor": "Gabriela Núñez",
+      "canal": "#historias-egresados",
+      "origen": "LinkedIn_ONE_G10",
+      "idioma": "es",
+      "texto": "El networking que generé en este programa me abrió puertas para colaborar en proyectos open source.",
+      "tipo_original": "testimonio",
+      "score_relevancia": 71,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "muy_positivo",
+      "tema_principal": "comunidad",
+      "subtema": "networking para open source",
+      "tipo_detectado": "testimonio",
+      "rutas": [
+        "caso_exito",
+        "boletin",
+        "linkedin"
+      ],
+      "activos_generados": {
+        "caso_exito": {
+          "titular": "Gabriela Núñez genera networking para colaborar en proyectos open source",
+          "resumen": "Gabriela Núñez señala que el networking generado en este programa le abrió puertas para colaborar en proyectos open source. Su testimonio indica que las conexiones obtenidas estuvieron relacionadas con su participación en las actividades."
+        },
+        "boletin": {
+          "seccion": "Experiencia de comunidad",
+          "titular": "Gabriela colabora en proyectos open source gracias al networking del programa",
+          "resumen": "Gabriela destaca que el networking generado en el programa le abrió puertas para colaborar en proyectos open source."
+        },
+        "linkedin": {
+          "titulo": "Gabriela Núñez expande su colaboración en proyectos open source a través del networking",
+          "contenido": "Compartimos la experiencia de Gabriela Núñez dentro de la comunidad. Según su testimonio, el networking generado en el programa le abrió puertas para colaborar en proyectos open source.",
+          "hashtags": [
+            "#OpenSource",
+            "#Networking",
+            "#ComunidadEducativa"
+          ],
+          "canal_recomendado": "LinkedIn Oficial"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-012",
+      "autor": "Felipe Contreras",
+      "canal": "#historias-egresados",
+      "origen": "LinkedIn_ONE_G10",
+      "idioma": "es",
+      "texto": "Gracias a este bootcamp cambié de carrera a los 35 años y hoy trabajo en análisis de datos en una fintech.",
+      "tipo_original": "testimonio",
+      "score_relevancia": 80,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "muy_positivo",
+      "tema_principal": "empleabilidad",
+      "subtema": "cambio de carrera",
+      "tipo_detectado": "testimonio",
+      "rutas": [
+        "caso_exito",
+        "boletin",
+        "linkedin"
+      ],
+      "activos_generados": {
+        "caso_exito": {
+          "titular": "Felipe Contreras cambia de carrera a los 35 años y trabaja en análisis de datos en una fintech",
+          "resumen": "Felipe Contreras señala que cambió de carrera a los 35 años y actualmente trabaja en análisis de datos en una fintech. Asimismo, expresa su agradecimiento hacia el bootcamp."
+        },
+        "boletin": {
+          "seccion": "Logro de la comunidad",
+          "titular": "Felipe Contreras realiza un cambio de carrera hacia el análisis de datos en una fintech",
+          "resumen": "A los 35 años y tras participar en el bootcamp, Felipe Contreras logró cambiar de carrera y actualmente trabaja en análisis de datos dentro de una fintech."
+        },
+        "linkedin": {
+          "titulo": "Felipe Contreras realiza un cambio de carrera a los 35 años y trabaja en análisis de datos en una fintech",
+          "contenido": "Felipe Contreras comparte que, gracias al bootcamp, realizó un cambio de carrera a los 35 años. Según su testimonio, hoy en día trabaja en análisis de datos en una fintech.",
+          "hashtags": [
+            "#AnalisisDeDatos",
+            "#CambioDeCarrera",
+            "#Fintech"
+          ],
+          "canal_recomendado": "LinkedIn Oficial"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-013",
+      "autor": "Javier Fernández",
+      "canal": "#formulario-dudas",
+      "origen": "Formulario_Feedback_ONE_G10",
+      "idioma": "es",
+      "texto": "¿Cómo puedo acceder a las grabaciones de las clases si me perdí una sesión en vivo?",
+      "tipo_original": "pregunta_programa",
+      "score_relevancia": 61,
+      "elegible_contenido": true,
+      "elegible_faq": true,
+      "sentimiento": "neutral",
+      "tema_principal": "plataforma",
+      "subtema": "acceso a grabaciones",
+      "tipo_detectado": "pregunta_programa",
+      "rutas": [
+        "preguntas_frecuentes"
+      ],
+      "activos_generados": {
+        "preguntas_frecuentes": {
+          "tema": "Acceso a grabaciones de clases",
+          "respuesta": "Para conocer el procedimiento y los plazos exactos de acceso a las grabaciones de las sesiones en vivo, es necesario consultar los canales oficiales de comunicación o la plataforma del programa."
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-014",
+      "autor": "Laura Ocampo",
+      "canal": "#formulario-testimonios",
+      "origen": "Formulario_Feedback_ONE_G10",
+      "idioma": "es",
+      "texto": "El acompañamiento del mentor fue clave para entender conceptos de machine learning que antes me costaban mucho.",
+      "tipo_original": "testimonio",
+      "score_relevancia": 72,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "muy_positivo",
+      "tema_principal": "mentoria",
+      "subtema": "conceptos de machine learning",
+      "tipo_detectado": "testimonio",
+      "rutas": [
+        "caso_exito",
+        "boletin",
+        "linkedin"
+      ],
+      "activos_generados": {
+        "caso_exito": {
+          "titular": "Laura Ocampo comprende conceptos de machine learning con el apoyo de su mentor",
+          "resumen": "Laura Ocampo señala que el acompañamiento del mentor fue clave para entender conceptos de machine learning que antes le costaban mucho. No se especifican otros resultados o detalles adicionales en su testimonio."
+        },
+        "boletin": {
+          "seccion": "Aprendizaje destacado",
+          "titular": "Laura comprende conceptos complejos de machine learning gracias a su mentor",
+          "resumen": "Laura Ocampo señala que el acompañamiento de su mentor fue clave para entender conceptos de machine learning que antes le costaban mucho."
+        },
+        "linkedin": {
+          "titulo": "Laura Ocampo destaca el acompañamiento de su mentor en la comprensión de machine learning",
+          "contenido": "Desde nuestra comunidad, compartimos la experiencia de Laura Ocampo, quien expresó que el acompañamiento de su mentor fue clave para entender conceptos de machine learning que antes le costaban mucho.",
+          "hashtags": [
+            "#MachineLearning",
+            "#Mentoria",
+            "#ComunidadEducativa"
+          ],
+          "canal_recomendado": "LinkedIn Oficial"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-015",
+      "autor": "Carlos Mena",
+      "canal": "#formulario-dudas",
+      "origen": "Formulario_Feedback_ONE_G10",
+      "idioma": "es",
+      "texto": "¿Cuál es la diferencia entre las rutas de Data Analyst y Data Scientist dentro del programa?",
+      "tipo_original": "pregunta_programa",
+      "score_relevancia": 61,
+      "elegible_contenido": true,
+      "elegible_faq": true,
+      "sentimiento": "neutral",
+      "tema_principal": "programa_hackathon",
+      "subtema": "rutas de aprendizaje",
+      "tipo_detectado": "pregunta_programa",
+      "rutas": [
+        "preguntas_frecuentes"
+      ],
+      "activos_generados": {
+        "preguntas_frecuentes": {
+          "tema": "Diferencia entre las rutas de Data Analyst y Data Scientist",
+          "respuesta": "La diferencia exacta en el enfoque y contenido entre ambas rutas debe confirmarse consultando la malla curricular oficial y la información institucional vigente del programa."
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-016",
+      "autor": "Isabel Quiroga",
+      "canal": "#formulario-testimonios",
+      "origen": "Formulario_Feedback_ONE_G10",
+      "idioma": "es",
+      "texto": "Nunca pensé que podría aprender SQL y Python al mismo tiempo, pero la metodología del curso lo hizo posible.",
+      "tipo_original": "testimonio",
+      "score_relevancia": 84,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "muy_positivo",
+      "tema_principal": "aprendizaje",
+      "subtema": "SQL y Python simultáneos",
+      "tipo_detectado": "testimonio",
+      "rutas": [
+        "caso_exito",
+        "boletin",
+        "linkedin"
+      ],
+      "activos_generados": {
+        "caso_exito": {
+          "titular": "Isabel Quiroga aprende SQL y Python simultáneamente con la metodología del curso",
+          "resumen": "Isabel Quiroga señala que logró aprender SQL y Python al mismo tiempo mediante la metodología del curso. Expresa que nunca pensó que esto fuera posible."
+        },
+        "boletin": {
+          "seccion": "Aprendizaje destacado",
+          "titular": "Isabel aprende SQL y Python simultáneamente gracias a la metodología del curso",
+          "resumen": "Isabel señala que pudo aprender SQL y Python al mismo tiempo gracias a la metodología del curso, algo que inicialmente no creía posible."
+        },
+        "linkedin": {
+          "titulo": "Isabel Quiroga comparte su aprendizaje simultáneo de SQL y Python",
+          "contenido": "Isabel Quiroga comparte su experiencia al aprender SQL y Python de forma simultánea. Según su testimonio, la metodología del curso hizo posible un aprendizaje que nunca pensó que lograría.",
+          "hashtags": [
+            "#SQL",
+            "#Python",
+            "#Aprendizaje"
+          ],
+          "canal_recomendado": "LinkedIn Oficial"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-017",
+      "autor": "Marcos Villalba",
+      "canal": "categoria-python",
+      "origen": "Alura_Forum_ONE_G10",
+      "idioma": "es",
+      "texto": "Estoy atascado con un error de indentación en un bucle for anidado con pandas, ¿alguien puede revisar mi código en el tópico que abrí?",
+      "tipo_original": "pregunta_tecnica",
+      "score_relevancia": 75,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "neutral",
+      "tema_principal": "programacion",
+      "subtema": "error de indentación en pandas",
+      "tipo_detectado": "pregunta_tecnica",
+      "rutas": [
+        "preguntas_frecuentes"
+      ],
+      "activos_generados": {
+        "preguntas_frecuentes": {
+          "tema": "Error de indentación en bucles con pandas",
+          "respuesta": "Los errores de indentación en Python ocurren cuando no se respeta la correcta alineación de los espacios o tabulaciones, especialmente al usar bucles anidados. Para solucionar un error específico en tu código con pandas, es necesario revisar la estructura exacta del bloque de código afectado."
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-018",
+      "autor": "Estefanía Roldán",
+      "canal": "categoria-data-science",
+      "origen": "Alura_Forum_ONE_G10",
+      "idioma": "es",
+      "texto": "Terminé la formación de Data Science y ya estoy aplicando lo aprendido en un proyecto real de mi trabajo, el foro fue clave para resolver dudas rápido.",
+      "tipo_original": "testimonio",
+      "score_relevancia": 80,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "muy_positivo",
+      "tema_principal": "datos_ia",
+      "subtema": "aplicación real de data science",
+      "tipo_detectado": "testimonio",
+      "rutas": [
+        "caso_exito",
+        "boletin",
+        "linkedin"
+      ],
+      "activos_generados": {
+        "caso_exito": {
+          "titular": "Estefanía Roldán finaliza la formación de Data Science y aplica lo aprendido en su trabajo",
+          "resumen": "Estefanía terminó la formación de Data Science y ya está aplicando lo aprendido en un proyecto real de su trabajo. Además, señala que el foro fue clave para resolver dudas rápido."
+        },
+        "boletin": {
+          "seccion": "Logro de la comunidad",
+          "titular": "Estefanía aplica conocimientos de Data Science en su trabajo",
+          "resumen": "Estefanía terminó la formación de Data Science y ya aplica lo aprendido en un proyecto real de su trabajo, destacando que el foro fue clave para resolver dudas con rapidez."
+        },
+        "linkedin": {
+          "titulo": "Estefanía Roldán aplica los conocimientos de la formación de Data Science en un proyecto real",
+          "contenido": "Estefanía Roldán finalizó la formación de Data Science y ya se encuentra aplicando lo aprendido en un proyecto real dentro de su trabajo. Según su testimonio, el foro fue clave para resolver dudas de manera rápida durante su proceso.",
+          "hashtags": [
+            "#DataScience",
+            "#CienciaDeDatos",
+            "#FormacionTecnologica"
+          ],
+          "canal_recomendado": "LinkedIn Oficial"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-019",
+      "autor": "Joaquín Beltrán",
+      "canal": "subcategoria-javascript",
+      "origen": "Alura_Forum_ONE_G10",
+      "idioma": "es",
+      "texto": "Buen material el de la última clase de funciones asíncronas, muy claro con los ejemplos.",
+      "tipo_original": "comentario",
+      "score_relevancia": 35,
+      "elegible_contenido": false,
+      "elegible_faq": false,
+      "sentimiento": "positivo",
+      "tema_principal": "aprendizaje",
+      "subtema": "funciones asíncronas",
+      "tipo_detectado": "comentario",
+      "rutas": [],
+      "activos_generados": {},
+      "errores": []
+    },
+    {
+      "id": "int-020",
+      "autor": "Lucía Paredes",
+      "canal": "categoria-programacion-basica",
+      "origen": "Alura_Forum_ONE_G10",
+      "idioma": "es",
+      "texto": "Sugiero agregar más ejercicios prácticos antes de pasar al módulo de estructuras de datos, se siente un salto grande.",
+      "tipo_original": "feedback",
+      "score_relevancia": 64,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "neutral",
+      "tema_principal": "programacion",
+      "subtema": "ejercicios prácticos",
+      "tipo_detectado": "feedback",
+      "rutas": [
+        "insight_mejora"
+      ],
+      "activos_generados": {
+        "insight_mejora": {
+          "hallazgo": "Se percibe un incremento abrupto en la dificultad antes de iniciar el módulo de estructuras de datos.",
+          "sugerencia_detectada": "Agregar más ejercicios prácticos antes de pasar al módulo de estructuras de datos.",
+          "area": "programacion"
+        }
+      },
+      "errores": []
+    },
+    {
+      "id": "int-021",
+      "autor": "Tomás Ibáñez",
+      "canal": "categoria-front-end",
+      "origen": "Alura_Forum_ONE_G10",
+      "idioma": "es",
+      "texto": "¿Cuál es la diferencia práctica entre usar Grid y Flexbox para un layout de dashboard? En el tópico nadie me respondió todavía.",
+      "tipo_original": "pregunta_tecnica",
+      "score_relevancia": 70,
+      "elegible_contenido": true,
+      "elegible_faq": false,
+      "sentimiento": "neutral",
+      "tema_principal": "programacion",
+      "subtema": "Grid y Flexbox",
+      "tipo_detectado": "pregunta_tecnica",
+      "rutas": [
+        "preguntas_frecuentes"
+      ],
+      "activos_generados": {
+        "preguntas_frecuentes": {
+          "tema": "Diferencia práctica entre Grid y Flexbox para layouts de dashboard",
+          "respuesta": "En términos generales, CSS Grid está diseñado para layouts bidimensionales (filas y columnas simultáneamente), lo cual suele ser útil para la estructura general de un dashboard. Por otro lado, Flexbox está optimizado para distribuciones unidimensionales (en una sola dirección, ya sea en fila o en columna), ideal para alinear elementos dentro de un mismo componente. Para una respuesta más precisa adaptada a tu diseño específico, sería necesario conocer la estructura exacta de tu dashboard."
+        }
+      },
+      "errores": []
+    }
+  ],
+  "activos": [
+    {
+      "id_interaccion": "int-001",
+      "tipo": "caso_exito",
+      "contenido": {
+        "titular": "Camila Restrepo consigue su primer trabajo como analista de datos en menos de 3 meses",
+        "resumen": "Camila señala que consiguió su primer trabajo como analista de datos en menos de 3 meses gracias a este programa. También indica que el proyecto final de su portfolio fue clave en la entrevista técnica."
+      }
+    },
+    {
+      "id_interaccion": "int-001",
+      "tipo": "boletin",
+      "contenido": {
+        "seccion": "Logro de la comunidad",
+        "titular": "Camila consigue su primer trabajo como analista de datos",
+        "resumen": "Camila consiguió su primer trabajo como analista de datos en menos de 3 meses gracias al programa. Señaló que el proyecto final de su portfolio fue clave en la entrevista técnica."
+      }
+    },
+    {
+      "id_interaccion": "int-001",
+      "tipo": "linkedin",
+      "contenido": {
+        "titulo": "Camila Restrepo consigue su primer trabajo como analista de datos",
+        "contenido": "Compartimos el logro de Camila Restrepo, quien consiguió su primer trabajo como analista de datos en menos de 3 meses gracias a este programa. Según su testimonio, el proyecto final de su portfolio fue clave en la entrevista técnica.",
+        "hashtags": [
+          "#AnalistaDeDatos",
+          "#Empleabilidad",
+          "#DataAnalytics"
+        ],
+        "canal_recomendado": "LinkedIn Oficial"
+      }
+    },
+    {
+      "id_interaccion": "int-002",
+      "tipo": "preguntas_frecuentes",
+      "contenido": {
+        "tema": "Estructuración de nodos condicionales y reintentos en LangGraph",
+        "respuesta": "Para estructurar nodos condicionales en LangGraph que manejen reintentos basados en la respuesta de un LLM, se suele utilizar una función de enrutamiento que evalúa el estado actual y decide si el flujo debe dirigirse hacia un nodo de procesamiento posterior o regresar al nodo del LLM. Dado que no se cuenta con el código ni con la estructura exacta del grafo actual, sería necesario revisar dichos detalles para ofrecer una implementación específica."
+      }
+    },
+    {
+      "id_interaccion": "int-003",
+      "tipo": "caso_exito",
+      "contenido": {
+        "titular": "Andrés Kuri construye su primer modelo de clasificación en 6 semanas tras pasar de no saber programar",
+        "resumen": "Andrés Kuri pasó de no saber programar a construir su primer modelo de clasificación en 6 semanas. Asimismo, expresó su agradecimiento hacia la comunidad y los mentores."
+      }
+    },
+    {
+      "id_interaccion": "int-003",
+      "tipo": "boletin",
+      "contenido": {
+        "seccion": "Logro de la comunidad",
+        "titular": "Andrés construye su primer modelo de clasificación",
+        "resumen": "Andrés pasó de no saber programar a construir su primer modelo de clasificación en 6 semanas y expresó su agradecimiento a la comunidad y los mentores."
+      }
+    },
+    {
+      "id_interaccion": "int-003",
+      "tipo": "linkedin",
+      "contenido": {
+        "titulo": "Andrés Kuri construye su primer modelo de clasificación en seis semanas",
+        "contenido": "Compartimos el recorrido de Andrés Kuri, quien logró construir su primer modelo de clasificación en seis semanas tras iniciar sin conocimientos previos de programación. Según su testimonio, Andrés expresó su agradecimiento hacia la comunidad y los mentores.",
+        "hashtags": [
+          "#ModeloDeClasificacion",
+          "#Programacion",
+          "#Aprendizaje"
+        ],
+        "canal_recomendado": "LinkedIn Oficial"
+      }
+    },
+    {
+      "id_interaccion": "int-004",
+      "tipo": "preguntas_frecuentes",
+      "contenido": {
+        "tema": "Costo del certificado final",
+        "respuesta": "La información sobre si el certificado final tiene un costo adicional o se encuentra incluido debe confirmarse directamente con los canales de atención oficiales del programa."
+      }
+    },
+    {
+      "id_interaccion": "int-006",
+      "tipo": "insight_mejora",
+      "contenido": {
+        "hallazgo": "Se señala la necesidad de contar con más talleres prácticos sobre despliegue de modelos en la nube antes del hackathon.",
+        "sugerencia_detectada": "Tener más talleres prácticos sobre despliegue de modelos en la nube antes del hackathon.",
+        "area": "cloud_infraestructura"
+      }
+    },
+    {
+      "id_interaccion": "int-007",
+      "tipo": "preguntas_frecuentes",
+      "contenido": {
+        "tema": "Fecha límite de inscripción al hackathon",
+        "respuesta": "La posibilidad de inscribirse al hackathon después de la semana 0 y su fecha límite correspondiente deben confirmarse directamente con la información oficial y vigente del programa."
+      }
+    },
+    {
+      "id_interaccion": "int-022",
+      "tipo": "caso_exito",
+      "contenido": {
+        "titular": "Mariana es seleccionada para el puesto de Desarrolladora Junior de IA",
+        "resumen": "Mariana fue seleccionada para el puesto de Desarrolladora Junior de IA. Señala que el proyecto del curso de LangChain y OCI que construyó en su portfolio marcó la diferencia en la entrevista técnica. Asimismo, expresó su agradecimiento con la comunidad por el apoyo."
+      }
+    },
+    {
+      "id_interaccion": "int-022",
+      "tipo": "boletin",
+      "contenido": {
+        "seccion": "Logro de la comunidad",
+        "titular": "Mariana es seleccionada como Desarrolladora Junior de IA",
+        "resumen": "Mariana quedó seleccionada para el puesto de Desarrolladora Junior de IA y expresó su agradecimiento a la comunidad. Según su testimonio, el proyecto del curso de LangChain y OCI en su portfolio marcó la diferencia en la entrevista técnica."
+      }
+    },
+    {
+      "id_interaccion": "int-022",
+      "tipo": "linkedin",
+      "contenido": {
+        "titulo": "Mariana Souza es seleccionada como Desarrolladora Junior de IA",
+        "contenido": "Mariana Souza fue seleccionada para el puesto de Desarrolladora Junior de IA. Según su testimonio, el proyecto del curso de LangChain y OCI que construyó en su portfolio marcó toda la diferencia en la entrevista técnica. Mariana expresó su agradecimiento con la comunidad por todo el apoyo.",
+        "hashtags": [
+          "#LangChain",
+          "#OCI",
+          "#InteligenciaArtificial",
+          "#Empleabilidad"
+        ],
+        "canal_recomendado": "LinkedIn Oficial"
+      }
+    },
+    {
+      "id_interaccion": "int-023",
+      "tipo": "preguntas_frecuentes",
+      "contenido": {
+        "tema": "Estructuración de nodos condicionales y router para reintentos en LangGraph",
+        "respuesta": "Para implementar un router o nodo condicional que maneje reintentos basados en la respuesta de un LLM en LangGraph, se evalúa el estado actual del flujo para decidir el siguiente nodo a ejecutar (por ejemplo, volver al nodo del LLM si se requiere un reintento). Como no se especificó la estructura exacta del grafo ni la lógica de validación, es necesario conocer estos detalles para brindar un ejemplo de código adaptado."
+      }
+    },
+    {
+      "id_interaccion": "int-010",
+      "tipo": "preguntas_frecuentes",
+      "contenido": {
+        "tema": "Alianzas con empresas para prácticas profesionales",
+        "respuesta": "La disponibilidad de alianzas con empresas para prácticas profesionales debe confirmarse consultando la información institucional oficial vigente del programa."
+      }
+    },
+    {
+      "id_interaccion": "int-011",
+      "tipo": "caso_exito",
+      "contenido": {
+        "titular": "Gabriela Núñez genera networking para colaborar en proyectos open source",
+        "resumen": "Gabriela Núñez señala que el networking generado en este programa le abrió puertas para colaborar en proyectos open source. Su testimonio indica que las conexiones obtenidas estuvieron relacionadas con su participación en las actividades."
+      }
+    },
+    {
+      "id_interaccion": "int-011",
+      "tipo": "boletin",
+      "contenido": {
+        "seccion": "Experiencia de comunidad",
+        "titular": "Gabriela colabora en proyectos open source gracias al networking del programa",
+        "resumen": "Gabriela destaca que el networking generado en el programa le abrió puertas para colaborar en proyectos open source."
+      }
+    },
+    {
+      "id_interaccion": "int-011",
+      "tipo": "linkedin",
+      "contenido": {
+        "titulo": "Gabriela Núñez expande su colaboración en proyectos open source a través del networking",
+        "contenido": "Compartimos la experiencia de Gabriela Núñez dentro de la comunidad. Según su testimonio, el networking generado en el programa le abrió puertas para colaborar en proyectos open source.",
+        "hashtags": [
+          "#OpenSource",
+          "#Networking",
+          "#ComunidadEducativa"
+        ],
+        "canal_recomendado": "LinkedIn Oficial"
+      }
+    },
+    {
+      "id_interaccion": "int-012",
+      "tipo": "caso_exito",
+      "contenido": {
+        "titular": "Felipe Contreras cambia de carrera a los 35 años y trabaja en análisis de datos en una fintech",
+        "resumen": "Felipe Contreras señala que cambió de carrera a los 35 años y actualmente trabaja en análisis de datos en una fintech. Asimismo, expresa su agradecimiento hacia el bootcamp."
+      }
+    },
+    {
+      "id_interaccion": "int-012",
+      "tipo": "boletin",
+      "contenido": {
+        "seccion": "Logro de la comunidad",
+        "titular": "Felipe Contreras realiza un cambio de carrera hacia el análisis de datos en una fintech",
+        "resumen": "A los 35 años y tras participar en el bootcamp, Felipe Contreras logró cambiar de carrera y actualmente trabaja en análisis de datos dentro de una fintech."
+      }
+    },
+    {
+      "id_interaccion": "int-012",
+      "tipo": "linkedin",
+      "contenido": {
+        "titulo": "Felipe Contreras realiza un cambio de carrera a los 35 años y trabaja en análisis de datos en una fintech",
+        "contenido": "Felipe Contreras comparte que, gracias al bootcamp, realizó un cambio de carrera a los 35 años. Según su testimonio, hoy en día trabaja en análisis de datos en una fintech.",
+        "hashtags": [
+          "#AnalisisDeDatos",
+          "#CambioDeCarrera",
+          "#Fintech"
+        ],
+        "canal_recomendado": "LinkedIn Oficial"
+      }
+    },
+    {
+      "id_interaccion": "int-013",
+      "tipo": "preguntas_frecuentes",
+      "contenido": {
+        "tema": "Acceso a grabaciones de clases",
+        "respuesta": "Para conocer el procedimiento y los plazos exactos de acceso a las grabaciones de las sesiones en vivo, es necesario consultar los canales oficiales de comunicación o la plataforma del programa."
+      }
+    },
+    {
+      "id_interaccion": "int-014",
+      "tipo": "caso_exito",
+      "contenido": {
+        "titular": "Laura Ocampo comprende conceptos de machine learning con el apoyo de su mentor",
+        "resumen": "Laura Ocampo señala que el acompañamiento del mentor fue clave para entender conceptos de machine learning que antes le costaban mucho. No se especifican otros resultados o detalles adicionales en su testimonio."
+      }
+    },
+    {
+      "id_interaccion": "int-014",
+      "tipo": "boletin",
+      "contenido": {
+        "seccion": "Aprendizaje destacado",
+        "titular": "Laura comprende conceptos complejos de machine learning gracias a su mentor",
+        "resumen": "Laura Ocampo señala que el acompañamiento de su mentor fue clave para entender conceptos de machine learning que antes le costaban mucho."
+      }
+    },
+    {
+      "id_interaccion": "int-014",
+      "tipo": "linkedin",
+      "contenido": {
+        "titulo": "Laura Ocampo destaca el acompañamiento de su mentor en la comprensión de machine learning",
+        "contenido": "Desde nuestra comunidad, compartimos la experiencia de Laura Ocampo, quien expresó que el acompañamiento de su mentor fue clave para entender conceptos de machine learning que antes le costaban mucho.",
+        "hashtags": [
+          "#MachineLearning",
+          "#Mentoria",
+          "#ComunidadEducativa"
+        ],
+        "canal_recomendado": "LinkedIn Oficial"
+      }
+    },
+    {
+      "id_interaccion": "int-015",
+      "tipo": "preguntas_frecuentes",
+      "contenido": {
+        "tema": "Diferencia entre las rutas de Data Analyst y Data Scientist",
+        "respuesta": "La diferencia exacta en el enfoque y contenido entre ambas rutas debe confirmarse consultando la malla curricular oficial y la información institucional vigente del programa."
+      }
+    },
+    {
+      "id_interaccion": "int-016",
+      "tipo": "caso_exito",
+      "contenido": {
+        "titular": "Isabel Quiroga aprende SQL y Python simultáneamente con la metodología del curso",
+        "resumen": "Isabel Quiroga señala que logró aprender SQL y Python al mismo tiempo mediante la metodología del curso. Expresa que nunca pensó que esto fuera posible."
+      }
+    },
+    {
+      "id_interaccion": "int-016",
+      "tipo": "boletin",
+      "contenido": {
+        "seccion": "Aprendizaje destacado",
+        "titular": "Isabel aprende SQL y Python simultáneamente gracias a la metodología del curso",
+        "resumen": "Isabel señala que pudo aprender SQL y Python al mismo tiempo gracias a la metodología del curso, algo que inicialmente no creía posible."
+      }
+    },
+    {
+      "id_interaccion": "int-016",
+      "tipo": "linkedin",
+      "contenido": {
+        "titulo": "Isabel Quiroga comparte su aprendizaje simultáneo de SQL y Python",
+        "contenido": "Isabel Quiroga comparte su experiencia al aprender SQL y Python de forma simultánea. Según su testimonio, la metodología del curso hizo posible un aprendizaje que nunca pensó que lograría.",
+        "hashtags": [
+          "#SQL",
+          "#Python",
+          "#Aprendizaje"
+        ],
+        "canal_recomendado": "LinkedIn Oficial"
+      }
+    },
+    {
+      "id_interaccion": "int-017",
+      "tipo": "preguntas_frecuentes",
+      "contenido": {
+        "tema": "Error de indentación en bucles con pandas",
+        "respuesta": "Los errores de indentación en Python ocurren cuando no se respeta la correcta alineación de los espacios o tabulaciones, especialmente al usar bucles anidados. Para solucionar un error específico en tu código con pandas, es necesario revisar la estructura exacta del bloque de código afectado."
+      }
+    },
+    {
+      "id_interaccion": "int-018",
+      "tipo": "caso_exito",
+      "contenido": {
+        "titular": "Estefanía Roldán finaliza la formación de Data Science y aplica lo aprendido en su trabajo",
+        "resumen": "Estefanía terminó la formación de Data Science y ya está aplicando lo aprendido en un proyecto real de su trabajo. Además, señala que el foro fue clave para resolver dudas rápido."
+      }
+    },
+    {
+      "id_interaccion": "int-018",
+      "tipo": "boletin",
+      "contenido": {
+        "seccion": "Logro de la comunidad",
+        "titular": "Estefanía aplica conocimientos de Data Science en su trabajo",
+        "resumen": "Estefanía terminó la formación de Data Science y ya aplica lo aprendido en un proyecto real de su trabajo, destacando que el foro fue clave para resolver dudas con rapidez."
+      }
+    },
+    {
+      "id_interaccion": "int-018",
+      "tipo": "linkedin",
+      "contenido": {
+        "titulo": "Estefanía Roldán aplica los conocimientos de la formación de Data Science en un proyecto real",
+        "contenido": "Estefanía Roldán finalizó la formación de Data Science y ya se encuentra aplicando lo aprendido en un proyecto real dentro de su trabajo. Según su testimonio, el foro fue clave para resolver dudas de manera rápida durante su proceso.",
+        "hashtags": [
+          "#DataScience",
+          "#CienciaDeDatos",
+          "#FormacionTecnologica"
+        ],
+        "canal_recomendado": "LinkedIn Oficial"
+      }
+    },
+    {
+      "id_interaccion": "int-020",
+      "tipo": "insight_mejora",
+      "contenido": {
+        "hallazgo": "Se percibe un incremento abrupto en la dificultad antes de iniciar el módulo de estructuras de datos.",
+        "sugerencia_detectada": "Agregar más ejercicios prácticos antes de pasar al módulo de estructuras de datos.",
+        "area": "programacion"
+      }
+    },
+    {
+      "id_interaccion": "int-021",
+      "tipo": "preguntas_frecuentes",
+      "contenido": {
+        "tema": "Diferencia práctica entre Grid y Flexbox para layouts de dashboard",
+        "respuesta": "En términos generales, CSS Grid está diseñado para layouts bidimensionales (filas y columnas simultáneamente), lo cual suele ser útil para la estructura general de un dashboard. Por otro lado, Flexbox está optimizado para distribuciones unidimensionales (en una sola dirección, ya sea en fila o en columna), ideal para alinear elementos dentro de un mismo componente. Para una respuesta más precisa adaptada a tu diseño específico, sería necesario conocer la estructura exacta de tu dashboard."
+      }
+    }
+  ],
+  "pendientes": [],
+  "ids_pendientes": []
+}

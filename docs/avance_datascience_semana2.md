@@ -51,6 +51,7 @@ Data Science consume la salida preparada por Data y no recalcula:
 
 - `score_relevancia`
 - `tipo_original`
+- `elegible_faq`
 - `ids_contenido`
 - ciclos de procesamiento
 - estados pendientes
@@ -61,7 +62,7 @@ La responsabilidad de Data Science comienza a partir del paquete recibido.
 
 ## 3. Análisis estructurado
 
-El análisis realizado con Gemini produce campos estructurados que luego son utilizados por LangGraph.
+El análisis realizado con Gemini produce campos estructurados utilizados posteriormente por LangGraph.
 
 Entre los campos principales se encuentran:
 
@@ -86,7 +87,9 @@ Los tipos detectados actualmente son:
 - `feedback`
 - `comentario`
 
-La categoría `pregunta_programa` se incorporó para diferenciar preguntas administrativas o relacionadas con el funcionamiento del programa, por ejemplo:
+### Preguntas del programa
+
+La categoría `pregunta_programa` diferencia preguntas administrativas o relacionadas con el funcionamiento del programa, por ejemplo:
 
 - costo de certificados;
 - fechas de inscripción;
@@ -95,7 +98,17 @@ La categoría `pregunta_programa` se incorporó para diferenciar preguntas admin
 - alianzas con empresas;
 - consultas generales del programa.
 
-Estas preguntas son identificadas correctamente por Data Science, pero por ahora no generan FAQ hasta que Data entregue un criterio específico como `elegible_faq`.
+Data incorpora el campo `elegible_faq`, calculado previamente a partir de sus reglas de relevancia. Data Science consume este valor sin recalcularlo y lo utiliza como criterio específico para decidir si una pregunta del programa puede generar una FAQ.
+
+La regla integrada es:
+
+```text
+pregunta_programa + elegible_faq = true
+    ↓
+preguntas_frecuentes
+```
+
+El campo `elegible_faq` se conserva también en el contrato de salida para mantener trazabilidad sobre la decisión tomada por Data.
 
 El resultado del procesamiento se mantiene como una estructura de Python serializable a JSON, facilitando su uso posterior en interfaz, API, reporting u OCI.
 
@@ -103,38 +116,22 @@ Ejemplo conceptual:
 
 ```json
 {
-  "id": "int-022",
-  "sentimiento": "muy_positivo",
-  "tema_principal": "empleabilidad",
-  "subtema": "Desarrolladora Junior de IA",
-  "tipo_original": "testimonio",
-  "tipo_detectado": "testimonio",
-  "score_relevancia": 95,
+  "id": "int-004",
+  "tipo_original": "pregunta_programa",
+  "score_relevancia": 62,
   "elegible_contenido": true,
+  "elegible_faq": true,
+  "sentimiento": "neutral",
+  "tema_principal": "certificacion",
+  "subtema": "costo del certificado",
+  "tipo_detectado": "pregunta_programa",
   "rutas": [
-    "caso_exito",
-    "boletin",
-    "linkedin"
+    "preguntas_frecuentes"
   ],
   "activos_generados": {
-    "caso_exito": {
-      "titular": "...",
-      "resumen": "..."
-    },
-    "boletin": {
-      "seccion": "Logro de la comunidad",
-      "titular": "...",
-      "resumen": "..."
-    },
-    "linkedin": {
-      "titulo": "...",
-      "contenido": "...",
-      "hashtags": [
-        "#LangChain",
-        "#OCI",
-        "#InteligenciaArtificial"
-      ],
-      "canal_recomendado": "LinkedIn Oficial"
+    "preguntas_frecuentes": {
+      "tema": "Costo del certificado final",
+      "respuesta": "..."
     }
   },
   "errores": []
@@ -165,7 +162,7 @@ Los prompts incluyen:
 - formato esperado;
 - restricciones contra información inventada;
 - ejemplos Few-Shot;
-- uso exclusivo de información presente en la interacción;
+- uso exclusivo de información disponible en la interacción cuando corresponde;
 - reglas de atribución cuando una afirmación corresponde a la percepción del autor;
 - control de inferencias causales;
 - control de referencias temporales;
@@ -173,7 +170,7 @@ Los prompts incluyen:
 
 ### LinkedIn
 
-La salida de LinkedIn quedó estructurada en:
+La salida de LinkedIn está estructurada en:
 
 - `titulo`
 - `contenido`
@@ -191,6 +188,43 @@ La salida contiene:
 - `seccion`
 - `titular`
 - `resumen`
+
+### Preguntas frecuentes
+
+El generador de FAQ soporta actualmente dos tipos de interacción:
+
+- `pregunta_tecnica`
+- `pregunta_programa`
+
+Para preguntas técnicas, el prompt busca producir respuestas breves y didácticas.
+
+Para `pregunta_programa`, se incorporaron reglas adicionales de seguridad:
+
+- no inventar precios, fechas, condiciones, beneficios o procedimientos;
+- no asumir características institucionales no proporcionadas;
+- indicar cuando la información debe confirmarse mediante una fuente oficial vigente;
+- mantener la respuesta como propuesta sujeta a posterior validación humana.
+
+El prompt incluye ejemplos Few-Shot diferenciados para preguntas técnicas y preguntas del programa.
+
+### Caso de éxito
+
+El prompt diferencia entre:
+
+- hechos presentes en el mensaje;
+- interpretaciones expresadas por la persona;
+- relaciones causales explícitas;
+- inferencias que no deben añadirse.
+
+Por ejemplo, evita transformar:
+
+`"el proyecto marcó la diferencia"`
+
+en una afirmación más fuerte como:
+
+`"consiguió el puesto gracias al proyecto"`
+
+si esa relación causal no aparece explícitamente en el mensaje original.
 
 ### Insight de mejora
 
@@ -241,28 +275,9 @@ El Few-Shot ayuda a generar:
 - respuestas técnicas breves;
 - explicaciones didácticas;
 - respuestas prudentes cuando falta información;
-- contenido sin comandos, configuraciones o datos inventados.
-
-Por ahora este generador se utiliza únicamente con `pregunta_tecnica`.
-
-### Caso de éxito
-
-El prompt diferencia entre:
-
-- hechos presentes en el mensaje;
-- interpretaciones expresadas por la persona;
-- relaciones causales explícitas;
-- inferencias que no deben añadirse.
-
-Por ejemplo, evita transformar:
-
-`"el proyecto marcó la diferencia"`
-
-en una afirmación más fuerte como:
-
-`"consiguió el puesto gracias al proyecto"`
-
-si esa relación causal no aparece explícitamente en el mensaje original.
+- contenido sin comandos, configuraciones o datos inventados;
+- comportamiento diferenciado entre `pregunta_tecnica` y `pregunta_programa`;
+- respuestas institucionales prudentes y sujetas a validación oficial cuando corresponde.
 
 ### Insight de mejora
 
@@ -315,10 +330,14 @@ insight_mejora
 ```
 
 ```text
-pregunta_programa
+pregunta_programa + elegible_faq = true
     ↓
-sin ruta por ahora
+preguntas_frecuentes
 ```
+
+Para `pregunta_programa`, la elegibilidad específica `elegible_faq` controla esta ruta. Si el campo no existe o es `false`, no se genera una FAQ.
+
+La decisión de `elegible_faq` pertenece a Data; Data Science únicamente la consume durante el routing.
 
 Los mensajes que no son elegibles para generación de contenido continúan recibiendo análisis de sentimiento, tema, subtema y tipo detectado, pero no generan rutas ni activos.
 
@@ -326,7 +345,7 @@ Los mensajes que no son elegibles para generación de contenido continúan recib
 
 ## 7. Control de cuota y estabilidad de Gemini
 
-Durante las pruebas E2E se detectó un error `429 RESOURCE_EXHAUSTED` debido al límite de solicitudes por minuto del modelo Gemini utilizado.
+Durante las pruebas E2E se detectó previamente un error `429 RESOURCE_EXHAUSTED` debido al límite de solicitudes por minuto del modelo Gemini utilizado.
 
 Para estabilizar las ejecuciones se actualizó el cliente compartido de Gemini en:
 
@@ -334,18 +353,14 @@ Para estabilizar las ejecuciones se actualizó el cliente compartido de Gemini e
 
 Se incorporaron:
 
-- `InMemoryRateLimiter`
+- `InMemoryRateLimiter`;
 - límite aproximado de 12 solicitudes por minuto;
 - `max_retries=6`;
 - cliente compartido mediante `lru_cache`.
 
 El objetivo es evitar ráfagas de solicitudes y permitir que el flujo completo finalice sin errores de cuota.
 
-Después del ajuste, la prueba completa de 23 interacciones finalizó con:
-
-```text
-0 errores
-```
+La prueba E2E integrada de 23 interacciones finalizó sin errores de ejecución.
 
 ---
 
@@ -358,11 +373,12 @@ Se utiliza:
 Los tests verifican:
 
 - presencia de Few-Shot;
-- uso de ejemplos de referencia;
 - renderizado correcto de variables;
 - reglas contra información inventada;
 - estructura de los prompts;
-- comportamiento esperado de LinkedIn, Boletín, FAQ y Caso de Éxito.
+- comportamiento esperado de LinkedIn, Boletín, FAQ y Caso de Éxito;
+- comportamiento diferenciado entre `pregunta_tecnica` y `pregunta_programa`;
+- prohibición de inventar información institucional en FAQ de programa.
 
 Comando:
 
@@ -370,10 +386,10 @@ Comando:
 python -m pytest tests\agents\test_prompts_generadores.py -q
 ```
 
-Resultado obtenido:
+Resultado validado:
 
 ```text
-5 passed
+6 passed
 ```
 
 ---
@@ -386,76 +402,78 @@ Se actualizaron las pruebas del router para incluir:
 - testimonio neutral → `caso_exito`, `boletin`;
 - feedback relevante → `insight_mejora`;
 - feedback de baja relevancia → sin ruta;
-- preguntas técnicas → `preguntas_frecuentes`.
+- pregunta técnica elegible → `preguntas_frecuentes`;
+- `pregunta_programa` + `elegible_faq=true` → `preguntas_frecuentes`;
+- `pregunta_programa` + `elegible_faq=false` → sin ruta;
+- compatibilidad cuando `elegible_faq` no está presente.
 
-Comando utilizado:
+Comando:
 
 ```powershell
 python -m pytest tests\agents\test_enrutador.py -q
 ```
 
-Resultado obtenido:
+Resultado validado:
 
 ```text
-8 passed
+11 passed
+```
+
+La validación conjunta de router y prompts produjo:
+
+```text
+17 passed
 ```
 
 ---
 
 ## 10. Suite de regresión
 
-Después de incorporar los cambios de Semana 2 se ejecutó la suite completa del proyecto.
-
-Comando:
+Después de incorporar los cambios de `elegible_faq`, routing y contrato 1.1 se ejecutó la suite completa del proyecto con:
 
 ```powershell
 python -m pytest -q
 ```
 
-Resultado:
+La suite finalizó correctamente sin fallos.
 
-```text
-93 passed
-106 subtests passed
-0 failures
-```
-
-Puede aparecer un warning proveniente de la dependencia `google.genai`, sin afectar la ejecución funcional del proyecto.
+Puede aparecer un `DeprecationWarning` proveniente de la dependencia `google.genai`. La advertencia es externa y no afecta la ejecución funcional del proyecto.
 
 ---
 
 ## 11. Validación funcional con Gemini
 
-Se realizaron pruebas individuales con Gemini para validar clasificación, routing y generación.
+Se realizaron pruebas con Gemini para validar clasificación, routing y generación.
 
 ### Preguntas de programa
 
-Se validaron ejemplos como:
+Se validó la integración real entre la rama de Data y Data Science utilizando cinco preguntas de programa:
 
-- costo del certificado;
-- inscripción al hackathon;
-- acceso a grabaciones;
-- diferencias entre Data Analyst y Data Scientist.
+- `int-004`: costo del certificado;
+- `int-007`: fecha límite de inscripción al hackathon;
+- `int-010`: alianzas con empresas para prácticas;
+- `int-013`: acceso a grabaciones;
+- `int-015`: diferencias entre rutas de aprendizaje.
 
-Resultado esperado:
+Los cinco estados fueron entregados por Data con:
 
 ```text
-tipo_detectado: pregunta_programa
-rutas: []
+tipo_original: pregunta_programa
+elegible_faq: true
 ```
 
-Este comportamiento es temporal hasta integrar el futuro criterio `elegible_faq` proveniente de Data.
+Data Science los clasificó también como `pregunta_programa` y ejecutó:
+
+```text
+rutas:
+- preguntas_frecuentes
+```
+
+Las respuestas generadas mantuvieron un comportamiento prudente: no inventaron precios, fechas, alianzas, procedimientos ni características institucionales y recomendaron consultar información oficial vigente cuando los datos no estaban disponibles en la interacción.
 
 ### Feedback
 
-Ejemplo:
-
-```text
-"Sugiero agregar más ejercicios prácticos antes de pasar al módulo
-de estructuras de datos, se siente un salto grande."
-```
-
-Resultado:
+Los mensajes de feedback elegibles generan:
 
 ```text
 tipo_detectado: feedback
@@ -463,13 +481,7 @@ ruta:
 - insight_mejora
 ```
 
-Activo generado:
-
-```text
-hallazgo: Se percibe un salto importante antes del módulo de estructuras de datos.
-sugerencia_detectada: Agregar más ejercicios prácticos antes de avanzar al módulo.
-area: programacion
-```
+El activo conserva el hallazgo, la sugerencia explícita cuando existe y el área asociada.
 
 ### Testimonio
 
@@ -487,11 +499,7 @@ LinkedIn entrega hashtags como estructura independiente.
 
 ## 12. Prueba E2E del paquete completo de Data
 
-La prueba de integración:
-
-`tests/integracion/prueba_paquete_completo_datos.py`
-
-valida el flujo completo:
+La prueba funcional utiliza el flujo:
 
 ```text
 mensajes_comunidad_simulados.json
@@ -511,60 +519,69 @@ LangGraph
 routing
     ↓
 activos generados
+    ↓
+contrato DS 1.1
 ```
 
-Resultado final validado:
+Antes de ejecutar Gemini se validó directamente el paquete generado por Data:
+
+```text
+Total estados: 23
+Elegibles contenido: 19
+Elegibles FAQ: 5
+```
+
+Estados con `elegible_faq=true`:
+
+```text
+int-004 | pregunta_programa | score 62
+int-007 | pregunta_programa | score 59
+int-010 | pregunta_programa | score 55
+int-013 | pregunta_programa | score 61
+int-015 | pregunta_programa | score 61
+```
+
+Resultado final del E2E:
 
 ```text
 Estados recibidos de Data: 23
 Estados procesados por Data Science: 23
 Estados pendientes: 0
-Elegibles para contenido: 14
-Con activos generados: 14
-Con errores de ejecución: 0
+Elegibles para contenido: 19
+Elegibles para FAQ: 5
+Activos individuales generados: 35
+Resultados con errores: 0
+Contrato: 1.1
 ```
 
-Distribución observada en la ejecución final:
-
-```text
-Tipos detectados:
-- testimonio: 8
-- pregunta_tecnica: 4
-- pregunta_programa: 5
-- comentario: 4
-- feedback: 2
-```
-
-Rutas ejecutadas:
+Distribución funcional de activos:
 
 ```text
 - caso_exito: 8
 - boletin: 8
 - linkedin: 8
-- preguntas_frecuentes: 4
+- preguntas_frecuentes: 9
 - insight_mejora: 2
+
+TOTAL: 35 activos
 ```
 
-Activos generados:
+Las 9 FAQ corresponden a:
 
 ```text
-- caso_exito: 8
-- boletin: 8
-- linkedin: 8
-- preguntas_frecuentes: 4
-- insight_mejora: 2
-
-TOTAL: 30 activos
+4 preguntas técnicas
++
+5 preguntas del programa
 ```
 
-La ejecución E2E finalizó correctamente con:
+La ejecución funcional completa finalizó con:
 
 ```text
 1 passed
 0 errores
 ```
 
-La prueba confirmó además que los mensajes no elegibles para contenido igualmente reciben análisis de Data Science, pero no generan rutas ni activos.
+La integración E2E tardó aproximadamente 3 minutos y 20 segundos debido al rate limiting configurado para proteger la cuota de Gemini.
 
 ---
 
@@ -581,14 +598,14 @@ Archivos principales:
 Versión actual:
 
 ```text
-1.0
+1.1
 ```
 
 La estructura principal del contrato es:
 
 ```json
 {
-  "version_contrato": "1.0",
+  "version_contrato": "1.1",
   "resumen_comunidad": {},
   "interacciones": [],
   "activos": [],
@@ -603,7 +620,8 @@ Incluye, entre otros:
 
 - total de interacciones procesadas;
 - total de pendientes;
-- total de elegibles;
+- total de elegibles para contenido;
+- `total_elegibles_faq`;
 - total con activos;
 - total de activos generados;
 - total con errores;
@@ -621,10 +639,13 @@ Cada interacción mantiene trazabilidad de:
 - `tipo_original`;
 - `score_relevancia`;
 - `elegible_contenido`;
+- `elegible_faq`;
 - análisis DS;
 - rutas;
 - activos generados;
 - errores.
+
+Para mantener compatibilidad con paquetes anteriores de Data, si `elegible_faq` no está presente se expone como `false` en el contrato de salida.
 
 ### activos
 
@@ -655,7 +676,7 @@ resultado interno DS
     ↓
 entrega_resultados.py
     ↓
-contrato oficial DS v1.0
+contrato oficial DS v1.1
 ```
 
 Al finalizar genera:
@@ -665,14 +686,15 @@ output\entrega_ciencia_datos_completa.json
 output\resumen_entrega_ciencia_datos.txt
 ```
 
-Resultado validado en la ejecución final:
+Resultado validado con Data + Data Science:
 
 ```text
 total_interacciones_procesadas: 23
 total_pendientes: 0
-total_elegibles_contenido: 14
-total_con_activos: 14
-total_activos_generados: 30
+total_elegibles_contenido: 19
+total_elegibles_faq: 5
+total_con_activos: 19
+total_activos_generados: 35
 total_con_errores: 0
 ```
 
@@ -696,7 +718,7 @@ y representa la salida oficial actual del módulo de Data Science.
 |---|---|
 | Prompt LinkedIn | Completado |
 | Prompt Boletín / Community Highlight | Completado |
-| Prompt FAQ técnica | Completado |
+| Prompt FAQ técnica y de programa | Completado |
 | Prompt Caso de Éxito | Completado |
 | Prompt Insight de Mejora | Completado |
 | Few-Shot Learning | Completado |
@@ -706,34 +728,48 @@ y representa la salida oficial actual del módulo de Data Science.
 | Integración con LangGraph | Completado |
 | Routing de testimonios | Completado |
 | Routing de feedback | Completado |
+| Routing `pregunta_programa` mediante `elegible_faq` | Completado |
+| Integración `elegible_faq` con Data | Validada |
 | Tests específicos de prompts | Completado |
 | Tests del router | Completado |
 | Suite de regresión | Completado |
 | Validación funcional con Gemini | Completado |
 | Rate limiting / retries | Completado |
 | Prueba Data → Data Science sobre paquete completo | Completado |
-| Contrato oficial de salida DS v1.0 | Completado |
+| Contrato oficial de salida DS v1.1 | Completado |
 | Prueba funcional del contrato | Completado |
 
 ---
 
 ## 16. Pendientes inmediatos
 
-### 1. Integración de preguntas de programa con FAQ
+### 1. Integración oficial con la rama de Data
 
-Esperar el ajuste del equipo de Data para incorporar un criterio específico como:
+La compatibilidad entre los cambios de Data y Data Science fue validada en una rama temporal de integración utilizando la rama completa:
 
-`elegible_faq`
+`feature/gustavo-pregunta-programa`
 
-Una vez disponible, Data Science podrá evaluar el routing:
+Primero se verificó la suite correspondiente de Data:
 
 ```text
-pregunta_programa + elegible_faq
-    ↓
-preguntas_frecuentes
+79 passed
+124 subtests passed
+0 failures
 ```
 
-El generador de FAQ deberá adaptarse para manejar preguntas del programa sin inventar información institucional.
+Posteriormente se ejecutó el flujo E2E completo con Gemini y contrato DS 1.1:
+
+```text
+23 interacciones procesadas
+19 elegibles para contenido
+5 elegibles para FAQ
+19 interacciones con activos
+35 activos generados
+0 pendientes
+0 errores
+```
+
+La integración funcional está validada. La incorporación definitiva del código de Data debe realizarse mediante el flujo normal del equipo cuando su PR sea integrado en `develop`.
 
 ### 2. Deduplicación o agrupación de FAQ
 
@@ -755,7 +791,7 @@ Esto permitiría generar una FAQ consolidada en lugar de una respuesta independi
 
 ### 3. Integración posterior con UI y OCI
 
-El contrato de salida v1.0 ya deja preparado el módulo de Data Science para ser consumido por:
+El contrato de salida v1.1 deja preparado el módulo de Data Science para ser consumido por:
 
 - interfaz de curaduría;
 - reportes;
@@ -777,20 +813,27 @@ Routing determinista con LangGraph
         ↓
 Generación de activos especializados
         ↓
-Contrato oficial de salida DS v1.0
+Contrato oficial de salida DS v1.1
 ```
 
-Validación final:
+Validación funcional final con Data + Data Science:
 
 ```text
 23 interacciones procesadas
 0 pendientes
-14 interacciones con activos
-30 activos generados
+19 elegibles para contenido
+5 elegibles para FAQ
+19 interacciones con activos
+35 activos generados
 0 errores
 
-93 tests passed
-106 subtests passed
+11 tests de routing passed
+6 tests de prompts passed
+79 tests de integración Data passed
+124 subtests Data passed
+1 prueba funcional E2E passed
 ```
 
-Con esto, el flujo de Data Science queda funcionalmente validado para la etapa actual del proyecto.
+La integración de `pregunta_programa` con `elegible_faq` fue validada utilizando la rama completa del equipo de Data, sin incorporar su implementación directamente en la rama oficial de Data Science.
+
+Con esto, el flujo de Data Science queda preparado para integrarse con el cambio de Data mediante el proceso normal de merge hacia `develop`.

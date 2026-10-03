@@ -82,6 +82,10 @@ def _guardar_resultados(
             f"{resumen['total_elegibles_contenido']}"
         ),
         (
+            "Elegibles para FAQ: "
+            f"{resumen['total_elegibles_faq']}"
+        ),
+        (
             "Interacciones con activos: "
             f"{resumen['total_con_activos']}"
         ),
@@ -348,9 +352,14 @@ def test_entrega_funcional_ciencia_datos():
         for resultado in resultados_originales
     )
 
+    total_elegibles_faq_esperado = sum(
+        resultado.get("elegible_faq") is True
+        for resultado in resultados_originales
+    )
+
     assert entrega[
         "version_contrato"
-    ] == "1.0"
+    ] == "1.1"
 
     assert resumen[
         "total_interacciones_procesadas"
@@ -361,6 +370,10 @@ def test_entrega_funcional_ciencia_datos():
     ] == len(
         salida_ds["ids_pendientes"]
     )
+
+    assert resumen[
+        "total_elegibles_faq"
+    ] == total_elegibles_faq_esperado
 
     assert resumen[
         "total_con_activos"
@@ -397,6 +410,25 @@ def test_entrega_funcional_ciencia_datos():
     ) == len(
         salida_ds["pendientes"]
     )
+
+    resultados_por_id = {
+        resultado["id"]: resultado
+        for resultado in resultados_originales
+    }
+
+    for interaccion in entrega["interacciones"]:
+        resultado_original = resultados_por_id[
+            interaccion["id"]
+        ]
+
+        assert "elegible_faq" in interaccion
+
+        assert interaccion["elegible_faq"] is (
+            resultado_original.get(
+                "elegible_faq",
+                False,
+            )
+        )
 
     # El contrato externo no expone detalles internos de DS.
     assert "resultados_por_id" not in entrega

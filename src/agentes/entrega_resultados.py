@@ -34,6 +34,7 @@ CAMPOS_INTERACCION = (
     "tipo_original",
     "score_relevancia",
     "elegible_contenido",
+    "elegible_faq",
     "sentimiento",
     "tema_principal",
     "subtema",
@@ -146,7 +147,10 @@ def _preparar_interaccion(
         for campo in CAMPOS_INTERACCION
         if campo in resultado
     }
-
+    interaccion["elegible_faq"] = resultado.get(
+        "elegible_faq",
+        False,
+    )
     interaccion["rutas"] = deepcopy(
         resultado.get("rutas", [])
     )
@@ -286,6 +290,13 @@ def preparar_entrega_resultados(
         for resultado in resultados
     )
 
+    total_elegibles_faq = sum(
+        resultado.get(
+            "elegible_faq"
+        ) is True
+        for resultado in resultados
+    )
+
     sentimientos_predominantes = (
         _obtener_sentimientos_predominantes(
             sentimientos
@@ -315,6 +326,7 @@ def preparar_entrega_resultados(
                 ids_pendientes
             ),
             "total_elegibles_contenido": total_elegibles,
+            "total_elegibles_faq": total_elegibles_faq,
             "total_con_activos": total_con_activos,
             "total_activos_generados": len(
                 activos

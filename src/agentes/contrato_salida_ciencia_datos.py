@@ -12,7 +12,7 @@ from typing import TypedDict
 from src.agentes.estado_agente import Ruta
 
 
-VERSION_CONTRATO_SALIDA_DS = "1.0"
+VERSION_CONTRATO_SALIDA_DS = "1.1"
 
 
 class TemaPrincipalResumen(TypedDict):
@@ -24,6 +24,7 @@ class ResumenComunidad(TypedDict):
     total_interacciones_procesadas: int
     total_pendientes: int
     total_elegibles_contenido: int
+    total_elegibles_faq: int
     total_con_activos: int
     total_activos_generados: int
     total_con_errores: int
@@ -48,6 +49,7 @@ class ResultadoInteraccion(TypedDict, total=False):
     tipo_original: str
     score_relevancia: float | None
     elegible_contenido: bool
+    elegible_faq: bool
 
     # Resultado de Data Science.
     sentimiento: str

@@ -102,3 +102,44 @@ def test_puntaje_ausente_no_bloquea():
     resultado = determinar_rutas(estado)
 
     assert resultado["rutas"] == ["preguntas_frecuentes"]
+
+
+def test_pregunta_programa_elegible_faq_genera_faq():
+    estado = {
+        "tipo_detectado": "pregunta_programa",
+        "sentimiento": "neutral",
+        "score_relevancia": 62,
+        "elegible_contenido": True,
+        "elegible_faq": True,
+    }
+
+    resultado = determinar_rutas(estado)
+
+    assert resultado["rutas"] == ["preguntas_frecuentes"]
+
+
+def test_pregunta_programa_no_elegible_faq_no_genera_activo():
+    estado = {
+        "tipo_detectado": "pregunta_programa",
+        "sentimiento": "neutral",
+        "score_relevancia": 62,
+        "elegible_contenido": True,
+        "elegible_faq": False,
+    }
+
+    resultado = determinar_rutas(estado)
+
+    assert resultado["rutas"] == []
+
+
+def test_pregunta_programa_sin_elegible_faq_no_genera_activo():
+    estado = {
+        "tipo_detectado": "pregunta_programa",
+        "sentimiento": "neutral",
+        "score_relevancia": 62,
+        "elegible_contenido": True,
+    }
+
+    resultado = determinar_rutas(estado)
+
+    assert resultado["rutas"] == []

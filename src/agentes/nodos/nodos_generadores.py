@@ -67,8 +67,9 @@ class SugerenciaPreguntasFrecuentes(BaseModel):
 
     respuesta: str = Field(
         description=(
-            "Respuesta breve, didáctica y prudente, sin inventar "
-            "información técnica no presente o no sustentable."
+            "Respuesta breve, didáctica y prudente. "
+            "No debe inventar información técnica, administrativa "
+            "o institucional que no esté sustentada."
         )
     )
 
@@ -484,30 +485,71 @@ _prompt_preguntas_frecuentes = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-Eres redactor técnico para una comunidad educativa y tecnológica.
+Eres redactor de preguntas frecuentes para una comunidad educativa
+y tecnológica.
 
-Tu tarea es transformar una pregunta técnica real de la comunidad
-en una sugerencia breve para la sección de preguntas frecuentes.
+Tu tarea es transformar una pregunta real de la comunidad en una
+entrada breve y útil para una sección de preguntas frecuentes.
 
-Por ahora, este generador se utiliza únicamente para preguntas técnicas.
-No debe responder preguntas administrativas, institucionales o generales
-del programa como si fueran consultas técnicas.
+Puedes recibir dos tipos de preguntas:
 
-# REGLAS
+1. pregunta_tecnica
+2. pregunta_programa
 
-- Conserva el problema técnico planteado por la persona.
-- La respuesta debe ser clara, breve y didáctica.
+# REGLAS GENERALES
+
+- Conserva fielmente la intención de la pregunta original.
+- El campo "tema" debe funcionar como un título breve y descriptivo de FAQ.
+- La respuesta debe ser clara, breve y prudente.
+- No inventes información que no esté sustentada.
+- No conviertas supuestos en hechos.
+- No cambies una pregunta de programa por una pregunta técnica ni viceversa.
+
+# SI tipo_detectado = pregunta_tecnica
+
+- Puedes explicar conceptos técnicos generales cuando sean conocidos
+  y suficientes para responder.
 - Evita asumir configuraciones, versiones, errores o contexto que
   no aparezcan en la pregunta.
-- No inventes comandos, resultados, características específicas
-  ni comportamiento de herramientas cuando no tengas suficiente certeza.
-- Si la pregunta no contiene información suficiente para dar una
-  solución concreta, explica qué información adicional sería necesaria.
+- No inventes comandos, resultados o características específicas.
+- Si falta información para una solución concreta, indica qué dato
+  adicional sería necesario.
 - No presentes una hipótesis como una solución confirmada.
-- El campo "tema" debe funcionar como un título breve de FAQ.
-- No conviertas preguntas administrativas o generales en preguntas técnicas.
 
-# EJEMPLO DE REFERENCIA
+# SI tipo_detectado = pregunta_programa
+
+La pregunta se refiere al funcionamiento, condiciones o información
+institucional del programa.
+
+Ejemplos:
+
+- certificados;
+- costos;
+- inscripciones;
+- fechas;
+- grabaciones;
+- rutas o especialidades;
+- prácticas profesionales;
+- alianzas;
+- acceso a clases;
+- funcionamiento del programa.
+
+Para estas preguntas:
+
+- NO inventes precios, fechas, condiciones, beneficios, enlaces,
+  requisitos, alianzas ni políticas institucionales.
+- NO respondas afirmativamente o negativamente si la información
+  necesaria no aparece en el mensaje recibido.
+- Formula una respuesta prudente indicando qué información debe
+  confirmarse mediante la fuente oficial del programa.
+- La respuesta debe seguir siendo útil como borrador de FAQ para
+  posterior validación humana.
+- No conviertas la falta de información en una respuesta inventada.
+
+# EJEMPLO TÉCNICO
+
+Tipo:
+pregunta_tecnica
 
 Subtema:
 enrutamiento condicional en LangGraph
@@ -519,23 +561,50 @@ según el resultado del análisis?"
 Resultado esperado:
 
 Tema:
-"Tip rápido: enrutamiento condicional en LangGraph"
+"Enrutamiento condicional en LangGraph"
 
 Respuesta:
-Una explicación breve y didáctica centrada en cómo una condición
-puede utilizar el estado o resultado del flujo para decidir la siguiente
-ruta. Si para responder con precisión hiciera falta conocer la estructura
-del grafo o el código utilizado, debe indicarse en lugar de asumirlo.
+Una explicación breve centrada en cómo una condición puede utilizar
+el estado del flujo para decidir la siguiente ruta. Si hiciera falta
+conocer la estructura del grafo o el código utilizado, debe indicarse
+en lugar de asumirlo.
+
+# EJEMPLO DE PROGRAMA
+
+Tipo:
+pregunta_programa
+
+Subtema:
+costo del certificado
+
+Pregunta original:
+"¿El certificado final tiene costo adicional o está incluido
+en el programa?"
+
+Resultado esperado:
+
+Tema:
+"Costo del certificado final"
+
+Respuesta:
+Una redacción breve que indique que el costo o inclusión del certificado
+debe confirmarse con la información oficial vigente del programa.
+No inventes un precio ni afirmes que está incluido o tiene costo si esa
+información no fue proporcionada.
 
 # IMPORTANTE
 
-El ejemplo solo define el nivel de claridad, estructura y prudencia.
-No copies literalmente su tema ni su respuesta para otras preguntas.
+Los ejemplos solo definen el nivel de claridad, estructura y prudencia.
+No copies literalmente sus respuestas.
+
+Construye la FAQ exclusivamente a partir de la pregunta recibida y
+del tipo de interacción indicado.
             """,
         ),
         (
             "user",
             """
+Tipo de pregunta: {tipo_detectado}
 Subtema: {subtema}
 
 Pregunta original:
@@ -544,7 +613,6 @@ Pregunta original:
         ),
     ]
 )
-
 
 # --------------------------------------------------
 # Caso de éxito
@@ -790,8 +858,8 @@ def _contexto(estado: EstadoAgente) -> dict:
         "texto": estado["texto"],
         "tema_principal": estado.get("tema_principal") or "",
         "subtema": estado.get("subtema") or "",
+        "tipo_detectado": estado.get("tipo_detectado") or "",
     }
-
 
 def generar_activos(estado: EstadoAgente) -> dict:
     """

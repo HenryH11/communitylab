@@ -62,10 +62,10 @@ def test_boletin_incluye_few_shot_y_renderiza_contexto():
 
 def test_preguntas_frecuentes_incluye_few_shot_y_renderiza_contexto():
     contexto = {
+        "tipo_detectado": "pregunta_tecnica",
         "subtema": "enrutamiento condicional",
         "texto": "¿Cómo puedo elegir el siguiente nodo según el estado?",
     }
-
     sistema = _contenido_sistema(
         _prompt_preguntas_frecuentes,
         **contexto,
@@ -75,7 +75,9 @@ def test_preguntas_frecuentes_incluye_few_shot_y_renderiza_contexto():
         **contexto,
     )
 
-    assert "EJEMPLO DE REFERENCIA" in sistema
+    assert "EJEMPLO TÉCNICO" in sistema
+    assert "EJEMPLO DE PROGRAMA" in sistema
+    assert "Tipo de pregunta: pregunta_tecnica" in usuario
     assert "LangGraph" in sistema
     assert "enrutamiento" in sistema.lower()
 
@@ -132,3 +134,27 @@ def test_prompts_contienen_reglas_contra_informacion_inventada():
     for prompt, contexto in contextos:
         sistema = _contenido_sistema(prompt, **contexto).lower()
         assert "no inventes" in sistema
+
+def test_pregunta_programa_faq_prohibe_inventar_informacion_institucional():
+    contexto = {
+        "tipo_detectado": "pregunta_programa",
+        "subtema": "costo del certificado",
+        "texto": "¿El certificado final tiene costo adicional o está incluido en el programa?",
+    }
+
+    sistema = _contenido_sistema(
+        _prompt_preguntas_frecuentes,
+        **contexto,
+    )
+
+    usuario = _contenido_usuario(
+        _prompt_preguntas_frecuentes,
+        **contexto,
+    )
+
+    assert "pregunta_programa" in sistema
+    assert "NO inventes precios, fechas, condiciones, beneficios" in sistema
+    assert "fuente oficial del programa" in sistema
+    assert "posterior validación humana" in sistema
+    assert "Tipo de pregunta: pregunta_programa" in usuario
+    assert "costo del certificado" in usuario

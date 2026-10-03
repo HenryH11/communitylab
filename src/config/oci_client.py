@@ -1,4 +1,4 @@
-"""Borrador del conector de JSON a OCI Object Storage (Semana 2).
+"""Cliente de persistencia JSON en OCI Object Storage (Semana 2).
 
 La integración con el cierre del workflow se realizará en Semana 3. Este módulo
 no imprime credenciales ni escribe archivos locales.

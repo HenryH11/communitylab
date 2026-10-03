@@ -4,7 +4,7 @@ import json
 import unittest
 from unittest.mock import Mock, patch
 
-from src.config.persistencia_oci import nombre_objeto_activo, subir_json
+from src.config.oci_client import nombre_objeto_activo, subir_json
 
 
 class PruebasPersistenciaOCI(unittest.TestCase):
@@ -46,7 +46,7 @@ class PruebasPersistenciaOCI(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "subida fallida"):
             subir_json({"id": "int-022"}, "assets/int-022.json", cliente=cliente, namespace="prueba")
 
-    @patch("src.config.persistencia_oci.crear_cliente")
+    @patch("src.config.oci_client.crear_cliente")
     def test_usa_perfil_y_bucket_del_entorno(self, crear_cliente):
         cliente = Mock()
         cliente.put_object.return_value.headers = {}

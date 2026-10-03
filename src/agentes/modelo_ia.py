@@ -4,16 +4,36 @@ import os
 from functools import lru_cache
 
 from dotenv import load_dotenv
+from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 MODELO_GEMINI = "gemini-3.5-flash-lite"
 
+# Límite observado en Gemini Free Tier:
+# 15 requests por minuto para este modelo.
+#
+# Trabajamos a ~12 RPM para dejar margen.
+SOLICITUDES_POR_SEGUNDO = 0.20
+
+_rate_limiter = InMemoryRateLimiter(
+    requests_per_second=SOLICITUDES_POR_SEGUNDO,
+    check_every_n_seconds=0.1,
+    max_bucket_size=1,
+)
+
 
 @lru_cache(maxsize=1)
 def obtener_modelo_gemini() -> ChatGoogleGenerativeAI:
-    """Carga las credenciales y crea el cliente al primer uso."""
+    """
+    Carga las credenciales y crea un único cliente compartido.
+
+    El rate limiter evita ráfagas de solicitudes que puedan superar
+    el límite de Gemini. max_retries permite recuperar llamadas
+    transitorias que fallen por rate limit o disponibilidad.
+    """
     load_dotenv()
+
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
@@ -25,4 +45,6 @@ def obtener_modelo_gemini() -> ChatGoogleGenerativeAI:
     return ChatGoogleGenerativeAI(
         api_key=api_key,
         model=MODELO_GEMINI,
+        rate_limiter=_rate_limiter,
+        max_retries=6,
     )

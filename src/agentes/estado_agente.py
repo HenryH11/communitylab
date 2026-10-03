@@ -6,6 +6,7 @@ Ruta = Literal[
     "caso_exito",
     "linkedin",
     "boletin",
+    "insight_mejora",
 ]
 
 

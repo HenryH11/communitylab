@@ -41,6 +41,8 @@ def test_linkedin_incluye_few_shot_y_renderiza_contexto():
 def test_boletin_incluye_few_shot_y_renderiza_contexto():
     contexto = {
         "autor": "Persona de prueba",
+        "tema_principal": "empleabilidad",
+        "subtema": "nueva oportunidad profesional",
         "texto": "Fui seleccionado para una nueva oportunidad profesional.",
     }
 
@@ -49,9 +51,12 @@ def test_boletin_incluye_few_shot_y_renderiza_contexto():
 
     assert "EJEMPLO DE REFERENCIA" in sistema
     assert "Mariana Souza" in sistema
-    assert "Logro de la Semana" in sistema
+    assert "Community Highlight" in sistema
+    assert "Logro de la comunidad" in sistema
 
     assert contexto["autor"] in usuario
+    assert contexto["tema_principal"] in usuario
+    assert contexto["subtema"] in usuario
     assert contexto["texto"] in usuario
 
 
@@ -110,6 +115,8 @@ def test_prompts_contienen_reglas_contra_informacion_inventada():
             _prompt_boletin,
             {
                 "autor": "A",
+                "tema_principal": "empleabilidad",
+                "subtema": "empleo",
                 "texto": "Texto de prueba",
             },
         ),

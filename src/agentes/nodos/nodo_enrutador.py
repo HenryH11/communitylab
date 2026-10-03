@@ -35,9 +35,15 @@ def determinar_rutas(estado: EstadoAgente) -> dict:
     if tipo == "pregunta_tecnica":
         rutas.append("preguntas_frecuentes")
 
+    # El feedback relevante se transforma en un insight accionable
+    # para el equipo responsable de la comunidad o del programa.
+    if tipo == "feedback":
+        rutas.append("insight_mejora")
+
     # Un testimonio puede servir para más de un activo.
     if tipo == "testimonio":
         rutas.append("caso_exito")
+        rutas.append("boletin")
 
         if sentimiento in {"positivo", "muy_positivo"}:
             rutas.append("linkedin")

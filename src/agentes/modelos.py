@@ -15,6 +15,7 @@ Sentimiento = Literal[
 TipoInteraccion = Literal[
     "testimonio",
     "pregunta_tecnica",
+    "pregunta_programa",
     "feedback",
     "comentario",
 ]

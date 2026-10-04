@@ -39,6 +39,120 @@ def _normalizar(valor, campo):
     return valor
 
 
+def _metricas_binarias(verdaderos_positivos, falsos_positivos, falsos_negativos, soporte):
+    precision = (
+        verdaderos_positivos / (verdaderos_positivos + falsos_positivos)
+        if verdaderos_positivos + falsos_positivos
+        else 0.0
+    )
+    recall = verdaderos_positivos / soporte if soporte else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return {
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "soporte": soporte,
+    }
+
+
+def _valor_clasificacion(interaccion: dict, campo: str):
+    valor = interaccion.get(campo)
+    return valor if valor is not None else "<sin_prediccion>"
+
+
+def _metricas_categoricas(referencias_por_id: dict, predicciones_por_id: dict, campo: str):
+    etiquetas = sorted(
+        {
+            _valor_clasificacion(referencia, campo)
+            for referencia in referencias_por_id.values()
+        }
+        | {
+            _valor_clasificacion(predicciones_por_id.get(identificador, {}), campo)
+            for identificador in referencias_por_id
+        }
+    )
+    matriz = {real: {predicha: 0 for predicha in etiquetas} for real in etiquetas}
+
+    for identificador, referencia in referencias_por_id.items():
+        real = _valor_clasificacion(referencia, campo)
+        predicha = _valor_clasificacion(
+            predicciones_por_id.get(identificador, {}), campo
+        )
+        matriz[real][predicha] += 1
+
+    por_clase = {}
+    for etiqueta in etiquetas:
+        soporte = sum(matriz[etiqueta].values())
+        verdaderos_positivos = matriz[etiqueta][etiqueta]
+        falsos_positivos = sum(
+            matriz[real][etiqueta]
+            for real in etiquetas
+            if real != etiqueta
+        )
+        falsos_negativos = soporte - verdaderos_positivos
+        por_clase[etiqueta] = _metricas_binarias(
+            verdaderos_positivos,
+            falsos_positivos,
+            falsos_negativos,
+            soporte,
+        )
+    return por_clase, matriz
+
+
+def _metricas_rutas(referencias_por_id: dict, predicciones_por_id: dict):
+    conjuntos_reales = {}
+    conjuntos_predichos = {}
+    etiquetas = set()
+    for identificador, referencia in referencias_por_id.items():
+        rutas_reales = set(referencia.get("rutas") or [])
+        rutas_predichas = set(
+            predicciones_por_id.get(identificador, {}).get("rutas") or []
+        )
+        conjuntos_reales[identificador] = rutas_reales
+        conjuntos_predichos[identificador] = rutas_predichas
+        etiquetas.update(rutas_reales)
+        etiquetas.update(rutas_predichas)
+
+    por_clase = {}
+    matrices = {}
+    total = len(referencias_por_id)
+    for etiqueta in sorted(etiquetas):
+        verdaderos_positivos = sum(
+            etiqueta in conjuntos_reales[identificador]
+            and etiqueta in conjuntos_predichos[identificador]
+            for identificador in referencias_por_id
+        )
+        falsos_positivos = sum(
+            etiqueta not in conjuntos_reales[identificador]
+            and etiqueta in conjuntos_predichos[identificador]
+            for identificador in referencias_por_id
+        )
+        falsos_negativos = sum(
+            etiqueta in conjuntos_reales[identificador]
+            and etiqueta not in conjuntos_predichos[identificador]
+            for identificador in referencias_por_id
+        )
+        verdaderos_negativos = total - verdaderos_positivos - falsos_positivos - falsos_negativos
+        soporte = verdaderos_positivos + falsos_negativos
+        por_clase[etiqueta] = _metricas_binarias(
+            verdaderos_positivos,
+            falsos_positivos,
+            falsos_negativos,
+            soporte,
+        )
+        matrices[etiqueta] = {
+            "negativo": {
+                "negativo": verdaderos_negativos,
+                "positivo": falsos_positivos,
+            },
+            "positivo": {
+                "negativo": falsos_negativos,
+                "positivo": verdaderos_positivos,
+            },
+        }
+    return por_clase, matrices
+
+
 def calcular_metricas(referencias: list[dict], predicciones: list[dict]) -> dict:
     """Calcula coincidencia exacta por dimensión e informa discrepancias por ID."""
     referencias_por_id = {caso.get("id"): caso for caso in referencias}
@@ -77,7 +191,28 @@ def calcular_metricas(referencias: list[dict], predicciones: list[dict]) -> dict
         {"id": identificador, "campo": "id", "esperado": None, "obtenido": "inesperado"}
         for identificador in sorted(ids_inesperados)
     )
-    return {"metricas": metricas, "discrepancias": discrepancias}
+
+    metricas_por_clase = {}
+    matrices_confusion = {}
+    for campo in CAMPOS_EVALUADOS:
+        if campo == "rutas":
+            metricas_por_clase[campo], matrices_confusion[campo] = _metricas_rutas(
+                referencias_por_id,
+                predicciones_por_id,
+            )
+        else:
+            metricas_por_clase[campo], matrices_confusion[campo] = _metricas_categoricas(
+                referencias_por_id,
+                predicciones_por_id,
+                campo,
+            )
+
+    return {
+        "metricas": metricas,
+        "metricas_por_clase": metricas_por_clase,
+        "matrices_confusion": matrices_confusion,
+        "discrepancias": discrepancias,
+    }
 
 
 def evaluar_rutas_referencia(interacciones: list[dict]) -> list[dict]:
@@ -140,6 +275,26 @@ def _analizar_en_vivo(referencias: list[dict]) -> list[dict]:
     return resultados
 
 
+def _imprimir_matriz_confusion(campo: str, matriz: dict) -> None:
+    print("Matriz de confusión:")
+    if campo == "rutas":
+        print("ruta | TN | FP | FN | TP")
+        for ruta, celdas in matriz.items():
+            print(
+                f"{ruta} | {celdas['negativo']['negativo']} | "
+                f"{celdas['negativo']['positivo']} | "
+                f"{celdas['positivo']['negativo']} | "
+                f"{celdas['positivo']['positivo']}"
+            )
+        return
+
+    etiquetas = list(matriz)
+    print("real \\ predicha | " + " | ".join(etiquetas))
+    for real in etiquetas:
+        celdas = " | ".join(str(matriz[real][predicha]) for predicha in etiquetas)
+        print(f"{real} | {celdas}")
+
+
 def _imprimir_metricas(titulo: str, evaluacion: dict) -> bool:
     print(titulo)
     aprobado = _evaluacion_aprobada(evaluacion)
@@ -148,6 +303,22 @@ def _imprimir_metricas(titulo: str, evaluacion: dict) -> bool:
         umbral = UMBRALES_MINIMOS[campo]
         estado = "OK" if puntaje >= umbral else "ALERTA"
         print(f"{campo}: {puntaje:.1%} (mínimo {umbral:.0%}) [{estado}]")
+
+    print("Métricas por clase (precisión / recall / F1 / soporte):")
+    for campo, clases in evaluacion["metricas_por_clase"].items():
+        print(f"{campo}:")
+        for etiqueta, metricas_clase in clases.items():
+            print(
+                f"- {etiqueta}: "
+                f"{metricas_clase['precision']:.1%} / "
+                f"{metricas_clase['recall']:.1%} / "
+                f"{metricas_clase['f1']:.1%} / "
+                f"{metricas_clase['soporte']}"
+            )
+        _imprimir_matriz_confusion(
+            campo,
+            evaluacion["matrices_confusion"][campo],
+        )
 
     if evaluacion["discrepancias"]:
         print("Discrepancias:")

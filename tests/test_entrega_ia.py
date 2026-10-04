@@ -124,6 +124,27 @@ class EntregaTests(unittest.TestCase):
         paquete = preparar_paquete_ia(datos, fecha_referencia=FECHA)
         self.assertEqual(len(paquete["estados"]), 23)
         self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 14)
+        informe = paquete["informe"]
+        self.assertEqual(informe["version_criterio"], "1.0-propuesta")
+        self.assertEqual(
+            informe["fecha_referencia"],
+            FECHA.replace("Z", "+00:00"),
+        )
+        self.assertEqual(
+            informe["configuracion"],
+            ConfiguracionRelevancia().como_dict(),
+        )
+        self.assertEqual(
+            informe["modelo_ia"],
+            {
+                "proveedor": "Google Gemini",
+                "identificador_modelo": "gemini-3.5-flash-lite",
+                "max_retries": 6,
+                "solicitudes_por_segundo": 0.2,
+                "intervalo_revision_limitador_segundos": 0.1,
+                "tamano_maximo_limitador": 1,
+            },
+        )
         plan = paquete["plan"]
         self.assertEqual([c["cantidad"] for c in plan["ciclos"]], [12, 11])
         self.assertEqual(plan["pendientes"], [])

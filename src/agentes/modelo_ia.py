@@ -9,6 +9,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 MODELO_GEMINI = "gemini-3.5-flash-lite"
+MAX_RETRIES_GEMINI = 6
+INTERVALO_REVISION_LIMITADOR = 0.1
+TAMANO_MAXIMO_LIMITADOR = 1
 
 # Límite observado en Gemini Free Tier:
 # 15 requests por minuto para este modelo.
@@ -16,10 +19,22 @@ MODELO_GEMINI = "gemini-3.5-flash-lite"
 # Trabajamos a ~12 RPM para dejar margen.
 SOLICITUDES_POR_SEGUNDO = 0.20
 
+
+def obtener_configuracion_modelo() -> dict[str, str | int | float]:
+    """Devuelve los parámetros no secretos usados en las llamadas a Gemini."""
+    return {
+        "proveedor": "Google Gemini",
+        "identificador_modelo": MODELO_GEMINI,
+        "max_retries": MAX_RETRIES_GEMINI,
+        "solicitudes_por_segundo": SOLICITUDES_POR_SEGUNDO,
+        "intervalo_revision_limitador_segundos": INTERVALO_REVISION_LIMITADOR,
+        "tamano_maximo_limitador": TAMANO_MAXIMO_LIMITADOR,
+    }
+
 _rate_limiter = InMemoryRateLimiter(
     requests_per_second=SOLICITUDES_POR_SEGUNDO,
-    check_every_n_seconds=0.1,
-    max_bucket_size=1,
+    check_every_n_seconds=INTERVALO_REVISION_LIMITADOR,
+    max_bucket_size=TAMANO_MAXIMO_LIMITADOR,
 )
 
 
@@ -46,5 +61,5 @@ def obtener_modelo_gemini() -> ChatGoogleGenerativeAI:
         api_key=api_key,
         model=MODELO_GEMINI,
         rate_limiter=_rate_limiter,
-        max_retries=6,
+        max_retries=MAX_RETRIES_GEMINI,
     )

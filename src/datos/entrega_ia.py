@@ -4,6 +4,7 @@ from .ingesta import (
     _interaccion_para_entrega, construir_estados_agente, procesar_datos,
     validar_tamano_ciclo, validar_y_limpiar,
 )
+from src.agentes.modelo_ia import obtener_configuracion_modelo
 
 
 CAMPOS = ("id", "autor", "canal", "tipo", "texto", "fecha", "idioma")
@@ -101,8 +102,9 @@ def construir_plan_procesamiento(estados, tamano_ciclo=20):
 
 
 def preparar_paquete_ia(datos, *, fecha_referencia, configuracion=None, tamano_ciclo=20):
-    """Reutiliza el adaptador de Gustavo; elegibilidad separada de EstadoAgente."""
+    """Prepara estados e informe reproducible sin inicializar ni llamar al LLM."""
     completos, contenido, informe = preparar_entrega(datos, fecha_referencia=fecha_referencia, configuracion=configuracion)
+    informe["modelo_ia"] = obtener_configuracion_modelo()
     estados = construir_estados_agente(completos, informe, poblacion="sentimiento")
     plan = construir_plan_procesamiento(estados, tamano_ciclo)
     plan["ids_contenido"] = [m["id"] for lote in contenido["lotes"] for m in lote["interacciones"]]

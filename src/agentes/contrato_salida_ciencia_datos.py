@@ -12,7 +12,7 @@ from typing import TypedDict
 from src.agentes.estado_agente import Ruta
 
 
-VERSION_CONTRATO_SALIDA_DS = "1.1"
+VERSION_CONTRATO_SALIDA_DS = "1.2"
 
 
 class TemaPrincipalResumen(TypedDict):
@@ -28,6 +28,8 @@ class ResumenComunidad(TypedDict):
     total_con_activos: int
     total_activos_generados: int
     total_con_errores: int
+    total_fallos: int
+    fallos_por_etapa: dict[str, int]
     sentimiento_predominante: str | None
     sentimientos_predominantes: list[str]
     distribucion_sentimientos: dict[str, int]
@@ -61,6 +63,7 @@ class ResultadoInteraccion(TypedDict, total=False):
     rutas: list[Ruta]
     activos_generados: dict[str, dict]
     errores: list[str]
+    fallos: list[dict]
 
 
 class ActivoEntregado(TypedDict):
@@ -74,5 +77,6 @@ class EntregaCienciaDatos(TypedDict):
     resumen_comunidad: ResumenComunidad
     interacciones: list[ResultadoInteraccion]
     activos: list[ActivoEntregado]
+    fallos: list[dict]
     pendientes: list[dict]
     ids_pendientes: list[str]

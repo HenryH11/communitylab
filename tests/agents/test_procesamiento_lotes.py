@@ -13,6 +13,7 @@ from src.agentes.nodos.nodos_generadores import (
     SugerenciaPreguntasFrecuentes,
     generar_activos,
 )
+from src.agentes.entrega_resultados import preparar_entrega_resultados
 
 
 def crear_estado(mensaje_id, puntaje=80):
@@ -150,6 +151,16 @@ def test_fallo_total_del_lote_no_dispara_reintentos_individuales():
 
     cadena_individual.invoke.assert_not_called()
     assert all(resultado.get("errores") for resultado in resultados)
+    assert [fallo["id"] for resultado in resultados for fallo in resultado["fallos"]] == [
+        "id-a",
+        "id-b",
+    ]
+    assert all(
+        fallo["etapa"] == "analizar_lote"
+        and fallo["tipo_error"] == "RuntimeError"
+        for resultado in resultados
+        for fallo in resultado["fallos"]
+    )
 
 
 def test_respuesta_de_lote_malformada_se_reporta_sin_reintentos_en_cascada():
@@ -313,4 +324,88 @@ def test_sin_rutas_no_inicializa_generadores_ni_requiere_gemini():
         resultado = generar_activos({"rutas": [], "errores": []})
 
     obtener_generadores.assert_not_called()
-    assert resultado == {"activos_generados": {}, "errores": []}
+    assert resultado == {"activos_generados": {}, "errores": [], "fallos": []}
+
+
+def test_fallo_de_generacion_conserva_id_etapa_y_ruta():
+    generador = MagicMock()
+    generador.invoke.side_effect = RuntimeError("API no disponible")
+
+    with patch(
+        "src.agentes.nodos.nodos_generadores._obtener_generadores",
+        return_value={"preguntas_frecuentes": generador},
+    ):
+        resultado = generar_activos(
+            {
+                "id": "id-faq",
+                "texto": "Pregunta de prueba",
+                "rutas": ["preguntas_frecuentes"],
+            }
+        )
+
+    assert resultado["fallos"] == [
+        {
+            "id": "id-faq",
+            "etapa": "generar_activos",
+            "ruta": "preguntas_frecuentes",
+            "tipo_error": "RuntimeError",
+            "mensaje": "API no disponible",
+        }
+    ]
+
+
+def test_fallo_al_inicializar_generadores_se_registra_por_ruta():
+    with patch(
+        "src.agentes.nodos.nodos_generadores._obtener_generadores",
+        side_effect=ValueError("falta GEMINI_API_KEY"),
+    ):
+        resultado = generar_activos(
+            {
+                "id": "id-testimonio",
+                "texto": "Testimonio de prueba",
+                "rutas": ["caso_exito", "linkedin"],
+            }
+        )
+
+    assert [fallo["ruta"] for fallo in resultado["fallos"]] == [
+        "caso_exito",
+        "linkedin",
+    ]
+    assert all(
+        fallo["id"] == "id-testimonio"
+        and fallo["etapa"] == "inicializar_generadores"
+        and fallo["tipo_error"] == "ValueError"
+        and fallo["mensaje"] == "falta GEMINI_API_KEY"
+        for fallo in resultado["fallos"]
+    )
+
+
+def test_contrato_consolida_fallos_por_etapa_y_conserva_el_id():
+    fallo = {
+        "id": "id-error",
+        "etapa": "generar_activos",
+        "ruta": "preguntas_frecuentes",
+        "tipo_error": "RuntimeError",
+        "mensaje": "API no disponible",
+    }
+    estado = {
+        **crear_estado("id-error"),
+        "errores": ["generar_activos[preguntas_frecuentes]: RuntimeError: API no disponible"],
+        "fallos": [fallo],
+    }
+
+    entrega = preparar_entrega_resultados(
+        {
+            "resultados": [estado],
+            "pendientes": [],
+            "ids_pendientes": [],
+        }
+    )
+
+    assert entrega["fallos"] == [fallo]
+    assert entrega["interacciones"][0]["fallos"] == [fallo]
+    assert entrega["resumen_comunidad"]["total_con_errores"] == 1
+    assert entrega["resumen_comunidad"]["total_fallos"] == 1
+    assert entrega["resumen_comunidad"]["fallos_por_etapa"] == {
+        "generar_activos": 1
+    }

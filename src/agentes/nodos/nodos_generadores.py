@@ -870,16 +870,39 @@ def generar_activos(estado: EstadoAgente) -> dict:
 
     activos = {}
     errores = list(estado.get("errores", []))
+    fallos = list(estado.get("fallos", []))
     rutas = estado.get("rutas", [])
 
     if not rutas:
         return {
             "activos_generados": activos,
             "errores": errores,
+        "fallos": fallos,
         }
 
     contexto = _contexto(estado)
-    generadores = _obtener_generadores()
+    try:
+      generadores = _obtener_generadores()
+    except Exception as error:
+      for ruta in rutas:
+        errores.append(
+          f"inicializar_generadores[{ruta}]: "
+          f"{type(error).__name__}: {error}"
+        )
+        fallo = {
+          "etapa": "inicializar_generadores",
+          "ruta": ruta,
+          "tipo_error": type(error).__name__,
+          "mensaje": str(error),
+        }
+        if estado.get("id") is not None:
+          fallo["id"] = estado["id"]
+        fallos.append(fallo)
+      return {
+        "activos_generados": activos,
+        "errores": errores,
+        "fallos": fallos,
+      }
 
     for ruta in rutas:
         cadena = generadores.get(ruta)
@@ -888,6 +911,15 @@ def generar_activos(estado: EstadoAgente) -> dict:
             errores.append(
                 f"generar_activos[{ruta}]: generador no configurado"
             )
+            fallo = {
+                "etapa": "generar_activos",
+                "ruta": ruta,
+                "tipo_error": "GeneradorNoConfigurado",
+                "mensaje": "generador no configurado",
+            }
+            if estado.get("id") is not None:
+                fallo["id"] = estado["id"]
+            fallos.append(fallo)
             continue
 
         try:
@@ -907,8 +939,18 @@ def generar_activos(estado: EstadoAgente) -> dict:
                 f"generar_activos[{ruta}]: "
                 f"{type(error).__name__}: {error}"
             )
+            fallo = {
+                "etapa": "generar_activos",
+                "ruta": ruta,
+                "tipo_error": type(error).__name__,
+                "mensaje": str(error),
+            }
+            if estado.get("id") is not None:
+                fallo["id"] = estado["id"]
+            fallos.append(fallo)
 
     return {
         "activos_generados": activos,
         "errores": errores,
+        "fallos": fallos,
     }

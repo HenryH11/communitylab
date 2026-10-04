@@ -47,3 +47,4 @@ class EstadoAgente(TypedDict, total=False):
 
     # Control de errores
     errores: list[str]
+    fallos: list[dict]

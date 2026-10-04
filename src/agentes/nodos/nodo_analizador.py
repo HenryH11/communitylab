@@ -24,11 +24,22 @@ def _campos_analisis(resultado) -> dict:
     return analisis.model_dump()
 
 
-def _error_analisis(prefijo: str, error: Exception) -> dict:
+def _error_analisis(
+    prefijo: str,
+    error: Exception,
+    identificador: str | None = None,
+) -> dict:
+    fallo = {
+        "etapa": prefijo,
+        "tipo_error": type(error).__name__,
+        "mensaje": str(error),
+    }
+    if identificador is not None:
+        fallo["id"] = identificador
+
     return {
-        "errores": [
-            f"{prefijo}: {type(error).__name__}: {error}"
-        ]
+        "errores": [f"{prefijo}: {type(error).__name__}: {error}"],
+        "fallos": [fallo],
     }
 
 
@@ -38,7 +49,11 @@ def _analizar_individualmente(estado: EstadoAgente) -> dict:
             cadena_analisis.invoke(_entrada_analisis(estado))
         )
     except Exception as error:
-        return _error_analisis("analizar_mensaje", error)
+        return _error_analisis(
+            "analizar_mensaje",
+            error,
+            estado.get("id"),
+        )
 
 
 def analizar_mensaje(estado: EstadoAgente) -> dict:
@@ -58,14 +73,24 @@ def analizar_mensaje(estado: EstadoAgente) -> dict:
 
     except Exception as error:
         errores = list(estado.get("errores", []))
+        fallos = list(estado.get("fallos", []))
 
         errores.append(
             f"analizar_mensaje: "
             f"{type(error).__name__}: {error}"
         )
+        fallo = {
+            "etapa": "analizar_mensaje",
+            "tipo_error": type(error).__name__,
+            "mensaje": str(error),
+        }
+        if estado.get("id") is not None:
+            fallo["id"] = estado["id"]
+        fallos.append(fallo)
 
         return {
-            "errores": errores
+            "errores": errores,
+            "fallos": fallos,
         }
 
 
@@ -108,8 +133,8 @@ def analizar_lote(estados: list[EstadoAgente]) -> list[dict]:
             )
     except Exception as error:
         return [
-            _error_analisis("analizar_lote", error)
-            for _ in estados
+            _error_analisis("analizar_lote", error, estado["id"])
+            for estado in estados
         ]
 
     estados_por_id = {

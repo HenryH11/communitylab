@@ -78,6 +78,23 @@ def _validar_resultados(resultados: list[dict]) -> None:
                 f"{identificador}: errores debe ser una lista"
             )
 
+        fallos = resultado.get("fallos", [])
+        if not isinstance(fallos, list):
+            raise ValueError(
+                f"{identificador}: fallos debe ser una lista"
+            )
+        for fallo in fallos:
+            if (
+                not isinstance(fallo, dict)
+                or fallo.get("id") != identificador
+                or not isinstance(fallo.get("etapa"), str)
+                or not isinstance(fallo.get("tipo_error"), str)
+                or not isinstance(fallo.get("mensaje"), str)
+            ):
+                raise ValueError(
+                    f"{identificador}: registro de fallo inválido"
+                )
+
         if not errores:
             for campo in (
                 "sentimiento",
@@ -159,6 +176,9 @@ def _preparar_interaccion(
     )
     interaccion["errores"] = deepcopy(
         resultado.get("errores", [])
+    )
+    interaccion["fallos"] = deepcopy(
+        resultado.get("fallos", [])
     )
 
     return interaccion
@@ -262,6 +282,14 @@ def preparar_entrega_resultados(
     activos = _extraer_activos(
         resultados
     )
+    fallos = [
+        deepcopy(fallo)
+        for resultado in resultados
+        for fallo in resultado.get("fallos", [])
+    ]
+    fallos_por_etapa = _ordenar_distribucion(
+        Counter(fallo["etapa"] for fallo in fallos)
+    )
 
     total_con_activos = sum(
         bool(
@@ -332,6 +360,8 @@ def preparar_entrega_resultados(
                 activos
             ),
             "total_con_errores": total_con_errores,
+            "total_fallos": len(fallos),
+            "fallos_por_etapa": fallos_por_etapa,
             "sentimiento_predominante": (
                 sentimiento_predominante
             ),
@@ -361,6 +391,7 @@ def preparar_entrega_resultados(
         },
         "interacciones": interacciones,
         "activos": activos,
+        "fallos": fallos,
         "pendientes": deepcopy(
             pendientes
         ),

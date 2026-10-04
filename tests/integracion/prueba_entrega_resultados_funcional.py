@@ -359,7 +359,7 @@ def test_entrega_funcional_ciencia_datos():
 
     assert entrega[
         "version_contrato"
-    ] == "1.1"
+    ] == "1.2"
 
     assert resumen[
         "total_interacciones_procesadas"
@@ -386,6 +386,14 @@ def test_entrega_funcional_ciencia_datos():
     assert resumen[
         "total_con_errores"
     ] == total_con_errores_esperado
+
+    assert resumen[
+        "total_fallos"
+    ] == len(entrega["fallos"])
+
+    assert sum(
+        resumen["fallos_por_etapa"].values()
+    ) == resumen["total_fallos"]
 
     assert len(
         entrega["interacciones"]

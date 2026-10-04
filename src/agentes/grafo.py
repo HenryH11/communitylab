@@ -145,10 +145,13 @@ def procesar_estados_por_lotes(
             estado_actualizado = dict(estado)
             errores = list(estado_actualizado.get("errores", []))
             errores.extend(campos_analisis.get("errores", []))
+            fallos = list(estado_actualizado.get("fallos", []))
+            fallos.extend(campos_analisis.get("fallos", []))
             estado_actualizado.update(campos_analisis)
 
             if errores:
                 estado_actualizado["errores"] = errores
+                estado_actualizado["fallos"] = fallos
                 estado_actualizado["rutas"] = []
                 estado_actualizado["activos_generados"] = {}
                 resultados.append(estado_actualizado)

@@ -145,6 +145,24 @@ class EntregaTests(unittest.TestCase):
                 "tamano_maximo_limitador": 1,
             },
         )
+        huellas_prompts = informe["prompts_ia"]
+        self.assertEqual(huellas_prompts["algoritmo"], "sha256")
+        self.assertEqual(len(huellas_prompts["hash_global"]), 64)
+        self.assertEqual(
+            set(huellas_prompts["por_tarea"]),
+            {
+                "analisis_individual",
+                "analisis_lote",
+                "boletin",
+                "caso_exito",
+                "insight_mejora",
+                "linkedin",
+                "preguntas_frecuentes",
+            },
+        )
+        self.assertTrue(
+            all(len(huella) == 64 for huella in huellas_prompts["por_tarea"].values())
+        )
         plan = paquete["plan"]
         self.assertEqual([c["cantidad"] for c in plan["ciclos"]], [12, 11])
         self.assertEqual(plan["pendientes"], [])

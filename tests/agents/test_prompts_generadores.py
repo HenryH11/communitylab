@@ -4,6 +4,8 @@ from src.agentes.nodos.nodos_generadores import (
     _prompt_linkedin,
     _prompt_preguntas_frecuentes,
 )
+from src.agentes.trazabilidad_prompts import calcular_hash_prompt
+from langchain_core.prompts import ChatPromptTemplate
 
 
 def _contenido_sistema(prompt, **contexto):
@@ -158,3 +160,17 @@ def test_pregunta_programa_faq_prohibe_inventar_informacion_institucional():
     assert "posterior validación humana" in sistema
     assert "Tipo de pregunta: pregunta_programa" in usuario
     assert "costo del certificado" in usuario
+
+
+def test_hash_prompt_es_determinista_y_cambia_con_la_plantilla():
+    prompt_original = ChatPromptTemplate.from_messages(
+        [("system", "Clasifica el mensaje con cuidado.")]
+    )
+    prompt_modificado = ChatPromptTemplate.from_messages(
+        [("system", "Clasifica el mensaje con cuidado y precisión.")]
+    )
+
+    huella_original = calcular_hash_prompt(prompt_original)
+
+    assert huella_original == calcular_hash_prompt(prompt_original)
+    assert huella_original != calcular_hash_prompt(prompt_modificado)

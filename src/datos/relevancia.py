@@ -75,7 +75,7 @@ class ConfiguracionRelevancia:
         if self.maximo_por_lote is not None and (type(self.maximo_por_lote) is not int or self.maximo_por_lote < 1):
             raise ValueError("maximo_por_lote debe ser null o un entero positivo")
         if not isinstance(self.puntos_por_tipo, dict) or set(self.puntos_por_tipo) != TIPOS:
-            raise ValueError("puntos_por_tipo debe contener los cuatro tipos admitidos")
+            raise ValueError("puntos_por_tipo debe contener los cinco tipos admitidos")
         if any(type(v) is not int or v < 0 for v in self.puntos_por_tipo.values()):
             raise ValueError("Los pesos de tipo deben ser enteros no negativos")
         peso_sin_bonus = max(v for t, v in self.puntos_por_tipo.items() if t != "pregunta_programa")

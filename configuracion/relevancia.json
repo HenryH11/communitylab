@@ -5,6 +5,7 @@
   "puntos_por_tipo": {
     "testimonio": 40,
     "pregunta_tecnica": 40,
+    "pregunta_programa": 10,
     "feedback": 30,
     "comentario": 10
   },

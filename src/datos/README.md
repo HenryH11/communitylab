@@ -34,7 +34,7 @@ separa su elegibilidad para contenido. Reutiliza el adaptador de Gustavo a
 python -m src.datos.ingesta --configuracion configuracion/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z --entrega-ia salida/datos/ia --tamano-ciclo 20
 ```
 
-Con esa referencia: **23 estados para sentimiento, 14 seleccionados para contenido
+Con esa referencia: **23 estados para sentimiento, 19 seleccionados para contenido
 y ciclos operativos de 12 y 11 mensajes**. El paquete incluye:
 
 - Selección e informe en `salida/datos`.
@@ -66,7 +66,45 @@ El grafo ya consume ciclos por ID y conserva los remanentes; la aprobación form
 del contrato continúa pendiente.
 Ver [contrato, archivos y ejemplo de consumo](../../docs/contrato_datos_ingesta.md).
 
+## Semana 2 — caracteres, estimación de tokens y tiempo
+
+El informe incluye `rendimiento` con caracteres de entrada, después de limpiar,
+para análisis y para contenido, por lote y en total. `preparar_paquete_ia`
+calcula ambas poblaciones; `procesar_datos` deja las métricas de análisis en
+`null`, porque solo prepara la selección para contenido.
+
+La estimación de tokens usa el largo de los textos. Excluye prompts, metadatos,
+respuestas y reintentos; no mide cuota ni facturación. Se conservan las claves
+de Gustavo: `tokens_estimados` y `tokens_estimados_total` siguen refiriéndose
+al contenido seleccionado.
+
+La revisión de caracteres compara identidad y orden de tildes, eñes y emojis
+tras normalizar HTML y Unicode. Las alertas indican los índices de lote e
+interacción afectados. También se rechazan cadenas no representables en UTF-8.
+
+El tiempo se mide en el CLI. Puede guardarse con `--registro-rendimiento` en
+un JSON separado; el informe de relevancia conserva su reproducibilidad:
+
+```sh
+python -m src.datos.ingesta --configuracion configuracion/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z --entrega-ia salida/datos/ia --tamano-ciclo 20 --registro-rendimiento salida/datos/rendimiento_ejecucion.json
+python -m pytest tests/test_rendimiento_datos.py tests/test_integracion_ciencia_datos.py -v
+```
+
+Las métricas permanecen en `informe["rendimiento"]`; no añaden campos a
+`EstadoAgente` ni modifican el plan que consume Ciencia de Datos. Ver
+[alcance, campos y comprobaciones de Semana 2](../../docs/rendimiento_datos_semana2.md).
+
+**Compatibilidad verificada con Ciencia de Datos (29–30 sep):** la rama
+`feature/DS-Semana2` (Arnold, commit `6bb3c3e`) agrega un test de integración
+E2E real que consume `preparar_paquete_ia()`/`procesar_datos()` de este módulo
+a través de `scripts/apoyo_demostraciones.py`. Ese helper solo lee
+`informe["lotes"]`, nunca `informe["rendimiento"]` — ni los campos originales
+de Gustavo ni las extensiones de Jhonattan les afectan. Sin conflictos de
+merge entre ramas (verificado con `git merge-tree`).
+
 El texto siguiente conserva el contexto original del aporte de Gustavo.
+Reddit queda fuera del flujo acordado para Semana 2; las referencias a su
+ingesta son históricas.
 
 ---
 
@@ -106,8 +144,8 @@ Andá directo a tu sección si no te interesa el resto.
   }
   ```
 
-  `tipo` es uno de: `testimonio` | `pregunta_tecnica` | `comentario` |
-  `feedback`. Hoy tiene 4 lotes simulados: Discord, LinkedIn, Formulario de
+  `tipo` es uno de: `testimonio` | `pregunta_tecnica` | `pregunta_programa` |
+  `comentario` | `feedback`. Hoy tiene 4 lotes simulados: Discord, LinkedIn, Formulario de
   comentarios, y **Alura_Forum_ONE_G10** (simulado, ver sección de Jhonattan).
 
 - **`ingesta_reddit.py`** — ingesta **real** (no simulada) desde Reddit
@@ -203,7 +241,13 @@ ISO 639-1, mayormente `"es"`).
 | --- | --- |
 | `testimonio` | Detector de Historias de Éxito / Generador de contenido para RRSS |
 | `pregunta_tecnica` | Motor de FAQ Dinámico |
+| `pregunta_programa` | FAQ del programa cuando `elegible_faq` es `true` (pregunta completa, tema de programa y score >= umbral) |
 | `comentario` / `feedback` | Panel de salud y sentimiento de la comunidad |
+
+`elegible_faq` lo calcula `relevancia.py`: solo para `pregunta_programa`, con
+un bonus de +25 por pregunta completa (`¿...?`, al menos 4 palabras) y tema del
+programa. Si un texto cumple esa regla con otro tipo, se registra la advertencia
+`pregunta_no_etiquetada` y no recibe el bonus.
 
 **Cuidados importantes antes de asumir cosas:**
 

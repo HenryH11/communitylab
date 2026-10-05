@@ -2,7 +2,8 @@
 
 from .ingesta import (
     _interaccion_para_entrega, construir_estados_agente, procesar_datos,
-    validar_tamano_ciclo, validar_y_limpiar,
+    validar_tamano_ciclo, validar_y_limpiar, actualizar_totales_rendimiento,
+    estimar_tokens,
 )
 from src.agentes.modelo_ia import obtener_configuracion_modelo
 from src.agentes.trazabilidad_prompts import obtener_huellas_prompts
@@ -48,7 +49,8 @@ def preparar_entrega(datos, *, fecha_referencia, configuracion=None):
     """
     limpios = validar_y_limpiar(datos)
     _validar_identidad_y_contexto(limpios)
-    seleccion, informe = procesar_datos(limpios, fecha_referencia=fecha_referencia, configuracion=configuracion)
+    # La medición debe comparar con la entrada original, no con textos ya limpios.
+    seleccion, informe = procesar_datos(datos, fecha_referencia=fecha_referencia, configuracion=configuracion)
     completos = {"lotes": []}
     contenido = {"lotes": []}
     informe["version_entrega"] = "1.1-propuesta"
@@ -66,8 +68,16 @@ def preparar_entrega(datos, *, fecha_referencia, configuracion=None):
         completos["lotes"].append(_proyectar_lote(lote, validos))
         contenido["lotes"].append(_proyectar_lote(lote_seleccion, lote_seleccion["interacciones"]))
         informe["resumen_sentimiento"]["incluidas"] += len(validos)
+        rendimiento_lote = informe["rendimiento"]["lotes"][revision["indice"]]
+        rendimiento_lote.update(
+            interacciones_analisis=len(validos),
+            caracteres_analisis=sum(len(m["texto"]) for m in validos),
+            tokens_estimados_analisis=sum(estimar_tokens(m["texto"]) for m in validos),
+        )
     resumen = informe["resumen_sentimiento"]
     resumen["excluidas_calidad"] = resumen["total"] - resumen["incluidas"]
+    informe["rendimiento"]["analisis_disponible"] = True
+    actualizar_totales_rendimiento(informe["rendimiento"])
     return completos, contenido, informe
 
 

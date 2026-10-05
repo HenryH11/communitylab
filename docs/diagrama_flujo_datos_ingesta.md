@@ -11,7 +11,7 @@ la comunidad hasta que sale como JSON listo para el flujo de IA (Sub-equipo 2).
 flowchart TD
     A[Fuentes de la comunidad<br/>Discord / Slack / Foros / GitHub / Formularios] --> B[Ingesta por lote<br/>origen_comunidad + periodo_referencia + interacciones]
     B --> C[Validar y limpiar JSON<br/>HTML común, controles y espacios]
-    C --> D[Puntuación de relevancia<br/>tipo: testimonio / pregunta_tecnica / comentario / feedback]
+    C --> D[Puntuación de relevancia<br/>tipo: testimonio / pregunta_tecnica / pregunta_programa / comentario / feedback]
     D --> E[JSON de salida<br/>salida/datos/mensajes_filtrados.json]
     D --> R[Informe separado<br/>puntajes y motivos de descarte]
     D --> P[Población válida completa<br/>incluye críticas breves y bajo puntaje]

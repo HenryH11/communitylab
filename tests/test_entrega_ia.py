@@ -119,19 +119,20 @@ class EntregaTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             construir_estados_agente(completos, informe, poblacion="sentimiento")
 
-    def test_dataset_23_sentimiento_14_contenido_dos_ciclos(self):
+    def test_dataset_23_sentimiento_19_contenido_dos_ciclos(self):
         datos = json.loads((RAIZ / "src/datos/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
         paquete = preparar_paquete_ia(datos, fecha_referencia=FECHA)
         self.assertEqual(len(paquete["estados"]), 23)
-        self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 14)
+        self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 19)
         plan = paquete["plan"]
         self.assertEqual([c["cantidad"] for c in plan["ciclos"]], [12, 11])
         self.assertEqual(plan["pendientes"], [])
         self.assertTrue({"int-022", "int-023"} <= set(plan["ids_contenido"]))
+        # Las dudas completas del programa ahora son contenido y FAQ elegibles (ver relevancia.py).
         administrativos = {"int-004", "int-007", "int-010", "int-013", "int-015"}
-        self.assertFalse(administrativos & set(plan["ids_contenido"]))
-        self.assertTrue(administrativos <= {e["id"] for e in paquete["estados"]})
-        claves = {"id", "autor", "canal", "origen", "idioma", "texto", "tipo_original", "score_relevancia"}
+        self.assertTrue(administrativos <= set(plan["ids_contenido"]))
+        self.assertEqual({e["id"] for e in paquete["estados"] if e["elegible_faq"]}, administrativos)
+        claves = {"id", "autor", "canal", "origen", "idioma", "texto", "tipo_original", "score_relevancia", "elegible_faq"}
         self.assertTrue(all(set(e) == claves for e in paquete["estados"]))
 
     def test_reddit_original_se_conecta_al_mismo_adaptador(self):

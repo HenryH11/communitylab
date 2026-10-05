@@ -5,6 +5,8 @@ from .ingesta import (
     validar_tamano_ciclo, validar_y_limpiar, actualizar_totales_rendimiento,
     estimar_tokens,
 )
+from src.agentes.modelo_ia import obtener_configuracion_modelo
+from src.agentes.trazabilidad_prompts import obtener_huellas_prompts
 
 
 CAMPOS = ("id", "autor", "canal", "tipo", "texto", "fecha", "idioma")
@@ -111,8 +113,10 @@ def construir_plan_procesamiento(estados, tamano_ciclo=20):
 
 
 def preparar_paquete_ia(datos, *, fecha_referencia, configuracion=None, tamano_ciclo=20):
-    """Reutiliza el adaptador de Gustavo; elegibilidad separada de EstadoAgente."""
+    """Prepara estados e informe reproducible sin inicializar ni llamar al LLM."""
     completos, contenido, informe = preparar_entrega(datos, fecha_referencia=fecha_referencia, configuracion=configuracion)
+    informe["modelo_ia"] = obtener_configuracion_modelo()
+    informe["prompts_ia"] = obtener_huellas_prompts()
     estados = construir_estados_agente(completos, informe, poblacion="sentimiento")
     plan = construir_plan_procesamiento(estados, tamano_ciclo)
     plan["ids_contenido"] = [m["id"] for lote in contenido["lotes"] for m in lote["interacciones"]]

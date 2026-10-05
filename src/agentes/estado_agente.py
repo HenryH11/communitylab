@@ -6,6 +6,7 @@ Ruta = Literal[
     "caso_exito",
     "linkedin",
     "boletin",
+    "insight_mejora",
 ]
 
 
@@ -26,6 +27,7 @@ class EstadoAgente(TypedDict, total=False):
     # Relevancia calculada por el equipo de Datos
     score_relevancia: float | None
     elegible_contenido: bool
+    elegible_faq: bool
 
     # -----------------------------
     # Resultado de LangChain / Gemini
@@ -45,3 +47,4 @@ class EstadoAgente(TypedDict, total=False):
 
     # Control de errores
     errores: list[str]
+    fallos: list[dict]

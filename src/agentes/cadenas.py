@@ -123,6 +123,7 @@ Utiliza únicamente:
 
 - testimonio
 - pregunta_tecnica
+- pregunta_programa
 - feedback
 - comentario
 
@@ -146,14 +147,45 @@ y una transformación personal concreta, prioriza testimonio.
 pregunta_tecnica:
 Pregunta cuya intención principal es resolver una duda técnica
 relacionada con programación, datos, inteligencia artificial,
-código, herramientas o implementación.
+código, herramientas, infraestructura o implementación.
+
+Ejemplos:
+- errores de código;
+- uso de Python o SQL;
+- configuración de LangGraph;
+- comportamiento de un modelo;
+- herramientas de datos o IA.
 
 IMPORTANTE:
-Preguntas administrativas o informativas sobre certificados,
-fechas, inscripciones, grabaciones, horarios o funcionamiento
-general del programa NO son pregunta_tecnica.
-Esos casos deben clasificarse como comentario.
+Preguntas administrativas, académicas o informativas sobre el
+programa NO son pregunta_tecnica.
 
+pregunta_programa:
+Pregunta cuya intención principal es obtener información sobre
+el programa, curso, comunidad o institución, pero que no requiere
+resolver un problema técnico.
+
+Incluye preguntas sobre:
+- certificados y costos;
+- fechas e inscripciones;
+- horarios;
+- grabaciones y acceso a clases;
+- rutas o especialidades del programa;
+- prácticas profesionales;
+- alianzas con empresas;
+- beneficios o funcionamiento general del programa.
+
+Ejemplos:
+- "¿El certificado final tiene costo adicional?"
+- "¿Hasta cuándo puedo inscribirme al hackathon?"
+- "¿Cómo puedo acceder a las grabaciones?"
+- "¿Cuál es la diferencia entre Data Analyst y Data Scientist?"
+- "¿Tienen alianzas con empresas para prácticas profesionales?"
+
+IMPORTANTE:
+No clasifiques como pregunta_programa una duda de código,
+herramientas, datos, IA o implementación. Esos casos deben ser
+pregunta_tecnica.
 
 feedback:
 Mensaje cuyo objetivo principal es señalar una mejora, problema,
@@ -165,9 +197,9 @@ no debe clasificarse automáticamente como feedback.
 
 
 comentario:
-Observación, reacción, felicitación, elogio, información general
-o consulta administrativa que no presenta una transformación
-personal relevante, una duda técnica ni una sugerencia concreta.
+Observación, reacción, felicitación, elogio o información general
+que no presenta una transformación personal relevante, una pregunta
+técnica, una pregunta sobre el programa ni una sugerencia concreta.
 
 Los elogios generales como:
 - "Buen material"
@@ -175,7 +207,7 @@ Los elogios generales como:
 - "Los mentores responden rápido"
 
 deben clasificarse como comentario si no contienen una propuesta
-de mejora o una historia personal de impacto.
+de mejora, una pregunta o una historia personal de impacto.
 
 
 # EJEMPLOS DE CLASIFICACIÓN
@@ -262,7 +294,17 @@ Resultado:
 sentimiento: neutral
 tema_principal: certificacion
 subtema: costo del certificado
-tipo_detectado: comentario
+tipo_detectado: pregunta_programa
+
+
+Mensaje:
+"¿Cómo puedo acceder a las grabaciones si me perdí una sesión?"
+
+Resultado:
+sentimiento: neutral
+tema_principal: plataforma
+subtema: acceso a grabaciones
+tipo_detectado: pregunta_programa
 
 
 # METADATOS

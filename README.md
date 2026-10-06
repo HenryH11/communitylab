@@ -33,7 +33,9 @@ Puntos de entrada útiles:
 
 - `src/datos/ingesta.py`: CLI de limpieza, selección e informes.
 - `src/datos/ingesta_reddit.py`: extracción y transformación de entradas RSS/Atom.
-- `src/agentes/grafo.py`: procesamiento por lotes y coordinación del grafo.
+- `src/agentes/procesamiento.py`: procesamiento completo del paquete de entrega.
+- `src/agentes/grafo.py`: grafo de LangGraph y procesamiento por lotes.
+- `src/agentes/recuperacion.py`: reprocesamiento de fallos.
 - `scripts/demostracion_lotes_ciencia_datos.py`: demo de integración DA → DS.
 
 ## Inicio rápido (•̀ω•́)و
@@ -70,6 +72,7 @@ anotadores independientes.
 
 ## Documentación (•̀ᴗ•́)و
 
+- [Manual maestro de lectura del código](docs/manual_lectura_codigo.md)
 - [Guía de ejecución y pruebas](docs/guia_pruebas.md)
 - [Arquitectura general](docs/arquitectura_general_sistema.md)
 - [Contrato de datos de ingesta](docs/contrato_datos_ingesta.md)

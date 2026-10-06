@@ -3,24 +3,22 @@
 import hashlib
 import json
 
-from src.agentes.cadenas import template_analisis, template_analisis_lote
-from src.agentes.nodos.nodos_generadores import (
-    _prompt_boletin,
-    _prompt_caso_exito,
-    _prompt_insight_mejora,
-    _prompt_linkedin,
-    _prompt_preguntas_frecuentes,
-)
+from src.agentes.prompts.analisis import template_analisis, template_analisis_lote
+from src.agentes.prompts.boletin import prompt_boletin
+from src.agentes.prompts.caso_exito import prompt_caso_exito
+from src.agentes.prompts.insight_mejora import prompt_insight_mejora
+from src.agentes.prompts.linkedin import prompt_linkedin
+from src.agentes.prompts.preguntas_frecuentes import prompt_preguntas_frecuentes
 
 
 PLANTILLAS = {
     "analisis_individual": template_analisis,
     "analisis_lote": template_analisis_lote,
-    "boletin": _prompt_boletin,
-    "caso_exito": _prompt_caso_exito,
-    "insight_mejora": _prompt_insight_mejora,
-    "linkedin": _prompt_linkedin,
-    "preguntas_frecuentes": _prompt_preguntas_frecuentes,
+    "boletin": prompt_boletin,
+    "caso_exito": prompt_caso_exito,
+    "insight_mejora": prompt_insight_mejora,
+    "linkedin": prompt_linkedin,
+    "preguntas_frecuentes": prompt_preguntas_frecuentes,
 }
 
 

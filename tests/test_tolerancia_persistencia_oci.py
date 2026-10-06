@@ -13,10 +13,17 @@ from unittest.mock import Mock
 
 import pytest
 
-oci = pytest.importorskip("oci")
-
 from src.agentes.estado_agente import Ruta
-from src.config.oci_client import RUTAS_ACTIVO, nombre_objeto_activo, subir_json
+
+# skipif en lugar de importorskip(): unittest discover también importa este módulo.
+try:
+    import oci
+    from src.config.oci_client import RUTAS_ACTIVO, nombre_objeto_activo, subir_json
+except ImportError:
+    oci = None
+    RUTAS_ACTIVO = frozenset()
+
+pytestmark = pytest.mark.skipif(oci is None, reason="SDK de OCI no instalado")
 
 
 RAIZ = Path(__file__).resolve().parents[1]

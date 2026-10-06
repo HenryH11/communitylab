@@ -123,7 +123,7 @@ class EntregaTests(unittest.TestCase):
         datos = json.loads((RAIZ / "src/datos/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
         paquete = preparar_paquete_ia(datos, fecha_referencia=FECHA)
         self.assertEqual(len(paquete["estados"]), 23)
-        self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 14)
+        self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 19)
         informe = paquete["informe"]
         self.assertEqual(informe["version_criterio"], "1.0-propuesta")
         self.assertEqual(

@@ -1,4 +1,12 @@
-from src.agentes.nodos.nodo_enrutador import determinar_rutas
+from typing import cast
+
+from src.agentes.estado_agente import EstadoAgente
+from src.agentes.nodos.nodo_enrutador import determinar_rutas as _determinar_rutas
+
+
+def determinar_rutas(estado: dict) -> dict:
+    # El enrutador solo lee clasificación y elegibilidad; estos casos omiten id/texto.
+    return _determinar_rutas(cast(EstadoAgente, estado))
 
 
 def test_testimonio_relevante():

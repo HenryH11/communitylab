@@ -8,6 +8,10 @@ import json
 from pathlib import Path
 import re
 import unicodedata
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from src.agentes.estado_agente import EstadoAgente
 
 if __package__:
     from .relevancia import ConfiguracionRelevancia, leer_fecha, seleccionar_lote
@@ -119,7 +123,7 @@ def procesar_datos(datos, *, fecha_referencia, configuracion=None):
     return salida, informe
 
 
-def construir_estado_agente(mensaje, puntaje, origen):
+def construir_estado_agente(mensaje, puntaje, origen) -> "EstadoAgente":
     """Traduce una interacción ya depurada al subconjunto de entrada de `EstadoAgente`
     (ver `src/agentes/estado_agente.py`, Sub-equipo 2), confirmado con Ciencia de Datos:
 
@@ -146,7 +150,7 @@ def construir_estado_agente(mensaje, puntaje, origen):
     for campo in ("id", "idioma"):
         if campo in mensaje:
             estado[campo] = mensaje[campo]
-    return estado
+    return cast("EstadoAgente", estado)
 
 
 def construir_estados_agente(salida, informe, *, poblacion="contenido"):

@@ -4,7 +4,7 @@ from src.agentes.estado_agente import EstadoAgente
 UMBRAL_RELEVANCIA = 40
 
 
-def determinar_rutas(estado: EstadoAgente) -> dict:
+def determinar_rutas(state: EstadoAgente) -> dict:
     """
     Determina qué activos puede generar una interacción
     a partir del análisis semántico y de las decisiones
@@ -15,12 +15,12 @@ def determinar_rutas(estado: EstadoAgente) -> dict:
 
     rutas = []
 
-    tipo = estado.get("tipo_detectado")
-    sentimiento = estado.get("sentimiento")
+    tipo = state.get("tipo_detectado")
+    sentimiento = state.get("sentimiento")
 
-    elegible_contenido = estado.get("elegible_contenido")
-    elegible_faq = estado.get("elegible_faq", False)
-    puntaje = estado.get("score_relevancia")
+    elegible_contenido = state.get("elegible_contenido")
+    elegible_faq = state.get("elegible_faq", False)
+    puntaje = state.get("score_relevancia")
 
     # Las preguntas del programa utilizan una elegibilidad específica
     # definida por Data. No dependen de la ruta general de contenido.

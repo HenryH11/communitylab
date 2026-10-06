@@ -3,13 +3,15 @@ from pathlib import Path
 from typing import get_args
 
 from scripts.evaluar_casos_ambiguos import (
-    CAMPOS_EVALUADOS,
     RUTA_EJECUCION_ANTERIOR,
     RUTA_REFERENCIA,
-    UMBRALES_MINIMOS,
-    _evaluacion_aprobada,
-    calcular_metricas,
     cargar_interacciones,
+)
+from src.evaluacion import (
+    CAMPOS_EVALUADOS,
+    UMBRALES_MINIMOS,
+    calcular_metricas,
+    evaluacion_aprobada as _evaluacion_aprobada,
     evaluar_rutas_referencia,
 )
 from src.agentes.nodos.nodo_enrutador import determinar_rutas
@@ -40,6 +42,13 @@ def test_casos_candidatos_tienen_esquema_y_rutas_consistentes():
         "comentario",
         "feedback",
     }
+    caso_feedback_sugerencia = next(
+        interaccion
+        for interaccion in interacciones
+        if interaccion["id"] == "int-006"
+    )
+    assert caso_feedback_sugerencia["sentimiento"] == "neutral"
+    assert caso_feedback_sugerencia["tipo_detectado"] == "feedback"
 
     datos = json.loads(
         (RAIZ_REPOSITORIO / documento["origen_datos"]).read_text(encoding="utf-8")

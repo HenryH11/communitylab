@@ -1,0 +1,182 @@
+# Criterio de puntuación de relevancia
+
+Implementación de Jhonattan Benavides sobre el diseño inicial de Gustavo Vásquez.
+Versión `1.0-propuesta`, 17 de septiembre de 2026. Los pesos son una propuesta
+funcional para revisión conjunta con Gustavo y el subequipo de Ciencia de Datos; no representan
+un acuerdo ya aprobado ni resultados de una evaluación con usuarios reales.
+
+## Función dentro del proyecto
+
+`src/datos/ingesta.py` lee JSON, valida el contrato, limpia los textos y usa
+`src/datos/relevancia.py` para seleccionar mensajes para la generación de contenido.
+Funciona con datos simulados y con la salida JSON de la ingesta de Reddit de Gustavo.
+Usa solamente la biblioteca estándar de Python 3.11+ y no realiza solicitudes de red.
+
+La selección devuelve el mismo formato de entrada y un informe separado con puntaje,
+desglose, palabras clave encontradas, advertencias y motivos de descarte de cada
+interacción. La función de Python no modifica la entrada. La interfaz de línea de comandos (CLI) impide escribir
+las salidas sobre el archivo de entrada o de configuración.
+
+## Reglas implementadas
+
+El puntaje por defecto está entre 0 y 100. Los parámetros se pueden cambiar en
+`configuracion/relevancia.json`; la suma máxima de los pesos configurados debe ser <= 100.
+
+| Señal | Regla inicial |
+| --- | --- |
+| Tipo | `testimonio`: 40; `pregunta_tecnica`: 40; `pregunta_programa`: 10; `feedback`: 30; `comentario`: 10 |
+| Pregunta completa del programa | +25 solo si el tipo es `pregunta_programa`, el texto es una pregunta completa (`¿...?` con al menos 4 palabras) y toca el vocabulario del programa (`palabras_programa`). Genera `elegible_faq: true` si además el puntaje llega al umbral |
+| Longitud | 1 punto por palabra hasta 20. Con otro peso: `floor(min(palabras, 20) * puntos_por_longitud / 20)` |
+| Palabras clave | 5 puntos por término distinto hasta 30. Comparación de palabras completas sin distinguir mayúsculas ni tildes; no hay stemming |
+| Frescura | 10 puntos si la fecha está entre el instante de referencia y 7 días antes, incluidos ambos extremos |
+
+Las URLs no suman palabras ni palabras clave. Repetir `python` muchas veces no
+incrementa el puntaje por palabra clave. Se priorizan testimonios y preguntas por
+el objetivo de producir historias de éxito y preguntas frecuentes. Una queja
+útil puede conservarse como `feedback`.
+
+Se excluyen mensajes con cualquiera de estas condiciones:
+
+- Menos de 20 caracteres después de la limpieza (`texto_corto`).
+- Uno o varios enlaces sin texto que aporte contexto (`solo_enlaces`).
+- La misma palabra repetida 6 o más veces sin otras palabras (`texto_repetitivo`).
+- Marcadores `[deleted]`, `[removed]` y sus variantes `by user` / `by moderator`,
+  en el texto o autor (`contenido_eliminado`).
+- El mismo autor, canal y texto normalizados en el lote (`duplicado`), o un ID ya
+  visto en ese lote (`id_duplicado`). Se conserva la primera aparición. No se
+  deduplica entre lotes; preguntas iguales de autores distintos se conservan
+  para analizar recurrencia.
+- Puntaje inferior a 40 (`bajo_umbral`).
+
+Estas señales **no excluyen por sí solas** un mensaje; se registran en
+`advertencias` para revisión:
+
+- `caracter_sustitucion_unicode`: el texto contiene U+FFFD, que suele indicar un
+  carácter que no pudo decodificarse. Se conserva en el texto para no ocultar el
+  problema.
+- `grupo_consonantico_extenso`: una palabra formada con letras latinas tiene
+  cinco o más consonantes seguidas. Es una heurística independiente de un
+  diccionario de idioma; puede marcar nombres, términos técnicos o palabras
+  válidas de otros idiomas.
+- `proporcion_alta_de_simbolos`: al menos la mitad de 20 o más caracteres no
+  blancos son símbolos. Las URLs se excluyen del cálculo; emojis se conservan y
+  cuentan como símbolos, por lo que esta señal requiere criterio humano.
+- `patron_de_palabras_repetido`: una secuencia de una a tres palabras se repite
+  tres veces seguidas. Se advierte, pero no se clasifica automáticamente como
+  spam.
+
+Los candidatos se ordenan por puntaje descendente, manteniendo el orden original
+en los empates. `maximo_por_lote` limita la cantidad **por lote**, después de los descartes;
+los demás reciben `fuera_maximo_por_lote`. Por defecto es `null`: pasan todos los que cumplen
+el umbral. No se fuerza un top 20% con una muestra pequeña y aún sin calibrar.
+Un lote sin candidatos se conserva con `interacciones: []`.
+
+## Criterio de clasificación: `pregunta_tecnica`, `pregunta_programa` y `comentario`
+
+**Actualización del 2026-10-03** (propuesta de Ciencia de Datos, aceptada por
+Gustavo Vásquez; el nuevo valor de `tipo` queda pendiente de la aprobación de
+Nelson para el contrato): el criterio del 2026-09-20 dejaba las dudas
+administrativas o del programa como `comentario`. Eso ocultaba preguntas
+completas y relevantes para la comunidad. Se crea el tipo `pregunta_programa`
+para ellas.
+
+- **`pregunta_tecnica`**: duda sobre **código, herramientas o plataforma
+  técnica** (ej. "¿cómo estructuro nodos condicionales en LangGraph?",
+  "error de indentación en un bucle for con pandas", "diferencia entre Grid
+  y Flexbox"). Alimenta el Motor de FAQ Dinámico.
+- **`pregunta_programa`**: pregunta completa sobre el programa, curso, comunidad
+  o institución, sin resolver un problema técnico (costo del certificado,
+  plazos de inscripción, acceso a grabaciones, diferencias entre rutas,
+  alianzas con empresas). Si es completa y relevante para el programa, se
+  marca `elegible_faq: true` y puede responderse con activos de marketing.
+- **`comentario`**: todo lo demás que no sea testimonio, feedback ni duda
+  — elogios y observaciones generales sin propuesta de mejora concreta (ver
+  regla comentario/feedback más abajo).
+
+Pregunta completa: oración interrogativa cerrada (`¿...?`), con al menos 4
+palabras. Una pregunta incompleta o una afirmación con `?` no cuenta. El bonus
+de +25 solo aplica a `pregunta_programa`; si un texto cumple la regla y tiene
+otro tipo, se registra `pregunta_no_etiquetada` para revisión y no se reclasifica
+en silencio.
+
+Reclasificadas a `pregunta_programa` en `mensajes_comunidad_simulados.json`:
+`int-004`, `int-007`, `int-010`, `int-013` e `int-015`. Son las mismas
+interacciones que el 2026-09-20 se habían reclasificado a `comentario`.
+
+Nota de cambio de la sección anterior: el criterio del 2026-09-20 se mantiene
+para `pregunta_tecnica` (código, herramientas, plataforma). Solo cambia el
+destino de las dudas administrativas o del programa.
+
+**Nota para Nelson (no bloqueante):** `docs/arquitectura-solucion/
+contrato-intermedio-ingesta.schema.json` ya señala que la especificación original
+menciona "entregas de proyecto" y "debates de foro" como posibles fuentes de
+valor adicionales. Si más adelante el equipo decide que las dudas
+administrativas merecen su propia categoría (ej. `pregunta_administrativa`),
+sería una ampliación del enum de `tipo` a coordinar con Nelson — no bloquea
+la clasificación actual, que ya es consistente dentro de las 4 categorías
+existentes.
+
+**Regla comentario vs. feedback** (validada contra las interacciones del
+dataset, incluidas las 5 recién reclasificadas): `feedback` es una
+sugerencia, crítica o propuesta de mejora concreta (ej. "sería genial tener
+más talleres prácticos", "sugiero agregar más ejercicios antes del módulo de
+estructuras de datos"); `comentario` es un elogio general, observación o
+observación sin propuesta de mejora (ej. "buena onda el equipo de mentores").
+La pregunta administrativa completa del programa (ej. "¿el certificado tiene
+costo adicional?") es `pregunta_programa`, no `comentario`. Ningún caso del
+dataset actual queda ambiguo bajo esta regla.
+
+## Decisiones y límites
+
+- **Sentimiento:** se pospone la señal emocional del borrador. No se inventan
+  etiquetas ni se duplica el análisis con un modelo de lenguaje que corresponde
+  a Ciencia de Datos. El sentimiento
+  general de la comunidad debe calcularse sobre los datos completos: usar únicamente
+  la selección de marketing sesgaría sus métricas.
+- **Fechas:** una fecha ausente, inválida, sin zona o futura no recibe bonus. Se
+  registra una advertencia y no se sustituye por la fecha actual. Una fecha antigua
+  válida simplemente recibe cero. La referencia es obligatoria en la API de Python;
+  la CLI usa UTC actual si no se indica. Para comparar resultados, fijarla siempre.
+- **Texto:** se conserva capitalización, tildes, emojis y U+FFFD. Se quitan HTML
+  común, scripts/estilos, ciertos caracteres invisibles de formato y se sustituyen
+  controles por espacios. Se colapsan espacios repetidos. No se reconstruye texto
+  dañado ni se detecta idioma. La limpieza aplana saltos de línea; los originales
+  quedan en el archivo de entrada para revisar código multilínea.
+- **Heurísticas:** las advertencias de calidad no alteran el puntaje ni excluyen
+  mensajes. No hay detección semántica de spam. Una pregunta breve y válida puede
+  quedar bajo el mínimo: revisar los descartes y ajustar pesos con el equipo. El
+  vocabulario de relevancia inicial sigue orientado al español y al programa ONE.
+
+## Cómo ejecutar y comprobar
+
+Desde la raíz del repositorio:
+
+```sh
+python -m src.datos.ingesta --configuracion configuracion/relevancia.json --fecha-referencia 2026-09-17T12:00:00Z
+python -m pytest -v
+```
+
+Salidas locales (ignoradas por Git):
+
+- `salida/datos/mensajes_filtrados.json`: lotes para el equipo de IA.
+- `salida/datos/informe_relevancia.json`: decisiones trazables por lote, índice
+  original de interacción (base cero) e ID, si existe; incluye configuración y fecha.
+
+También se admite `python src/datos/ingesta.py`. Los caminos predeterminados se
+resuelven desde el repositorio, aunque se ejecute desde otra carpeta. Los caminos
+proporcionados por el usuario son relativos a su directorio actual. Las salidas
+existentes se reemplazan; usar rutas distintas para conservar varias corridas.
+
+Ejemplo con la muestra real de Gustavo y un máximo de tres mensajes por lote:
+
+```sh
+python -m src.datos.ingesta --entrada tests/fixtures/prueba_reddit_controlada.json --salida salida/reddit/mensajes_filtrados.json --informe salida/reddit/informe_relevancia.json --maximo-por-lote 3 --fecha-referencia 2026-09-17T12:00:00Z
+```
+
+## Integración pendiente de validación del equipo
+
+Arthur, Danny y Arnold pueden consumir los lotes siguiendo
+`docs/contrato_datos_ingesta.md`. Ramses debe validar el contrato propuesto.
+Corresponde revisar conjuntamente pesos, mínimo de longitud, umbral y cantidad
+máxima por lote. La implementación y sus pruebas ya permiten hacer esa revisión
+sin desarrollar otro filtro.

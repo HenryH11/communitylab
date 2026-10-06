@@ -1,22 +1,24 @@
-from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.agentes.grafo import (
-    procesar_estados_por_lotes,
-    procesar_paquete_entrega,
-)
-from src.agentes.modelos import AnalisisLote, AnalisisMensaje, AnalisisMensajeConId
-from src.agentes.nodos.nodo_analizador import analizar_lote
-from src.agentes.nodos.nodos_generadores import (
+from src.agentes.estado_agente import EstadoAgente
+from src.agentes.grafo import procesar_estados_por_lotes
+from src.agentes.procesamiento import procesar_paquete_entrega
+from src.agentes.modelos import (
+    AnalisisLote,
+    AnalisisMensaje,
+    AnalisisMensajeConId,
+    Sentimiento,
     SugerenciaPreguntasFrecuentes,
-    generar_activos,
+    TipoInteraccion,
 )
+from src.agentes.nodos.nodo_analizador import analizar_lote
+from src.agentes.nodos.nodos_generadores import generar_activos
 from src.agentes.entrega_resultados import preparar_entrega_resultados
 
 
-def crear_estado(mensaje_id, puntaje=80):
+def crear_estado(mensaje_id, puntaje=80) -> EstadoAgente:
     return {
         "id": mensaje_id,
         "autor": "Ana",
@@ -32,7 +34,11 @@ def crear_estado(mensaje_id, puntaje=80):
     }
 
 
-def crear_analisis(mensaje_id, tipo="pregunta_tecnica", sentimiento="neutral"):
+def crear_analisis(
+    mensaje_id,
+    tipo: TipoInteraccion = "pregunta_tecnica",
+    sentimiento: Sentimiento = "neutral",
+):
     return AnalisisMensajeConId(
         id=mensaje_id,
         sentimiento=sentimiento,
@@ -200,10 +206,10 @@ def test_id_de_contenido_controla_enrutamiento_y_el_puntaje_bajo_se_analiza():
             ids_contenido={"int-022", "int-002"},
         )[0]
 
-    assert resultado["sentimiento"] == "positivo"
-    assert resultado["rutas"] == []
-    assert resultado["activos_generados"] == {}
-    assert resultado["elegible_contenido"] is False
+    assert resultado.get("sentimiento") == "positivo"
+    assert resultado.get("rutas") == []
+    assert resultado.get("activos_generados") == {}
+    assert resultado.get("elegible_contenido") is False
 
 
 def test_estado_por_lotes_se_subdivide_sin_perder_orden_ni_ids():
@@ -268,9 +274,9 @@ def test_elegibilidad_por_id_prevalece_sobre_puntaje_en_enrutamiento():
             ids_contenido={"int-022"},
         )[0]
 
-    assert resultado["rutas"] == ["preguntas_frecuentes"]
+    assert resultado.get("rutas") == ["preguntas_frecuentes"]
     assert (
-        resultado["activos_generados"]["preguntas_frecuentes"]["tema"]
+        resultado.get("activos_generados", {})["preguntas_frecuentes"]["tema"]
         == "Enrutador"
     )
 
@@ -292,7 +298,7 @@ def test_procesar_paquete_sigue_ciclos_por_id_y_devuelve_pendientes():
         return [dict(estado, rutas=[]) for estado in grupo]
 
     with patch(
-        "src.agentes.grafo.procesar_estados_por_lotes",
+        "src.agentes.procesamiento.procesar_estados_por_lotes",
         side_effect=procesar_grupo,
     ):
         resultado = procesar_paquete_entrega(paquete)
@@ -321,7 +327,9 @@ def test_sin_rutas_no_inicializa_generadores_ni_requiere_gemini():
     with patch(
         "src.agentes.nodos.nodos_generadores._obtener_generadores"
     ) as obtener_generadores:
-        resultado = generar_activos({"rutas": [], "errores": []})
+        resultado = generar_activos(
+            {"id": "id-vacio", "texto": "Mensaje", "rutas": [], "errores": []}
+        )
 
     obtener_generadores.assert_not_called()
     assert resultado == {"activos_generados": {}, "errores": [], "fallos": []}
@@ -350,6 +358,8 @@ def test_fallo_de_generacion_conserva_id_etapa_y_ruta():
             "ruta": "preguntas_frecuentes",
             "tipo_error": "RuntimeError",
             "mensaje": "API no disponible",
+            "intentos": 1,
+            "reintentable": False,
         }
     ]
 

@@ -18,10 +18,15 @@ from src.agentes.estado_agente import Ruta
 # skipif en lugar de importorskip(): unittest discover también importa este módulo.
 try:
     import oci
-    from src.config.oci_client import RUTAS_ACTIVO, nombre_objeto_activo, subir_json
-except ImportError:
+except ModuleNotFoundError as error:
+    # Omitir solo si falta el SDK; sus dependencias rotas deben ser visibles.
+    if error.name != "oci":
+        raise
     oci = None
     RUTAS_ACTIVO = frozenset()
+else:
+    # Los errores del conector del proyecto no equivalen a un SDK ausente.
+    from src.config.oci_client import RUTAS_ACTIVO, nombre_objeto_activo, subir_json
 
 pytestmark = pytest.mark.skipif(oci is None, reason="SDK de OCI no instalado")
 

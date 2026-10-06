@@ -40,6 +40,7 @@ MODELOS_FREE_ENDPOINT = {
         "https://build.nvidia.com/deepseek-ai/deepseek-v4.1-flash",
 }
 FECHA_CATALOGO = "2026-10-06"
+MODELO_NEMOTRON = "nvidia/nemotron-3.5-lightning-30b-a3b"
 TAREAS = {
     "analisis": (template_analisis, AnalisisMensaje),
     "linkedin": (_prompt_linkedin, PublicacionLinkedIn),
@@ -94,7 +95,10 @@ def preparar_casos(paquete, tarea):
             for m in plantilla.format_messages(**contexto)
         ]
         mensajes[0]["content"] += (
-            "\nDevuelve exclusivamente un objeto JSON sin markdown, con este esquema: "
+            "\nDevuelve exclusivamente una INSTANCIA de datos JSON que cumpla el esquema siguiente. "
+            "Analiza el mensaje del usuario y rellena los campos con los resultados. "
+            "NO devuelvas ni copies el esquema: properties, required, title y type no son campos de la respuesta. "
+            "No incluyas markdown. Esquema de validación (solo como referencia): "
             + json.dumps(esquema.model_json_schema(), ensure_ascii=False)
         )
         huella = hashlib.sha256(
@@ -106,12 +110,16 @@ def preparar_casos(paquete, tarea):
     return casos
 
 
-def solicitar(modelo, caso, clave, timeout, max_tokens):
+def solicitar(modelo, caso, clave, timeout, max_tokens, sin_razonamiento=False):
     cuerpo = {
         "model": modelo, "messages": caso["mensajes"], "stream": False,
         "temperature": 0, "max_tokens": max_tokens,
         "response_format": {"type": "json_object"},
     }
+    if sin_razonamiento:
+        if modelo != MODELO_NEMOTRON:
+            raise ValueError("La desactivación de razonamiento solo se verificó para Nemotron")
+        cuerpo["chat_template_kwargs"] = {"enable_thinking": False}
     peticion = Request(
         ENDPOINT, data=json.dumps(cuerpo, ensure_ascii=False).encode("utf-8"),
         headers={"Authorization": "Bearer " + clave, "Content-Type": "application/json"},
@@ -136,7 +144,7 @@ def validar_respuesta(respuesta, esquema):
         raise RespuestaInvalida("json_o_esquema_invalido") from error
 
 
-def medir(modelo, caso, repeticion, *, tarea, clave, timeout, max_tokens, ritmo):
+def medir(modelo, caso, repeticion, *, tarea, clave, timeout, max_tokens, ritmo, sin_razonamiento=False):
     inicio_espera = time.perf_counter()
     ritmo.esperar()
     inicio = time.perf_counter()
@@ -147,7 +155,7 @@ def medir(modelo, caso, repeticion, *, tarea, clave, timeout, max_tokens, ritmo)
         "valida": False,
     }
     try:
-        respuesta = solicitar(modelo, caso, clave, timeout, max_tokens)
+        respuesta = solicitar(modelo, caso, clave, timeout, max_tokens, sin_razonamiento)
         registro["salida"] = validar_respuesta(respuesta, TAREAS[tarea][1])
         registro["valida"] = True
         uso = respuesta.get("usage")
@@ -212,6 +220,8 @@ def principal(argv=None):
     parser.add_argument("--intervalo", type=numero_positivo, default=1.0, help="Segundos mínimos entre inicios HTTP")
     parser.add_argument("--timeout", type=numero_positivo, default=60.0, help="Timeout de operaciones de red, en segundos")
     parser.add_argument("--max-tokens", type=int, default=4096)
+    parser.add_argument("--sin-razonamiento", action="store_true",
+                        help="Desactiva enable_thinking; solo disponible para Nemotron")
     parser.add_argument("--umbral-segundos", type=numero_positivo, help="Referencia por solicitud; no activa respaldo")
     parser.add_argument("--en-vivo", action="store_true", help="Autoriza llamadas reales a NVIDIA; consume cuota")
     parser.add_argument("--salida", type=Path, help="JSON opcional; usar salida/validacion_semana3/")
@@ -220,6 +230,8 @@ def principal(argv=None):
         if args.max_tokens < 1 or args.max_tokens > 32768:
             raise ValueError("max-tokens debe estar entre 1 y 32768")
         modelos = list(dict.fromkeys(m.strip() for m in args.modelo))
+        if args.sin_razonamiento and any(m != MODELO_NEMOTRON for m in modelos):
+            raise ValueError("--sin-razonamiento solo admite el modelo Nemotron")
         if any(not m or any(c.isspace() for c in m) for m in modelos):
             raise ValueError("Usa identificadores de modelo no vacíos y sin espacios")
         if args.salida is not None:
@@ -246,6 +258,7 @@ def principal(argv=None):
             "solicitudes_planificadas": len(casos) * len(modelos) * args.repeticiones,
             "concurrencia": args.concurrencia, "intervalo_minimo_seg": args.intervalo,
             "timeout_operaciones_red_seg": args.timeout, "max_tokens": args.max_tokens,
+            "razonamiento": "desactivado_enable_thinking" if args.sin_razonamiento else "predeterminado_proveedor",
             "repeticiones": args.repeticiones, "umbral_solicitud_seg": args.umbral_segundos,
             "alcance": "Solicitudes individuales aisladas; no mide el grafo ni exactitud semántica",
             "respaldo_gemini": "no_implementado_en_este_ensayo",
@@ -263,7 +276,8 @@ def principal(argv=None):
 
                 def trabajo(par):
                     return medir(modelo, par[0], par[1], tarea=args.tarea, clave=clave,
-                                 timeout=args.timeout, max_tokens=args.max_tokens, ritmo=ritmo)
+                                 timeout=args.timeout, max_tokens=args.max_tokens, ritmo=ritmo,
+                                 sin_razonamiento=args.sin_razonamiento)
 
                 with ThreadPoolExecutor(max_workers=args.concurrencia) as grupo:
                     registros.extend(grupo.map(trabajo, trabajos))

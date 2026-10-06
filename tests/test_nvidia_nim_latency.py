@@ -93,19 +93,24 @@ def test_json_incompleto_o_fuera_de_contrato_se_rechaza(malformada):
         nim.validar_respuesta(malformada, nim.AnalisisMensaje)
 
 
-def test_transporte_fija_endpoint_y_envia_json_utf8(bloquear_red):
+@pytest.mark.parametrize("sin_razonamiento", [False, True])
+def test_transporte_fija_endpoint_y_envia_json_utf8(bloquear_red, sin_razonamiento):
     caso = {"mensajes": [{"role": "user", "content": "¿Qué pasó? 👩‍💻"}]}
     contexto = MagicMock()
     contexto.__enter__.return_value.read.return_value = json.dumps(respuesta()).encode()
     bloquear_red.side_effect = None
     bloquear_red.return_value.open.return_value = contexto
-    resultado = nim.solicitar(MODELO, caso, "clave-prueba", 60, 4096)
+    resultado = nim.solicitar(MODELO, caso, "clave-prueba", 60, 4096, sin_razonamiento)
     peticion = bloquear_red.return_value.open.call_args.args[0]
     assert peticion.full_url == nim.ENDPOINT
     assert peticion.get_header("Authorization") == "Bearer clave-prueba"
     cuerpo = json.loads(peticion.data.decode("utf-8"))
     assert cuerpo["messages"] == caso["mensajes"]
     assert cuerpo["response_format"] == {"type": "json_object"}
+    if sin_razonamiento:
+        assert cuerpo["chat_template_kwargs"] == {"enable_thinking": False}
+    else:
+        assert "chat_template_kwargs" not in cuerpo
     assert nim.validar_respuesta(resultado, nim.AnalisisMensaje) == ANALISIS
     assert isinstance(bloquear_red.call_args.args[0], nim.SinRedirecciones)
     assert nim.SinRedirecciones().redirect_request(None, None, 302, None, None, "https://otro") is None
@@ -185,3 +190,10 @@ def test_informe_no_puede_reemplazar_entrada(archivo):
         nim.principal(["--entrada", str(archivo), "--modelo", MODELO, "--salida", str(archivo)])
     assert error.value.code == 2
     assert archivo.read_bytes() == original
+
+
+def test_no_se_aplica_opcion_de_razonamiento_de_nemotron_a_deepseek(archivo):
+    with pytest.raises(SystemExit) as error:
+        nim.principal(["--entrada", str(archivo), "--modelo", "deepseek-ai/deepseek-v4.1-flash",
+                       "--sin-razonamiento"])
+    assert error.value.code == 2

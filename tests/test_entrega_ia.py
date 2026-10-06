@@ -139,7 +139,7 @@ class EntregaTests(unittest.TestCase):
             {
                 "proveedor": "Google Gemini",
                 "identificador_modelo": "gemini-3.5-flash-lite",
-                "max_retries": 6,
+                "max_retries": 2,
                 "solicitudes_por_segundo": 0.2,
                 "intervalo_revision_limitador_segundos": 0.1,
                 "tamano_maximo_limitador": 1,
@@ -196,7 +196,7 @@ class EntregaTests(unittest.TestCase):
     def test_plan_rechaza_ids_y_tamanos_invalidos(self):
         for tamano in (9, 31, True, "20", 0):
             with self.assertRaises(ValueError):
-                construir_plan_procesamiento([], tamano)
+                construir_plan_procesamiento([], tamano)  # pyright: ignore[reportArgumentType]
         for estados in ([{}], [{"id": " x "}], [{"id": "x"}, {"id": "x"}]):
             with self.assertRaises(ValueError):
                 construir_plan_procesamiento(estados)

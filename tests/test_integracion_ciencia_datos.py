@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from unittest.mock import patch
 
-from src.agentes.grafo import procesar_paquete_entrega
+from src.agentes.procesamiento import procesar_paquete_entrega
 from src.datos.entrega_ia import preparar_paquete_ia
 from src.datos.relevancia import ConfiguracionRelevancia, leer_fecha
 
@@ -150,6 +150,7 @@ def test_grafo_consume_ciclos_de_datos_por_id_y_conserva_pendientes(
 ):
     def procesar_estados_sin_llm(estados, *, ids_contenido, tamano_lote):
         assert tamano_lote == 10
+        assert ids_contenido == set(paquete["plan"]["ids_contenido"])
         return [
             {
                 **estado,
@@ -161,7 +162,7 @@ def test_grafo_consume_ciclos_de_datos_por_id_y_conserva_pendientes(
         ]
 
     with patch(
-        "src.agentes.grafo.procesar_estados_por_lotes",
+        "src.agentes.procesamiento.procesar_estados_por_lotes",
         side_effect=procesar_estados_sin_llm,
     ):
         resultado = procesar_paquete_entrega(paquete)

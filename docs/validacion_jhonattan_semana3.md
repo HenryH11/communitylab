@@ -6,7 +6,7 @@ Preparado el 6 de octubre de 2026, sobre `origin/develop` en `e8177ba`, en la ra
 ## Qué se añadió
 
 - `tests/agents/test_tolerancia_fallas.py`: 19 pruebas del recorrido Datos → grafo real → contrato de salida de Data Science. Se sustituyen las llamadas a modelos por respuestas controladas.
-- `scripts/test_nvidia_nim_latency.py`: ensayo independiente de NVIDIA con planificación sin red y ejecución real opcional.
+- `scripts/medir_latencia_nvidia_nim.py`: ensayo independiente de NVIDIA con planificación sin red y ejecución real opcional.
 - `tests/test_nvidia_nim_latency.py`: pruebas del ensayo con transporte simulado.
 
 Las pruebas comprueban rechazo de datos inválidos antes de llamar a IA, conservación
@@ -50,7 +50,7 @@ python -B -m pytest tests/agents/test_tolerancia_fallas.py tests/test_nvidia_nim
 Planificar el análisis de los 23 mensajes en ambos modelos, sin usar una clave:
 
 ```powershell
-python -B -m scripts.test_nvidia_nim_latency --modelo nvidia/nemotron-3.5-lightning-30b-a3b --modelo deepseek-ai/deepseek-v4.1-flash --salida salida/validacion_semana3/plan_analisis.json
+python -B -m scripts.medir_latencia_nvidia_nim --modelo nvidia/nemotron-3.5-lightning-30b-a3b --modelo deepseek-ai/deepseek-v4.1-flash --salida salida/validacion_semana3/plan_analisis.json
 ```
 
 Este comando prepara 46 solicitudes individuales, pero no las envía. El benchmark
@@ -66,7 +66,7 @@ Para una prueba real, configurar `NVIDIA_API_KEY` en el entorno local o en el `.
 ignorado por Git y añadir `--en-vivo`. Ejemplo de una primera corrida con un modelo:
 
 ```powershell
-python -B -m scripts.test_nvidia_nim_latency --modelo nvidia/nemotron-3.5-lightning-30b-a3b --en-vivo --salida salida/validacion_semana3/nemotron_analisis.json
+python -B -m scripts.medir_latencia_nvidia_nim --modelo nvidia/nemotron-3.5-lightning-30b-a3b --en-vivo --salida salida/validacion_semana3/nemotron_analisis.json
 ```
 
 La ejecución real envía los textos a NVIDIA. El ensayo usa el endpoint oficial
@@ -119,10 +119,12 @@ recorrido con fallos y 20 del ensayo NVIDIA). Los planes sin red se verificaron 
 23 mensajes de análisis, nueve de FAQ y ocho de LinkedIn. No se hicieron llamadas
 reales a NVIDIA.
 
-Comando para repetir esa revisión junto con las pruebas nuevas:
+El script se renombró a `medir_latencia_nvidia_nim.py` para evitar la colisión con
+el módulo de pruebas al descubrir archivos desde la raíz. Comando para verificar
+esa ejecución, manteniendo las exclusiones de OCI de este entorno:
 
 ```powershell
-python -B -m pytest tests --ignore=tests/test_storage.py --ignore=tests/test_persistencia_oci.py -q -p no:cacheprovider
+python -B -m pytest --ignore=tests/test_storage.py --ignore=tests/test_persistencia_oci.py -q -p no:cacheprovider
 ```
 
 Los dos desacuerdos conocidos siguen pendientes de conciliación con el equipo:

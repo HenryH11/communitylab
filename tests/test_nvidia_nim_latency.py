@@ -7,7 +7,7 @@ from urllib.error import HTTPError
 
 import pytest
 
-from scripts import test_nvidia_nim_latency as nim
+from scripts import medir_latencia_nvidia_nim as nim
 
 
 MODELO = next(iter(nim.MODELOS_FREE_ENDPOINT))

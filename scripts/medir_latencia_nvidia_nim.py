@@ -1,7 +1,7 @@
 """Ensayo aislado de NVIDIA NIM. Sin red salvo al indicar --en-vivo.
 
 No cambia el proveedor del grafo ni implementa respaldo hacia Gemini.
-Ejecutar desde la raíz con python -m scripts.test_nvidia_nim_latency --help.
+Ejecutar desde la raíz con python -m scripts.medir_latencia_nvidia_nim --help.
 """
 
 import argparse

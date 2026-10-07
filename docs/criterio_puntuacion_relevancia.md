@@ -24,7 +24,8 @@ El puntaje por defecto está entre 0 y 100. Los parámetros se pueden cambiar en
 
 | Señal | Regla inicial |
 | --- | --- |
-| Tipo | `testimonio`: 40; `pregunta_tecnica`: 40; `feedback`: 30; `comentario`: 10 |
+| Tipo | `testimonio`: 40; `pregunta_tecnica`: 40; `pregunta_programa`: 10; `feedback`: 30; `comentario`: 10 |
+| Pregunta completa del programa | +25 solo si el tipo es `pregunta_programa`, el texto es una pregunta completa (`¿...?` con al menos 4 palabras) y toca el vocabulario del programa (`palabras_programa`). Genera `elegible_faq: true` si además el puntaje llega al umbral |
 | Longitud | 1 punto por palabra hasta 20. Con otro peso: `floor(min(palabras, 20) * puntos_por_longitud / 20)` |
 | Palabras clave | 5 puntos por término distinto hasta 30. Comparación de palabras completas sin distinguir mayúsculas ni tildes; no hay stemming |
 | Frescura | 10 puntos si la fecha está entre el instante de referencia y 7 días antes, incluidos ambos extremos |
@@ -70,27 +71,41 @@ los demás reciben `fuera_maximo_por_lote`. Por defecto es `null`: pasan todos l
 el umbral. No se fuerza un top 20% con una muestra pequeña y aún sin calibrar.
 Un lote sin candidatos se conserva con `interacciones: []`.
 
-## Criterio de clasificación: `pregunta_tecnica` vs. `comentario`
+## Criterio de clasificación: `pregunta_tecnica`, `pregunta_programa` y `comentario`
 
-Definición oficial acordada entre Gustavo y Jhonattan (2026-09-20), a raíz de
-una pregunta de Arnold (Sub-equipo 2) sobre cómo distinguir ambos tipos antes
-de construir el `EstadoAgente` de LangGraph:
+**Actualización del 2026-10-03** (propuesta de Ciencia de Datos, aceptada por
+Gustavo Vásquez; el nuevo valor de `tipo` queda pendiente de la aprobación de
+Nelson para el contrato): el criterio del 2026-09-20 dejaba las dudas
+administrativas o del programa como `comentario`. Eso ocultaba preguntas
+completas y relevantes para la comunidad. Se crea el tipo `pregunta_programa`
+para ellas.
 
 - **`pregunta_tecnica`**: duda sobre **código, herramientas o plataforma
   técnica** (ej. "¿cómo estructuro nodos condicionales en LangGraph?",
   "error de indentación en un bucle for con pandas", "diferencia entre Grid
   y Flexbox"). Alimenta el Motor de FAQ Dinámico.
+- **`pregunta_programa`**: pregunta completa sobre el programa, curso, comunidad
+  o institución, sin resolver un problema técnico (costo del certificado,
+  plazos de inscripción, acceso a grabaciones, diferencias entre rutas,
+  alianzas con empresas). Si es completa y relevante para el programa, se
+  marca `elegible_faq: true` y puede responderse con activos de marketing.
 - **`comentario`**: todo lo demás que no sea testimonio, feedback ni duda
-  técnica — **incluye dudas administrativas o de programa** (costo de
-  certificado, plazos de inscripción, alianzas con empresas, acceso a
-  grabaciones, diferencias entre rutas del programa), además de elogios y
-  observaciones generales sin propuesta de mejora concreta (ver regla
-  comentario/feedback más abajo).
+  — elogios y observaciones generales sin propuesta de mejora concreta (ver
+  regla comentario/feedback más abajo).
 
-Al aplicar este criterio se encontraron y corrigieron 5 interacciones mal
-etiquetadas como `pregunta_tecnica` en `mensajes_comunidad_simulados.json`
-(eran dudas administrativas): `int-004`, `int-007`, `int-010`, `int-013` e
-`int-015`. Quedaron reclasificadas como `comentario`.
+Pregunta completa: oración interrogativa cerrada (`¿...?`), con al menos 4
+palabras. Una pregunta incompleta o una afirmación con `?` no cuenta. El bonus
+de +25 solo aplica a `pregunta_programa`; si un texto cumple la regla y tiene
+otro tipo, se registra `pregunta_no_etiquetada` para revisión y no se reclasifica
+en silencio.
+
+Reclasificadas a `pregunta_programa` en `mensajes_comunidad_simulados.json`:
+`int-004`, `int-007`, `int-010`, `int-013` e `int-015`. Son las mismas
+interacciones que el 2026-09-20 se habían reclasificado a `comentario`.
+
+Nota de cambio de la sección anterior: el criterio del 2026-09-20 se mantiene
+para `pregunta_tecnica` (código, herramientas, plataforma). Solo cambia el
+destino de las dudas administrativas o del programa.
 
 **Nota para Nelson (no bloqueante):** `docs/arquitectura-solucion/
 contrato-intermedio-ingesta.schema.json` ya señala que la especificación original
@@ -106,8 +121,9 @@ dataset, incluidas las 5 recién reclasificadas): `feedback` es una
 sugerencia, crítica o propuesta de mejora concreta (ej. "sería genial tener
 más talleres prácticos", "sugiero agregar más ejercicios antes del módulo de
 estructuras de datos"); `comentario` es un elogio general, observación o
-pregunta administrativa sin propuesta de mejora (ej. "buena onda el equipo
-de mentores", "¿el certificado tiene costo adicional?"). Ningún caso del
+observación sin propuesta de mejora (ej. "buena onda el equipo de mentores").
+La pregunta administrativa completa del programa (ej. "¿el certificado tiene
+costo adicional?") es `pregunta_programa`, no `comentario`. Ningún caso del
 dataset actual queda ambiguo bajo esta regla.
 
 ## Decisiones y límites

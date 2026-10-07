@@ -40,7 +40,7 @@ de mensajes suelta. `lotes` e `interacciones` pueden estar vacíos.
 | Campo de interacción | Validación |
 | --- | --- |
 | `autor`, `canal` | Obligatorios, cadenas no vacías antes y después de limpiar |
-| `tipo` | Obligatorio: `testimonio`, `pregunta_tecnica`, `comentario` o `feedback` |
+| `tipo` | Obligatorio: `testimonio`, `pregunta_tecnica`, `pregunta_programa`, `comentario` o `feedback` |
 | `texto` | Obligatorio, cadena; el texto vacío se registra como descarte |
 | `id`, `fecha`, `idioma` | Opcionales en la lectura base. Si aparecen, deben ser cadenas no vacías |
 | Otros campos | Se preservan sin reinterpretarlos |
@@ -145,7 +145,7 @@ textuales del mismo autor/canal dentro del lote; cada exclusión queda documenta
 Un mismo ID repetido es un error de identidad, no un descarte silencioso.
 
 Con el dataset corregido y la referencia del ejemplo:
-**23 mensajes para sentimiento y 14 para contenido**.
+**23 mensajes para sentimiento y 19 para contenido**.
 Cambiar la referencia temporal puede cambiar la selección por frescura.
 
 ## Mapeo a EstadoAgente
@@ -174,6 +174,13 @@ for ciclo in paquete["plan"]["ciclos"]:
 | tipo | Copia en tipo_original; no modifica la clasificación original |
 | origen_comunidad del lote | origen por interacción |
 | puntaje del informe | score_relevancia, sin recalcular |
+| pregunta completa del programa (`relevancia.py`) | elegible_faq: `true` solo si el tipo es `pregunta_programa`, el texto es una pregunta completa (`¿...?`, al menos 4 palabras), toca el vocabulario del programa y el puntaje alcanza el umbral |
+
+`elegible_faq` es una marca para Ciencia de Datos: indica qué preguntas del
+programa pueden enrutarse a `preguntas_frecuentes` (`pregunta_programa` +
+`elegible_faq`). No reemplaza la clasificación de DS (`tipo_detectado`) y no
+cruza la entrega de contenido con el contrato de Nelson, que mantiene sus siete
+campos.
 
 Fecha y periodo permanecen en los lotes y en el contexto del informe.
 No se inventan campos de sentimiento, rutas, temas ni resultados de IA.

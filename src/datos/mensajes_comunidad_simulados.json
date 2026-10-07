@@ -13,14 +13,14 @@
       "id": "identificador unico de la interaccion (extension del equipo, no forma parte del contrato original)",
       "autor": "nombre del autor del mensaje",
       "canal": "sub-canal o hilo especifico dentro del origen_comunidad, ej. #logros-y-empleos",
-      "tipo": "testimonio | pregunta_tecnica | comentario | feedback",
+      "tipo": "testimonio | pregunta_tecnica | pregunta_programa | comentario | feedback",
       "texto": "contenido del mensaje",
       "fecha": "fecha ISO 8601 (extension del equipo)",
       "idioma": "codigo ISO 639-1 (extension del equipo)"
     },
-    "nota_tipos": "Taxonomía de 'tipo' definida por el Sub-equipo 3 para cubrir los 4 casos de uso: testimonio -> detector de historias de éxito / generador para redes sociales; pregunta_tecnica -> motor de preguntas frecuentes; comentario y feedback -> panel de salud y sentimiento.",
+    "nota_tipos": "Taxonomía de 'tipo' para 5 casos de uso: testimonio -> detector de historias de éxito / generador para redes sociales; pregunta_tecnica -> motor de preguntas frecuentes técnicas; pregunta_programa -> FAQ del programa cuando elegible_faq es true; comentario y feedback -> panel de salud y sentimiento.",
     "actualizado_por": "Jhonattan Benavides (Analista de datos, Sub-equipo 3)",
-  "nota_actualizacion": "Se agregan los dos casos de la especificación conservando las 21 interacciones anteriores. También se reclasifican int-004, int-007, int-010, int-013 e int-015 como comentario: eran dudas administrativas o del programa, no dudas técnicas de código o plataforma. Ver docs/criterio_puntuacion_relevancia.md para el criterio."
+  "nota_actualizacion": "Se agregan los dos casos de la especificación conservando las 21 interacciones anteriores. Se crea el tipo pregunta_programa y se reclasifican int-004, int-007, int-010, int-013 e int-015 como pregunta_programa (dudas administrativas o del programa completas). Esto revierte la clasificación como comentario del 20 sep; ver docs/criterio_puntuacion_relevancia.md."
   },
   "lotes": [
     {
@@ -58,7 +58,7 @@
           "id": "int-004",
           "autor": "Sofía Torres",
           "canal": "#soporte-tecnico",
-          "tipo": "comentario",
+          "tipo": "pregunta_programa",
           "texto": "¿El certificado final tiene costo adicional o está incluido en el programa?",
           "fecha": "2026-09-12T08:15:00Z",
           "idioma": "es"
@@ -85,7 +85,7 @@
           "id": "int-007",
           "autor": "Héctor Prado",
           "canal": "#dudas-hackathon",
-          "tipo": "comentario",
+          "tipo": "pregunta_programa",
           "texto": "¿Hasta cuándo puedo inscribirme al hackathon si me integro después de la semana 0?",
           "fecha": "2026-09-14T10:11:00Z",
           "idioma": "es"
@@ -136,7 +136,7 @@
           "id": "int-010",
           "autor": "Pedro Álvarez",
           "canal": "#post-lanzamiento-programa",
-          "tipo": "comentario",
+          "tipo": "pregunta_programa",
           "texto": "Interesante propuesta, ¿tienen alguna alianza con empresas para prácticas profesionales?",
           "fecha": "2026-09-11T18:02:00Z",
           "idioma": "es"
@@ -169,7 +169,7 @@
           "id": "int-013",
           "autor": "Javier Fernández",
           "canal": "#formulario-dudas",
-          "tipo": "comentario",
+          "tipo": "pregunta_programa",
           "texto": "¿Cómo puedo acceder a las grabaciones de las clases si me perdí una sesión en vivo?",
           "fecha": "2026-09-10T15:05:00Z",
           "idioma": "es"
@@ -187,7 +187,7 @@
           "id": "int-015",
           "autor": "Carlos Mena",
           "canal": "#formulario-dudas",
-          "tipo": "comentario",
+          "tipo": "pregunta_programa",
           "texto": "¿Cuál es la diferencia entre las rutas de Data Analyst y Data Scientist dentro del programa?",
           "fecha": "2026-09-12T20:05:00Z",
           "idioma": "es"

@@ -20,12 +20,22 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from dotenv import load_dotenv
 
-from src.agentes.cadenas import template_analisis
 from src.agentes.modelos import AnalisisMensaje
-from src.agentes.nodos.nodos_generadores import (
-    PublicacionLinkedIn, SugerenciaPreguntasFrecuentes,
-    _prompt_linkedin, _prompt_preguntas_frecuentes,
-)
+
+# DS-Semana3 movió prompts y modelos a módulos propios; se admiten ambas ubicaciones.
+try:
+    from src.agentes.modelos import PublicacionLinkedIn, SugerenciaPreguntasFrecuentes
+    from src.agentes.prompts.analisis import template_analisis
+    from src.agentes.prompts.linkedin import prompt_linkedin as _prompt_linkedin
+    from src.agentes.prompts.preguntas_frecuentes import (
+        prompt_preguntas_frecuentes as _prompt_preguntas_frecuentes,
+    )
+except ImportError:
+    from src.agentes.cadenas import template_analisis
+    from src.agentes.nodos.nodos_generadores import (
+        PublicacionLinkedIn, SugerenciaPreguntasFrecuentes,
+        _prompt_linkedin, _prompt_preguntas_frecuentes,
+    )
 from src.datos.entrega_ia import preparar_paquete_ia
 from src.datos.relevancia import leer_fecha
 

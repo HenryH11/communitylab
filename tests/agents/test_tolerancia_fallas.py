@@ -10,7 +10,10 @@ from src.agentes.entrega_resultados import (
     entrega_resultados_a_json,
     preparar_entrega_resultados,
 )
-from src.agentes.grafo import procesar_paquete_entrega
+try:  # DS-Semana3 lo movió a procesamiento.py
+    from src.agentes.procesamiento import procesar_paquete_entrega
+except ImportError:
+    from src.agentes.grafo import procesar_paquete_entrega
 from src.agentes.nodos import nodo_analizador, nodos_generadores
 from src.datos.entrega_ia import preparar_paquete_ia
 from src.datos.ingesta import cargar_json
@@ -45,7 +48,7 @@ def analisis(identificador=None):
     return resultado
 
 
-def respuesta_lote(argumentos):
+def respuesta_lote(argumentos, **_opciones):
     mensajes = json.loads(argumentos["mensajes_json"])
     return {"resultados": [analisis(m["id"]) for m in mensajes]}
 
@@ -53,6 +56,12 @@ def respuesta_lote(argumentos):
 @pytest.fixture
 def servicios(monkeypatch):
     """Solo se sustituyen las llamadas a modelos; el grafo y contratos son reales."""
+    try:  # DS-Semana3 agrega reintentos con espera real: se anula la espera.
+        from src.agentes import reintentos
+    except ImportError:
+        pass
+    else:
+        monkeypatch.setattr(reintentos, "_esperar", lambda segundos: None)
     lote = MagicMock()
     lote.invoke.side_effect = respuesta_lote
     individual = MagicMock()
@@ -139,18 +148,18 @@ def test_sin_ciclo_suficiente_conserva_pendientes_sin_llamadas(servicios):
 @pytest.mark.parametrize("fallo", [TimeoutError("espera agotada"), RuntimeError("HTTP 429 simulado")])
 def test_fallo_de_un_lote_conserva_ids_y_permite_el_siguiente(fallo, servicios):
     lote, individual, faq, _ = servicios
-    contador = 0
+    enviados = []
 
-    def proveedor(argumentos):
-        nonlocal contador
-        contador += 1
-        if contador == 1:
+    def proveedor(argumentos, **_opciones):
+        ids = [m["id"] for m in json.loads(argumentos["mensajes_json"])]
+        enviados.append(ids)
+        if "s3-0" in ids:  # el primer lote falla siempre, aunque haya reintentos
             raise fallo
         return respuesta_lote(argumentos)
 
     lote.invoke.side_effect = proveedor
     paquete, entrega = ejecutar(entrada(25))
-    assert lote.invoke.call_count == 2
+    assert any("s3-10" in ids for ids in enviados)
     individual.invoke.assert_not_called()
     assert faq.invoke.call_count == 10
     assert len(entrega["interacciones"]) == 20
@@ -176,7 +185,7 @@ def test_respuesta_invalida_se_serializa_como_fallo_sin_generar(respuesta, servi
 
 
 def test_id_omitido_y_reintento_fallido_no_eliminan_resultados_validos(servicios):
-    def omitir_uno(argumentos):
+    def omitir_uno(argumentos, **_opciones):
         respuesta = respuesta_lote(argumentos)
         respuesta["resultados"] = list(reversed(respuesta["resultados"][1:]))
         return respuesta
@@ -184,7 +193,8 @@ def test_id_omitido_y_reintento_fallido_no_eliminan_resultados_validos(servicios
     servicios[0].invoke.side_effect = omitir_uno
     servicios[1].invoke.side_effect = TimeoutError("fallo individual simulado")
     _, entrega = ejecutar(entrada())
-    servicios[1].invoke.assert_called_once()
+    llamadas = servicios[1].invoke.call_args_list
+    assert llamadas and all(c.args[0]["texto"].startswith("¿Cómo resuelvo el error 0 ") for c in llamadas)
     assert [m["id"] for m in entrega["interacciones"]] == [f"s3-{i}" for i in range(10)]
     assert entrega["resumen_comunidad"]["total_con_errores"] == 1
     assert entrega["resumen_comunidad"]["total_con_activos"] == 9
@@ -193,7 +203,7 @@ def test_id_omitido_y_reintento_fallido_no_eliminan_resultados_validos(servicios
 
 
 def test_fallo_de_generador_no_detiene_los_demas_mensajes(servicios):
-    def generar(contexto):
+    def generar(contexto, **_opciones):
         if "error 0 " in contexto["texto"]:
             raise RuntimeError("generador no disponible")
         return nodos_generadores.SugerenciaPreguntasFrecuentes(tema="Python", respuesta="Respuesta de prueba")

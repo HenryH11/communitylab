@@ -179,5 +179,12 @@ def procesar_estados_por_lotes(
     return resultados
 
 
+def procesar_paquete_entrega(*args, **kwargs):
+    """Compatibilidad: la implementación vive en src.agentes.procesamiento."""
+    from src.agentes.procesamiento import procesar_paquete_entrega as _impl
+
+    return _impl(*args, **kwargs)
+
+
 grafo = construir_grafo()
 grafo_desde_analisis = construir_grafo_desde_analisis()

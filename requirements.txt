@@ -4,6 +4,7 @@
 langchain>=0.3
 langchain-core>=0.3
 langchain-google-genai>=2.0
+langchain-openai>=0.3
 langgraph>=0.2
 pydantic>=2.7
 python-dotenv>=1.0

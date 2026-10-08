@@ -8,12 +8,18 @@ from langchain_core.messages import SystemMessage
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnableLambda
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+
+from src.agentes.errores_ia import (
+    ErrorConfiguracionProveedor,
+    ErrorSalidaProveedor,
+)
 
 from src.agentes.configuracion_ia import (
     MAX_RETRIES_CLIENTE_NVIDIA,
     MODELO_NVIDIA_NEMOTRON,
     NVIDIA_BASE_URL,
+    obtener_timeout_nvidia,
 )
 
 
@@ -35,9 +41,8 @@ def obtener_modelo_nvidia() -> ChatOpenAI:
     api_key = os.getenv("NVIDIA_API_KEY")
 
     if not api_key:
-        raise ValueError(
-            "No se encontró NVIDIA_API_KEY. "
-            "Verifica que exista en el archivo .env."
+        raise ErrorConfiguracionProveedor(
+            "No se encontró NVIDIA_API_KEY."
         )
 
     return ChatOpenAI(
@@ -45,6 +50,7 @@ def obtener_modelo_nvidia() -> ChatOpenAI:
         base_url=NVIDIA_BASE_URL,
         model=MODELO_NVIDIA_NEMOTRON,
         temperature=0,
+        timeout=obtener_timeout_nvidia(),
         max_retries=MAX_RETRIES_CLIENTE_NVIDIA,
         extra_body={
             "chat_template_kwargs": {
@@ -136,25 +142,21 @@ def obtener_modelo_nvidia_estructurado(
     def validar_respuesta(respuesta):
         contenido = respuesta.content
 
-        if not isinstance(
-            contenido,
-            str,
-        ):
-            raise TypeError(
-                "NVIDIA NIM devolvió contenido no textual"
+        if not isinstance(contenido, str):
+            raise ErrorSalidaProveedor(
+                "NVIDIA NIM devolvió contenido no textual."
             )
 
         if not contenido.strip():
-            raise ValueError(
-                "NVIDIA NIM devolvió una respuesta vacía"
+            raise ErrorSalidaProveedor(
+                "NVIDIA NIM devolvió una respuesta vacía."
             )
 
-        return esquema.model_validate_json(
-            contenido
-        )
-
-    return (
-        RunnableLambda(preparar_entrada)
-        | modelo_json
-        | RunnableLambda(validar_respuesta)
-    )
+        try:
+            return esquema.model_validate_json(
+                contenido
+            )
+        except ValidationError as error:
+            raise ErrorSalidaProveedor(
+                "NVIDIA NIM devolvió una salida que no cumple el esquema."
+            ) from error

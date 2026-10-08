@@ -7,6 +7,14 @@ import time
 from collections.abc import Callable
 from typing import TypeVar
 
+from langchain_core.exceptions import OutputParserException
+
+from src.agentes.errores_ia import (
+    ErrorConfiguracionProveedor,
+    ErrorFallbackProveedores,
+    ErrorSalidaProveedor,
+)
+
 from src.agentes.observabilidad import registrar_evento
 
 
@@ -47,7 +55,14 @@ class FalloOperacion(Exception):
 
 
 def es_error_transitorio(error: BaseException) -> bool:
-    """Timeouts, límites de cuota y errores 5xx; nunca validación ni credenciales."""
+    """Clasifica errores que justifican repetir una llamada al proveedor."""
+    if isinstance(error, ErrorConfiguracionProveedor):
+        return False
+    if isinstance(
+        error,
+        (ErrorSalidaProveedor, OutputParserException),
+    ):
+        return True
     if isinstance(error, (TimeoutError, ConnectionError)):
         return True
     if {clase.__name__ for clase in type(error).__mro__} & _TIPOS_TRANSITORIOS:
@@ -139,6 +154,18 @@ def construir_fallo(
             else es_error_transitorio(causa)
         ),
     )
+    if isinstance(causa, ErrorFallbackProveedores):
+        traza = causa.traza
+
+        fallo.update(
+            proveedor_primario=traza.get("proveedor_primario"),
+            proveedor_respaldo=traza.get("proveedor_usado"),
+            fallback_activado=True,
+            motivo_fallback=traza.get("motivo_fallback"),
+            error_primario=traza.get("error_primario"),
+            error_respaldo=traza.get("error_respaldo"),
+        )
+
     return fallo
 
 

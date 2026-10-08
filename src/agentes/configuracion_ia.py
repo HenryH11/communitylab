@@ -3,7 +3,7 @@
 import os
 
 from dotenv import load_dotenv
-
+from src.agentes.errores_ia import ErrorConfiguracionProveedor
 
 PROVEEDOR_GEMINI = "gemini"
 PROVEEDOR_NVIDIA_NIM = "nvidia_nim"
@@ -16,6 +16,10 @@ PROVEEDORES_SOPORTADOS = {
 VARIABLE_PROVEEDOR_ANALISIS = "COMMUNITYLAB_PROVEEDOR_ANALISIS"
 
 VARIABLE_PROVEEDOR_GENERACION = ("COMMUNITYLAB_PROVEEDOR_GENERACION")
+
+VARIABLE_TIMEOUT_NVIDIA = "COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS"
+
+TIMEOUT_NVIDIA_POR_DEFECTO = 3.0
 
 PROVEEDOR_GENERACION_POR_DEFECTO = (PROVEEDOR_GEMINI)
 
@@ -73,3 +77,27 @@ def obtener_proveedor_generacion() -> str:
         )
 
     return proveedor
+
+
+def obtener_timeout_nvidia() -> float:
+    """Obtiene y valida el timeout configurable de NVIDIA NIM."""
+    load_dotenv()
+
+    valor = os.getenv(
+        VARIABLE_TIMEOUT_NVIDIA,
+        str(TIMEOUT_NVIDIA_POR_DEFECTO),
+    ).strip()
+
+    try:
+        timeout = float(valor)
+    except ValueError as error:
+        raise ErrorConfiguracionProveedor(
+            f"{VARIABLE_TIMEOUT_NVIDIA} debe ser un número."
+        ) from error
+
+    if timeout <= 0:
+        raise ErrorConfiguracionProveedor(
+            f"{VARIABLE_TIMEOUT_NVIDIA} debe ser mayor que cero."
+        )
+
+    return timeout

@@ -1,7 +1,8 @@
 """Respaldo NVIDIA NIM -> Gemini: criterios de aceptación acordados con DS.
 
-Data Science implementará invocar_modelo_con_fallback(entrada, *, primario,
-respaldo) en src/agentes/modelo_ia.py. Hasta que exista, este módulo se omite.
+Data Science publicó invocar_modelo_con_fallback(entrada, *, primario,
+respaldo) en src/agentes/modelo_ia.py (feature/DS-Semana3-Nvidia, a989951).
+Mientras no esté en la rama, este módulo se omite.
 
 Acordado con DS (6 oct, Arnold):
 - Activan el respaldo los fallos operativos de NIM (429, timeout, conexión,
@@ -13,13 +14,14 @@ Acordado con DS (6 oct, Arnold):
 - Si fallan ambos proveedores, la interacción queda fallida con los motivos de
   ambos guardados de forma segura, y el grafo sigue con los demás mensajes.
 - El límite de tiempo es un timeout de NIM: al superarlo se activa Gemini.
-  PM (6 oct): configurable en .env, con 1.8 s por defecto.
 
-Pendiente de DS (lo confirman al definir el cliente de NIM):
-- Cómo se reconocen los errores HTTP (aquí: atributo status_code).
-- Tipo propio para clave/configuración ausente, distinto de ValueError.
-- Nombre de la variable de .env del timeout.
-- Integración en el grafo: cómo llega la traza al estado y a fallos.
+Confirmado por DS (8 oct, Arnold):
+- Cliente NIM: ChatOpenAI (langchain-openai). Los errores HTTP se reconocen
+  por status_code o por .code (aquí se simula status_code).
+- La clave o configuración ausente lanza modelo_ia.ErrorConfiguracionProveedor,
+  distinto del ValueError de entrada.
+- Timeout de 3 s por ahora, configurable con COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS.
+- El respaldo ya está conectado al análisis y a la generación por ruta.
 """
 
 from copy import deepcopy
@@ -35,6 +37,13 @@ pytestmark = pytest.mark.skipif(
     not hasattr(modelo_ia, "invocar_modelo_con_fallback"),
     reason="DS aún no publica invocar_modelo_con_fallback en modelo_ia.py",
 )
+
+
+@pytest.fixture(autouse=True)
+def sin_esperas_de_reintento(monkeypatch):
+    """Los reintentos de NIM esperan con time.sleep; en pruebas no hace falta."""
+    reintentos = pytest.importorskip("src.agentes.reintentos")
+    monkeypatch.setattr(reintentos, "_esperar", lambda segundos: None)
 
 
 # --- Contrato provisional: único bloque a ajustar con la firma definitiva ---

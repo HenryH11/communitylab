@@ -6,7 +6,7 @@ from functools import lru_cache
 from dotenv import load_dotenv
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_google_genai import ChatGoogleGenerativeAI
-
+from pydantic import BaseModel
 
 MODELO_GEMINI = "gemini-3.5-flash-lite"
 
@@ -69,4 +69,13 @@ def obtener_modelo_gemini() -> ChatGoogleGenerativeAI:
         model=MODELO_GEMINI,
         rate_limiter=_rate_limiter,
         max_retries=MAX_RETRIES_GEMINI,
+    )
+
+
+def obtener_modelo_gemini_estructurado(
+    esquema: type[BaseModel],
+):
+    """Adapta Gemini al contrato estructurado solicitado."""
+    return obtener_modelo_gemini().with_structured_output(
+        esquema
     )

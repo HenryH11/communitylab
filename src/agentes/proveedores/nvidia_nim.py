@@ -1,10 +1,14 @@
 """Proveedor NVIDIA NIM para el pipeline de Ciencia de Datos."""
 
 import os
+import json
 from functools import lru_cache
 
+from langchain_core.messages import SystemMessage
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+from langchain_core.runnables import RunnableLambda
+from pydantic import BaseModel
 
 from src.agentes.configuracion_ia import (
     MAX_RETRIES_CLIENTE_NVIDIA,
@@ -47,4 +51,110 @@ def obtener_modelo_nvidia() -> ChatOpenAI:
                 "enable_thinking": False,
             }
         },
+    )
+
+
+def _agregar_instruccion_esquema(
+    entrada,
+    esquema: type[BaseModel],
+):
+    """
+    Añade únicamente instrucciones técnicas de formato para NVIDIA NIM.
+
+    No modifica las reglas semánticas del prompt de CommunityLab.
+    """
+    if hasattr(entrada, "to_messages"):
+        mensajes = list(
+            entrada.to_messages()
+        )
+    elif isinstance(entrada, list):
+        mensajes = list(entrada)
+    else:
+        raise TypeError(
+            "Formato de entrada no compatible con NVIDIA NIM"
+        )
+
+    esquema_json = json.dumps(
+        esquema.model_json_schema(),
+        ensure_ascii=False,
+    )
+
+    instruccion = SystemMessage(
+        content=(
+            "REQUISITO TÉCNICO DE SALIDA JSON:\n"
+            "Devuelve únicamente un objeto JSON válido que cumpla "
+            "exactamente el siguiente JSON Schema.\n\n"
+            f"{esquema_json}\n\n"
+            "Respeta exactamente los nombres y niveles de las "
+            "propiedades definidos por el esquema. "
+            "No utilices IDs, categorías ni valores como claves "
+            "alternativas del objeto raíz. "
+            "No añadas texto fuera del JSON."
+        )
+    )
+
+    # Conserva primero el system prompt semántico de CommunityLab
+    # y coloca después la adaptación técnica del proveedor.
+    if mensajes and getattr(
+        mensajes[0],
+        "type",
+        None,
+    ) == "system":
+        return [
+            mensajes[0],
+            instruccion,
+            *mensajes[1:],
+        ]
+
+    return [
+        instruccion,
+        *mensajes,
+    ]
+
+
+def obtener_modelo_nvidia_estructurado(
+    esquema: type[BaseModel],
+):
+    """
+    Adapta NVIDIA NIM al contrato estructurado solicitado.
+
+    NVIDIA trabaja en JSON mode y recibe explícitamente el
+    JSON Schema correspondiente. Pydantic realiza la validación final.
+    """
+    modelo_json = obtener_modelo_nvidia().bind(
+        response_format={
+            "type": "json_object",
+        }
+    )
+
+    def preparar_entrada(entrada):
+        return _agregar_instruccion_esquema(
+            entrada,
+            esquema,
+        )
+
+    def validar_respuesta(respuesta):
+        contenido = respuesta.content
+
+        if not isinstance(
+            contenido,
+            str,
+        ):
+            raise TypeError(
+                "NVIDIA NIM devolvió contenido no textual"
+            )
+
+        if not contenido.strip():
+            raise ValueError(
+                "NVIDIA NIM devolvió una respuesta vacía"
+            )
+
+        return esquema.model_validate_json(
+            contenido
+        )
+
+    return (
+        RunnableLambda(preparar_entrada)
+        | modelo_json
+        | RunnableLambda(validar_respuesta)
     )

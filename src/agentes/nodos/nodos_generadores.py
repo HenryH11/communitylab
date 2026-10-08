@@ -6,7 +6,8 @@ from typing import cast
 from pydantic import BaseModel
 
 from src.agentes.estado_agente import EstadoAgente
-from src.agentes.modelo_ia import obtener_modelo_gemini
+from src.agentes.configuracion_ia import (obtener_proveedor_generacion,)
+from src.agentes.modelo_ia import (obtener_modelo_generacion_estructurado,)
 from src.agentes.modelos import (
     CasoDeExito,
     DestaqueBoletin,
@@ -27,32 +28,45 @@ from src.agentes.reintentos import (
 )
 
 
-@lru_cache(maxsize=1)
-def _obtener_generadores():
-    modelo = obtener_modelo_gemini()
-
+@lru_cache(maxsize=2)
+def _obtener_generadores(
+    proveedor: str,
+):
     return {
         "linkedin": (
             prompt_linkedin
-            | modelo.with_structured_output(PublicacionLinkedIn)
+            | obtener_modelo_generacion_estructurado(
+                PublicacionLinkedIn,
+                proveedor=proveedor,
+            )
         ),
-        # La clave técnica "boletin" se conserva por compatibilidad,
-        # aunque el activo generado funciona como Community Highlight.
         "boletin": (
             prompt_boletin
-            | modelo.with_structured_output(DestaqueBoletin)
+            | obtener_modelo_generacion_estructurado(
+                DestaqueBoletin,
+                proveedor=proveedor,
+            )
         ),
         "preguntas_frecuentes": (
             prompt_preguntas_frecuentes
-            | modelo.with_structured_output(SugerenciaPreguntasFrecuentes)
+            | obtener_modelo_generacion_estructurado(
+                SugerenciaPreguntasFrecuentes,
+                proveedor=proveedor,
+            )
         ),
         "caso_exito": (
             prompt_caso_exito
-            | modelo.with_structured_output(CasoDeExito)
+            | obtener_modelo_generacion_estructurado(
+                CasoDeExito,
+                proveedor=proveedor,
+            )
         ),
         "insight_mejora": (
             prompt_insight_mejora
-            | modelo.with_structured_output(InsightMejora)
+            | obtener_modelo_generacion_estructurado(
+                InsightMejora,
+                proveedor=proveedor,
+            )
         ),
     }
 
@@ -89,7 +103,9 @@ def generar_activos(state: EstadoAgente) -> dict:
 
     contexto = _contexto(state)
     try:
-        generadores = _obtener_generadores()
+        proveedor = obtener_proveedor_generacion()
+
+        generadores = _obtener_generadores(proveedor)
     except Exception as error:
         for ruta in rutas:
             errores.append(

@@ -119,14 +119,15 @@ def test_archivo_corrupto_no_llega_al_grafo(cuerpo, tmp_path, servicios):
 
 
 def test_ruido_no_consume_ia_y_texto_unicode_llega_al_contrato(servicios):
-    datos = entrada(14)
-    textos = ["", "https://example.com", "spam spam spam spam spam spam", "[deleted]"]
-    for mensaje, texto in zip(datos["interacciones"][-4:], textos):
+    textos = ["", "https://example.com", "spam spam spam spam spam spam", "[deleted]",
+              "compra ahora " * 6, "oferta por tiempo limitado " * 3]
+    datos = entrada(10 + len(textos))
+    for mensaje, texto in zip(datos["interacciones"][10:], textos):
         mensaje["texto"] = texto
     original = deepcopy(datos)
     paquete, entrega = ejecutar(datos)
     assert len(paquete["estados"]) == 10
-    assert paquete["informe"]["resumen_sentimiento"]["excluidas_calidad"] == 4
+    assert paquete["informe"]["resumen_sentimiento"]["excluidas_calidad"] == len(textos)
     enviados = json.loads(servicios[0].invoke.call_args.args[0]["mensajes_json"])
     assert [m["id"] for m in enviados] == [f"s3-{i}" for i in range(10)]
     assert entrega["resumen_comunidad"]["total_con_activos"] == 10
@@ -134,6 +135,21 @@ def test_ruido_no_consume_ia_y_texto_unicode_llega_al_contrato(servicios):
     serializado = entrega_resultados_a_json(entrega).encode("utf-8")
     assert "👩‍💻".encode("utf-8") in serializado
     assert json.loads(serializado)["interacciones"][0]["texto"] == original["interacciones"][0]["texto"]
+
+
+def test_solo_ruido_finaliza_sin_analisis_generacion_ni_pendientes(servicios):
+    datos = entrada()
+    for mensaje in datos["interacciones"]:
+        mensaje["texto"] = "compra ahora " * 6
+    paquete, entrega = ejecutar(datos)
+    assert paquete["estados"] == []
+    assert paquete["plan"]["ids_contenido"] == []
+    assert entrega["interacciones"] == []
+    assert entrega["ids_pendientes"] == []
+    assert paquete["informe"]["resumen_sentimiento"]["excluidas_calidad"] == 10
+    servicios[0].invoke.assert_not_called()
+    servicios[1].invoke.assert_not_called()
+    servicios[3].assert_not_called()
 
 
 def test_sin_ciclo_suficiente_conserva_pendientes_sin_llamadas(servicios):

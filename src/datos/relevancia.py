@@ -8,6 +8,10 @@ import unicodedata
 
 TIPOS = {"testimonio", "pregunta_tecnica", "pregunta_programa", "comentario", "feedback"}
 URL = re.compile(r"(?:https?://|www\.)\S+", re.IGNORECASE)
+# Calidad se decide antes del análisis, independientemente del puntaje o del tipo.
+MOTIVOS_RUIDO = frozenset({
+    "texto_vacio", "solo_enlaces", "texto_repetitivo", "contenido_eliminado", "duplicado",
+})
 # Oración interrogativa completa: abre con ¿ y cierra con ?.
 PREGUNTA_ABIERTA = re.compile(r"¿[^?¿]*\?")
 PALABRAS_INTERROGATIVAS = {
@@ -117,6 +121,34 @@ def tema_programa(palabras, configuracion):
     return any(p in exactas or (prefijos and p.startswith(prefijos)) for p in palabras)
 
 
+def detectar_ruido(interaccion):
+    """Reglas conservadoras sobre texto ya limpio; no detectan spam semántico.
+
+    Una palabra repetida seis veces o más, o un bloque de 2–4 palabras que
+    ocupe todo el texto al menos tres veces y alcance 12 palabras, es ruido.
+    Las copias de mensajes se detectan por separado dentro de cada lote.
+    """
+    texto = interaccion["texto"]
+    palabras = re.findall(r"\b\w+\b", normalizar_busqueda(URL.sub(" ", texto)))
+    motivos = []
+    if not texto.strip():
+        motivos.append("texto_vacio")
+    if URL.search(texto) and not re.search(r"\w", URL.sub(" ", texto)):
+        motivos.append("solo_enlaces")
+    repetitivo = len(palabras) >= 6 and len(set(palabras)) == 1
+    if len(palabras) >= 12:
+        repetitivo = repetitivo or any(
+            len(palabras) % ancho == 0
+            and palabras == palabras[:ancho] * (len(palabras) // ancho)
+            for ancho in range(2, 5)
+        )
+    if repetitivo:
+        motivos.append("texto_repetitivo")
+    if texto.casefold() in {"[deleted]", "[removed]"} or interaccion["autor"] == "[deleted]":
+        motivos.append("contenido_eliminado")
+    return motivos
+
+
 def puntuar_interaccion(interaccion, configuracion, fecha_referencia):
     """Devuelve evidencia del puntaje y exclusiones, sin modificar la entrada."""
     texto = interaccion["texto"]
@@ -132,12 +164,7 @@ def puntuar_interaccion(interaccion, configuracion, fecha_referencia):
         advertencias.append("pregunta_no_etiquetada")
     if len(texto) < configuracion.caracteres_minimos:
         motivos.append("texto_corto")
-    if URL.search(texto) and not re.search(r"\w", URL.sub(" ", texto)):
-        motivos.append("solo_enlaces")
-    if len(palabras) >= 6 and len(set(palabras)) == 1:
-        motivos.append("texto_repetitivo")
-    if texto.casefold() in {"[deleted]", "[removed]"} or interaccion["autor"] == "[deleted]":
-        motivos.append("contenido_eliminado")
+    motivos.extend(detectar_ruido(interaccion))
     frescura = 0
     fecha = interaccion.get("fecha")
     if fecha is None:

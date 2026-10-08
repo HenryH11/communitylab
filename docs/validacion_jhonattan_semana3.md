@@ -1,10 +1,13 @@
 # Semana 3: validación de Jhonattan
 
-Actualizado el 6 de octubre de 2026 en `feature/jhonattan-validacion-semana3`.
+Actualizado el 7 de octubre de 2026 en `feature/jhonattan-validacion-semana3`.
 La rama se creó desde `develop` en `e8177ba` y Gustavo incorporó `develop`
 `1a9bcaa` mediante el merge `3fdd8e0`. La auditoría cruzada toma como referencia
 el commit compartido `14be025`, más los ajustes locales de importación de OCI y del
-ensayo NIM descritos abajo.
+ensayo NIM descritos abajo. La copia local incorpora ahora `a15631c`, con los
+ajustes de compatibilidad de Gustavo y el tipado de `01f6b1b`. Data Analyst está
+integrado por Gustavo y Jhonattan. La actualización del 7 de octubre incluye el
+[filtro de ruido de DA](filtro_ruido_da_semana3.md); no fusiona DS ni Cloud en esta rama.
 
 ## Qué se añadió
 
@@ -22,6 +25,9 @@ errores de cuota simulados y respuestas incompletas. Las entradas de estas prueb
 son sintéticas y propias; no reemplazan los datos de referencia del equipo.
 
 Las 19 pruebas iniciales cubren entradas que pasan por `preparar_paquete_ia`.
+Ahora hay 20 en ese archivo: se añadió la entrega compuesta solo por ruido. Otras
+17 pruebas en `tests/test_filtro_ruido.py` cubren las reglas y los casos que deben
+conservarse. Los nuevos resultados se registran al final de este documento.
 Las pruebas adicionales de Gustavo documentan también estados manuales y pendientes
 de otros componentes. La revisión de Streamlit es estática; OCI usa un cliente
 simulado cuando está instalado su SDK. No son pruebas con servicios reales.
@@ -39,8 +45,8 @@ Available** al verificarlas el 6 de octubre de 2026:
 La lista es una verificación manual fechada, no una consulta automática de disponibilidad.
 Revisar las fichas antes de una ejecución real. Para incorporar otro modelo, primero
 confirmar su etiqueta y actualizar `MODELOS_FREE_ENDPOINT` y la fecha en el script.
-La etiqueta sirve para seleccionar candidatos al prototipo; todavía no hay medidas
-reales que permitan recomendar un ganador.
+La etiqueta sirve para seleccionar candidatos al prototipo; hay medidas reales
+de Nemotron, pero no una comparación completa que permita recomendar un ganador.
 
 ## Comandos para el equipo
 
@@ -133,7 +139,9 @@ aislada, no la calidad del flujo completo. Validar el esquema tampoco demuestra
 corrección semántica: los textos necesitan revisión humana.
 
 Según el acuerdo del PM comunicado por Gustavo el 6 de octubre, el timeout de NIM
-en producción será configurable en `.env`, con 1,8 segundos por defecto. Data Science
+en producción sería configurable en `.env`, con 1,8 segundos por defecto. Gustavo
+propuso posteriormente 3 segundos a partir de otra corrida. En las capturas revisadas
+no consta aprobación final de ese cambio; no se modifica aquí el valor acordado. Data Science
 debe confirmar el nombre de esa variable y cómo se aplica el límite a los reintentos.
 
 En este ensayo, `--umbral-segundos 1.8` solo cuenta respuestas válidas que superan
@@ -147,7 +155,7 @@ El script devuelve 0 para un plan o una corrida sin fallos, 1 cuando alguna soli
 falla y 2 para errores de configuración o entrada. Conserva resultados de solicitudes
 fallidas y continúa con las demás.
 
-## Validación y pendientes
+## Validación histórica hasta el 6 de octubre
 
 El [PR #17 de Data Science](https://github.com/HenryH11/communitylab/pull/17), ya
 fusionado en `develop` e incorporado a esta rama, resolvió los dos desacuerdos:
@@ -280,17 +288,109 @@ No se puede declarar un ganador frente a DeepSeek ni recomendar el cambio de
 proveedor de producción con estos datos. Faltan repetición en otro momento,
 resolución de los timeouts de DeepSeek y pruebas del respaldo real de DS.
 
+## Comparación con la corrida reportada por Gustavo
+
+Fuente: mensaje de Gustavo en Discord, captura `Captura de pantalla 2026-10-07
+210230.png`. Gustavo declara una corrida del 6 de octubre a las 17:23, hora de
+Colombia, con la misma configuración: sin razonamiento, 1024 tokens y timeout de
+30 segundos. Las cifras de su corrida son reportadas; no se dispone aquí de su
+JSON por solicitud para recalcularlas. No se mezclan ambas corridas.
+
+| Medida | Jhonattan, evidencia JSON local | Gustavo, reporte de Discord |
+| --- | ---: | ---: |
+| Solicitudes | 23 | 23 |
+| Respuestas válidas | 20 | 22 |
+| Fallos | 3 timeouts | 1, `int-015`, reportado como inválido a los 30 s |
+| Promedio de respuestas válidas | 5,23 s | 2,15 s |
+| Mediana | 1,88 s | 1,84 s |
+| p95 | 21,64 s | 4,45 s |
+| Válidas en hasta 1,8 s | 10/23 | 8/23 |
+| Válidas en hasta 2,5 s | 13/23 | 18/23 |
+| Válidas en hasta 3 s | 13/23 | 19/23 |
+
+Las filas de 2,5 y 3 segundos de Jhonattan se recalcularon el 7 de octubre sobre
+`nemotron_23_analisis.json`, contando solo resultados válidos. No hubo nuevas llamadas.
+Con 3 segundos, 10 solicitudes de nuestra corrida y 4 de la de Gustavo no habrían
+producido una respuesta válida dentro del objetivo. Esto es una estimación sobre
+solicitudes aisladas, no una ejecución real del respaldo ni una garantía de latencia
+para el grafo por lotes. El fallo de `int-015` no demuestra por sí solo un problema
+del mensaje; se necesita su error y respuesta para diagnosticarlo.
+
+La evidencia justifica revisar el límite de 1,8 segundos con DS y PM, pero no
+declara 3 segundos como valor aprobado. DeepSeek sigue pendiente de una respuesta
+válida y de una decisión del equipo sobre su papel en la evaluación.
+
+## Actualización técnica del 7 de octubre
+
+- Nuestra base remota es `a15631c`: incorpora el tipado y las adaptaciones de
+  imports, mocks con `config` y reintentos de Gustavo.
+- DS está en `fcb18df`, sobre `develop` `1a9bcaa`. Los dos árboles de ingesta son
+  idénticos. DS añade reintentos, reprocesamiento y contrato 1.3; su proveedor
+  continúa siendo Gemini. La función de respaldo NIM → Gemini sigue pendiente.
+- El PR #18 de Cloud, `7d756df`, incluye `insight_mejora`, mueve la prueba manual
+  fuera de `tests/` y omite la suite OCI cuando falta específicamente su SDK.
+  Está pendiente de integración. El `xfail` de rutas se conserva en nuestra rama
+  mientras use el conector anterior; debe retirarse al incorporar la corrección.
+- La aplicación en la rama de DS sigue importando `procesar_paquete_entrega` desde
+  `grafo.py`, aunque se trasladó a `procesamiento.py`. También mantiene `json.load`
+  fuera del `try`. La suite de funciones no equivale a validar el arranque de la app.
+
+### Validación local del 7 de octubre
+
+Se instaló el SDK `oci` 2.187.2 en el entorno local para ejecutar también las
+pruebas de persistencia con clientes simulados. No se llamaron proveedores de IA
+ni se consultó o escribió en el bucket. No se copiaron credenciales a las revisiones.
+
+| Comprobación | Aprobadas | Omitidas | Fallos esperados | Fallos inesperados |
+| --- | ---: | ---: | ---: | ---: |
+| DA sobre `a15631c` más este cambio de ruido, con OCI | 228 | 38 | 6 | 0 |
+| DA más DS `fcb18df`, copia aislada | 252 | 38 | 6 | 0 |
+| DA + DS + código de Cloud del PR #18 `7d756df`, copia aislada | 255 | 38 | 5 | 0 |
+
+Las dos primeras ejecuciones aprobaron también 127 subpruebas; la tercera, 132.
+`unittest discover` en la rama de DA ejecutó 84 pruebas y terminó en OK. La revisión
+inicial focalizada de filtro, entrega, tolerancia y ensayo NIM aprobó 77 pruebas
+y 76 subpruebas. Estos números pertenecen a selecciones diferentes, no se suman.
+
+Las 38 omisiones son los criterios del respaldo NIM → Gemini. Los seis fallos
+esperados en DA corresponden a cuatro estados manuales de DS, la ruta OCI
+`insight_mejora` y la lectura JSON de la app. En la copia con Cloud se retiró
+únicamente el `xfail` de rutas y la prueba pasó; la marca se conserva en la rama
+compartida porque su conector todavía no contiene el PR #18.
+
+Para comprobar DS se construyó el árbol de combinación de `a15631c` y `fcb18df`
+con `git merge-tree` (sin conflictos) y se aplicaron los archivos locales del
+filtro y sus pruebas en `salida/.revision-da-ds-20261007/`. Para Cloud se preparó
+otra copia con su conector, pruebas y traslado de la comprobación manual, más la
+retirada de la marca mencionada. Es una validación funcional de esos archivos,
+no una fusión ni una aprobación del PR completo. La documentación de Cloud no
+se superpuso a la de DS.
+
+Comando de la suite completa en cada raíz, con sus dependencias instaladas:
+
+```powershell
+New-Item -ItemType Directory -Force salida | Out-Null
+$pruebasTemp = Join-Path (Get-Location).Path ('salida/pytest-' + [guid]::NewGuid().ToString('N'))
+python -B -m pytest --ignore=salida -q -p no:cacheprovider --basetemp "$pruebasTemp"
+python -B -m unittest discover -s tests -p "test_*.py"
+```
+
+Durante la preparación hubo errores de permisos de temporales de Windows y de
+directorio padre ausente en una copia aislada. Se corrigió el entorno de ejecución
+y se repitieron las comprobaciones; la tabla contiene los resultados finales.
+Que estas suites pasen no valida el arranque de Streamlit ni el respaldo real de NIM.
+
 ## Siguientes acciones
 
-1. Revisar con DS los resultados reales, la instrucción corregida y la configuración
-   de razonamiento. Resolver la comprobación de DeepSeek y repetir las mediciones
-   acordando perfiles comparables. No mezclar diagnósticos con las corridas completas.
+1. Revisar entre Gustavo y Jhonattan el filtro de ruido, sus límites y las pruebas;
+   compartirlo con DS y PM. Confirmar el timeout propuesto con las dos corridas
+   separadas y el papel de DeepSeek antes de gastar más solicitudes.
 2. Cuando DS publique el cliente y el respaldo, ajustar el contrato provisional y
    comprobar el límite temporal, los reintentos y el recorrido completo del grafo.
 3. Coordinar con Gustavo antes del siguiente push. Después preparar un solo PR hacia
    `develop`, con revisión de DS, CE y SS, indicando omisiones y defectos conocidos.
 
 Pendientes de los otros componentes: DS debe resolver los cuatro defectos de estados
-manuales; CE debe admitir `insight_mejora` y acordar la política de sus pruebas sin
-SDK; SS debe proteger la lectura del JSON. Este trabajo no modifica esos módulos
-de producción ni sustituye Gemini por NVIDIA.
+manuales y publicar el respaldo; CE tiene las correcciones en el PR #18, aún sin
+integrar; SS debe proteger la lectura del JSON y adaptar el import del procesamiento.
+Este trabajo no modifica esos módulos de producción ni sustituye Gemini por NVIDIA.

@@ -46,7 +46,8 @@ communitylab/
 │   ├── demostracion_nodo_analizador.py
 │   ├── evaluar_casos_ambiguos.py
 │   ├── evaluar_conjunto_datos.py
-│   └── inspeccionar_estado_agente.py
+│   ├── inspeccionar_estado_agente.py
+│   └── probar_oci_storage.py # Prueba manual: consulta el bucket y sube un JSON real.
 ├── src/                    # Código fuente principal del sistema.
 │   ├── agentes/            # Grafos, lógica analítica y prompts de LangGraph (Cerebro IA).
 │   │   ├── nodos/          # Nodos enrutadores y generadores de activos MarTech.
@@ -87,8 +88,7 @@ communitylab/
     ├── test_integracion_ciencia_datos.py
     ├── test_persistencia_oci.py
     ├── test_procesamiento_datos.py
-    ├── test_rendimiento_datos.py
-    └── test_storage.py
+    └── test_rendimiento_datos.py
 ```
 
 ---

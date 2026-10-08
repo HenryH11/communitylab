@@ -40,6 +40,33 @@ con estado distinto de cero si una métrica cae bajo su umbral. Los snapshots so
 resultados históricos; sirven para regresión, no son una verdad de referencia
 revisada por anotadores independientes.
 
+## Pruebas de Cloud (OCI)
+
+`tests/test_persistencia_oci.py` usa un cliente simulado: no necesita credenciales
+ni accede al bucket. Comprueba, entre otros casos, que las cinco rutas del grafo
+(incluida `insight_mejora`) se almacenen sin alterar el JSON del activo.
+
+Si el SDK `oci` no está instalado, este módulo se omite con un motivo visible
+tanto en pytest como en unittest; las demás pruebas pueden continuar. No se
+ocultan errores de otras dependencias ni del conector. Para validar Cloud hay
+que instalar las dependencias de `requirements.txt` y ejecutar:
+
+```powershell
+python -m pytest tests/test_persistencia_oci.py -q -rs
+```
+
+La prueba manual de conexión se encuentra en `scripts/probar_oci_storage.py`
+(antes `tests/test_storage.py`) y queda fuera de la suite automática:
+
+```powershell
+python -m scripts.probar_oci_storage
+```
+
+Este último comando sí consulta OCI y sube el objeto de prueba
+`activos/2026-semana-00/prueba-inicial.json`; requiere el SDK y un perfil local
+válido. Usa `OCI_PROFILE` y `OCI_BUCKET_NAME` para seleccionar la cuenta y el
+bucket. No lo ejecutes como parte de las pruebas offline.
+
 ## CLI de Datos
 
 Consulta las opciones vigentes de cada comando:

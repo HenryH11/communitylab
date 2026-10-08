@@ -107,14 +107,32 @@ def analizar_lote(estados: list[EstadoAgente]) -> list[dict]:
         return []
 
     mensajes = []
-    for estado in estados:
-        mensajes.append(
-            {
-                "id": estado["id"],
-                **_entrada_analisis(estado),
-            }
-        )
+    errores_preparacion = {}
 
+    for estado in estados:
+        identificador = estado["id"]
+
+        try:
+            mensajes.append(
+                {
+                    "id": identificador,
+                    **_entrada_analisis(estado),
+                }
+            )
+        except Exception as error:
+            errores_preparacion[identificador] = _error_analisis(
+                "analizar_lote",
+                error,
+                identificador,
+            )
+
+    if not mensajes:
+        return [
+            errores_preparacion[estado["id"]]
+            for estado in estados
+        ]
+
+    ids_lote = [mensaje["id"] for mensaje in mensajes]
     mensajes_json = json.dumps(mensajes, ensure_ascii=False)
 
     def invocar(intento: int) -> AnalisisLote:
@@ -123,7 +141,7 @@ def analizar_lote(estados: list[EstadoAgente]) -> list[dict]:
             config=config_ejecucion(
                 "analizar_lote",
                 intento=intento,
-                ids_interaccion=ids,
+                ids_interaccion=ids_lote,
             ),
         )
         if isinstance(respuesta, dict):
@@ -133,11 +151,12 @@ def analizar_lote(estados: list[EstadoAgente]) -> list[dict]:
     try:
         respuesta = ejecutar_con_reintentos(
             invocar,
-            contexto={"etapa": "analizar_lote", "ids_interaccion": ids},
+            contexto={"etapa": "analizar_lote", "ids_interaccion": ids_lote},
         )
     except Exception as error:
         return [
-            _error_analisis("analizar_lote", error, estado["id"])
+            errores_preparacion.get(estado["id"])
+            or _error_analisis("analizar_lote", error, estado["id"])
             for estado in estados
         ]
 
@@ -162,7 +181,11 @@ def analizar_lote(estados: list[EstadoAgente]) -> list[dict]:
     resultados = []
     for estado in estados:
         identificador = estado["id"]
-        resultado = resultados_por_id.get(identificador)
+        resultado = errores_preparacion.get(identificador)
+
+        if resultado is None:
+            resultado = resultados_por_id.get(identificador)
+
         if resultado is None:
             resultado = _analizar_individualmente(estado)
         resultados.append(resultado)

@@ -44,7 +44,8 @@ def determinar_rutas(state: EstadoAgente) -> ResultadoRutas:
     # el umbral de respaldo.
     if (
         elegible_contenido is None
-        and puntaje is not None
+        and isinstance(puntaje, (int, float))
+        and not isinstance(puntaje, bool)
         and puntaje < UMBRAL_RELEVANCIA
     ):
         return {"rutas": []}
@@ -63,7 +64,10 @@ def determinar_rutas(state: EstadoAgente) -> ResultadoRutas:
         rutas.append("caso_exito")
         rutas.append("boletin")
 
-        if sentimiento in {"positivo", "muy_positivo"}:
+        if (
+            isinstance(sentimiento, str)
+            and sentimiento in {"positivo", "muy_positivo"}
+        ):
             rutas.append("linkedin")
 
     return {

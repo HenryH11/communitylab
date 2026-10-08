@@ -151,3 +151,54 @@ def test_pregunta_programa_sin_elegible_faq_no_genera_activo():
     resultado = determinar_rutas(estado)
 
     assert resultado["rutas"] == []
+
+
+def test_pregunta_programa_faq_es_independiente_de_elegible_contenido():
+    estado = {
+        "tipo_detectado": "pregunta_programa",
+        "sentimiento": "neutral",
+        "score_relevancia": 20,
+        "elegible_contenido": False,
+        "elegible_faq": True,
+    }
+
+    resultado = determinar_rutas(estado)
+
+    assert resultado["rutas"] == ["preguntas_frecuentes"]
+
+
+def test_elegible_contenido_prevalece_sobre_puntaje_bajo():
+    estado = {
+        "tipo_detectado": "pregunta_tecnica",
+        "sentimiento": "neutral",
+        "score_relevancia": 20,
+        "elegible_contenido": True,
+    }
+
+    resultado = determinar_rutas(estado)
+
+    assert resultado["rutas"] == ["preguntas_frecuentes"]
+
+
+def test_puntaje_en_umbral_no_bloquea_estado_antiguo():
+    estado = {
+        "tipo_detectado": "pregunta_tecnica",
+        "sentimiento": "neutral",
+        "score_relevancia": 40,
+    }
+
+    resultado = determinar_rutas(estado)
+
+    assert resultado["rutas"] == ["preguntas_frecuentes"]
+
+
+def test_tipo_no_reconocido_no_genera_rutas():
+    estado = {
+        "tipo_detectado": "spam",
+        "sentimiento": "neutral",
+        "score_relevancia": 80,
+    }
+
+    resultado = determinar_rutas(estado)
+
+    assert resultado["rutas"] == []

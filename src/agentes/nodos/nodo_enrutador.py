@@ -1,10 +1,16 @@
-from src.agentes.estado_agente import EstadoAgente
+from typing import TypedDict
+
+from src.agentes.estado_agente import EstadoAgente, Ruta
 
 
 UMBRAL_RELEVANCIA = 40
 
 
-def determinar_rutas(state: EstadoAgente) -> dict:
+class ResultadoRutas(TypedDict):
+    rutas: list[Ruta]
+
+
+def determinar_rutas(state: EstadoAgente) -> ResultadoRutas:
     """
     Determina qué activos puede generar una interacción
     a partir del análisis semántico y de las decisiones
@@ -13,7 +19,7 @@ def determinar_rutas(state: EstadoAgente) -> dict:
     Puede devolver varias rutas para un mismo mensaje.
     """
 
-    rutas = []
+    rutas: list[Ruta] = []
 
     tipo = state.get("tipo_detectado")
     sentimiento = state.get("sentimiento")

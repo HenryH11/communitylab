@@ -1,9 +1,10 @@
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.agentes.estado_agente import EstadoAgente
-from src.agentes.grafo import procesar_estados_por_lotes
+from src.agentes.grafo import comprobar_rutas, procesar_estados_por_lotes
 from src.agentes.procesamiento import procesar_paquete_entrega
 from src.agentes.modelos import (
     AnalisisLote,
@@ -419,3 +420,29 @@ def test_contrato_consolida_fallos_por_etapa_y_conserva_el_id():
     assert entrega["resumen_comunidad"]["fallos_por_etapa"] == {
         "generar_activos": 1
     }
+
+
+def test_grafo_finaliza_si_no_hay_rutas():
+    estado = cast(
+        EstadoAgente,
+        {
+            "id": "id-sin-ruta",
+            "texto": "Mensaje sin activo",
+            "rutas": [],
+        },
+    )
+
+    assert comprobar_rutas(estado) == "finalizar"
+
+
+def test_grafo_continua_a_generacion_si_hay_rutas():
+    estado = cast(
+        EstadoAgente,
+        {
+            "id": "id-con-ruta",
+            "texto": "Pregunta técnica",
+            "rutas": ["preguntas_frecuentes"],
+        },
+    )
+
+    assert comprobar_rutas(estado) == "generar"

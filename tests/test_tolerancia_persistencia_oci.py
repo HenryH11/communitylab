@@ -43,13 +43,15 @@ def cliente_simulado():
 
 @pytest.mark.parametrize("ruta", sorted(RUTAS_ACTIVO))
 def test_rutas_admitidas_generan_clave_estable(ruta):
-    assert nombre_objeto_activo("int-004", ruta, PERIODO) == f"assets/{PERIODO}/{ruta}/int-004.json"
+    # El prefijo lo define CE (assets/ o activos/); aquí importa el resto de la clave.
+    clave = nombre_objeto_activo("int-004", ruta, PERIODO)
+    prefijo, resto = clave.split("/", 1)
+    assert prefijo in {"assets", "activos"}
+    assert resto == f"{PERIODO}/{ruta}/int-004.json"
+    assert nombre_objeto_activo("int-004", ruta, PERIODO) == clave
 
 
-@pytest.mark.xfail(strict=True, raises=ValueError, reason=(
-    "El grafo genera la ruta insight_mejora (estado_agente.Ruta), pero "
-    "oci_client.RUTAS_ACTIVO no la admite: esos activos no se podrán guardar (CE)"
-))
+# Regresión: CE agregó insight_mejora a RUTAS_ACTIVO (PR #18).
 def test_toda_ruta_del_grafo_tiene_destino_en_el_bucket():
     for ruta in get_args(Ruta):
         nombre_objeto_activo("int-006", ruta, PERIODO)

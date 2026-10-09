@@ -14,7 +14,9 @@ import oci
 
 
 BUCKET_PREDETERMINADO = "communitylab-activos-marketing"
-RUTAS_ACTIVO = frozenset({"linkedin", "boletin", "preguntas_frecuentes", "caso_exito"})
+RUTAS_ACTIVO = frozenset(
+    {"linkedin", "boletin", "preguntas_frecuentes", "caso_exito", "insight_mejora"}
+)
 _SEGMENTO = re.compile(r"[A-Za-z0-9_-]+\Z")
 
 

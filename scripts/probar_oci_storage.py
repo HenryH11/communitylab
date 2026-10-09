@@ -24,10 +24,7 @@ def get_oci_client(profile_name: str) -> tuple[ObjectStorageClient, str]:
     oci.config.validate_config(config)
 
     client = ObjectStorageClient(config)
-    respuesta_namespace = client.get_namespace()
-    if respuesta_namespace is None:
-        raise ValueError("OCI no devolvió el namespace")
-    namespace = respuesta_namespace.data
+    namespace = client.get_namespace().data
 
     return client, namespace
 
@@ -40,13 +37,10 @@ def display_bucket_info(
     """
     Consulta e imprime los metadatos del bucket para confirmar la conexión.
     """
-    respuesta_bucket = client.get_bucket(
+    bucket = client.get_bucket(
         namespace_name=namespace,
         bucket_name=bucket_name,
-    )
-    if respuesta_bucket is None:
-        raise ValueError("OCI no devolvió la respuesta del bucket")
-    bucket = respuesta_bucket.data
+    ).data
 
     print("Conexión exitosa con OCI Object Storage.")
     print(f"Bucket: {bucket.name} (Nivel: {bucket.storage_tier})")

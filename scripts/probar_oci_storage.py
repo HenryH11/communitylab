@@ -1,5 +1,8 @@
 """
-Módulo para validar la conexión y subida de archivos a OCI Object Storage.
+Prueba manual de conexión y subida de archivos a OCI Object Storage.
+
+Ejecutar con ``python -m scripts.probar_oci_storage``. Requiere el SDK y un
+perfil OCI local; escribe un objeto de prueba en el bucket configurado.
 
 Consulta los metadatos del bucket y carga los objetos, manejando la
 configuración a través de variables de entorno y emitiendo errores estándar.

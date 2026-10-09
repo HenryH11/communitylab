@@ -2,12 +2,49 @@
 
 import json
 import unittest
+from typing import get_args
 from unittest.mock import Mock, patch
 
+# Omitir solo cuando falta OCI, sin esconder dependencias o imports rotos.
+try:
+    import oci
+except ModuleNotFoundError as error:
+    if error.name != "oci":
+        raise
+    raise unittest.SkipTest("SDK de OCI no instalado") from error
+
+from src.agentes.estado_agente import Ruta
 from src.config.oci_client import nombre_objeto_activo, subir_json
 
 
 class PruebasPersistenciaOCI(unittest.TestCase):
+    def test_rutas_del_grafo_conservan_el_activo_al_guardar(self):
+        for ruta in get_args(Ruta):
+            with self.subTest(ruta=ruta):
+                cliente = Mock()
+                cliente.put_object.return_value.headers = {"etag": "etag-prueba"}
+                activo = {
+                    "id_interaccion": "int-006",
+                    "tipo": ruta,
+                    "contenido": {"texto": "Mejorar la documentación ✅"},
+                }
+                nombre = nombre_objeto_activo("int-006", ruta, "2026-semana-03")
+
+                resultado = subir_json(
+                    activo, nombre, cliente=cliente, namespace="namespace-prueba"
+                )
+
+                cliente.put_object.assert_called_once()
+                parametros = cliente.put_object.call_args.kwargs
+                self.assertEqual(
+                    parametros["object_name"],
+                    f"assets/2026-semana-03/{ruta}/int-006.json",
+                )
+                self.assertEqual(
+                    json.loads(parametros["put_object_body"].decode("utf-8")), activo
+                )
+                self.assertEqual(resultado["object_name"], nombre)
+
     def test_subida_conserva_unicode_y_devuelve_ubicacion(self):
         cliente = Mock()
         cliente.put_object.return_value.headers = {"etag": "abc123"}

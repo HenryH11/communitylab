@@ -11,17 +11,18 @@ Este módulo no modifica el paquete de Data, no ejecuta Gemini y no persiste
 archivos.
 """
 
-from collections import Counter
 from copy import deepcopy
 import json
+from typing import cast
 
 from src.agentes.contrato_salida_ciencia_datos import (
     ActivoEntregado,
     EntregaCienciaDatos,
     ResultadoInteraccion,
-    TemaPrincipalResumen,
     VERSION_CONTRATO_SALIDA_DS,
 )
+from src.agentes.resumen_entrega import construir_resumen_comunidad
+from src.agentes.validacion_entrega import validar_resultados
 
 
 CAMPOS_INTERACCION = (
@@ -42,128 +43,17 @@ CAMPOS_INTERACCION = (
 )
 
 
-def _validar_resultados(resultados: list[dict]) -> None:
-    ids = []
-
-    for resultado in resultados:
-        identificador = resultado.get("id")
-
-        if (
-            not isinstance(identificador, str)
-            or not identificador.strip()
-            or identificador != identificador.strip()
-        ):
-            raise ValueError(
-                "Cada resultado de Data Science debe tener un ID válido"
-            )
-
-        ids.append(identificador)
-
-        rutas = resultado.get("rutas", [])
-        activos = resultado.get("activos_generados", {})
-        errores = resultado.get("errores", [])
-
-        if not isinstance(rutas, list):
-            raise ValueError(
-                f"{identificador}: rutas debe ser una lista"
-            )
-
-        if not isinstance(activos, dict):
-            raise ValueError(
-                f"{identificador}: activos_generados debe ser un diccionario"
-            )
-
-        if not isinstance(errores, list):
-            raise ValueError(
-                f"{identificador}: errores debe ser una lista"
-            )
-
-        fallos = resultado.get("fallos", [])
-        if not isinstance(fallos, list):
-            raise ValueError(
-                f"{identificador}: fallos debe ser una lista"
-            )
-        for fallo in fallos:
-            if (
-                not isinstance(fallo, dict)
-                or fallo.get("id") != identificador
-                or not isinstance(fallo.get("etapa"), str)
-                or not isinstance(fallo.get("tipo_error"), str)
-                or not isinstance(fallo.get("mensaje"), str)
-            ):
-                raise ValueError(
-                    f"{identificador}: registro de fallo inválido"
-                )
-
-        if not errores:
-            for campo in (
-                "sentimiento",
-                "tema_principal",
-                "subtema",
-                "tipo_detectado",
-            ):
-                valor = resultado.get(campo)
-
-                if not isinstance(valor, str) or not valor.strip():
-                    raise ValueError(
-                        f"{identificador}: falta el campo de análisis {campo}"
-                    )
-
-    if len(ids) != len(set(ids)):
-        raise ValueError(
-            "La salida de Data Science contiene IDs repetidos"
-        )
-
-
-def _ordenar_distribucion(contador: Counter) -> dict[str, int]:
-    return {
-        clave: cantidad
-        for clave, cantidad in sorted(
-            contador.items(),
-            key=lambda item: (-item[1], item[0]),
-        )
-    }
-
-
-def _obtener_sentimientos_predominantes(
-    contador: Counter,
-) -> list[str]:
-    if not contador:
-        return []
-
-    maximo = max(contador.values())
-
-    return sorted(
-        sentimiento
-        for sentimiento, cantidad in contador.items()
-        if cantidad == maximo
-    )
-
-
-def _obtener_temas_principales(
-    contador: Counter,
-    limite: int = 3,
-) -> list[TemaPrincipalResumen]:
-    return [
-        {
-            "tema": tema,
-            "cantidad": cantidad,
-        }
-        for tema, cantidad in sorted(
-            contador.items(),
-            key=lambda item: (-item[1], item[0]),
-        )[:limite]
-    ]
-
-
 def _preparar_interaccion(
     resultado: dict,
 ) -> ResultadoInteraccion:
-    interaccion: ResultadoInteraccion = {
-        campo: deepcopy(resultado[campo])
-        for campo in CAMPOS_INTERACCION
-        if campo in resultado
-    }
+    interaccion = cast(
+        ResultadoInteraccion,
+        {
+            campo: deepcopy(resultado[campo])
+            for campo in CAMPOS_INTERACCION
+            if campo in resultado
+        },
+    )
     interaccion["elegible_faq"] = resultado.get(
         "elegible_faq",
         False,
@@ -241,7 +131,7 @@ def preparar_entrega_resultados(
             "La salida debe contener ids_pendientes como lista"
         )
 
-    _validar_resultados(resultados)
+    validar_resultados(resultados)
 
     ids_resultados = {
         resultado["id"]
@@ -258,27 +148,6 @@ def preparar_entrega_resultados(
             "Un ID no puede estar procesado y pendiente al mismo tiempo"
         )
 
-    sentimientos = Counter(
-        resultado["sentimiento"]
-        for resultado in resultados
-        if isinstance(resultado.get("sentimiento"), str)
-        and resultado["sentimiento"].strip()
-    )
-
-    temas = Counter(
-        resultado["tema_principal"]
-        for resultado in resultados
-        if isinstance(resultado.get("tema_principal"), str)
-        and resultado["tema_principal"].strip()
-    )
-
-    tipos_detectados = Counter(
-        resultado["tipo_detectado"]
-        for resultado in resultados
-        if isinstance(resultado.get("tipo_detectado"), str)
-        and resultado["tipo_detectado"].strip()
-    )
-
     activos = _extraer_activos(
         resultados
     )
@@ -287,54 +156,12 @@ def preparar_entrega_resultados(
         for resultado in resultados
         for fallo in resultado.get("fallos", [])
     ]
-    fallos_por_etapa = _ordenar_distribucion(
-        Counter(fallo["etapa"] for fallo in fallos)
-    )
-
-    total_con_activos = sum(
-        bool(
-            resultado.get(
-                "activos_generados",
-                {},
-            )
+    ids_reintentables = list(
+        dict.fromkeys(
+            fallo["id"]
+            for fallo in fallos
+            if fallo.get("reintentable") is True
         )
-        for resultado in resultados
-    )
-
-    total_con_errores = sum(
-        bool(
-            resultado.get(
-                "errores",
-                [],
-            )
-        )
-        for resultado in resultados
-    )
-
-    total_elegibles = sum(
-        resultado.get(
-            "elegible_contenido"
-        ) is True
-        for resultado in resultados
-    )
-
-    total_elegibles_faq = sum(
-        resultado.get(
-            "elegible_faq"
-        ) is True
-        for resultado in resultados
-    )
-
-    sentimientos_predominantes = (
-        _obtener_sentimientos_predominantes(
-            sentimientos
-        )
-    )
-
-    sentimiento_predominante = (
-        sentimientos_predominantes[0]
-        if len(sentimientos_predominantes) == 1
-        else None
     )
 
     interacciones = [
@@ -346,52 +173,17 @@ def preparar_entrega_resultados(
 
     return {
         "version_contrato": VERSION_CONTRATO_SALIDA_DS,
-        "resumen_comunidad": {
-            "total_interacciones_procesadas": len(
-                resultados
-            ),
-            "total_pendientes": len(
-                ids_pendientes
-            ),
-            "total_elegibles_contenido": total_elegibles,
-            "total_elegibles_faq": total_elegibles_faq,
-            "total_con_activos": total_con_activos,
-            "total_activos_generados": len(
-                activos
-            ),
-            "total_con_errores": total_con_errores,
-            "total_fallos": len(fallos),
-            "fallos_por_etapa": fallos_por_etapa,
-            "sentimiento_predominante": (
-                sentimiento_predominante
-            ),
-            "sentimientos_predominantes": (
-                sentimientos_predominantes
-            ),
-            "distribucion_sentimientos": (
-                _ordenar_distribucion(
-                    sentimientos
-                )
-            ),
-            "temas_principales": (
-                _obtener_temas_principales(
-                    temas
-                )
-            ),
-            "distribucion_temas": (
-                _ordenar_distribucion(
-                    temas
-                )
-            ),
-            "distribucion_tipos_detectados": (
-                _ordenar_distribucion(
-                    tipos_detectados
-                )
-            ),
-        },
+        "id_ejecucion": salida_procesamiento.get("id_ejecucion"),
+        "resumen_comunidad": construir_resumen_comunidad(
+            resultados,
+            activos,
+            fallos,
+            len(ids_pendientes),
+        ),
         "interacciones": interacciones,
         "activos": activos,
         "fallos": fallos,
+        "ids_reintentables": ids_reintentables,
         "pendientes": deepcopy(
             pendientes
         ),

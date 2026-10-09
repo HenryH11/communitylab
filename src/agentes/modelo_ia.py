@@ -9,7 +9,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 MODELO_GEMINI = "gemini-3.5-flash-lite"
-MAX_RETRIES_GEMINI = 6
+# Bajo a propósito: los reintentos de la aplicación (reintentos.py) se suman a estos.
+MAX_RETRIES_GEMINI = 2
 INTERVALO_REVISION_LIMITADOR = 0.1
 TAMANO_MAXIMO_LIMITADOR = 1
 

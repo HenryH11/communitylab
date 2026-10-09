@@ -40,6 +40,33 @@ con estado distinto de cero si una métrica cae bajo su umbral. Los snapshots so
 resultados históricos; sirven para regresión, no son una verdad de referencia
 revisada por anotadores independientes.
 
+## Pruebas de Cloud (OCI)
+
+`tests/test_persistencia_oci.py` usa un cliente simulado: no necesita credenciales
+ni accede al bucket. Comprueba, entre otros casos, que las cinco rutas del grafo
+(incluida `insight_mejora`) se almacenen sin alterar el JSON del activo.
+
+Si el SDK `oci` no está instalado, este módulo se omite con un motivo visible
+tanto en pytest como en unittest; las demás pruebas pueden continuar. No se
+ocultan errores de otras dependencias ni del conector. Para validar Cloud hay
+que instalar las dependencias de `requirements.txt` y ejecutar:
+
+```powershell
+python -m pytest tests/test_persistencia_oci.py -q -rs
+```
+
+La prueba manual de conexión se encuentra en `scripts/probar_oci_storage.py`
+(antes `tests/test_storage.py`) y queda fuera de la suite automática:
+
+```powershell
+python -m scripts.probar_oci_storage
+```
+
+Este último comando sí consulta OCI y sube el objeto de prueba
+`activos/2026-semana-00/prueba-inicial.json`; requiere el SDK y un perfil local
+válido. Usa `OCI_PROFILE` y `OCI_BUCKET_NAME` para seleccionar la cuenta y el
+bucket. No lo ejecutes como parte de las pruebas offline.
+
 ## CLI de Datos
 
 Consulta las opciones vigentes de cada comando:
@@ -96,9 +123,32 @@ Ambas requieren conexión a Internet y `GEMINI_API_KEY`. Procesan el paquete de
 Datos, llaman al modelo, ejecutan el routing y validan la salida. La prueba
 funcional del contrato escribe sus resultados en `output/`.
 
+## Logs y reprocesamiento de fallos
+
+Cada ejecución de `procesar_paquete_entrega()` escribe eventos JSON en
+`salida/logs/ciencia_datos.jsonl`, con `id_ejecucion`, etapa, ID, ruta,
+intento, duración y tokens. Los tracebacks solo quedan en ese archivo, no en la
+entrega. Variables útiles: `COMMUNITYLAB_LOGS=0` (desactivar),
+`COMMUNITYLAB_LOG_DIR` y `COMMUNITYLAB_LOG_LEVEL`.
+
+Los errores transitorios (timeouts, 429, 5xx) se reintentan automáticamente y,
+al final de la corrida, se hace una pasada de recuperación sobre lo que quedó
+fallido. Si aún quedan fallos reintentables en una entrega guardada:
+
+```powershell
+python -m scripts.reprocesar_fallidos
+python -m scripts.reprocesar_fallidos --entrada ruta\entrega.json --salida ruta\nueva.json
+```
+
+Solo se repite lo que falló: análisis de los IDs afectados o las rutas de
+activos fallidas. Requiere `GEMINI_API_KEY`. `--incluir-permanentes` fuerza
+también errores no transitorios.
+
 ## Errores frecuentes
 
-- `429 RESOURCE_EXHAUSTED`: se alcanzó el límite de frecuencia o cuota. Espera
-  el intervalo que indique el proveedor antes de reintentar.
-- `503 ServiceUnavailable`: suele ser temporal; reintenta antes de atribuirlo a
-  la lógica local.
+- `429 RESOURCE_EXHAUSTED`: se alcanzó el límite de frecuencia o cuota. El sistema
+  reintenta automáticamente los errores transitorios; respeta además cualquier
+  intervalo indicado por el proveedor. Si persiste, revisa `ids_reintentables`
+  en la entrega y usa el reprocesamiento más tarde.
+- `503 ServiceUnavailable`: suele ser temporal; el sistema lo trata como error
+  transitorio y lo reintenta automáticamente antes de considerarlo definitivo.

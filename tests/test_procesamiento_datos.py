@@ -161,7 +161,7 @@ class PruebasSeleccion(unittest.TestCase):
     def test_rechaza_esquemas_invalidos_con_ubicacion(self):
         for campo, valor in (("autor", None), ("texto", 25), ("tipo", "desconocido"), ("fecha", []), ("id", "")):
             with self.subTest(campo=campo), self.assertRaisesRegex(ValueError, r"lotes\[0\].interacciones\[0\]"):
-                procesar(lote(mensaje(**{campo: valor})))
+                procesar(lote(mensaje(**{campo: valor})))  # pyright: ignore[reportArgumentType]
         for entrada in ([], {"lotes": {}}, {"lotes": [None]}, lote(None), {"lotes": [], "interacciones": []}):
             with self.subTest(entrada=entrada), self.assertRaises(ValueError):
                 procesar(entrada)
@@ -169,7 +169,7 @@ class PruebasSeleccion(unittest.TestCase):
     def test_rechaza_configuracion_invalida(self):
         for opciones in ({"maximo_por_lote": 0}, {"maximo_por_lote": True}, {"puntaje_minimo": -1}, {"caracteres_minimos": 0}, {"puntos_por_longitud": 200}, {"puntos_por_tipo": {}}, {"palabras_clave": "python"}, {"dias_de_frescura": 1.5}):
             with self.subTest(opciones=opciones), self.assertRaises(ValueError):
-                ConfiguracionRelevancia(**opciones)
+                ConfiguracionRelevancia(**opciones)  # pyright: ignore[reportArgumentType]
 
 
 class PruebasMapeoEstadoAgente(unittest.TestCase):
@@ -188,7 +188,7 @@ class PruebasMapeoEstadoAgente(unittest.TestCase):
         self.assertNotIn("id", estado)
         self.assertNotIn("idioma", estado)
         self.assertEqual(interaccion["tipo"], "comentario")
-        self.assertEqual(estado["tipo_original"], "comentario")
+        self.assertEqual(estado.get("tipo_original"), "comentario")
 
     def test_construir_estados_agente_aplana_lotes_seleccionados_en_orden_de_puntaje(self):
         entrada = lote(

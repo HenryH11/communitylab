@@ -7,12 +7,12 @@ u otras capas de aplicación).
 No ejecuta Gemini, LangGraph ni escritura de archivos.
 """
 
-from typing import TypedDict
+from typing import Required, TypedDict
 
 from src.agentes.estado_agente import Ruta
 
 
-VERSION_CONTRATO_SALIDA_DS = "1.2"
+VERSION_CONTRATO_SALIDA_DS = "1.3"
 
 
 class TemaPrincipalResumen(TypedDict):
@@ -29,6 +29,7 @@ class ResumenComunidad(TypedDict):
     total_activos_generados: int
     total_con_errores: int
     total_fallos: int
+    total_fallos_reintentables: int
     fallos_por_etapa: dict[str, int]
     sentimiento_predominante: str | None
     sentimientos_predominantes: list[str]
@@ -40,7 +41,7 @@ class ResumenComunidad(TypedDict):
 
 class ResultadoInteraccion(TypedDict, total=False):
     # Identidad y contexto heredados de Data.
-    id: str
+    id: Required[str]
     autor: str
     canal: str
     origen: str
@@ -51,7 +52,7 @@ class ResultadoInteraccion(TypedDict, total=False):
     tipo_original: str
     score_relevancia: float | None
     elegible_contenido: bool
-    elegible_faq: bool
+    elegible_faq: Required[bool]
 
     # Resultado de Data Science.
     sentimiento: str
@@ -60,10 +61,10 @@ class ResultadoInteraccion(TypedDict, total=False):
     tipo_detectado: str
 
     # Resultado de LangGraph y generadores.
-    rutas: list[Ruta]
-    activos_generados: dict[str, dict]
-    errores: list[str]
-    fallos: list[dict]
+    rutas: Required[list[Ruta]]
+    activos_generados: Required[dict[str, dict]]
+    errores: Required[list[str]]
+    fallos: Required[list[dict]]
 
 
 class ActivoEntregado(TypedDict):
@@ -74,9 +75,11 @@ class ActivoEntregado(TypedDict):
 
 class EntregaCienciaDatos(TypedDict):
     version_contrato: str
+    id_ejecucion: str | None
     resumen_comunidad: ResumenComunidad
     interacciones: list[ResultadoInteraccion]
     activos: list[ActivoEntregado]
     fallos: list[dict]
+    ids_reintentables: list[str]
     pendientes: list[dict]
     ids_pendientes: list[str]

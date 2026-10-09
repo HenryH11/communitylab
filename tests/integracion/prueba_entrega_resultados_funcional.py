@@ -25,11 +25,12 @@ import json
 from pathlib import Path
 
 from scripts.apoyo_demostraciones import cargar_paquete_demostracion
+from src.agentes.contrato_salida_ciencia_datos import EntregaCienciaDatos
 from src.agentes.entrega_resultados import (
     entrega_resultados_a_json,
     preparar_entrega_resultados,
 )
-from src.agentes.grafo import procesar_paquete_entrega
+from src.agentes.procesamiento import procesar_paquete_entrega
 
 
 RAIZ_REPOSITORIO = Path(__file__).resolve().parents[2]
@@ -47,7 +48,7 @@ RUTA_RESUMEN = (
 
 
 def _guardar_resultados(
-    entrega: dict,
+    entrega: EntregaCienciaDatos,
     json_salida: str,
 ) -> None:
     """Guarda el contrato completo y un resumen legible en UTF-8."""
@@ -359,7 +360,7 @@ def test_entrega_funcional_ciencia_datos():
 
     assert entrega[
         "version_contrato"
-    ] == "1.2"
+    ] == "1.3"
 
     assert resumen[
         "total_interacciones_procesadas"

@@ -1,11 +1,13 @@
-from typing import Literal
+"""Grafo de LangGraph y ejecución por lotes; el paquete se procesa en procesamiento.py."""
+
+from typing import Literal, cast
 
 from langgraph.graph import END, START, StateGraph
 
-from src.agentes.nodos.nodo_analizador import analizar_lote, analizar_mensaje
-from src.agentes.nodos.nodos_generadores import generar_activos
-from src.agentes.nodos.nodo_enrutador import determinar_rutas
 from src.agentes.estado_agente import EstadoAgente
+from src.agentes.nodos.nodo_analizador import analizar_lote, analizar_mensaje
+from src.agentes.nodos.nodo_enrutador import determinar_rutas
+from src.agentes.nodos.nodos_generadores import generar_activos
 
 
 MAX_INTERACCIONES_POR_SOLICITUD = 10
@@ -142,12 +144,23 @@ def procesar_estados_por_lotes(
         analisis = analizar_lote(grupo)
 
         for estado, campos_analisis in zip(grupo, analisis):
-            estado_actualizado = dict(estado)
-            errores = list(estado_actualizado.get("errores", []))
-            errores.extend(campos_analisis.get("errores", []))
-            fallos = list(estado_actualizado.get("fallos", []))
-            fallos.extend(campos_analisis.get("fallos", []))
-            estado_actualizado.update(campos_analisis)
+            errores = [
+                *estado.get("errores", []),
+                *campos_analisis.get("errores", []),
+            ]
+            fallos = [
+                *estado.get("fallos", []),
+                *campos_analisis.get("fallos", []),
+            ]
+            estado_actualizado = cast(
+                EstadoAgente,
+                {**estado, **campos_analisis},
+            )
+
+            if ids_contenido is not None:
+                estado_actualizado["elegible_contenido"] = (
+                    estado["id"] in ids_contenido
+                )
 
             if errores:
                 estado_actualizado["errores"] = errores
@@ -156,11 +169,6 @@ def procesar_estados_por_lotes(
                 estado_actualizado["activos_generados"] = {}
                 resultados.append(estado_actualizado)
                 continue
-
-            if ids_contenido is not None:
-                estado_actualizado["elegible_contenido"] = (
-                    estado["id"] in ids_contenido
-                )
 
             estado_actualizado.setdefault("rutas", [])
             estado_actualizado.setdefault("activos_generados", {})
@@ -171,78 +179,11 @@ def procesar_estados_por_lotes(
     return resultados
 
 
-def procesar_paquete_entrega(
-    paquete: dict,
-    *,
-    tamano_lote: int = MAX_INTERACCIONES_POR_SOLICITUD,
-) -> dict:
-    """Ejecuta los ciclos planificados por ID y devuelve los estados pendientes."""
-    estados = paquete["estados"]
-    plan = paquete["plan"]
-    estados_por_id = {}
+def procesar_paquete_entrega(*args, **kwargs):
+    """Compatibilidad: la implementación vive en src.agentes.procesamiento."""
+    from src.agentes.procesamiento import procesar_paquete_entrega as _impl
 
-    for estado in estados:
-        identificador = estado.get("id")
-        if (
-            not isinstance(identificador, str)
-            or not identificador.strip()
-            or identificador != identificador.strip()
-            or identificador in estados_por_id
-        ):
-            raise ValueError("El paquete contiene IDs inválidos o repetidos")
-        estados_por_id[identificador] = estado
-
-    ids_contenido = set(plan["ids_contenido"])
-    if not ids_contenido.issubset(estados_por_id):
-        raise ValueError("ids_contenido contiene IDs ausentes de los estados")
-
-    ids_planificados = []
-    for ciclo in plan["ciclos"]:
-        ids_planificados.extend(ciclo["ids"])
-    ids_pendientes = list(plan["pendientes"])
-
-    if (
-        len(ids_planificados + ids_pendientes)
-        != len(set(ids_planificados + ids_pendientes))
-        or set(ids_planificados + ids_pendientes) != set(estados_por_id)
-    ):
-        raise ValueError("Los ciclos y pendientes no cubren todos los estados por ID")
-
-    ciclos_resultantes = []
-    resultados = []
-
-    for ciclo in plan["ciclos"]:
-        estados_ciclo = [
-            estados_por_id[identificador]
-            for identificador in ciclo["ids"]
-        ]
-        resultados_ciclo = procesar_estados_por_lotes(
-            estados_ciclo,
-            ids_contenido=ids_contenido,
-            tamano_lote=tamano_lote,
-        )
-        ciclos_resultantes.append(
-            {
-                "indice": ciclo["indice"],
-                "ids": list(ciclo["ids"]),
-                "resultados": resultados_ciclo,
-            }
-        )
-        resultados.extend(resultados_ciclo)
-
-    return {
-        "resultados": resultados,
-        "resultados_por_id": {
-            resultado["id"]: resultado
-            for resultado in resultados
-        },
-        "ciclos": ciclos_resultantes,
-        "pendientes": [
-            estados_por_id[identificador]
-            for identificador in ids_pendientes
-        ],
-        "ids_pendientes": ids_pendientes,
-    }
+    return _impl(*args, **kwargs)
 
 
 grafo = construir_grafo()

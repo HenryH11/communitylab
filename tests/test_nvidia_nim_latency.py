@@ -40,6 +40,9 @@ def archivo(tmp_path):
 
 @pytest.fixture(autouse=True)
 def bloquear_red(monkeypatch):
+    # La configuración de DS también carga .env al preparar el paquete.
+    # Las pruebas deben depender solo del entorno simulado por monkeypatch.
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
     transporte = MagicMock(side_effect=AssertionError("No debe haber tráfico real"))
     monkeypatch.setattr(nim, "build_opener", transporte)
     return transporte
@@ -56,7 +59,8 @@ def test_plan_no_usa_clave_ni_red_y_conserva_entrada(archivo, monkeypatch, capsy
     assert nim.principal(args) == 0
     informe = json.loads(capsys.readouterr().out)
     assert informe["modo"] == "plan_sin_red"
-    assert informe["solicitudes_planificadas"] == 12
+    assert informe["modelos"] == [nim.MODELO_NEMOTRON]
+    assert informe["solicitudes_planificadas"] == 6
     assert informe["ids"] == ["nim-0", "nim-1", "nim-2"]
     assert informe["catalogo_free_endpoint"]["estado_observado"] == "Available"
     assert "resultados" not in informe
@@ -192,8 +196,8 @@ def test_informe_no_puede_reemplazar_entrada(archivo):
     assert archivo.read_bytes() == original
 
 
-def test_no_se_aplica_opcion_de_razonamiento_de_nemotron_a_deepseek(archivo):
+def test_deepseek_retirado_se_rechaza_antes_de_red(archivo, bloquear_red):
     with pytest.raises(SystemExit) as error:
-        nim.principal(["--entrada", str(archivo), "--modelo", "deepseek-ai/deepseek-v4.1-flash",
-                       "--sin-razonamiento"])
+        nim.principal(["--entrada", str(archivo), "--modelo", "deepseek-ai/deepseek-v4.1-flash"])
     assert error.value.code == 2
+    bloquear_red.assert_not_called()

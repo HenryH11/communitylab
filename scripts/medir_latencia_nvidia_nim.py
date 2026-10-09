@@ -43,13 +43,12 @@ from src.datos.relevancia import leer_fecha
 RAIZ = Path(__file__).resolve().parents[1]
 ENDPOINT = "https://integrate.api.nvidia.com/v1/chat/completions"
 # Verificación manual del catálogo; revisar otra vez antes de una corrida real.
+# Alcance acordado por Gustavo y Jhonattan el 8 de octubre: solo Nemotron.
 MODELOS_FREE_ENDPOINT = {
     "nvidia/nemotron-3.5-lightning-30b-a3b":
         "https://build.nvidia.com/nvidia/nemotron-3.5-lightning-30b-a3b/build",
-    "deepseek-ai/deepseek-v4.1-flash":
-        "https://build.nvidia.com/deepseek-ai/deepseek-v4.1-flash",
 }
-FECHA_CATALOGO = "2026-10-06"
+FECHA_CATALOGO = "2026-10-08"
 MODELO_NEMOTRON = "nvidia/nemotron-3.5-lightning-30b-a3b"
 TAREAS = {
     "analisis": (template_analisis, AnalisisMensaje),

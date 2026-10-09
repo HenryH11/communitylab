@@ -1,6 +1,8 @@
 # Semana 3: validación de Jhonattan
 
-Actualizado el 7 de octubre de 2026 en `feature/jhonattan-validacion-semana3`.
+Actualizado el 8 de octubre de 2026 en `feature/jhonattan-validacion-semana3`.
+La revisión más reciente está en [integración NIM del 8 de octubre](revision_integracion_nim_semana3.md).
+Las tablas fechadas del 6 y 7 se conservan como evidencia histórica.
 La rama se creó desde `develop` en `e8177ba` y Gustavo incorporó `develop`
 `1a9bcaa` mediante el merge `3fdd8e0`. La auditoría cruzada toma como referencia
 el commit compartido `14be025`, más los ajustes locales de importación de OCI y del
@@ -34,15 +36,18 @@ simulado cuando está instalado su SDK. No son pruebas con servicios reales.
 
 ## Modelos Free Endpoint
 
-El ensayo admite únicamente estos modelos. Sus fichas mostraban **Free Endpoint:
-Available** al verificarlas el 6 de octubre de 2026:
+Por acuerdo de Gustavo y Jhonattan del 8 de octubre, el ensayo admite únicamente
+Nemotron. Su ficha mostraba **Free Endpoint: Available** al verificarla ese día:
 
 | ID admitido | Ficha oficial |
 | --- | --- |
 | `nvidia/nemotron-3.5-lightning-30b-a3b` | [Nemotron 3.5 Lightning](https://build.nvidia.com/nvidia/nemotron-3.5-lightning-30b-a3b/build) |
-| `deepseek-ai/deepseek-v4.1-flash` | [DeepSeek V4.1 Flash](https://build.nvidia.com/deepseek-ai/deepseek-v4.1-flash) |
 
 La lista es una verificación manual fechada, no una consulta automática de disponibilidad.
+DeepSeek se retiró del catálogo del script y de los comandos sugeridos por decisión
+de DA. No se etiqueta como `deprecated`: los timeouts anteriores no demuestran
+retiro del servicio. Los resultados del 6 de octubre se conservan como evidencia
+histórica; no hay nuevas corridas de DeepSeek pendientes dentro del alcance acordado.
 Revisar las fichas antes de una ejecución real. Para incorporar otro modelo, primero
 confirmar su etiqueta y actualizar `MODELOS_FREE_ENDPOINT` y la fecha en el script.
 La etiqueta sirve para seleccionar candidatos al prototipo; hay medidas reales
@@ -71,13 +76,13 @@ python -B -m pytest tests/agents/test_tolerancia_fallas.py tests/test_nvidia_nim
 La ruta generada es exclusiva para pytest; no usar como `--basetemp` una carpeta
 con archivos propios, porque pytest puede borrar su contenido al comenzar.
 
-Planificar el análisis de los 23 mensajes en ambos modelos, sin usar una clave:
+Planificar el análisis de los 23 mensajes con Nemotron, sin usar una clave:
 
 ```powershell
-python -B -m scripts.medir_latencia_nvidia_nim --modelo nvidia/nemotron-3.5-lightning-30b-a3b --modelo deepseek-ai/deepseek-v4.1-flash --umbral-segundos 1.8 --salida salida/validacion_semana3/plan_analisis.json
+python -B -m scripts.medir_latencia_nvidia_nim --modelo nvidia/nemotron-3.5-lightning-30b-a3b --umbral-segundos 3 --salida salida/validacion_semana3/plan_analisis.json
 ```
 
-Este comando prepara 46 solicitudes individuales, pero no las envía. El benchmark
+Este comando prepara 23 solicitudes individuales, pero no las envía. El benchmark
 incluye todos los estados válidos aunque algunos estén pendientes de completar un
 ciclo de producción. No ejecuta el grafo ni reproduce su análisis por lotes.
 
@@ -89,17 +94,16 @@ testimonios seleccionados. No reproduce el enrutamiento posterior a la clasifica
 Para una prueba real, configurar `NVIDIA_API_KEY` en el entorno local o en el `.env`
 ignorado por Git y añadir `--en-vivo`. No guardar la clave en el script, informes
 ni mensajes del equipo. [NVIDIA explica cómo obtenerla en su guía oficial](https://docs.api.nvidia.com/nim/docs/api-quickstart).
-Comando de la corrida real de Nemotron, con el razonamiento desactivado:
+Comando para una nueva corrida de Nemotron, con el razonamiento desactivado y el
+umbral confirmado por DS. La corrida histórica del 6 de octubre usó 1,8 s:
 
 ```powershell
-python -B -m scripts.medir_latencia_nvidia_nim --modelo nvidia/nemotron-3.5-lightning-30b-a3b --sin-razonamiento --max-tokens 1024 --timeout 30 --umbral-segundos 1.8 --en-vivo --salida salida/validacion_semana3/nemotron_analisis.json
+python -B -m scripts.medir_latencia_nvidia_nim --modelo nvidia/nemotron-3.5-lightning-30b-a3b --sin-razonamiento --max-tokens 1024 --timeout 30 --umbral-segundos 3 --en-vivo --salida salida/validacion_semana3/nemotron_analisis.json
 ```
 
 `--sin-razonamiento` envía `chat_template_kwargs.enable_thinking=false` y solo
-admite Nemotron. La configuración se registra en el informe. DeepSeek sigue con
-su razonamiento predeterminado: no se deben presentar perfiles distintos como
-una comparación controlada. Su comprobación inicial continúa agotando el timeout;
-resolver esa condición antes de lanzar el lote completo de DeepSeek.
+admite Nemotron. La configuración se registra en el informe. DeepSeek ya no es
+una opción admitida por la CLI; se rechaza antes de enviar solicitudes.
 
 La ejecución real envía los textos a NVIDIA. El ensayo usa el endpoint oficial
 `https://integrate.api.nvidia.com/v1/chat/completions` y no sigue redirecciones.
@@ -138,18 +142,19 @@ ensayo no ejecuta un análisis previo. Miden el formato y rendimiento de esa sol
 aislada, no la calidad del flujo completo. Validar el esquema tampoco demuestra
 corrección semántica: los textos necesitan revisión humana.
 
-Según el acuerdo del PM comunicado por Gustavo el 6 de octubre, el timeout de NIM
-en producción sería configurable en `.env`, con 1,8 segundos por defecto. Gustavo
-propuso posteriormente 3 segundos a partir de otra corrida. En las capturas revisadas
-no consta aprobación final de ese cambio; no se modifica aquí el valor acordado. Data Science
-debe confirmar el nombre de esa variable y cómo se aplica el límite a los reintentos.
+El acuerdo inicial comunicado el 6 de octubre indicaba 1,8 segundos. El 8 de octubre,
+DS confirmó e implementó 3 segundos en `COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS`, usando
+`ChatOpenAI` para NIM. Es el timeout del cliente por intento, no un plazo global del
+mensaje: el fallback agota hasta tres intentos primarios con esperas antes de usar
+Gemini. Las métricas del flujo completo deben incluir esas esperas y el respaldo.
+La implementación está en la rama de DS NVIDIA, todavía fuera de esta rama de DA.
 
-En este ensayo, `--umbral-segundos 1.8` solo cuenta respuestas válidas que superan
-1,8 segundos **por solicitud**. No cancela llamadas ni activa Gemini. `--timeout`
+En este ensayo, `--umbral-segundos 3` solo cuenta respuestas válidas que superan
+3 segundos **por solicitud**. No cancela llamadas ni activa Gemini. `--timeout`
 es otro parámetro: mantiene 60 segundos por defecto y se aplica a operaciones de
 socket, no garantiza un plazo total de respuesta. Las corridas de latencia conservan
 ese timeout para observar también respuestas que superan el objetivo del PM. La
-activación del respaldo debe verificarse por separado cuando DS la implemente.
+activación del respaldo debe verificarse por separado con el código de DS.
 
 El script devuelve 0 para un plan o una corrida sin fallos, 1 cuando alguna solicitud
 falla y 2 para errores de configuración o entrada. Conserva resultados de solicitudes
@@ -282,11 +287,11 @@ en vez del análisis. Tras aclarar la instrucción y desactivar el razonamiento,
 la comprobación de un mensaje fue válida en 4,05 segundos y se inició el lote.
 Estas comprobaciones están separadas del cálculo de las 23 solicitudes.
 
-**Conclusión de esta ejecución:** la configuración de la clave funciona, pero la
+**Conclusión histórica de esta ejecución:** la configuración de la clave funciona, pero la
 corrida de Nemotron no cumple de forma consistente el objetivo de 1,8 segundos.
 No se puede declarar un ganador frente a DeepSeek ni recomendar el cambio de
-proveedor de producción con estos datos. Faltan repetición en otro momento,
-resolución de los timeouts de DeepSeek y pruebas del respaldo real de DS.
+proveedor de producción con estos datos. Quedaban pendientes la repetición y el
+respaldo real de DS. El 8 de octubre DA retiró DeepSeek del alcance de nuevas pruebas.
 
 ## Comparación con la corrida reportada por Gustavo
 
@@ -317,8 +322,8 @@ para el grafo por lotes. El fallo de `int-015` no demuestra por sí solo un prob
 del mensaje; se necesita su error y respuesta para diagnosticarlo.
 
 La evidencia justifica revisar el límite de 1,8 segundos con DS y PM, pero no
-declara 3 segundos como valor aprobado. DeepSeek sigue pendiente de una respuesta
-válida y de una decisión del equipo sobre su papel en la evaluación.
+declaraba 3 segundos como valor aprobado en esa revisión. DS lo confirmó después,
+el 8 de octubre. Ese día Gustavo y Jhonattan retiraron DeepSeek del ensayo.
 
 ## Actualización técnica del 7 de octubre
 
@@ -384,13 +389,15 @@ Que estas suites pasen no valida el arranque de Streamlit ni el respaldo real de
 
 1. Revisar entre Gustavo y Jhonattan el filtro de ruido, sus límites y las pruebas;
    compartirlo con DS y PM. Confirmar el timeout propuesto con las dos corridas
-   separadas y el papel de DeepSeek antes de gastar más solicitudes.
-2. Cuando DS publique el cliente y el respaldo, ajustar el contrato provisional y
-   comprobar el límite temporal, los reintentos y el recorrido completo del grafo.
+   separadas. Las próximas evaluaciones se limitan a Nemotron y su respaldo Gemini.
+2. Revisar con DS el cliente y respaldo ya publicados, aplicar la corrección del
+   adaptador y conciliar sus ramas. Comprobar el límite temporal, los reintentos
+   y el recorrido completo del grafo con la versión integrada.
 3. Coordinar con Gustavo antes del siguiente push. Después preparar un solo PR hacia
    `develop`, con revisión de DS, CE y SS, indicando omisiones y defectos conocidos.
 
-Pendientes de los otros componentes: DS debe resolver los cuatro defectos de estados
-manuales y publicar el respaldo; CE tiene las correcciones en el PR #18, aún sin
-integrar; SS debe proteger la lectura del JSON y adaptar el import del procesamiento.
+Pendientes de los otros componentes: DS debe conciliar sus correcciones de estados
+manuales con el respaldo y corregir el retorno del adaptador; CE tiene las correcciones
+en el PR #18, aún sin integrar; SS corrigió la lectura del JSON en el PR #19, también
+pendiente. La compatibilidad del import está publicada en la rama principal de DS.
 Este trabajo no modifica esos módulos de producción ni sustituye Gemini por NVIDIA.

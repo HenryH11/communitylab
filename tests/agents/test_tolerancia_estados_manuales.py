@@ -1,8 +1,9 @@
 """Estados construidos sin pasar por la ingesta: qué resiste el grafo y qué no.
 
 Complementa test_tolerancia_fallas.py, que cubre las entradas validadas por
-preparar_paquete_ia. Los xfail documentan colapsos reales de src/agentes/
-(de Data Science); con strict=True, el test avisa en cuanto se corrijan.
+preparar_paquete_ia. Los cuatro colapsos que
+documentaban (src/agentes/, de Data Science) se corrigieron en el PR #22;
+las pruebas quedan como regresión.
 """
 
 from unittest.mock import MagicMock
@@ -67,10 +68,7 @@ def test_generacion_sin_rutas_no_toca_texto_ni_modelos():
     assert resultado["fallos"] == []
 
 
-@pytest.mark.xfail(strict=True, raises=KeyError, reason=(
-    "nodo_analizador.analizar_lote arma los mensajes con estado['texto'] "
-    "fuera del try: un estado sin texto aborta todo el lote (DS)"
-))
+# Regresión: corregido por DS en DS-Semana3 (PR #22).
 def test_lote_con_un_estado_sin_texto_no_aborta_a_los_demas():
     estados = [estado("m-1"), estado("m-2")]
     del estados[1]["texto"]
@@ -79,10 +77,7 @@ def test_lote_con_un_estado_sin_texto_no_aborta_a_los_demas():
     assert all(r["fallos"] for r in resultados)
 
 
-@pytest.mark.xfail(strict=True, raises=KeyError, reason=(
-    "nodos_generadores._contexto lee estado['texto'] fuera del try: "
-    "con rutas y sin texto, generar_activos lanza KeyError (DS)"
-))
+# Regresión: corregido por DS en DS-Semana3 (PR #22).
 def test_generacion_con_rutas_y_sin_texto_registra_fallo_por_ruta():
     sin_texto = estado(rutas=["preguntas_frecuentes"])
     del sin_texto["texto"]
@@ -91,10 +86,7 @@ def test_generacion_con_rutas_y_sin_texto_registra_fallo_por_ruta():
     assert resultado["fallos"][0]["ruta"] == "preguntas_frecuentes"
 
 
-@pytest.mark.xfail(strict=True, raises=TypeError, reason=(
-    "nodo_enrutador compara score_relevancia < UMBRAL sin validar tipo: "
-    "un score de texto sin elegible_contenido lanza TypeError (DS)"
-))
+# Regresión: corregido por DS en DS-Semana3 (PR #22).
 def test_enrutador_con_score_no_numerico_no_colapsa():
     resultado = determinar_rutas(estado(
         tipo_detectado="pregunta_tecnica", elegible_contenido=None,
@@ -103,10 +95,7 @@ def test_enrutador_con_score_no_numerico_no_colapsa():
     assert isinstance(resultado["rutas"], list)
 
 
-@pytest.mark.xfail(strict=True, raises=TypeError, reason=(
-    "nodo_enrutador evalúa sentimiento in {...}: un valor no hashable "
-    "en un testimonio lanza TypeError (DS)"
-))
+# Regresión: corregido por DS en DS-Semana3 (PR #22).
 def test_enrutador_con_sentimiento_no_hashable_no_colapsa():
     resultado = determinar_rutas(estado(
         tipo_detectado="testimonio", sentimiento=["positivo"],

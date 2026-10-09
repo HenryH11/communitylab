@@ -1,8 +1,8 @@
 """Revisión estática de la app de Streamlit frente a archivos anómalos.
 
 No importa Streamlit ni ejecuta la app: analiza src/app/app.py con ast, de
-modo que corre en cualquier entorno del equipo. Los xfail documentan riesgos
-reales para Soluciones de Software.
+modo que corre en cualquier entorno del equipo. La lectura protegida del
+archivo subido la corrigió Soluciones de Software (PR #19).
 """
 
 import ast
@@ -59,10 +59,7 @@ def test_errores_se_muestran_en_pantalla(arbol):
     assert llamadas(arbol, "st", "error")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "app.py ejecuta json.load(archivo_subido) fuera del try: un JSON truncado, "
-    "vacío o no UTF-8 muestra la traza en vez de st.error (SS)"
-))
+# Regresión: SS movió json.load dentro del try (PR #19).
 def test_lectura_del_archivo_subido_esta_protegida(arbol):
     cargas = llamadas(arbol, "json", "load") + llamadas(arbol, "json", "loads")
     assert cargas

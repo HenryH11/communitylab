@@ -45,6 +45,32 @@ La [revisión NIM del 8 de octubre](revision_integracion_nim_semana3.md) conserv
 reproducción del retorno faltante y la comprobación de su corrección en una copia
 aislada. No se debe presentar el resultado de esa copia como resultado de esta rama.
 
+### Complemento de Gustavo del 10 de octubre, 12:05 (Colombia)
+
+En la captura `Captura de pantalla 2026-10-10 120659.png`, Gustavo confirma que
+revisó la rama `15545da` y reporta 273 y 302 pruebas aprobadas al simular la
+integración con Cloud #21 y #23, sin fallos ni conflictos. Son resultados reportados
+por Gustavo; no se dispone aquí del registro detallado de esas combinaciones ni
+se presentan como nuevas ejecuciones locales. Los dos PR de Cloud siguen abiertos.
+La revisión mutua comprende los archivos de Gustavo revisados por Jhonattan sobre
+`b3d7676` y la revisión de `15545da` confirmada por Gustavo. Las aprobaciones de
+DS, CE y SS para fusionar el PR de DA siguen siendo independientes.
+
+## Diferencias respecto al plan del 5 de octubre
+
+Fuente: `2026-10-05_semana_3_reunion_1.pdf`, páginas 10–12. Se declaran las
+diferencias de implementación y de alcance; no se presentan como cumplimiento
+literal de todas las metas del plan ni como aprobación del PM.
+
+| Punto del plan | Implementación y límite actual |
+| --- | --- |
+| Ráfagas de 23 peticiones concurrentes (p. 11) | El ensayo admite concurrencia de 1 a 4 como control local; las corridas documentadas usaron 1. No es un límite oficial del endpoint gratuito verificado ni una prueba de carga con 23 peticiones simultáneas. |
+| Comparación Nemotron / DeepSeek (p. 11) | DA retiró DeepSeek del alcance el 8 de octubre. Se conserva Nemotron `nvidia/nemotron-3.5-lightning-30b-a3b`; los resultados anteriores de DeepSeek son históricos. |
+| Respaldo al superar 1,8 s en procesamiento por lotes (pp. 11–12) | DS implementó un timeout de cliente de 3 s por intento, configurable mediante `COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS`, con hasta tres intentos primarios antes de Gemini. Está en la rama NVIDIA, no en esta rama. El ensayo aislado mide solicitudes individuales: `--umbral-segundos` solo clasifica resultados y `--timeout` controla las operaciones de red; no activa Gemini ni mide el tiempo total del grafo. |
+| `base_url = "https://nvidia.com"` en el ejemplo (p. 12) | La base usada por DS es `https://integrate.api.nvidia.com/v1`; el ensayo llama a `https://integrate.api.nvidia.com/v1/chat/completions`. |
+| Medir latencia en `tests/test_rendimiento_datos.py` (p. 10) | Las mediciones de inferencia están separadas en `scripts/medir_latencia_nvidia_nim.py`; las pruebas de rendimiento de Datos conservan su alcance local. |
+| Crear `scripts/test_nvidia_nim_latency.py` (p. 11) | El ejecutable se llama `scripts/medir_latencia_nvidia_nim.py` para evitar la colisión de nombres con `tests/test_nvidia_nim_latency.py` durante la recolección de pytest. La ejecución real está protegida por `--en-vivo` y el punto de entrada `__main__`; renombrarlo no es la protección que autoriza las llamadas. |
+
 ## Qué se añadió
 
 - `tests/agents/test_tolerancia_fallas.py`: 19 pruebas del recorrido Datos → grafo real → contrato de salida de Data Science. Se sustituyen las llamadas a modelos por respuestas controladas.

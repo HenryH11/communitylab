@@ -7,10 +7,10 @@ from .ingesta import (
 )
 from src.agentes.modelo_ia import obtener_configuracion_modelo
 from src.agentes.trazabilidad_prompts import obtener_huellas_prompts
+from .relevancia import MOTIVOS_RUIDO as EXCLUSIONES_CALIDAD
 
 
 CAMPOS = ("id", "autor", "canal", "tipo", "texto", "fecha", "idioma")
-EXCLUSIONES_CALIDAD = {"solo_enlaces", "texto_repetitivo", "contenido_eliminado", "duplicado"}
 
 
 def _lotes(datos):
@@ -59,8 +59,6 @@ def preparar_entrega(datos, *, fecha_referencia, configuracion=None):
         validos = []
         for mensaje, evaluacion in zip(lote["interacciones"], revision["evaluaciones"]):
             motivos = sorted(EXCLUSIONES_CALIDAD.intersection(evaluacion["motivos"]))
-            if not mensaje["texto"]:
-                motivos.append("texto_vacio")
             evaluacion["incluido_sentimiento"] = not motivos
             evaluacion["motivos_exclusion_sentimiento"] = motivos
             if not motivos:

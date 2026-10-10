@@ -160,6 +160,10 @@ anotadores independientes.
 
 ## Documentación (•̀ᴗ•́)و
 
+Los [contratos JSON de arquitectura](docs/arquitectura-solucion/README.md) definen
+la entrada pública, los lotes de ingesta DA → DS y la salida operativa DS 1.2/1.3,
+con soporte para `pregunta_programa` y validación reproducible sin llamadas a IA.
+
 ### Paso 2: Crear una rama de tarea (Feature Branch) desde develop
 ```bash
 git checkout -b feature/nombre_subequipo_tarea

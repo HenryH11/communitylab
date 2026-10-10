@@ -1,5 +1,13 @@
 # Revisión de integración NIM — 8 de octubre de 2026
 
+> Actualización del 10 de octubre: la rama DA ya incorporó `develop` `415a16d`
+> (PR #18, #19 y #22) y retiró las seis marcas `xfail`. Sobre `b3d7676` se verificaron
+> 273 pruebas aprobadas, 46 omitidas y 132 subpruebas aprobadas; unittest: 85, OK.
+> Las 46 omisiones siguen esperando DS NVIDIA. El retorno faltante permanece en
+> `a989951`. El resto de este documento conserva el alcance y los resultados de
+> la revisión histórica del día 8; el estado vigente está en
+> [validación de DA](validacion_jhonattan_semana3.md#estado-verificado-el-10-de-octubre).
+
 Data Analyst: Gustavo y Jhonattan. Base de DA: `5e73233`, que conserva el filtro de
 ruido de `14b8032`. Los cambios de producción de DS se prepararon en copias aisladas;
 no se fusionaron en la rama compartida ni se publicaron en ramas de otros equipos.

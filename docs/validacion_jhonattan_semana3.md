@@ -1,15 +1,49 @@
 # Semana 3: validación de Jhonattan
 
-Actualizado el 8 de octubre de 2026 en `feature/jhonattan-validacion-semana3`.
-La revisión más reciente está en [integración NIM del 8 de octubre](revision_integracion_nim_semana3.md).
-Las tablas fechadas del 6 y 7 se conservan como evidencia histórica.
-La rama se creó desde `develop` en `e8177ba` y Gustavo incorporó `develop`
-`1a9bcaa` mediante el merge `3fdd8e0`. La auditoría cruzada toma como referencia
-el commit compartido `14be025`, más los ajustes locales de importación de OCI y del
-ensayo NIM descritos abajo. La copia local incorpora ahora `a15631c`, con los
-ajustes de compatibilidad de Gustavo y el tipado de `01f6b1b`. Data Analyst está
-integrado por Gustavo y Jhonattan. La actualización del 7 de octubre incluye el
-[filtro de ruido de DA](filtro_ruido_da_semana3.md); no fusiona DS ni Cloud en esta rama.
+Actualizado el 10 de octubre de 2026 en `feature/jhonattan-validacion-semana3`.
+Data Analyst: Gustavo y Jhonattan. Esta sección describe el estado actual; las
+tablas fechadas del 6, 7 y 8 de octubre se conservan como evidencia histórica.
+
+## Estado verificado el 10 de octubre
+
+Se actualizó la copia local por avance directo hasta `b3d7676`. Gustavo incorporó
+`develop` `415a16d` mediante `d040cb8`: ya están las correcciones de Cloud (PR #18),
+Streamlit (PR #19) y la línea estable de Data Science (PR #22). La rama contiene
+el [filtro de ruido de DA](filtro_ruido_da_semana3.md). No contiene DS NVIDIA.
+
+| Comprobación local sobre `b3d7676` | Resultado |
+| --- | --- |
+| Suite completa de pytest, con SDK OCI instalado | 273 aprobadas, 46 omitidas, 0 fallidas, 0 fallos esperados; 132 subpruebas aprobadas |
+| `unittest discover` | 85 pruebas, OK |
+
+Las 46 omisiones son 38 criterios del respaldo y 8 pruebas del adaptador: falta
+integrar la rama `feature/DS-Semana3-Nvidia`. No equivalen a pruebas aprobadas.
+Gustavo retiró las seis marcas `xfail` en `9519d38` y `b3d7676` después de incorporar
+las correcciones; esas seis pruebas ya pasan normalmente. Las 13 pruebas de
+estructura de activos añadidas en `c67502c` también forman parte de esta suite.
+
+La ejecución inicial dentro del entorno restringido de Windows falló en 14 pruebas
+por permisos de archivos temporales. Se repitió fuera de esa restricción, sin
+cambiar código ni omitir pruebas; la tabla muestra el resultado final.
+No se hicieron llamadas reales a NIM, Gemini ni OCI. Streamlit se comprueba de
+forma estática y OCI con clientes simulados. `unittest` no sustituye a pytest.
+
+Comandos desde la raíz del repositorio, con el entorno Python del proyecto activo:
+
+```powershell
+$env:PYTHON_DOTENV_DISABLED = '1'
+$pruebasTemp = Join-Path (Get-Location).Path ('salida/pytest-' + [guid]::NewGuid().ToString('N'))
+python -B -m pytest --ignore=salida -q -p no:cacheprovider --basetemp "$pruebasTemp"
+python -B -m unittest discover -s tests -p "test_*.py"
+Remove-Item Env:PYTHON_DOTENV_DISABLED
+```
+
+La variable evita cargar `.env` durante las pruebas y se retira al terminar para
+permitir las ejecuciones reales posteriores. El ensayo real es una acción separada.
+
+La [revisión NIM del 8 de octubre](revision_integracion_nim_semana3.md) conserva la
+reproducción del retorno faltante y la comprobación de su corrección en una copia
+aislada. No se debe presentar el resultado de esa copia como resultado de esta rama.
 
 ## Qué se añadió
 
@@ -18,7 +52,7 @@ integrado por Gustavo y Jhonattan. La actualización del 7 de octubre incluye el
 - `tests/test_nvidia_nim_latency.py`: pruebas del ensayo con transporte simulado.
 - Gustavo añadió pruebas de estados manuales, persistencia OCI, estructura de la
   aplicación y 38 criterios de aceptación del respaldo NIM → Gemini. Su evaluación
-  y sus límites se detallan en la sección de auditoría cruzada.
+  y sus límites se detallan en la sección de revisión de sus archivos.
 
 Las pruebas comprueban rechazo de datos inválidos antes de llamar a IA, conservación
 de Unicode e IDs, exclusión de ruido, conservación de pendientes y continuidad de
@@ -114,6 +148,8 @@ del modelo: guardarlos en `salida/`, que ya está ignorada por Git.
 
 Por defecto se ejecuta una solicitud a la vez, con un segundo mínimo entre inicios,
 una repetición y un máximo de 4096 tokens de salida. `--concurrencia` permite de 1 a 4;
+ese máximo es un control local del ensayo, no un límite oficial de NVIDIA verificado.
+Las mediciones reales documentadas usaron concurrencia 1;
 no se lanzan 23 peticiones simultáneas. El intervalo controla el ritmo local, no
 garantiza la cuota del proveedor. No hay reintentos automáticos.
 
@@ -209,25 +245,32 @@ manteniendo `--ignore=salida`. Un resultado
 `unittest discover: OK` no sustituye este comando: unittest no ejecuta todas las
 funciones ni aplica las marcas de pytest.
 
-## Auditoría cruzada de los cuatro archivos de Gustavo
+## Revisión de los archivos de Gustavo por Jhonattan
+
+La revisión inicial cubrió cuatro archivos en `14be025` y sus ajustes posteriores.
+El 10 de octubre se revisaron sus versiones en `b3d7676`, los cambios que retiran
+los `xfail` y el nuevo archivo de estructura JSON. La suite completa anterior se
+ejecutó sobre esa misma versión. Las revisiones atribuidas a Gustavo se identifican
+como reportadas cuando no hay evidencia local de su ejecución; esto no certifica
+una aprobación conjunta del estado final ni reemplaza las revisiones de DS, CE y SS.
 
 | Archivo | Qué aporta | Límite o acción pendiente |
 | --- | --- | --- |
-| `tests/agents/test_tolerancia_estados_manuales.py` | Siete casos aprobados y cuatro defectos reproducidos de DS. | Faltan defensas ante texto ausente en lotes y generación, puntaje no numérico y sentimiento no hashable. Los `xfail(strict=True)` obligan a revisar la prueba cuando DS corrija el código. |
-| `tests/test_tolerancia_persistencia_oci.py` | Casos de serialización, nombres de objetos, propagación de errores y compatibilidad de rutas. | `insight_mejora` no está admitida por OCI. La importación se ajustó para omitir únicamente cuando falta `oci`; los errores de dependencias internas o del conector deben propagarse. No se validó el servicio real. |
-| `tests/test_tolerancia_app.py` | Verifica estáticamente el uso de `try`, la presentación de errores y la ausencia de llamadas explícitas a `st.rerun`. | `json.load` sigue fuera del `try`. Una inspección AST no demuestra el comportamiento completo de Streamlit ni descarta otras causas de ejecuciones repetidas. |
-| `tests/agents/test_respaldo_nim_gemini.py` | Define 38 criterios sobre respaldo, conservación de entrada y trazas sin secretos. | Todos se omiten hasta que DS publique la función. Falta probar el timeout real, el presupuesto de reintentos y la integración de trazas y fallos en el grafo. No se verificó la implementación de referencia mencionada por Gustavo. |
+| `tests/agents/test_tolerancia_estados_manuales.py` | Once casos aprobados; los cuatro defectos de DS se corrigieron en el PR #22. | Usan proveedores simulados. El caso de lote comprueba que se devuelven ambos estados con fallo cuando también falla el proveedor; por sí solo no demuestra éxito del mensaje sano. |
+| `tests/test_tolerancia_persistencia_oci.py` | Serialización, nombres, errores y rutas del grafo, incluido `insight_mejora` del PR #18. | Acepta prefijos `assets/` o `activos/` y exige el resto de la clave estable. No valida servicio real, IAM ni la migración de objetos existentes. |
+| `tests/test_tolerancia_app.py` | Verifica `try`, presentación de errores y ausencia de llamadas explícitas a `st.rerun`. La lectura JSON se corrigió en el PR #19. | La inspección AST no demuestra el comportamiento visual completo ni descarta otras causas de ejecuciones repetidas. |
+| `tests/agents/test_respaldo_nim_gemini.py` | Define 38 criterios sobre respaldo, conservación de entrada y trazas sin secretos. | Se omiten hasta incorporar la función publicada en la rama NVIDIA. Falta medir timeout, reintentos y respaldo real. |
+| `tests/agents/test_estructura_activos_referencia.py` | Trece casos aprobados de contenido JSON, Unicode y fallo trazable en LinkedIn y FAQ. | Ejecuta el generador y el contrato de salida con cadenas simuladas; no invoca el grafo completo ni el adaptador NIM. La búsqueda de fragmentos en el JSON final no comprueba por sí sola la asociación exacta de cada activo con su ID. |
 
 `pytestmark = pytest.mark.skipif(...)` evita interrumpir la importación de esos
 módulos con funciones de pytest. No debe asumirse que unittest interpreta esa marca
-como una omisión propia. Los `xfail` son defectos conocidos, no funciones resueltas.
+como una omisión propia. Las seis marcas `xfail` históricas ya se retiraron.
 
-Si DS reutiliza nuestro cliente, deberá reconocer `urllib.error.HTTPError.code`
-y `RespuestaInvalida`; las pruebas provisionales usan `status_code` y
-`OutputParserException`. Además, el ensayo rechaza la ausencia de clave con
-`ValueError` antes de las llamadas; DS debe distinguir configuración de entrada
-inválida en su implementación. Confirmar esas decisiones antes de adaptar las
-pruebas del respaldo.
+DS eligió `ChatOpenAI`; el ensayo aislado conserva `urllib`. El contrato de respaldo
+ya fue actualizado por Gustavo en `5e73233`: reconoce errores HTTP y distingue
+configuración ausente de entrada inválida. Las ocho pruebas adicionales del
+adaptador ejercitan `ErrorSalidaProveedor` mediante la cadena real cuando se
+incorpore el módulo NVIDIA. No se deben confundir los dos clientes ni sus excepciones.
 
 ## Resultados reales del 6 de octubre de 2026
 
@@ -387,17 +430,17 @@ Que estas suites pasen no valida el arranque de Streamlit ni el respaldo real de
 
 ## Siguientes acciones
 
-1. Revisar entre Gustavo y Jhonattan el filtro de ruido, sus límites y las pruebas;
-   compartirlo con DS y PM. Confirmar el timeout propuesto con las dos corridas
-   separadas. Las próximas evaluaciones se limitan a Nemotron y su respaldo Gemini.
-2. Revisar con DS el cliente y respaldo ya publicados, aplicar la corrección del
-   adaptador y conciliar sus ramas. Comprobar el límite temporal, los reintentos
-   y el recorrido completo del grafo con la versión integrada.
-3. Coordinar con Gustavo antes del siguiente push. Después preparar un solo PR hacia
-   `develop`, con revisión de DS, CE y SS, indicando omisiones y defectos conocidos.
+1. Presentar un único PR de DA hacia `develop`, con revisión de DS, CE y SS.
+   Declarar las 46 omisiones y los límites del filtro de ruido y de las simulaciones.
+   La fusión queda sujeta a las aprobaciones acordadas por los subequipos.
+2. Cuando DS publique el retorno corregido y concilie NVIDIA con `develop`, ejecutar
+   las 38 pruebas de respaldo y las 8 del adaptador sobre la combinación. Después
+   acordar una medición real del flujo completo, incluidos lotes, reintentos y Gemini.
+   DeepSeek permanece fuera del alcance; las nuevas evaluaciones se centran en Nemotron.
+3. Comprobar compatibilidad al incorporar Cloud #21 (autenticación) y #23 (guardado
+   de activos aprobados). La conexión al panel de aprobación corresponde a SS;
+   IAM y guardado real en la VM deben validarse con CE.
 
-Pendientes de los otros componentes: DS debe conciliar sus correcciones de estados
-manuales con el respaldo y corregir el retorno del adaptador; CE tiene las correcciones
-en el PR #18, aún sin integrar; SS corrigió la lectura del JSON en el PR #19, también
-pendiente. La compatibilidad del import está publicada en la rama principal de DS.
-Este trabajo no modifica esos módulos de producción ni sustituye Gemini por NVIDIA.
+Los PR #18, #19 y #22 ya están integrados. La rama NVIDIA `a989951` continúa aparte
+y todavía carece del retorno del adaptador. No se modifican aquí los módulos de
+producción de DS, CE o SS ni se activa NVIDIA como proveedor de la aplicación.

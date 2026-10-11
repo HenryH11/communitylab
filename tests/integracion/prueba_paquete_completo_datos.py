@@ -26,7 +26,7 @@ from scripts.apoyo_demostraciones import (
     cargar_paquete_demostracion,
     obtener_evaluaciones_por_id,
 )
-from src.agentes.grafo import procesar_paquete_entrega
+from src.agentes.procesamiento import procesar_paquete_entrega
 
 
 TAMANO_CICLO = 12

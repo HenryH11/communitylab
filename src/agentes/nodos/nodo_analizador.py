@@ -3,6 +3,12 @@ import json
 from src.agentes.cadenas import cadena_analisis, cadena_analisis_lote
 from src.agentes.modelos import AnalisisLote, AnalisisMensaje
 from src.agentes.estado_agente import EstadoAgente
+from src.agentes.observabilidad import config_ejecucion
+from src.agentes.reintentos import (
+    construir_fallo,
+    describir_error,
+    ejecutar_con_reintentos,
+)
 
 
 def _entrada_analisis(estado: EstadoAgente) -> dict:
@@ -25,38 +31,46 @@ def _campos_analisis(resultado) -> dict:
 
 
 def _error_analisis(
-    prefijo: str,
+    etapa: str,
     error: Exception,
     identificador: str | None = None,
 ) -> dict:
-    fallo = {
-        "etapa": prefijo,
-        "tipo_error": type(error).__name__,
-        "mensaje": str(error),
-    }
-    if identificador is not None:
-        fallo["id"] = identificador
-
     return {
-        "errores": [f"{prefijo}: {type(error).__name__}: {error}"],
-        "fallos": [fallo],
+        "errores": [describir_error(etapa, error)],
+        "fallos": [
+            construir_fallo(etapa, error, id_interaccion=identificador)
+        ],
     }
 
 
 def _analizar_individualmente(estado: EstadoAgente) -> dict:
-    try:
+    identificador = estado.get("id")
+
+    def invocar(intento: int) -> dict:
         return _campos_analisis(
-            cadena_analisis.invoke(_entrada_analisis(estado))
+            cadena_analisis.invoke(
+                _entrada_analisis(estado),
+                config=config_ejecucion(
+                    "analizar_mensaje",
+                    intento=intento,
+                    id_interaccion=identificador,
+                ),
+            )
+        )
+
+    try:
+        return ejecutar_con_reintentos(
+            invocar,
+            contexto={
+                "etapa": "analizar_mensaje",
+                "id_interaccion": identificador,
+            },
         )
     except Exception as error:
-        return _error_analisis(
-            "analizar_mensaje",
-            error,
-            estado.get("id"),
-        )
+        return _error_analisis("analizar_mensaje", error, identificador)
 
 
-def analizar_mensaje(estado: EstadoAgente) -> dict:
+def analizar_mensaje(state: EstadoAgente) -> dict:
     """
     Analiza una interacción utilizando la cadena de LangChain.
 
@@ -69,28 +83,13 @@ def analizar_mensaje(estado: EstadoAgente) -> dict:
     """
 
     try:
-        return _analizar_individualmente(estado)
+        return _analizar_individualmente(state)
 
     except Exception as error:
-        errores = list(estado.get("errores", []))
-        fallos = list(estado.get("fallos", []))
-
-        errores.append(
-            f"analizar_mensaje: "
-            f"{type(error).__name__}: {error}"
-        )
-        fallo = {
-            "etapa": "analizar_mensaje",
-            "tipo_error": type(error).__name__,
-            "mensaje": str(error),
-        }
-        if estado.get("id") is not None:
-            fallo["id"] = estado["id"]
-        fallos.append(fallo)
-
+        nuevo = _error_analisis("analizar_mensaje", error, state.get("id"))
         return {
-            "errores": errores,
-            "fallos": fallos,
+            "errores": list(state.get("errores", [])) + nuevo["errores"],
+            "fallos": list(state.get("fallos", [])) + nuevo["fallos"],
         }
 
 
@@ -108,32 +107,56 @@ def analizar_lote(estados: list[EstadoAgente]) -> list[dict]:
         return []
 
     mensajes = []
-    for estado in estados:
-        mensajes.append(
-            {
-                "id": estado["id"],
-                **_entrada_analisis(estado),
-            }
-        )
+    errores_preparacion = {}
 
-    try:
+    for estado in estados:
+        identificador = estado["id"]
+
+        try:
+            mensajes.append(
+                {
+                    "id": identificador,
+                    **_entrada_analisis(estado),
+                }
+            )
+        except Exception as error:
+            errores_preparacion[identificador] = _error_analisis(
+                "analizar_lote",
+                error,
+                identificador,
+            )
+
+    if not mensajes:
+        return [
+            errores_preparacion[estado["id"]]
+            for estado in estados
+        ]
+
+    ids_lote = [mensaje["id"] for mensaje in mensajes]
+    mensajes_json = json.dumps(mensajes, ensure_ascii=False)
+
+    def invocar(intento: int) -> AnalisisLote:
         respuesta = cadena_analisis_lote.invoke(
-            {
-                "mensajes_json": json.dumps(
-                    mensajes,
-                    ensure_ascii=False,
-                )
-            }
+            {"mensajes_json": mensajes_json},
+            config=config_ejecucion(
+                "analizar_lote",
+                intento=intento,
+                ids_interaccion=ids_lote,
+            ),
         )
         if isinstance(respuesta, dict):
-            respuesta = AnalisisLote.model_validate(respuesta)
-        else:
-            respuesta = AnalisisLote.model_validate(
-                respuesta.model_dump()
-            )
+            return AnalisisLote.model_validate(respuesta)
+        return AnalisisLote.model_validate(respuesta.model_dump())
+
+    try:
+        respuesta = ejecutar_con_reintentos(
+            invocar,
+            contexto={"etapa": "analizar_lote", "ids_interaccion": ids_lote},
+        )
     except Exception as error:
         return [
-            _error_analisis("analizar_lote", error, estado["id"])
+            errores_preparacion.get(estado["id"])
+            or _error_analisis("analizar_lote", error, estado["id"])
             for estado in estados
         ]
 
@@ -158,7 +181,11 @@ def analizar_lote(estados: list[EstadoAgente]) -> list[dict]:
     resultados = []
     for estado in estados:
         identificador = estado["id"]
-        resultado = resultados_por_id.get(identificador)
+        resultado = errores_preparacion.get(identificador)
+
+        if resultado is None:
+            resultado = resultados_por_id.get(identificador)
+
         if resultado is None:
             resultado = _analizar_individualmente(estado)
         resultados.append(resultado)

@@ -1,21 +1,25 @@
-from src.agentes.nodos.nodos_generadores import (
-    _prompt_boletin,
-    _prompt_caso_exito,
-    _prompt_linkedin,
-    _prompt_preguntas_frecuentes,
+from src.agentes.prompts.boletin import prompt_boletin as _prompt_boletin
+from src.agentes.prompts.caso_exito import prompt_caso_exito as _prompt_caso_exito
+from src.agentes.prompts.linkedin import prompt_linkedin as _prompt_linkedin
+from src.agentes.prompts.preguntas_frecuentes import (
+    prompt_preguntas_frecuentes as _prompt_preguntas_frecuentes,
 )
 from src.agentes.trazabilidad_prompts import calcular_hash_prompt
 from langchain_core.prompts import ChatPromptTemplate
 
 
-def _contenido_sistema(prompt, **contexto):
+def _contenido_sistema(prompt, **contexto) -> str:
     mensajes = prompt.format_messages(**contexto)
-    return mensajes[0].content
+    contenido = mensajes[0].content
+    assert isinstance(contenido, str)
+    return contenido
 
 
-def _contenido_usuario(prompt, **contexto):
+def _contenido_usuario(prompt, **contexto) -> str:
     mensajes = prompt.format_messages(**contexto)
-    return mensajes[-1].content
+    contenido = mensajes[-1].content
+    assert isinstance(contenido, str)
+    return contenido
 
 
 def test_linkedin_incluye_few_shot_y_renderiza_contexto():

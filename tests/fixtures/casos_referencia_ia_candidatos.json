@@ -102,11 +102,11 @@
       "score_relevancia": 56,
       "elegible_contenido": true,
       "elegible_faq": false,
-      "sentimiento": "positivo",
+      "sentimiento": "neutral",
       "tema_principal": "cloud_infraestructura",
       "tipo_detectado": "feedback",
       "rutas": ["insight_mejora"],
-      "justificacion": "Propone una mejora concreta; 'sería genial' expresa una valoración favorable. Revisar si el sentimiento debe ser neutral."
+      "justificacion": "La sugerencia expresa una mejora, pero no una emoción inequívocamente positiva; el prompt clasifica como neutral un ejemplo análogo de sugerencia."
     },
     {
       "id": "int-007",

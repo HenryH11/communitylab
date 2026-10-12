@@ -7,6 +7,15 @@
 > `a989951`. El resto de este documento conserva el alcance y los resultados de
 > la revisión histórica del día 8; el estado vigente está en
 > [validación de DA](validacion_jhonattan_semana3.md#estado-verificado-el-10-de-octubre).
+>
+> Actualización del 11 de octubre: DS NVIDIA avanzó a `6e6e0a6`. El adaptador ya
+> devuelve la cadena (`8e9ac37`) y la rama incorporó `develop` (`70672ef`), sin
+> conflicto en `nodo_analizador.py`. En una copia aislada, DA `7393457` + NVIDIA
+> `6e6e0a6` da 352 pruebas aprobadas y 0 omitidas: las 46 pruebas que esperaban la
+> rama ahora pasan, con el ajuste de una línea en
+> `tests/agents/test_estructura_activos_referencia.py` para aceptar
+> `ErrorFallbackProveedores`. Junto con los PR #21, #23, #25 y #26: 399 aprobadas,
+> 0 fallas. La evidencia de `a989951` que sigue se conserva como histórica.
 
 Data Analyst: Gustavo y Jhonattan. Base de DA: `5e73233`, que conserva el filtro de
 ruido de `14b8032`. Los cambios de producción de DS se prepararon en copias aisladas;

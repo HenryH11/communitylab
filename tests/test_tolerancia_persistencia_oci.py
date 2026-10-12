@@ -43,7 +43,7 @@ def cliente_simulado():
 
 @pytest.mark.parametrize("ruta", sorted(RUTAS_ACTIVO))
 def test_rutas_admitidas_generan_clave_estable(ruta):
-    # El prefijo lo define CE (assets/ o activos/); aquí importa el resto de la clave.
+    # CE definió activos/ (PR #21); develop aún genera assets/ hasta que se fusione.
     clave = nombre_objeto_activo("int-004", ruta, PERIODO)
     prefijo, resto = clave.split("/", 1)
     assert prefijo in {"assets", "activos"}
@@ -74,11 +74,11 @@ def test_identificador_anomalo_se_rechaza_antes_de_subir(identificador):
 def test_documento_no_serializable_no_llega_al_bucket(documento):
     cliente = cliente_simulado()
     with pytest.raises((TypeError, ValueError)):
-        subir_json(documento, "assets/prueba.json", cliente=cliente, namespace="ns")
+        subir_json(documento, "activos/prueba.json", cliente=cliente, namespace="ns")
     cliente.put_object.assert_not_called()
 
 
-@pytest.mark.parametrize("nombre", ["", "   ", "/assets/x.json", None])
+@pytest.mark.parametrize("nombre", ["", "   ", "/activos/x.json", None])
 def test_nombre_de_objeto_invalido_no_llega_al_bucket(nombre):
     cliente = cliente_simulado()
     with pytest.raises(ValueError):
@@ -110,7 +110,7 @@ def test_error_del_servicio_se_propaga_sin_confirmar_guardado(estado_http):
         estado_http, "Simulado", {}, "error simulado del servicio",
     )
     with pytest.raises(oci.exceptions.ServiceError) as error:
-        subir_json({"id": "int-004"}, "assets/x.json", cliente=cliente, namespace="ns")
+        subir_json({"id": "int-004"}, "activos/x.json", cliente=cliente, namespace="ns")
     assert error.value.status == estado_http
 
 
@@ -118,7 +118,7 @@ def test_timeout_del_cliente_se_propaga():
     cliente = cliente_simulado()
     cliente.put_object.side_effect = TimeoutError("sin respuesta del bucket")
     with pytest.raises(TimeoutError):
-        subir_json({"id": "int-004"}, "assets/x.json", cliente=cliente, namespace="ns")
+        subir_json({"id": "int-004"}, "activos/x.json", cliente=cliente, namespace="ns")
 
 
 def test_persistencia_no_usa_comandos_del_sistema_operativo():

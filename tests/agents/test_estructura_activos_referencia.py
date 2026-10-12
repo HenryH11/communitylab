@@ -137,4 +137,5 @@ def test_json_roto_de_nim_queda_como_fallo_y_no_como_activo_alterado(caso):
     assert ruta not in estado["activos_generados"]
     fallo = next(f for f in estado["fallos"] if f.get("ruta") == ruta)
     assert fallo["id"] == caso["id"]
-    assert fallo["tipo_error"] == "OutputParserException"
+    # Con el respaldo NIM -> Gemini, el error original queda en error_primario.
+    assert fallo.get("error_primario", {}).get("tipo", fallo["tipo_error"]) == "OutputParserException"

@@ -10,6 +10,19 @@ código. Puede convertirse a PDF cuando se quiera distribuir una edición fija.
 Si algo aquí contradice a la implementación, el código y sus pruebas son la
 fuente de verdad: actualiza este documento al cambiar el comportamiento.
 
+Leer solo este manual no garantiza entender el 100% del sistema. Para eso hay
+que recorrer también las implementaciones, ejecutar y estudiar sus pruebas, y
+considerar el comportamiento externo de Gemini, LangChain, LangGraph, OCI y el
+entorno local. El índice de símbolos y el comando de descubrimiento más abajo
+sirven para no dejar definiciones escondidas fuera del recorrido.
+
+Ningún documento puede garantizar por sí solo entender el 100% del proyecto:
+parte del comportamiento depende de LangChain, LangGraph, Gemini, OCI, el
+intérprete y la configuración local. Este manual busca que puedas localizar y
+seguir cada responsabilidad; para comprender un cambio completo hay que leer
+el cuerpo de sus funciones, sus callers, sus pruebas y las dependencias que
+invoca.
+
 ## Cómo aprovecharlo
 
 Hay tres formas de leer el proyecto:
@@ -411,6 +424,101 @@ absoluta.
 | [tests/agents/__init__.py](../tests/agents/__init__.py) | Archivo vacío de paquete de pruebas. |
 | [tests/integracion/prueba_paquete_completo_datos.py](../tests/integracion/prueba_paquete_completo_datos.py) | E2E Datos→Gemini→LangGraph para el paquete completo. No entra en pytest normal por su nombre; requiere credencial y cuota. |
 | [tests/integracion/prueba_entrega_resultados_funcional.py](../tests/integracion/prueba_entrega_resultados_funcional.py) | E2E que añade contrato DS 1.3, serialización y escritura de informe en `output/`; requiere Gemini y cuota. |
+
+### Índice de símbolos
+
+Este índice complementa el índice por archivo: enumera las clases, funciones,
+métodos y plantillas nombradas para que puedas saltar directamente a cada
+definición. Los nombres privados con prefijo `_` son helpers internos. Las
+funciones `invocar` que aparecen dentro de un nodo son cierres locales, no API
+pública. Los archivos `__init__.py` vacíos y el cascarón Streamlit, que no
+declaran funciones, se explican en el índice de archivos.
+
+El índice enumera las definiciones de `src/` y `scripts/`; para reconstruir en
+Windows la lista exacta desde el código actual, incluidos helpers locales y
+tests, ejecuta desde la raíz:
+
+```powershell
+Get-ChildItem src,scripts,tests -Recurse -File -Filter *.py |
+  Select-String -Pattern '^\s*(async\s+)?def\s+\w+|^\s*class\s+\w+' |
+  ForEach-Object { "{0}:{1}" -f $_.Path, $_.Line.Trim() }
+python -m pytest --collect-only -q
+```
+
+El primer comando localiza cada `def` y `class`; el segundo muestra los IDs
+exactos de los casos pytest que se pueden ejecutar individualmente. La tabla
+de pruebas explica qué garantiza cada archivo; pytest es la fuente de verdad
+para la lista dinámica de casos descubiertos.
+
+#### Símbolos de `src/`
+
+| Archivo | Símbolos definidos |
+| --- | --- |
+| `src/datos/relevancia.py` | `normalizar_busqueda`, `leer_fecha`, `ConfiguracionRelevancia` (`__post_init__`, `como_dict`), `puntuar_interaccion`, `seleccionar_lote` |
+| `src/datos/ingesta.py` | `_nombre_seguro`, `limpiar_texto`, `_cadena`, `validar_y_limpiar`, `procesar_datos`, `construir_estado_agente`, `construir_estados_agente`, `_interaccion_para_entrega`, `validar_tamano_ciclo`, `construir_ciclos`, `validar_destino_ciclos` (incluye el helper local `ruta_archivo`), `guardar_ciclos`, `cargar_json`, `guardar_json`, `principal` |
+| `src/datos/entrega_ia.py` | `_lotes`, `_validar_identidad_y_contexto`, `_proyectar_lote`, `preparar_entrega`, `construir_plan_procesamiento`, `preparar_paquete_ia` |
+| `src/datos/ingesta_reddit.py` | `construir_url_publicaciones_nuevas`, `construir_url_comentarios_publicacion`, `_segundos_de_espera_tras_429`, `descargar_xml`, `_texto_plano`, `_obtener_id_completo`, `_normalizar_fecha`, `parsear_entradas_atom`, `es_comentario`, `comentario_fue_eliminado`, `transformar_entrada`, `construir_lote`, `cargar_o_crear_estructura_salida`, `guardar_lote`, `ejecutar_ingesta`, `construir_parser_argumentos`, `principal` |
+| `src/agentes/estado_agente.py` | Alias `Ruta`; `EstadoAgente` |
+| `src/agentes/modelos.py` | Alias `Sentimiento`, `TipoInteraccion`, `TemaPrincipal`; modelos `AnalisisMensaje`, `AnalisisMensajeConId`, `AnalisisLote`, `PublicacionLinkedIn`, `DestaqueBoletin`, `SugerenciaPreguntasFrecuentes`, `CasoDeExito`, `InsightMejora` |
+| `src/agentes/modelo_ia.py` | `obtener_configuracion_modelo`, `obtener_modelo_gemini` |
+| `src/agentes/cadenas.py` | `_obtener_cadena_analisis`, `_obtener_cadena_analisis_lote`, `_invocar_analisis`, `_invocar_analisis_lote`; runnables `cadena_analisis`, `cadena_analisis_lote` |
+| `src/agentes/nodos/nodo_analizador.py` | `_entrada_analisis`, `_campos_analisis`, `_error_analisis`, `_analizar_individualmente` (cierre local `invocar`), `analizar_mensaje`, `analizar_lote` (cierre local `invocar`) |
+| `src/agentes/nodos/nodo_enrutador.py` | `determinar_rutas`; constante `UMBRAL_RELEVANCIA` |
+| `src/agentes/nodos/nodos_generadores.py` | `_obtener_generadores`, `_contexto`, `generar_activos` (cierre local `invocar`) |
+| `src/agentes/grafo.py` | `comprobar_analisis`, `comprobar_rutas`, `construir_grafo`, `construir_grafo_desde_analisis`, `procesar_estados_por_lotes`; instancias compiladas `grafo`, `grafo_desde_analisis` |
+| `src/agentes/procesamiento.py` | `_validar_paquete`, `_ejecutar_ciclos`, `procesar_paquete_entrega`; constante `PASADAS_RECUPERACION` |
+| `src/agentes/recuperacion.py` | `_fallos_objetivo`, `ids_reintentables`, `_regenerar_rutas`, `_reanalizar`, `reprocesar_resultados`, `reprocesar_fallidos` |
+| `src/agentes/reintentos.py` | `FalloOperacion`, `es_error_transitorio`, `calcular_espera`, `_esperar`, `ejecutar_con_reintentos`, `_causa`, `construir_fallo`, `describir_error`; constantes de intentos y backoff |
+| `src/agentes/observabilidad.py` | `FormateadorJson.format`, `registrar_evento`, `configurar_logging`, `contexto_ejecucion`, `_contexto_desde_metadata`, `_uso_tokens`, `ManejadorObservabilidad` (`__init__`, `_iniciar`, `_finalizar`, `on_chat_model_start`, `on_llm_start`, `on_llm_end`, `on_llm_error`), `config_ejecucion` |
+| `src/agentes/validacion_entrega.py` | `validar_resultados` |
+| `src/agentes/resumen_entrega.py` | `_ordenar_distribucion`, `_obtener_sentimientos_predominantes`, `_obtener_temas_principales`, `construir_resumen_comunidad` |
+| `src/agentes/entrega_resultados.py` | `_preparar_interaccion`, `_extraer_activos`, `preparar_entrega_resultados`, `entrega_resultados_a_json` |
+| `src/agentes/contrato_salida_ciencia_datos.py` | `TemaPrincipalResumen`, `ResumenComunidad`, `ResultadoInteraccion`, `ActivoEntregado`, `EntregaCienciaDatos`; constante `VERSION_CONTRATO_SALIDA_DS` |
+| `src/agentes/trazabilidad_prompts.py` | `_serializar_plantilla`, `calcular_hash_prompt`, `obtener_huellas_prompts`; mapa `PLANTILLAS` |
+| `src/evaluacion.py` | `_normalizar`, `_metricas_binarias`, `_valor_clasificacion`, `_metricas_categoricas`, `_metricas_rutas`, `calcular_metricas`, `evaluar_rutas_referencia`, `evaluacion_aprobada`; constantes `CAMPOS_EVALUADOS`, `UMBRALES_MINIMOS` |
+| `src/agentes/prompts/analisis.py` | Plantillas `template_analisis`, `template_analisis_lote` |
+| `src/agentes/prompts/linkedin.py` | Plantilla `prompt_linkedin` |
+| `src/agentes/prompts/boletin.py` | Plantilla `prompt_boletin` |
+| `src/agentes/prompts/preguntas_frecuentes.py` | Plantilla `prompt_preguntas_frecuentes` |
+| `src/agentes/prompts/caso_exito.py` | Plantilla `prompt_caso_exito` |
+| `src/agentes/prompts/insight_mejora.py` | Plantilla `prompt_insight_mejora` |
+
+#### Símbolos de `scripts/`
+
+| Archivo | Símbolos definidos |
+| --- | --- |
+| `scripts/apoyo_demostraciones.py` | `obtener_lotes`, `obtener_fecha_referencia`, `cargar_paquete_demostracion`, `obtener_evaluaciones_por_id` |
+| `scripts/demostracion_analisis_sin_contenido.py` | `principal` |
+| `scripts/demostracion_cadena_analisis.py` | `principal` |
+| `scripts/demostracion_grafo_mensaje_unico.py` | `principal` |
+| `scripts/demostracion_lotes_ciencia_datos.py` | `principal` |
+| `scripts/demostracion_nodo_analizador.py` | `principal` |
+| `scripts/evaluar_casos_ambiguos.py` | `cargar_interacciones`, `_analizar_en_vivo`, `_imprimir_matriz_confusion`, `_imprimir_metricas`, `principal` |
+| `scripts/evaluar_conjunto_datos.py` | `principal` |
+| `scripts/inspeccionar_estado_agente.py` | `principal` |
+| `scripts/reprocesar_fallidos.py` | `principal` |
+
+#### Símbolos de `tests/`
+
+Los nombres de prueba son también un índice ejecutable: puedes seleccionar un
+caso con `pytest ruta/al/archivo.py::nombre_de_prueba`. Las funciones helper y
+fixtures se incluyen cuando ayudan a localizar cómo se construyen los casos.
+
+| Archivo | Clases, fixtures y pruebas principales |
+| --- | --- |
+| `tests/conftest.py` | Configuración global: desactiva escritura de logs durante pytest. |
+| `tests/test_procesamiento_datos.py` | `mensaje`, `lote`, `procesar`; clases `PruebasSeleccion`, `PruebasMapeoEstadoAgente`, `PruebasCiclos`, `PruebasIntegracion`. Sus casos verifican limpieza/Unicode, esquemas, selección, fechas, reproducibilidad, estado, ciclos, manifiesto seguro y CLI. |
+| `tests/test_entrega_ia.py` | Clase `EntregaTests`; verifica poblaciones, mapeo por ID, fixture 23/14, Reddit, planes y CLI reproducible/seguro. |
+| `tests/test_ingesta_reddit.py` | Parsing de publicaciones/comentarios, detección de eliminados, transformación, idioma explícito, pregunta técnica y autor faltante. |
+| `tests/test_integracion_ciencia_datos.py` | Fixture `paquete`; valida estado del contrato, separación sentimiento/contenido, tipo original y consumo de ciclos/pendientes por ID. |
+| `tests/test_storage.py` | Funciones de utilidad `get_oci_client`, `display_bucket_info`, `upload_object`, `main`; no es una prueba automática offline y puede subir a OCI al ejecutarse. |
+| `tests/agents/test_enrutador.py` | Wrapper tipado `determinar_rutas`; casos de testimonio, FAQ, feedback, comentario, puntaje y elegibilidad. |
+| `tests/agents/test_procesamiento_lotes.py` | Helpers `crear_estado`, `crear_analisis`, `json_ids`, `analizar_grupo`, `procesar_grupo`; verifica correlación/omisiones/duplicados, límites de lote, elegibilidad, ciclos, generadores y contrato. |
+| `tests/agents/test_observabilidad_reintentos.py` | Helpers `_eventos`, `_estado_analizado`; cubre clasificación de errores, backoff, agotamiento, reintento por ruta, recuperación, logs, callbacks y contrato. |
+| `tests/agents/test_prompts_generadores.py` | Helpers `_contenido_sistema`, `_contenido_usuario`; verifica render, ejemplos, reglas anti-invención y hash estable. |
+| `tests/agents/test_evaluacion_regresion.py` | Consistencia de casos candidatos/rutas, cuatro dimensiones, discrepancia localizada y matriz de confusión por tipo. |
+| `tests/integracion/prueba_paquete_completo_datos.py` | Helpers `_imprimir_titulo`, `_imprimir_activos`; `test_paquete_completo_datos_a_ciencia_datos` ejecuta E2E con Gemini. |
+| `tests/integracion/prueba_entrega_resultados_funcional.py` | `_guardar_resultados`; `test_entrega_funcional_ciencia_datos` valida salida y serialización E2E, escribe archivos y consume Gemini. |
 
 ### Configuración y datos de referencia
 

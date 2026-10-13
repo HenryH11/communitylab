@@ -418,7 +418,7 @@ sigue pasando.
 
 Se modularizó `src/datos/ingesta.py` (previamente con más de 600 líneas) aplicando el principio de responsabilidad única (SRP), manteniendo 100% de compatibilidad hacia atrás con todos los contratos y tests:
 
-- `src/datos/limpieza.py`: Encapsula la decodificación HTML, normalización NFC, filtrado de categorías de control invisibles, estimación de tokens (~4 caracteres por token), y detección/reparación de secuencias de mojibake (`detectar_mojibake`, `reparar_mojibake`, `PATRON_MOJIBAKE`). Repara automáticamente cadenas corruptas (ej. UTF-8 mal leído como Latin-1 como `pÃ©sima` -> `pésima` o `maÃ±ana` -> `mañana`) sin provocar falsos positivos en español válido y preservando emojis compuestos.
+- `src/datos/limpieza.py`: Encapsula la decodificación HTML, normalización NFC, filtrado de categorías de control invisibles, estimación de tokens (~4 caracteres por token), y detección/reparación de secuencias de mojibake (`detectar_mojibake`, `reparar_mojibake`, `PATRON_MOJIBAKE`). Repara automáticamente cadenas corruptas (ej. UTF-8 mal leído como Latin-1 como `pÃ©sima` -> `pésima` o `maÃ±ana` -> `mañana`) sin falsos positivos en los casos de español válido incluidos en las pruebas y preservando emojis compuestos.
 - `src/datos/ciclos_transporte.py`: Encapsula la lógica de fragmentación en ciclos de transporte (10 a 30 interacciones), la validación estricta del contrato intermedio de Nelson (7 campos exactos: `id`, `autor`, `canal`, `tipo`, `texto`, `fecha`, `idioma`), la sanitización de nombres de archivo para evitar escapes de directorio y la gestión atómica del `manifiesto.json`.
 - `src/datos/ingesta.py`: Actúa como fachada y orquestador del pipeline de datos y CLI, re-exportando todas las funciones y constantes públicas para no romper consumidores ni mocks dinámicos en tests.
 
@@ -428,7 +428,7 @@ Se implementó el enrutamiento adaptativo de modelos multi-tier según la comple
 
 - **Arquitectura en Cascada de Tiers de Modelos (`src/agentes/configuracion_ia.py`):**
   - **Tier Rápido (`rapido`):** Orientado a respuestas ágiles de baja latencia (`preguntas_frecuentes`, `boletin`). Modelo por defecto: `meta/llama-3.1-8b-instruct`.
-  - **Tier Estándar (`estandar`):** Para tareas de clasificación semántica estructurada (`analisis`, `analisis_lote`). Modelo por defecto: `google/gemma-4-31b-it` (validado con 86.7% de apego a JSON Schema en evaluación empírica).
+  - **Tier Estándar (`estandar`):** Para tareas de clasificación semántica estructurada (`analisis`, `analisis_lote`). Utiliza por defecto `google/gemma-4-31b-it`.
   - **Tier Razonamiento (`razonamiento`):** Para activos de síntesis profunda y alto impacto (`caso_exito`, `insight_mejora`, `linkedin`). Modelo por defecto: `meta/llama-3.3-70b-instruct`.
 - **Integración con LangGraph y Observabilidad:**
   - El nodo enrutador (`src/agentes/nodos/nodo_enrutador.py`) clasifica y propaga el `tier_modelo` en el estado del agente (`EstadoAgente`).
@@ -470,8 +470,8 @@ Se implementó el enrutamiento adaptativo de modelos multi-tier según la comple
 
 ## Validación registrada y próximos pasos
 
-- La última suite completa ejecutada sobre estos cambios pasó con **207 tests y
-	132 subtests** (incluyendo las pruebas de robustez de limpieza/mojibake y la
+- La última suite completa ejecutada sobre estos cambios pasó con **211 tests y
+    132 subtests, sin fallos** (incluyendo las pruebas de robustez de limpieza/mojibake y la
 	nueva suite de enrutamiento adaptativo `test_enrutamiento_adaptativo.py`).
 - Pylance no reportó diagnósticos en los archivos incluidos en los lotes de
 	corrección revisados.

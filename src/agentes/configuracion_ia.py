@@ -30,7 +30,7 @@ PROVEEDOR_ANALISIS_POR_DEFECTO = PROVEEDOR_NVIDIA_NIM
 
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
-# Modelo seleccionado por defecto con mayor tasa de éxito en el benchmark (86.7% triples exactos)
+# Modelo NVIDIA NIM configurado por defecto para el tier estándar.
 MODELO_NVIDIA_POR_DEFECTO = "google/gemma-4-31b-it"
 
 MODELO_NVIDIA_NEMOTRON = (

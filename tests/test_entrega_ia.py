@@ -138,7 +138,7 @@ class EntregaTests(unittest.TestCase):
             informe["modelo_ia"],
             {
                 "proveedor": "NVIDIA NIM",
-                "identificador_modelo": "nvidia/nemotron-3.5-lightning-30b-a3b",
+                "identificador_modelo": "google/gemma-4-31b-it",
                 "base_url": "https://integrate.api.nvidia.com/v1",
                 "max_retries": 0,
             },

@@ -17,6 +17,8 @@ VARIABLE_PROVEEDOR_ANALISIS = "COMMUNITYLAB_PROVEEDOR_ANALISIS"
 
 VARIABLE_PROVEEDOR_GENERACION = ("COMMUNITYLAB_PROVEEDOR_GENERACION")
 
+VARIABLE_MODELO_NVIDIA = "COMMUNITYLAB_MODELO_NVIDIA"
+
 VARIABLE_TIMEOUT_NVIDIA = "COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS"
 
 TIMEOUT_NVIDIA_POR_DEFECTO = 3.0
@@ -28,6 +30,9 @@ PROVEEDOR_ANALISIS_POR_DEFECTO = PROVEEDOR_NVIDIA_NIM
 
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
+# Modelo seleccionado por defecto con mayor tasa de éxito en el benchmark (86.7% triples exactos)
+MODELO_NVIDIA_POR_DEFECTO = "google/gemma-4-31b-it"
+
 MODELO_NVIDIA_NEMOTRON = (
     "nvidia/nemotron-3.5-lightning-30b-a3b"
 )
@@ -35,6 +40,128 @@ MODELO_NVIDIA_NEMOTRON = (
 # Los reintentos los controla la capa de aplicación.
 # Evitamos sumar retries ocultos del cliente NVIDIA.
 MAX_RETRIES_CLIENTE_NVIDIA = 0
+
+# -------------------------------------------------------------
+# Tiers y Enrutamiento Adaptativo de Modelos
+# -------------------------------------------------------------
+TIER_RAPIDO = "rapido"
+TIER_ESTANDAR = "estandar"
+TIER_RAZONAMIENTO = "razonamiento"
+
+TIERS_SOPORTADOS = {
+    TIER_RAPIDO,
+    TIER_ESTANDAR,
+    TIER_RAZONAMIENTO,
+}
+
+VARIABLE_ENRUTAMIENTO_ADAPTATIVO = "COMMUNITYLAB_ENRUTAMIENTO_ADAPTATIVO"
+VARIABLE_MODELO_NVIDIA_RAPIDO = "COMMUNITYLAB_MODELO_NVIDIA_RAPIDO"
+VARIABLE_MODELO_NVIDIA_ESTANDAR = "COMMUNITYLAB_MODELO_NVIDIA_ESTANDAR"
+VARIABLE_MODELO_NVIDIA_RAZONAMIENTO = "COMMUNITYLAB_MODELO_NVIDIA_RAZONAMIENTO"
+
+MODELO_NVIDIA_RAPIDO_POR_DEFECTO = "meta/llama-3.1-8b-instruct"
+MODELO_NVIDIA_ESTANDAR_POR_DEFECTO = MODELO_NVIDIA_POR_DEFECTO
+MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO = "meta/llama-3.3-70b-instruct"
+
+# Mapeo de rutas de generación y etapas a sus correspondientes tiers
+MAPEO_RUTAS_A_TIERS: dict[str, str] = {
+    "preguntas_frecuentes": TIER_RAPIDO,
+    "boletin": TIER_RAPIDO,
+    "caso_exito": TIER_RAZONAMIENTO,
+    "insight_mejora": TIER_RAZONAMIENTO,
+    "linkedin": TIER_RAZONAMIENTO,
+    "analisis": TIER_ESTANDAR,
+    "analisis_lote": TIER_ESTANDAR,
+}
+
+
+def enrutamiento_adaptativo_activo() -> bool:
+    """Indica si el enrutamiento adaptativo de modelos por tier está activado."""
+    load_dotenv()
+    valor = os.getenv(VARIABLE_ENRUTAMIENTO_ADAPTATIVO, "true").strip().lower()
+    return valor not in {"false", "0", "no", "off"}
+
+
+def obtener_tier_por_ruta(ruta: str | None) -> str:
+    """Devuelve el tier asociado a una ruta de generación o etapa."""
+    if not ruta:
+        return TIER_ESTANDAR
+    return MAPEO_RUTAS_A_TIERS.get(ruta, TIER_ESTANDAR)
+
+
+def obtener_modelo_nvidia_por_tier(tier: str) -> str:
+    """Obtiene el identificador de modelo NVIDIA NIM configurado para un tier."""
+    load_dotenv()
+    if not enrutamiento_adaptativo_activo():
+        return obtener_modelo_nvidia_id()
+
+    if tier == TIER_RAPIDO:
+        return (
+            os.getenv(
+                VARIABLE_MODELO_NVIDIA_RAPIDO,
+                MODELO_NVIDIA_RAPIDO_POR_DEFECTO,
+            ).strip()
+            or MODELO_NVIDIA_RAPIDO_POR_DEFECTO
+        )
+
+    if tier == TIER_RAZONAMIENTO:
+        return (
+            os.getenv(
+                VARIABLE_MODELO_NVIDIA_RAZONAMIENTO,
+                MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO,
+            ).strip()
+            or MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO
+        )
+
+    return (
+        os.getenv(
+            VARIABLE_MODELO_NVIDIA_ESTANDAR,
+            obtener_modelo_nvidia_id(),
+        ).strip()
+        or obtener_modelo_nvidia_id()
+    )
+
+
+def obtener_modelo_nvidia_por_ruta(ruta: str | None) -> str:
+    """Obtiene el modelo de NVIDIA NIM correspondiente a la ruta según su tier."""
+    tier = obtener_tier_por_ruta(ruta)
+    return obtener_modelo_nvidia_por_tier(tier)
+
+
+def obtener_configuracion_enrutamiento() -> dict[str, object]:
+    """Devuelve la configuración no secreta del enrutamiento adaptativo."""
+    return {
+        "enrutamiento_adaptativo_activo": enrutamiento_adaptativo_activo(),
+        "tiers": {
+            TIER_RAPIDO: {
+                "modelo_nvidia": obtener_modelo_nvidia_por_tier(TIER_RAPIDO),
+                "rutas": ["preguntas_frecuentes", "boletin"],
+            },
+            TIER_ESTANDAR: {
+                "modelo_nvidia": obtener_modelo_nvidia_por_tier(TIER_ESTANDAR),
+                "rutas": ["analisis", "analisis_lote"],
+            },
+            TIER_RAZONAMIENTO: {
+                "modelo_nvidia": obtener_modelo_nvidia_por_tier(TIER_RAZONAMIENTO),
+                "rutas": ["caso_exito", "insight_mejora", "linkedin"],
+            },
+        },
+    }
+
+
+def obtener_modelo_nvidia_id() -> str:
+    """Obtiene y valida el identificador de modelo configurado para NVIDIA NIM."""
+    load_dotenv()
+
+    modelo = os.getenv(
+        VARIABLE_MODELO_NVIDIA,
+        MODELO_NVIDIA_POR_DEFECTO,
+    ).strip()
+
+    if not modelo:
+        return MODELO_NVIDIA_POR_DEFECTO
+
+    return modelo
 
 
 def obtener_proveedor_analisis() -> str:

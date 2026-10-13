@@ -18,7 +18,9 @@ from src.agentes.errores_ia import (
 from src.agentes.configuracion_ia import (
     MAX_RETRIES_CLIENTE_NVIDIA,
     MODELO_NVIDIA_NEMOTRON,
+    MODELO_NVIDIA_POR_DEFECTO,
     NVIDIA_BASE_URL,
+    obtener_modelo_nvidia_id,
     obtener_timeout_nvidia,
 )
 
@@ -27,14 +29,16 @@ def obtener_configuracion_nvidia() -> dict[str, str | int]:
     """Devuelve configuración no secreta del proveedor NVIDIA NIM."""
     return {
         "proveedor": "NVIDIA NIM",
-        "identificador_modelo": MODELO_NVIDIA_NEMOTRON,
+        "identificador_modelo": obtener_modelo_nvidia_id(),
         "base_url": NVIDIA_BASE_URL,
         "max_retries": MAX_RETRIES_CLIENTE_NVIDIA,
     }
 
 
-@lru_cache(maxsize=1)
-def obtener_modelo_nvidia() -> ChatOpenAI:
+@lru_cache(maxsize=16)
+def obtener_modelo_nvidia(
+    modelo: str | None = None,
+) -> ChatOpenAI:
     """Construye el cliente NVIDIA NIM usando su API OpenAI-compatible."""
     load_dotenv()
 
@@ -45,18 +49,24 @@ def obtener_modelo_nvidia() -> ChatOpenAI:
             "No se encontró NVIDIA_API_KEY."
         )
 
-    return ChatOpenAI(
-        api_key=api_key,
-        base_url=NVIDIA_BASE_URL,
-        model=MODELO_NVIDIA_NEMOTRON,
-        temperature=0,
-        timeout=obtener_timeout_nvidia(),
-        max_retries=MAX_RETRIES_CLIENTE_NVIDIA,
-        extra_body={
+    modelo_id = modelo or obtener_modelo_nvidia_id()
+
+    extra_body = None
+    if "nemotron" in modelo_id.lower():
+        extra_body = {
             "chat_template_kwargs": {
                 "enable_thinking": False,
             }
-        },
+        }
+
+    return ChatOpenAI(
+        api_key=api_key,
+        base_url=NVIDIA_BASE_URL,
+        model=modelo_id,
+        temperature=0,
+        timeout=obtener_timeout_nvidia(),
+        max_retries=MAX_RETRIES_CLIENTE_NVIDIA,
+        extra_body=extra_body,
     )
 
 
@@ -120,6 +130,8 @@ def _agregar_instruccion_esquema(
 
 def obtener_modelo_nvidia_estructurado(
     esquema: type[BaseModel],
+    *,
+    modelo: str | None = None,
 ):
     """
     Adapta NVIDIA NIM al contrato estructurado solicitado.
@@ -127,7 +139,16 @@ def obtener_modelo_nvidia_estructurado(
     NVIDIA trabaja en JSON mode y recibe explícitamente el
     JSON Schema correspondiente. Pydantic realiza la validación final.
     """
-    modelo_json = obtener_modelo_nvidia().bind(
+    try:
+        cliente_base = (
+            obtener_modelo_nvidia(modelo=modelo)
+            if modelo is not None
+            else obtener_modelo_nvidia()
+        )
+    except TypeError:
+        cliente_base = obtener_modelo_nvidia()
+
+    modelo_json = cliente_base.bind(
         response_format={
             "type": "json_object",
         }

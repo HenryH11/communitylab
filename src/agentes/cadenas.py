@@ -6,7 +6,9 @@ from langchain_core.runnables import RunnableConfig, RunnableLambda
 from src.agentes.configuracion_ia import (
     PROVEEDOR_GEMINI,
     PROVEEDOR_NVIDIA_NIM,
+    TIER_ESTANDAR,
     obtener_proveedor_analisis,
+    obtener_tier_por_ruta,
 )
 from src.agentes.modelo_ia import (
     invocar_modelo_con_fallback,
@@ -26,24 +28,26 @@ from src.agentes.prompts.analisis import (
 )
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=4)
 def _obtener_cadena_analisis(
     proveedor: str,
 ):
     modelo = obtener_modelo_analisis_estructurado(
         AnalisisMensaje,
         proveedor=proveedor,
+        ruta="analisis",
     )
     return template_analisis | modelo
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=4)
 def _obtener_cadena_analisis_lote(
     proveedor: str,
 ):
     modelo = obtener_modelo_analisis_estructurado(
         AnalisisLote,
         proveedor=proveedor,
+        ruta="analisis_lote",
     )
     return template_analisis_lote | modelo
 
@@ -67,8 +71,15 @@ def _registrar_traza_proveedor(
         if metadata.get(campo) is not None
     }
 
+    tier = metadata.get("tier")
+    if tier is None and metadata.get("ruta"):
+        tier = obtener_tier_por_ruta(cast(str, metadata["ruta"]))
+    elif tier is None:
+        tier = TIER_ESTANDAR
+
     registrar_evento(
         "proveedor_ia_resuelto",
+        tier=tier,
         proveedor_primario=traza.get(
             "proveedor_primario"
         ),

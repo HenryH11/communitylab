@@ -45,10 +45,12 @@ _rate_limiter = InMemoryRateLimiter(
 )
 
 
-@lru_cache(maxsize=1)
-def obtener_modelo_gemini() -> ChatGoogleGenerativeAI:
+@lru_cache(maxsize=16)
+def obtener_modelo_gemini(
+    modelo: str | None = None,
+) -> ChatGoogleGenerativeAI:
     """
-    Carga las credenciales y crea un único cliente compartido.
+    Carga las credenciales y crea un cliente configurado.
 
     El rate limiter evita ráfagas de solicitudes que puedan superar
     el límite de Gemini. max_retries permite recuperar llamadas
@@ -64,9 +66,11 @@ def obtener_modelo_gemini() -> ChatGoogleGenerativeAI:
             "Verifica que exista en el archivo .env."
         )
 
+    modelo_id = modelo or MODELO_GEMINI
+
     return ChatGoogleGenerativeAI(
         api_key=api_key,
-        model=MODELO_GEMINI,
+        model=modelo_id,
         rate_limiter=_rate_limiter,
         max_retries=MAX_RETRIES_GEMINI,
     )
@@ -74,8 +78,19 @@ def obtener_modelo_gemini() -> ChatGoogleGenerativeAI:
 
 def obtener_modelo_gemini_estructurado(
     esquema: type[BaseModel],
+    *,
+    modelo: str | None = None,
 ):
     """Adapta Gemini al contrato estructurado solicitado."""
-    return obtener_modelo_gemini().with_structured_output(
+    try:
+        cliente_base = (
+            obtener_modelo_gemini(modelo=modelo)
+            if modelo is not None
+            else obtener_modelo_gemini()
+        )
+    except TypeError:
+        cliente_base = obtener_modelo_gemini()
+
+    return cliente_base.with_structured_output(
         esquema
     )

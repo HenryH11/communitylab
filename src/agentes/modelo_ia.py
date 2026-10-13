@@ -14,6 +14,10 @@ from src.agentes.errores_ia import (
 from src.agentes.configuracion_ia import (
     PROVEEDOR_GEMINI,
     PROVEEDOR_NVIDIA_NIM,
+    TIER_ESTANDAR,
+    enrutamiento_adaptativo_activo,
+    obtener_modelo_nvidia_por_ruta,
+    obtener_modelo_nvidia_por_tier,
     obtener_proveedor_analisis,
 )
 from src.agentes.proveedores.gemini import (
@@ -47,6 +51,8 @@ def obtener_modelo_analisis_estructurado(
     esquema: type[BaseModel],
     *,
     proveedor: str | None = None,
+    ruta: str | None = None,
+    modelo: str | None = None,
 ):
     """Obtiene el modelo estructurado utilizado para análisis."""
     proveedor_activo = (
@@ -55,23 +61,45 @@ def obtener_modelo_analisis_estructurado(
         else obtener_proveedor_analisis()
     )
 
+    modelo_resuelto = modelo
+    if (
+        modelo_resuelto is None
+        and ruta is not None
+        and proveedor_activo == PROVEEDOR_NVIDIA_NIM
+        and enrutamiento_adaptativo_activo()
+    ):
+        modelo_resuelto = obtener_modelo_nvidia_por_tier(TIER_ESTANDAR)
+
     return _obtener_modelo_estructurado(
         esquema,
         proveedor=proveedor_activo,
+        modelo=modelo_resuelto,
     )
+
 
 def _obtener_modelo_estructurado(
     esquema: type[BaseModel],
     *,
     proveedor: str,
+    modelo: str | None = None,
 ):
     """Obtiene un modelo estructurado del proveedor indicado."""
     if proveedor == PROVEEDOR_GEMINI:
+        if modelo is not None:
+            return obtener_modelo_gemini_estructurado(
+                esquema,
+                modelo=modelo,
+            )
         return obtener_modelo_gemini_estructurado(
             esquema
         )
 
     if proveedor == PROVEEDOR_NVIDIA_NIM:
+        if modelo is not None:
+            return obtener_modelo_nvidia_estructurado(
+                esquema,
+                modelo=modelo,
+            )
         return obtener_modelo_nvidia_estructurado(
             esquema
         )
@@ -80,15 +108,28 @@ def _obtener_modelo_estructurado(
         f"Proveedor de IA no soportado: {proveedor}"
     )
 
+
 def obtener_modelo_generacion_estructurado(
     esquema: type[BaseModel],
     *,
     proveedor: str,
+    ruta: str | None = None,
+    modelo: str | None = None,
 ):
     """Obtiene el modelo estructurado utilizado por los generadores."""
+    modelo_resuelto = modelo
+    if (
+        modelo_resuelto is None
+        and ruta is not None
+        and proveedor == PROVEEDOR_NVIDIA_NIM
+        and enrutamiento_adaptativo_activo()
+    ):
+        modelo_resuelto = obtener_modelo_nvidia_por_ruta(ruta)
+
     return _obtener_modelo_estructurado(
         esquema,
         proveedor=proveedor,
+        modelo=modelo_resuelto,
     )
 
 

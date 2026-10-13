@@ -11,6 +11,7 @@ from src.agentes.configuracion_ia import (
     PROVEEDOR_GEMINI,
     PROVEEDOR_NVIDIA_NIM,
     obtener_proveedor_generacion,
+    obtener_tier_por_ruta,
 )
 from src.agentes.modelo_ia import (
     invocar_modelo_con_fallback,
@@ -41,7 +42,7 @@ from src.agentes.reintentos import (
 )
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=8)
 def _obtener_generadores(
     proveedor: str,
 ):
@@ -51,6 +52,7 @@ def _obtener_generadores(
             | obtener_modelo_generacion_estructurado(
                 PublicacionLinkedIn,
                 proveedor=proveedor,
+                ruta="linkedin",
             )
         ),
         "boletin": (
@@ -58,6 +60,7 @@ def _obtener_generadores(
             | obtener_modelo_generacion_estructurado(
                 DestaqueBoletin,
                 proveedor=proveedor,
+                ruta="boletin",
             )
         ),
         "preguntas_frecuentes": (
@@ -65,6 +68,7 @@ def _obtener_generadores(
             | obtener_modelo_generacion_estructurado(
                 SugerenciaPreguntasFrecuentes,
                 proveedor=proveedor,
+                ruta="preguntas_frecuentes",
             )
         ),
         "caso_exito": (
@@ -72,6 +76,7 @@ def _obtener_generadores(
             | obtener_modelo_generacion_estructurado(
                 CasoDeExito,
                 proveedor=proveedor,
+                ruta="caso_exito",
             )
         ),
         "insight_mejora": (
@@ -79,6 +84,7 @@ def _obtener_generadores(
             | obtener_modelo_generacion_estructurado(
                 InsightMejora,
                 proveedor=proveedor,
+                ruta="insight_mejora",
             )
         ),
     }
@@ -96,6 +102,7 @@ def _registrar_traza_generacion(
         etapa="generar_activos",
         id_interaccion=identificador,
         ruta=ruta,
+        tier=obtener_tier_por_ruta(ruta),
         proveedor_primario=traza.get(
             "proveedor_primario"
         ),

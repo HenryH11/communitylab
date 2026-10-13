@@ -18,7 +18,7 @@ from langchain_core.runnables import RunnableConfig
 RAIZ = Path(__file__).resolve().parents[2]
 LOGGER = logging.getLogger("communitylab.ciencia_datos")
 NOMBRE_ARCHIVO_LOG = "ciencia_datos.jsonl"
-_CAMPOS_METADATA = ("etapa", "intento", "id_interaccion", "ids_interaccion", "ruta")
+_CAMPOS_METADATA = ("etapa", "intento", "id_interaccion", "ids_interaccion", "ruta", "tier")
 _CAMPOS_TOKENS = ("input_tokens", "output_tokens", "total_tokens")
 
 _id_ejecucion: ContextVar[str | None] = ContextVar("id_ejecucion", default=None)
@@ -240,6 +240,7 @@ def config_ejecucion(
     id_interaccion: str | None = None,
     ids_interaccion: list[str] | None = None,
     ruta: str | None = None,
+    tier: str | None = None,
 ) -> RunnableConfig:
     """Config de LangChain con callback y metadatos para correlacionar logs."""
     metadata: dict[str, object] = {"etapa": etapa, "intento": intento}
@@ -249,6 +250,8 @@ def config_ejecucion(
         metadata["ids_interaccion"] = list(ids_interaccion)
     if ruta is not None:
         metadata["ruta"] = ruta
+    if tier is not None:
+        metadata["tier"] = tier
 
     return {
         "callbacks": [MANEJADOR_OBSERVABILIDAD],

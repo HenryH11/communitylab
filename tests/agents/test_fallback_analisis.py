@@ -268,3 +268,98 @@ def test_retry_interno_nvidia_conserva_id_analisis(
         registro.campos["intento"]
         for registro in eventos
     ] == [1, 2]
+
+
+class _ErrorNvidiaDegraded(Exception):
+    def __init__(self):
+        super().__init__(
+            "Error code: 400 - "
+            "{'status': 400, 'title': 'Bad Request', "
+            "'detail': 'Function id: DEGRADED function cannot be invoked'}"
+        )
+        self.status_code = 400
+
+
+def test_analisis_nvidia_error_400_degraded_activa_fallback_gemini(
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        "COMMUNITYLAB_PROVEEDOR_ANALISIS",
+        PROVEEDOR_NVIDIA_NIM,
+    )
+
+    cadena_nvidia = MagicMock()
+    cadena_nvidia.invoke.side_effect = _ErrorNvidiaDegraded()
+
+    cadena_gemini = MagicMock()
+    cadena_gemini.invoke.return_value = AnalisisMensaje(
+        sentimiento="neutral",
+        tema_principal="datos_ia",
+        subtema="fallback degradado",
+        tipo_detectado="pregunta_tecnica",
+    )
+
+    def obtener_cadena(proveedor):
+        if proveedor == PROVEEDOR_NVIDIA_NIM:
+            return cadena_nvidia
+
+        if proveedor == PROVEEDOR_GEMINI:
+            return cadena_gemini
+
+        raise AssertionError(proveedor)
+
+    with patch(
+        "src.agentes.cadenas._obtener_cadena_analisis",
+        side_effect=obtener_cadena,
+    ):
+        resultado = analizar_mensaje(
+            _estado()
+        )
+
+    assert resultado.get("fallos", []) == []
+    cadena_nvidia.invoke.assert_called_once()
+    cadena_gemini.invoke.assert_called_once()
+
+
+class _Error400Normal(Exception):
+    def __init__(self):
+        super().__init__("Bad Request")
+        self.status_code = 400
+
+
+def test_analisis_nvidia_error_400_normal_no_activa_fallback_gemini(
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        "COMMUNITYLAB_PROVEEDOR_ANALISIS",
+        PROVEEDOR_NVIDIA_NIM,
+    )
+
+    cadena_nvidia = MagicMock()
+    cadena_nvidia.invoke.side_effect = _Error400Normal()
+
+    cadena_gemini = MagicMock()
+
+    def obtener_cadena(proveedor):
+        if proveedor == PROVEEDOR_NVIDIA_NIM:
+            return cadena_nvidia
+
+        if proveedor == PROVEEDOR_GEMINI:
+            return cadena_gemini
+
+        raise AssertionError(proveedor)
+
+    with patch(
+        "src.agentes.cadenas._obtener_cadena_analisis",
+        side_effect=obtener_cadena,
+    ):
+        resultado = analizar_mensaje(
+            _estado()
+        )
+
+    assert len(
+        resultado.get("fallos", [])
+    ) > 0
+
+    cadena_nvidia.invoke.assert_called_once()
+    cadena_gemini.invoke.assert_not_called()

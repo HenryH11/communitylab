@@ -74,6 +74,9 @@ def _motivo_seguro_fallback(
     if codigo == 429:
         return "http_429"
 
+    if codigo == 410:
+        return "http_410"
+
     if codigo in {500, 502, 503, 504}:
         return f"http_{codigo}"
 

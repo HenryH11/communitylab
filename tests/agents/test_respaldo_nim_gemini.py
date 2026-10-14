@@ -89,6 +89,7 @@ FALLOS_NIM = {
     # OutputParserException hereda de ValueError: debe distinguirse de ErrorEntrada.
     "json_roto": lambda: OutputParserException(f"Invalid json output: {{'sentim {SECRETO}"),
     "fuera_de_esquema": lambda: OutputParserException("sentimiento: valor no admitido 'feliz'"),
+    "modelo_retirado_410": lambda: ErrorHTTP(410,"Gone: model is no longer available",),
 }
 
 

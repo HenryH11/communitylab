@@ -7,6 +7,7 @@ let objective='Informar y generar interés', tone='Claro y cercano';
 const selectionByResult=new Map();
 const downloadsHandled=new Set();
 let ready=false, sentHeight=-1;
+let downloadFile=null;
 const stage = document.getElementById('stage'), feedback = document.getElementById('feedback'), extras = document.getElementById('extras');
 const nav = {'Inicio':'inicio','Plantillas':'plantillas','Agente en vivo':'agente','Analíticas':'analiticas','Ayuda':'ayuda'};
 const cards = [
@@ -28,10 +29,18 @@ let view;
 const message = (type, fields) => window.parent.postMessage({isStreamlitMessage:true,type,...fields}, '*');
 function height(){if(!ready)return;const h=Math.max(1,Math.ceil(document.body.getBoundingClientRect().height));if(h!==sentHeight){sentHeight=h;message('streamlit:setFrameHeight',{height:h});}}
 function notify(text,type='info'){feedback.textContent=text;feedback.dataset.type=type;height();}
+function syncPending(){
+  document.querySelectorAll('[data-server-action]').forEach(node=>node.disabled=busy||node.dataset.unavailable==='true');
+  extras.setAttribute('aria-busy',String(busy));
+}
+const requests=CommunityLabInteraction.requestGate({
+  post:value=>message('streamlit:setComponentValue',{value,dataType:'json'}),
+  changed:pending=>{busy=pending;syncPending();},
+  timedOut:()=>notify('No se recibió respuesta del servidor. Puedes volver a pulsar el botón; si continúa, recarga la página.','error')
+});
 function send(accion, fields={}){
-  if(busy)return;
-  busy=true;notify('Preparando la revisión local…');
-  message('streamlit:setComponentValue',{value:{id:crypto.randomUUID(),accion,...fields},dataType:'json'});
+  if(!requests.send(accion,fields))return notify('Espera a que termine la acción en curso.');
+  notify('Preparando la revisión local…');
 }
 function go(next){page=next;search='';category='Todas las plantillas';render();}
 function rect(id){return typeof id==='string'?view.elementos[id]:id;}
@@ -45,7 +54,8 @@ function group(id){return stage.querySelector(`[data-id="${id}"]`);}
 function hide(id){if(group(id))group(id).style.display='none';}
 function replace(text,newText){const id=find(text);if(!id)return;let nodes=group(id).querySelectorAll('text');nodes.forEach((n,i)=>n.textContent=i===0?newText:'');}
 function hot(id,label,handler,disabled=false){
-  const b=rect(id);if(!b)return;
+  const source=rect(id);if(!source)return;
+  const b=CommunityLabInteraction.hitBox(source,view.elementos,view.width,view.height,window.innerWidth/view.width);
   const node=document.createElement('button');node.type='button';node.className='hot';node.setAttribute('aria-label',label);node.title=label;
   node.innerHTML='<span class="sr-only"></span>';node.firstChild.textContent=label;node.disabled=disabled;node.addEventListener('click',handler);return at(node,b);
 }
@@ -63,13 +73,17 @@ function field(id,label,value,onChange,options){
 function action(label,handler,parent=extras,secondary=false){
   const node=document.createElement('button');node.type='button';node.className='action'+(secondary?' secondary':'');node.textContent=label;node.onclick=handler;parent.append(node);return node;
 }
+function serverAction(label,accion,fields={},parent=extras,secondary=false,unavailable=false){
+  const node=action(label,()=>send(accion,typeof fields==='function'?fields():fields),parent,secondary);
+  node.dataset.serverAction=accion;node.dataset.unavailable=String(unavailable);node.disabled=busy||unavailable;return node;
+}
 function menu(){
   const items=document.getElementById('menu-items');items.replaceChildren();
   [...Object.entries(nav),['Importar JSON','datos'],['Mapa de experiencia','mapa'],['Estados de interfaz','estados']].forEach(([name,key])=>{
     const btn=document.createElement('button');btn.textContent=name;btn.onclick=()=>{document.getElementById('menu').close();go(key);};items.append(btn);
   });
-  const sample=document.createElement('button');sample.textContent='Usar ejemplo del proyecto';sample.onclick=()=>{document.getElementById('menu').close();send('ejemplo');};items.append(sample);
-  document.getElementById('menu').showModal();
+  serverAction('Usar ejemplo del proyecto','ejemplo',{},items,true).addEventListener('click',()=>document.getElementById('menu').close());
+  if(!document.getElementById('menu').open)document.getElementById('menu').showModal();
 }
 document.getElementById('close-menu').onclick=()=>document.getElementById('menu').close();
 async function copy(text){try{await navigator.clipboard.writeText(text);notify('Contenido copiado. Borrador ilustrativo; revisa antes de publicar.');}catch{notify('El navegador no permitió copiar. Usa la descarga local.', 'error');}}
@@ -103,6 +117,7 @@ function render(){
     }
   }else if(mobile){mobilePage();}
   else{
+    stage.style.height='';
     svgView(page);common();
     if(page==='inicio'){
       hot('cml-00033','Explorar plantillas',()=>go('plantillas'));
@@ -118,9 +133,10 @@ function render(){
     else if(page==='ayuda')help();
     else if(page==='analiticas')analytics();
   }
-  if(backend.aviso){notify(backend.aviso.texto,backend.aviso.tipo);}
+  if(busy)notify('Preparando la revisión local…');
+  else if(backend.aviso){notify(backend.aviso.texto,backend.aviso.tipo);}
   else if(mobile || (page!=='inicio' && page!=='plantillas'))notify('Vista ilustrativa del boceto · simulación local. IA y OCI pendientes de integración.');
-  height();
+  syncPending();renderDownload();height();
 }
 function catalog(){
   field(find('Buscar plantillas...'),'Buscar plantillas',search,value=>{search=value;filterCards();});
@@ -159,7 +175,7 @@ function outputText(){return backend.resultado?.formato===format?(backend.result
 function social(id){
   const networks={instagram:['https://www.instagram.com/','Instagram'],linkedin:['https://www.linkedin.com/','LinkedIn'],x:['https://x.com/','X']};
   const [url,name]=networks[format]??networks.instagram;
-  const b=rect(id);if(!b)return;const link=document.createElement('a');link.className='hot';link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label',`Abrir ${name} (no publica automáticamente)`);link.title=`Abrir ${name}`;at(link,b);
+  const source=rect(id);if(!source)return;const b=CommunityLabInteraction.hitBox(source,view.elementos,view.width,view.height,window.innerWidth/view.width);const link=document.createElement('a');link.className='hot';link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label',`Abrir ${name} (no publica automáticamente)`);link.title=`Abrir ${name}`;at(link,b);
 }
 function result(){
   const names={instagram:'Instagram',linkedin:'LinkedIn',x:'X',preguntas:'Preguntas de la comunidad'};
@@ -183,8 +199,8 @@ function result(){
 }
 function resultExtras(){
   const row=document.createElement('div');row.className='actions';extras.append(row);
-  action('Usar ejemplo del proyecto',()=>send('ejemplo'),row,true);
-  const gen=action('Generar borrador simulado',()=>send('simular',{formato:format}),row);gen.disabled=busy||!backend.datos.length;
+  serverAction('Usar ejemplo del proyecto','ejemplo',{},row,true);
+  serverAction('Generar borrador simulado','simular',()=>({formato:format}),row,false,!backend.datos.length);
   action('Importar JSON',()=>go('datos'),row,true);
   if(backend.resultado){
     const drafts=backend.resultado.borradores;
@@ -194,10 +210,10 @@ function resultExtras(){
     const legend=document.createElement('p');legend.textContent='Borradores simulados · no generados por IA ni guardados en OCI.';extras.append(legend);
     drafts.forEach((draft,index)=>{
       const details=document.createElement('details'),summary=document.createElement('summary'),checkbox=document.createElement('input'),body=document.createElement('pre');
-      checkbox.type='checkbox';checkbox.checked=selected.has(index);checkbox.setAttribute('aria-label',`Seleccionar ${draft.titulo}`);checkbox.onchange=()=>{checkbox.checked?selected.add(index):selected.delete(index);if(downloadButton)downloadButton.disabled=!selected.size;};
+      checkbox.type='checkbox';checkbox.checked=selected.has(index);checkbox.setAttribute('aria-label',`Seleccionar ${draft.titulo}`);checkbox.onchange=()=>{checkbox.checked?selected.add(index):selected.delete(index);if(downloadButton){downloadButton.dataset.unavailable=String(!selected.size);syncPending();}};
       summary.append(checkbox,document.createTextNode(' '+draft.titulo));body.textContent=draft.contenido+'\n\nMensajes fuente: '+draft.fuentes.join(', ');details.append(summary,body);extras.append(details);
     });
-    downloadButton=action('Descargar selección simulada',()=>{if(!selected.size)return notify('Selecciona al menos un borrador.');send('descargar',{indices:[...selected].sort((a,b)=>a-b)});});downloadButton.disabled=!selected.size;
+    downloadButton=serverAction('Descargar selección simulada','descargar',()=>({indices:[...selected].sort((a,b)=>a-b)}),extras,false,!selected.size);
   }
 }
 document.getElementById('file').onchange=async event=>{
@@ -228,11 +244,11 @@ function dataPage(){
 function dataExtras(){
   const row=document.createElement('div');row.className='actions';extras.append(row);
   action('Seleccionar archivo JSON',()=>document.getElementById('file').click(),row);
-  action('Usar ejemplo del proyecto',()=>send('ejemplo'),row,true);
-  action('Vaciar sesión',()=>send('vaciar'),row,true);
+  serverAction('Usar ejemplo del proyecto','ejemplo',{},row,true);
+  serverAction('Vaciar sesión','vaciar',{},row,true);
   const details=document.createElement('details'),summary=document.createElement('summary');details.open=jsonOpen;details.ontoggle=()=>jsonOpen=details.open;summary.textContent='Pegar JSON manualmente';details.append(summary);
   const form=document.createElement('form');form.className='extra-form';const textarea=document.createElement('textarea');textarea.rows=7;textarea.value=rawJson;textarea.oninput=()=>rawJson=textarea.value;textarea.setAttribute('aria-label','Contenido JSON');form.append(textarea);
-  const validate=action('Validar JSON pegado',()=>send('cargar',{contenido:textarea.value,nombre:'JSON pegado'}),form);details.append(form);extras.append(details);
+  serverAction('Validar JSON pegado','cargar',()=>({contenido:textarea.value,nombre:'JSON pegado'}),form);details.append(form);extras.append(details);
   if(backend.datos.length){
     const title=document.createElement('h2');title.textContent=`${backend.datos.length} mensajes validados`;extras.append(title);
     const filters=document.createElement('div');filters.className='extra-form';const input=document.createElement('input'),select=document.createElement('select');input.placeholder='Buscar por autor o mensaje';input.value=dataSearch;input.setAttribute('aria-label','Buscar por autor o mensaje');select.setAttribute('aria-label','Canal');
@@ -246,7 +262,7 @@ function dataExtras(){
 }
 function agent(){
   hot(find('+ Nueva consulta'),'Nueva consulta',()=>{query='';render();});
-  ['Post para LinkedIn','Resumen de opiniones','Temas frecuentes'].forEach(label=>hot(find(label),label,()=>{query=label;notify('Consulta de ejemplo seleccionada. El agente real sigue pendiente de integración.');}));
+  ['Post para LinkedIn','Resumen de opiniones','Temas frecuentes'].forEach(label=>hot(find(label),label,()=>{query=label;const input=stage.querySelector('[aria-label="Consulta al agente"]');input.value=query;input.focus();notify('Consulta de ejemplo seleccionada. El agente real sigue pendiente de integración.');}));
   field(find('Escribe una instrucción sobre los datos que ya están disponibles...'),'Consulta al agente',query,value=>query=value);
   hot(find('Enviar  →'),'Enviar consulta de demostración',()=>notify('Respuesta no disponible: el agente en vivo está pendiente de integración. No se realizó ninguna llamada a IA.','error'));
   hot(find('Copiar post'),'Copiar post de ejemplo',()=>copy('Las mejores decisiones comienzan escuchando…\nConvirtamos las preguntas recurrentes en mejoras concretas.'));
@@ -268,11 +284,12 @@ function filterFaq(){
 function analytics(){
   const title=document.createElement('h2');title.textContent='Datos del lote validado';extras.append(title);
   const info=document.createElement('p');info.textContent='Los gráficos del boceto son ilustrativos: no son un análisis de IA de tu archivo. Los siguientes conteos sí proceden de los mensajes cargados.';extras.append(info);
-  if(backend.datos.length){const actual=document.createElement('p');actual.textContent=`${backend.datos.length} mensajes · ${new Set(backend.datos.map(m=>m.canal)).size} canales · ${backend.datos.filter(m=>m.tipo==='testimonio').length} testimonios declarados · ${backend.datos.filter(m=>m.tipo.startsWith('pregunta_')).length} preguntas declaradas`;extras.append(actual);action('Descargar mensajes validados',()=>send('descargar_datos'));}
+  if(backend.datos.length){const actual=document.createElement('p');actual.textContent=`${backend.datos.length} mensajes · ${new Set(backend.datos.map(m=>m.canal)).size} canales · ${backend.datos.filter(m=>m.tipo==='testimonio').length} testimonios declarados · ${backend.datos.filter(m=>m.tipo.startsWith('pregunta_')).length} preguntas declaradas`;extras.append(actual);serverAction('Descargar mensajes validados','descargar_datos');}
   else action('Importar conversaciones',()=>go('datos'));
 }
 function mobilePage(){
   view={width:390,height:750,elementos:{}};stage.style.aspectRatio='auto';stage.style.height='auto';stage.innerHTML='';
+  stage.setAttribute('aria-label',`CommunityLab · ${page} · demostración local`);
   const box=document.createElement('div');box.className='mobile-page';const header=document.createElement('header');header.textContent='communitylab';const hamburger=document.createElement('button');hamburger.textContent='≡';hamburger.setAttribute('aria-label','Abrir menú');hamburger.onclick=menu;header.append(hamburger);box.append(header);
   const heading=document.createElement('h1');heading.textContent={plantillas:'Elige el resultado que necesitas',agente:'Agente CommunityLab',analiticas:'Entiende las conversaciones de tu comunidad',ayuda:'¿En qué podemos ayudarte?',datos:'Prepara los datos antes de generar resultados',mapa:'Una base de datos, distintas salidas útiles',estados:'Estados de interfaz'}[page];box.append(heading);stage.append(box);
   if(page==='plantillas'){
@@ -284,18 +301,22 @@ function mobilePage(){
   else if(page==='agente'){const p=document.createElement('p');p.textContent='Respuesta de ejemplo · agente real pendiente de integración.';box.append(p);action('Ver resultado de ejemplo',()=>{format='linkedin';go('resultado');},box);}
   else{const p=document.createElement('p');p.textContent='Datos procesados → LangGraph + modelos → plantillas o agente. Sin cuentas ni publicación automática. Integraciones pendientes.';box.append(p);}
 }
+function renderDownload(){
+  if(!downloadFile)return;
+  const url=new URL(downloadFile.url,window.location.origin);
+  if(url.origin!==window.location.origin||!url.pathname.includes('/media/'))return;
+  const link=document.createElement('a');link.href=url.href;link.download=downloadFile.nombre;link.textContent='Descargar archivo preparado';link.className='action';extras.append(link);
+  if(!downloadsHandled.has(downloadFile.id)){downloadsHandled.add(downloadFile.id);link.click();}
+}
 window.addEventListener('message',event=>{
   if(event.source!==window.parent||event.data.type!=='streamlit:render')return;
-  backend=event.data.args.estado??backend;if(!backend.resultado)selectionByResult.clear();busy=false;render();
-  const file=event.data.args.descarga;
-  if(file && !downloadsHandled.has(file.id)){
-    downloadsHandled.add(file.id);
-    const url=new URL(file.url,window.location.origin);
-    if(url.origin===window.location.origin && url.pathname.includes('/media/')){
-      const link=document.createElement('a');link.href=url.href;link.download=file.nombre;link.textContent='Descargar archivo preparado';link.className='action';extras.append(link);
-      link.click();height();
-    }else notify('La URL de descarga local no es válida.','error');
-  }
+  const next=event.data.args.estado??backend;
+  const acknowledged=requests.acknowledge(next.ultimo_evento);
+  const changed=JSON.stringify(next)!==JSON.stringify(backend);
+  downloadFile=event.data.args.descarga??null;
+  backend=next;if(!backend.resultado)selectionByResult.clear();
+  // Streamlit también envía renders sin cambios; conservar los nodos evita perder clics y foco.
+  if(changed||acknowledged)render();
 });
 let lastWidth=window.innerWidth;
 window.addEventListener('resize',()=>{if(window.innerWidth!==lastWidth){lastWidth=window.innerWidth;render();}});

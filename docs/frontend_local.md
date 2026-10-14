@@ -114,6 +114,7 @@ en este frontend. No se han ejecutado NVIDIA, Gemini ni OCI.
 
 ```powershell
 ../.runtime_frontend/Scripts/python.exe -m pytest tests/test_frontend_local.py tests/test_tolerancia_app.py tests/test_procesamiento_datos.py -q
+node --test tests/test_frontend_interaction.cjs
 ```
 
 La suite usa `streamlit.testing.v1.AppTest` para comprobar la inicialización del
@@ -141,8 +142,8 @@ de simulación y no implica una escritura en OCI.
 
 Ubicación recomendada para los dos archivos exportados:
 `docs/referencias/communitylab_boceto_interfaz_2026-10-14.excalidraw` y
-`docs/referencias/communitylab_boceto_interfaz_2026-10-14.svg`. Los originales
-siguen en Descargas; el chat no los ha movido ni renombrado.
+`docs/referencias/communitylab_boceto_interfaz_2026-10-14.svg`. El usuario se
+encarga de trasladarlos; el chat no los ha movido ni renombrado.
 
 `src/app/frontend/design.json` contiene las vistas vectoriales extraídas, por lo
 que la app funciona sin los originales de Descargas. Para regenerarlas después
@@ -162,3 +163,23 @@ marcas de simulación. El archivo se sirve desde la memoria local de Streamlit
 mediante su gestor de descargas; no utiliza un enlace Blob ni almacenamiento en
 la nube. `src/app/downloads.py` encapsula esa integración para comprobarla al
 actualizar Streamlit.
+
+## Respuesta de los botones
+
+Los botones superpuestos cubren la forma completa del boceto, con un mínimo de
+44 píxeles para pulsarlos; la navegación ya no depende de acertar sobre las letras.
+Las consultas de ejemplo rellenan inmediatamente el campo del agente.
+Mientras se procesa una acción local, sus botones muestran el estado ocupado.
+Solo la respuesta con el identificador de esa acción los desbloquea. Si no llega
+respuesta en 15 segundos, se informa y se permite volver a actuar. Los renders
+de Streamlit sin cambios conservan los controles y su foco. El enlace de descarga
+preparado se conserva al navegar, sin repetir automáticamente la descarga.
+
+Las pruebas de Node verifican clics repetidos, respuestas anteriores y tardías,
+recuperación tras una respuesta ausente y las zonas de pulsación sobre la geometría
+real del diseño, incluidas la navegación y las composiciones móviles.
+Resultado de esta revisión: **79 pruebas de Python, 30 subtests y cinco pruebas
+de Node aprobados**. En navegador se comprobó un clic fuera de las letras del
+menú, la superficie lateral de una consulta de ejemplo, el reinicio del campo,
+el filtro del catálogo, la generación y descarga de ocho borradores, la ayuda y
+la copia en móvil a 390 × 844. El enlace de descarga siguió disponible al navegar.

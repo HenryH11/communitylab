@@ -43,10 +43,10 @@ def cliente_simulado():
 
 @pytest.mark.parametrize("ruta", sorted(RUTAS_ACTIVO))
 def test_rutas_admitidas_generan_clave_estable(ruta):
-    # CE definió activos/ (PR #21); develop aún genera assets/ hasta que se fusione.
+    # El PR #21 ya está en develop: la clave debe usar el prefijo acordado por CE.
     clave = nombre_objeto_activo("int-004", ruta, PERIODO)
     prefijo, resto = clave.split("/", 1)
-    assert prefijo in {"assets", "activos"}
+    assert prefijo == "activos"
     assert resto == f"{PERIODO}/{ruta}/int-004.json"
     assert nombre_objeto_activo("int-004", ruta, PERIODO) == clave
 

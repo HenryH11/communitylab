@@ -167,7 +167,7 @@ def test_int020_feedback_conserva_ruta_con_ambos_sentimientos(sentimiento):
     caso = next(c for c in fixture["interacciones"] if c["id"] == "int-020")
     estado = {**caso, "sentimiento": sentimiento}
     original = deepcopy(estado)
-    assert determinar_rutas(estado) == {"rutas": ["insight_mejora"]}
+    assert determinar_rutas(estado)["rutas"] == ["insight_mejora"]
     assert estado == original
     assert estado["tipo_original"] == "feedback"
 
@@ -177,6 +177,6 @@ def test_int020_divergencia_de_tipo_puede_perder_insight_sin_cambiar_original():
     caso = next(c for c in fixture["interacciones"] if c["id"] == "int-020")
     estado = {**caso, "tipo_detectado": "comentario"}
     original = deepcopy(estado)
-    assert determinar_rutas(estado) == {"rutas": []}
+    assert determinar_rutas(estado)["rutas"] == []
     assert estado == original
     assert estado["tipo_original"] == "feedback"

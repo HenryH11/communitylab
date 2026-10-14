@@ -1,6 +1,6 @@
 # Semana 4: preparación de la auditoría de consistencia
 
-Fecha: 12 de octubre de 2026. DA: Gustavo y Jhonattan.
+Preparado el 12 y actualizado el 14 de octubre de 2026. DA: Gustavo y Jhonattan.
 
 **Estado: preparación y validación offline. No es el cierre de la auditoría con
 IA real, curaduría, estrés ni OCI.**
@@ -26,12 +26,38 @@ palabras y alterar el hecho. Una paráfrasis fiel puede tener poca coincidencia.
 
 ## Base y aislamiento
 
-Rama: `feature/jhonattan-auditoria-semana4`, creada desde DA `f5e059c`. Esa base
-contiene `develop` `415a16d` y el PR #24 aprobado pero aún pendiente de fusión.
-Los cambios de esta rama se limitan a casos sintéticos, pruebas y este reporte.
-No cambia el dataset compartido ni código de producción de Datos, DS, SS o CE.
-Antes del PR de Semana 4, incorporar el `develop` que incluya #24 y volver a
-comprobar la compatibilidad con los componentes que se hayan integrado.
+Rama: `feature/jhonattan-auditoria-semana4`, creada desde DA `f5e059c`.
+El 14 se incorporó `develop` `8cedef2` mediante el merge `9dd4f27`, sin conflictos.
+Ya están fusionados los PR #21, #24, #25, #26, #28, #29 y #23. Los cambios propios
+de esta rama frente a `develop` son casos sintéticos, pruebas y este reporte.
+No se modifica el dataset compartido ni código de producción.
+
+El enrutador ahora devuelve `tier_modelo` además de `rutas`. Se ajustaron las
+comparaciones de rutas de los tres casos parametrizados de `int-020` y del caso
+de estado vacío de Semana 3 para aceptar metadatos adicionales sin debilitar la
+comprobación de rutas. El tier tiene su cobertura en
+`tests/agents/test_enrutamiento_adaptativo.py`.
+
+Con #21 integrado, `tests/test_tolerancia_persistencia_oci.py` exige el prefijo
+`activos/`; se retiró la aceptación temporal de `assets/`. La suite OCI continúa
+usando clientes simulados, no el servicio real.
+
+## Proveedores de la base integrada
+
+La configuración predeterminada de `src/agentes/configuracion_ia.py` usa NVIDIA
+para análisis y generación, con enrutamiento adaptativo activo:
+
+| Etapa/ruta | Modelo predeterminado |
+| --- | --- |
+| Análisis individual y por lotes | `google/gemma-4-31b-it` |
+| FAQ y boletín | `meta/llama-3.1-8b-instruct` |
+| Caso de éxito, insight y LinkedIn | `meta/llama-3.3-70b-instruct` |
+
+La configuración puede cambiar mediante variables de entorno. El respaldo de
+NVIDIA es Gemini; el timeout NVIDIA sigue siendo 3 s por intento, no un plazo
+total del recorrido. El ensayo histórico de Nemotron no evalúa estos modelos.
+Para la auditoría real deben registrarse los modelos y configuración efectivamente
+usados, tanto en análisis como en cada activo, además de la versión del código.
 
 ## Casos disponibles
 
@@ -83,6 +109,15 @@ respuesta técnica prudente y un activo que no debería existir para spam.
 comprobar sus alertas. No se inventó una firma ni se añadieron pruebas omitidas
 que aparenten cubrir un módulo todavía ausente.
 
+El 13 de octubre Gustavo reportó que `scripts/auditoria_consistencia.py` funciona
+localmente, sin IA ni red: las ocho variantes y cuatro activos simulados coinciden
+con la decisión esperada (12/12), con 23 casos de prueba propios. Propuso publicarlo
+en `feature/gustavo-auditoria-semana4` partiendo de `34989bf`. Al actualizar las
+referencias el 14 no se encontró esa rama ni el archivo en `develop` o en nuestra
+rama. Son resultados reportados por Gustavo, todavía sin revisión local de su
+implementación. Se recomienda integrar su rama cuando la publique y conservar
+el historial mediante merge.
+
 Para comparar la salida deben considerarse texto original, metadatos autorizados
 (por ejemplo autor) y fuentes técnicas aprobadas cuando correspondan. La ausencia
 literal de un nombre en el texto no demuestra que sea inventado si está en los
@@ -99,7 +134,26 @@ divergencia y su efecto en la ruta. Las pruebas no cambian el fixture de referen
 
 ## Evidencia y límites
 
-Resultados locales del 12 de octubre sobre DA `f5e059c` más estos archivos:
+### Validación integrada del 14 de octubre
+
+Base `develop` `8cedef2`, merge `9dd4f27`, más los ajustes de pruebas descritos:
+
+| Ejecución | Resultado |
+| --- | --- |
+| Consistencia de Semana 4, estados manuales y tolerancia OCI | 47 aprobadas |
+| Suite completa | 432 aprobadas, 132 subpruebas aprobadas; 0 fallidas, 0 omitidas |
+| `unittest discover` | 91 pruebas, OK |
+| `pip check` | Sin dependencias incompatibles |
+
+La primera ejecución completa se detuvo al recolectar contratos porque faltaba
+`jsonschema`. Se instaló `jsonschema[format-nongpl]>=4.18,<5`, ya declarado en
+`requirements.txt`, y se repitió la suite sin exclusiones adicionales. Las 46
+pruebas NVIDIA antes omitidas ya están activas y pasan con proveedores simulados.
+No se agregaron dependencias al repositorio.
+
+### Evidencia histórica del 12 de octubre
+
+Resultados sobre DA `f5e059c` más los casos iniciales:
 
 | Ejecución | Resultado |
 | --- | --- |
@@ -107,9 +161,9 @@ Resultados locales del 12 de octubre sobre DA `f5e059c` más estos archivos:
 | Suite completa | 280 aprobadas, 46 omitidas, 132 subpruebas aprobadas; sin fallos |
 | `unittest discover` | 85 pruebas, OK |
 
-Las 46 omisiones siguen correspondiendo a NVIDIA, aún fuera de esta base. Unittest
-no ejecuta las siete funciones nuevas de pytest ni sustituye su resultado.
-La suite completa se ejecutó fuera del entorno restringido por los problemas de
+Las 46 omisiones de esa ejecución correspondían a NVIDIA, entonces fuera de la
+base. Unittest no ejecuta las siete funciones nuevas de pytest ni sustituye su
+resultado. La suite completa se ejecutó fuera del entorno restringido por los problemas de
 temporales de Windows ya conocidos. No hubo llamadas reales a IA, ni ejecución
 de curaduría, ni escrituras en OCI. El acceso de red se bloquea en el archivo de
 pruebas y `.env` no se carga.
@@ -128,9 +182,11 @@ python -B -m unittest discover -s tests -p "test_*.py"
 Remove-Item Env:PYTHON_DOTENV_DISABLED
 ```
 
-La evaluación de clasificación de DS (`b141c93`) es un antecedente distinto: no
-evalúa la calidad de los activos ni reemplaza este trabajo. El proveedor para la
-demo debe acordarse antes de registrar evidencia real de generación.
+La evaluación de clasificación de DS (`b141c93`) es un antecedente sobre Nemotron,
+distinto de los modelos actuales; no evalúa la calidad de los activos ni reemplaza
+este trabajo. La configuración para la demo debe acordarse antes de registrar
+evidencia real de generación. Las pruebas de este reporte usan salidas simuladas;
+no demuestran calidad semántica de un proveedor real.
 
 ## Condiciones para cerrar el reporte
 

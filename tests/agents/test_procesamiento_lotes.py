@@ -81,6 +81,45 @@ def json_ids(mensajes_json):
     return [mensaje["id"] for mensaje in json.loads(mensajes_json)]
 
 
+def test_analizar_lote_no_envia_tipo_original_al_llm():
+    import json
+
+    estados = [
+        crear_estado("id-a"),
+        crear_estado("id-b"),
+    ]
+
+    cadena_lote = MagicMock()
+    cadena_lote.invoke.return_value = AnalisisLote(
+        resultados=[
+            crear_analisis("id-a"),
+            crear_analisis("id-b"),
+        ]
+    )
+
+    with patch(
+        "src.agentes.nodos.nodo_analizador.cadena_analisis_lote",
+        cadena_lote,
+    ):
+        analizar_lote(estados)
+
+    entrada = cadena_lote.invoke.call_args.args[0]
+
+    mensajes = json.loads(
+        entrada["mensajes_json"]
+    )
+
+    assert all(
+        "tipo_original" not in mensaje
+        for mensaje in mensajes
+    )
+
+    assert all(
+        "texto" in mensaje
+        for mensaje in mensajes
+    )
+
+
 def test_analizar_lote_reintenta_individualmente_solo_ids_omitidos():
     estados = [crear_estado("id-a"), crear_estado("id-b")]
     cadena_lote = MagicMock()

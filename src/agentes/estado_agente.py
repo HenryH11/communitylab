@@ -41,6 +41,7 @@ class EstadoAgente(TypedDict, total=False):
     # Resultado de LangGraph
     # -----------------------------
     rutas: list[Ruta]
+    tier_modelo: str
 
     # Semana 2: contenido generado
     activos_generados: dict

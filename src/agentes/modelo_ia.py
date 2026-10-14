@@ -1,66 +1,149 @@
-"""Cliente compartido de Gemini con inicialización diferida."""
+"""Fachada de acceso a proveedores de modelos de IA."""
 
-import os
-from functools import lru_cache
+from pydantic import BaseModel
 
-from dotenv import load_dotenv
-from langchain_core.rate_limiters import InMemoryRateLimiter
-from langchain_google_genai import ChatGoogleGenerativeAI
+from src.agentes.fallback_ia import (
+    invocar_modelo_con_fallback,
+)
 
+from src.agentes.errores_ia import (
+    ErrorConfiguracionProveedor,
+    ErrorFallbackProveedores,
+)
 
-MODELO_GEMINI = "gemini-3.5-flash-lite"
-# Bajo a propósito: los reintentos de la aplicación (reintentos.py) se suman a estos.
-MAX_RETRIES_GEMINI = 2
-INTERVALO_REVISION_LIMITADOR = 0.1
-TAMANO_MAXIMO_LIMITADOR = 1
-
-# Límite observado en Gemini Free Tier:
-# 15 requests por minuto para este modelo.
-#
-# Trabajamos a ~12 RPM para dejar margen.
-SOLICITUDES_POR_SEGUNDO = 0.20
-
-
-def obtener_configuracion_modelo() -> dict[str, str | int | float]:
-    """Devuelve los parámetros no secretos usados en las llamadas a Gemini."""
-    return {
-        "proveedor": "Google Gemini",
-        "identificador_modelo": MODELO_GEMINI,
-        "max_retries": MAX_RETRIES_GEMINI,
-        "solicitudes_por_segundo": SOLICITUDES_POR_SEGUNDO,
-        "intervalo_revision_limitador_segundos": INTERVALO_REVISION_LIMITADOR,
-        "tamano_maximo_limitador": TAMANO_MAXIMO_LIMITADOR,
-    }
-
-_rate_limiter = InMemoryRateLimiter(
-    requests_per_second=SOLICITUDES_POR_SEGUNDO,
-    check_every_n_seconds=INTERVALO_REVISION_LIMITADOR,
-    max_bucket_size=TAMANO_MAXIMO_LIMITADOR,
+from src.agentes.configuracion_ia import (
+    PROVEEDOR_GEMINI,
+    PROVEEDOR_NVIDIA_NIM,
+    TIER_ESTANDAR,
+    enrutamiento_adaptativo_activo,
+    obtener_modelo_nvidia_por_ruta,
+    obtener_modelo_nvidia_por_tier,
+    obtener_proveedor_analisis,
+)
+from src.agentes.proveedores.gemini import (
+    INTERVALO_REVISION_LIMITADOR,
+    MAX_RETRIES_GEMINI,
+    MODELO_GEMINI,
+    SOLICITUDES_POR_SEGUNDO,
+    TAMANO_MAXIMO_LIMITADOR,
+    obtener_configuracion_modelo as obtener_configuracion_gemini,
+    obtener_modelo_gemini,
+    obtener_modelo_gemini_estructurado,
+)
+from src.agentes.proveedores.nvidia_nim import (
+    obtener_configuracion_nvidia,
+    obtener_modelo_nvidia,
+    obtener_modelo_nvidia_estructurado,
 )
 
 
-@lru_cache(maxsize=1)
-def obtener_modelo_gemini() -> ChatGoogleGenerativeAI:
-    """
-    Carga las credenciales y crea un único cliente compartido.
+def obtener_configuracion_modelo() -> dict:
+    """Devuelve la configuración no secreta del proveedor de análisis activo."""
+    proveedor = obtener_proveedor_analisis()
 
-    El rate limiter evita ráfagas de solicitudes que puedan superar
-    el límite de Gemini. max_retries permite recuperar llamadas
-    transitorias que fallen por rate limit o disponibilidad.
-    """
-    load_dotenv()
+    if proveedor == PROVEEDOR_NVIDIA_NIM:
+        return obtener_configuracion_nvidia()
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    return obtener_configuracion_gemini()
 
-    if not api_key:
-        raise ValueError(
-            "No se encontró GEMINI_API_KEY. "
-            "Verifica que exista en el archivo .env."
+
+def obtener_modelo_analisis_estructurado(
+    esquema: type[BaseModel],
+    *,
+    proveedor: str | None = None,
+    ruta: str | None = None,
+    modelo: str | None = None,
+):
+    """Obtiene el modelo estructurado utilizado para análisis."""
+    proveedor_activo = (
+        proveedor
+        if proveedor is not None
+        else obtener_proveedor_analisis()
+    )
+
+    modelo_resuelto = modelo
+    if (
+        modelo_resuelto is None
+        and ruta is not None
+        and proveedor_activo == PROVEEDOR_NVIDIA_NIM
+        and enrutamiento_adaptativo_activo()
+    ):
+        modelo_resuelto = obtener_modelo_nvidia_por_tier(TIER_ESTANDAR)
+
+    return _obtener_modelo_estructurado(
+        esquema,
+        proveedor=proveedor_activo,
+        modelo=modelo_resuelto,
+    )
+
+
+def _obtener_modelo_estructurado(
+    esquema: type[BaseModel],
+    *,
+    proveedor: str,
+    modelo: str | None = None,
+):
+    """Obtiene un modelo estructurado del proveedor indicado."""
+    if proveedor == PROVEEDOR_GEMINI:
+        if modelo is not None:
+            return obtener_modelo_gemini_estructurado(
+                esquema,
+                modelo=modelo,
+            )
+        return obtener_modelo_gemini_estructurado(
+            esquema
         )
 
-    return ChatGoogleGenerativeAI(
-        api_key=api_key,
-        model=MODELO_GEMINI,
-        rate_limiter=_rate_limiter,
-        max_retries=MAX_RETRIES_GEMINI,
+    if proveedor == PROVEEDOR_NVIDIA_NIM:
+        if modelo is not None:
+            return obtener_modelo_nvidia_estructurado(
+                esquema,
+                modelo=modelo,
+            )
+        return obtener_modelo_nvidia_estructurado(
+            esquema
+        )
+
+    raise ValueError(
+        f"Proveedor de IA no soportado: {proveedor}"
     )
+
+
+def obtener_modelo_generacion_estructurado(
+    esquema: type[BaseModel],
+    *,
+    proveedor: str,
+    ruta: str | None = None,
+    modelo: str | None = None,
+):
+    """Obtiene el modelo estructurado utilizado por los generadores."""
+    modelo_resuelto = modelo
+    if (
+        modelo_resuelto is None
+        and ruta is not None
+        and proveedor == PROVEEDOR_NVIDIA_NIM
+        and enrutamiento_adaptativo_activo()
+    ):
+        modelo_resuelto = obtener_modelo_nvidia_por_ruta(ruta)
+
+    return _obtener_modelo_estructurado(
+        esquema,
+        proveedor=proveedor,
+        modelo=modelo_resuelto,
+    )
+
+
+__all__ = [
+    "INTERVALO_REVISION_LIMITADOR",
+    "MAX_RETRIES_GEMINI",
+    "MODELO_GEMINI",
+    "SOLICITUDES_POR_SEGUNDO",
+    "TAMANO_MAXIMO_LIMITADOR",
+    "obtener_configuracion_modelo",
+    "obtener_modelo_analisis_estructurado",
+    "obtener_modelo_gemini",
+    "obtener_modelo_nvidia",
+    "ErrorConfiguracionProveedor",
+    "ErrorFallbackProveedores",
+    "invocar_modelo_con_fallback",
+]

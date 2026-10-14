@@ -1,5 +1,8 @@
 # CommunityLab (ง •̀_•́)ง
 
+En esta rama, el [frontend local de Streamlit](docs/frontend_local.md) permite
+cargar y explorar conversaciones y revisar borradores simulados sin usar IA ni OCI.
+
 Herramientas para convertir conversaciones de comunidades digitales en datos
 analizables y activos estructurados. El flujo combina validación y relevancia
 determinista con análisis de lenguaje y enrutamiento por reglas.

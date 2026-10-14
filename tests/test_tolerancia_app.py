@@ -45,14 +45,15 @@ def test_app_no_usa_st_rerun(arbol):
     assert llamadas(arbol, "st", "experimental_rerun") == []
 
 
-def test_procesamiento_con_ia_esta_protegido(arbol):
-    for nombre in ("preparar_paquete_ia", "procesar_paquete_entrega"):
-        nodos = [
-            n for n in ast.walk(arbol)
-            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == nombre
-        ]
-        assert nodos, f"app.py ya no llama a {nombre}"
-        assert all(dentro_de_try(arbol, n) for n in nodos)
+def test_frontend_local_no_importa_ni_llama_proveedores(arbol):
+    """Esta rama es offline: conectar IA requiere una integración explícita."""
+    for archivo in (APP, APP.with_name("local.py")):
+        codigo = ast.parse(archivo.read_text(encoding="utf-8-sig"))
+        for nodo in ast.walk(codigo):
+            if isinstance(nodo, ast.ImportFrom):
+                assert not (nodo.module or "").startswith(("src.agentes", "src.config", "dotenv"))
+            if isinstance(nodo, ast.Call) and isinstance(nodo.func, ast.Name):
+                assert nodo.func.id not in {"preparar_paquete_ia", "procesar_paquete_entrega", "guardar_resultado_aprobado"}
 
 
 def test_errores_se_muestran_en_pantalla(arbol):
@@ -61,6 +62,7 @@ def test_errores_se_muestran_en_pantalla(arbol):
 
 # Regresión: SS movió json.load dentro del try (PR #19).
 def test_lectura_del_archivo_subido_esta_protegida(arbol):
+    arbol = ast.parse(APP.with_name("local.py").read_text(encoding="utf-8"))
     cargas = llamadas(arbol, "json", "load") + llamadas(arbol, "json", "loads")
     assert cargas
     assert all(dentro_de_try(arbol, n) for n in cargas)

@@ -188,6 +188,79 @@ este trabajo. La configuración para la demo debe acordarse antes de registrar
 evidencia real de generación. Las pruebas de este reporte usan salidas simuladas;
 no demuestran calidad semántica de un proveedor real.
 
+## Auditoría sobre la entrega real de DS (14 de octubre)
+
+DA: Gustavo. Ejecutada sin llamadas a IA ni red, con
+`scripts/auditoria_consistencia.py` (26 pruebas propias en verde, incluidas las
+ocho variantes de `casos_consistencia_semana4.json`: 12/12 coinciden con la
+decisión esperada).
+
+### Entrada auditada
+
+| Campo | Valor |
+| --- | --- |
+| Archivo | `auditoria_semana4.json`, versión 1.2, enviado por Arnold (DS) el 14/10 16:49; no se versiona porque `salida/` está ignorada |
+| SHA-256 del archivo | `8e2c24fc3edf755613bac85d4b1eb225ca8a9a71d39ca6eb167b66592fd4fc34` |
+| Código que lo generó | `feature/DS-Semana4` `4331b6e` (working tree limpio según el archivo) |
+| Dataset | `src/datos/mensajes_comunidad_simulados.json`, 23 interacciones, 0 excluidas por Datos |
+| Activos | 26 en 16 interacciones |
+| Modelos | NVIDIA NIM: `nemotron-3.5-lightning-30b-a3b` (rápido/estándar) y `nemotron-3-super-120b-a12b` (razonamiento); Gemini como respaldo |
+| Fallback | 0 en análisis, 0 en generación |
+
+Los modelos de la tabla "Proveedores de la base integrada" (`gemma-4-31b-it`,
+`llama-3.1-8b`, `llama-3.3-70b`) son los de `develop`. DS los reemplazó en
+`feature/DS-Semana4` porque NVIDIA marcó los Llama como deprecados; esa rama aún
+no tiene PR.
+
+Comando:
+
+```powershell
+python -B scripts/auditoria_consistencia.py --entrega auditoria_semana4.json `
+  --proveedor por_activo --version-codigo 4331b6e `
+  --salida-json salida/auditoria_semana4_reporte.json --salida-md salida/auditoria_semana4_reporte.md
+```
+
+### Resultado por modelo
+
+| Modelo | Activos | Con alertas |
+| --- | --- | --- |
+| `nemotron-3-super-120b-a12b` | 12 | 0 |
+| `nemotron-3.5-lightning-30b-a3b` | 14 | 1 |
+
+No se detectaron números, fechas, entidades, negaciones perdidas ni compromisos
+sin respaldo en los 26 activos.
+
+### Hallazgos para revisión humana
+
+| ID | Ruta | Hallazgo | Decisión sugerida |
+| --- | --- | --- | --- |
+| int-015 | preguntas_frecuentes | `instruccion_filtrada`: la respuesta es la instrucción del prompt ("Una redacción breve que indique… No inventes descripciones…"), no un texto para el lector | Rechazar y regenerar; DS revisa el prompt de FAQ |
+| int-011, int-014, int-018 | — | Datos los marca `testimonio` y elegibles (score 61–70); DS detecta `comentario` y no se generan activos | Revisar con DS; mismo patrón de divergencia documentado para `int-020` |
+| int-023 | preguntas_frecuentes | Casi duplicado de `int-002` (mismo texto sin tildes); se generaron dos FAQ equivalentes | Aceptable para la demo; deduplicación aproximada queda para la S5 |
+
+El hallazgo de `int-015` se detectó primero en la lectura manual: el auditor no
+tenía una regla para instrucciones filtradas. Se agregó `instruccion_filtrada`
+con su prueba antes de cerrar esta corrida. Que el resto no tenga alertas no
+certifica fidelidad: las respuestas técnicas de FAQ (`int-002`, `int-017`,
+`int-021`) agregan explicación general que no está en el mensaje y requieren
+juicio humano o fuentes técnicas aprobadas.
+
+### Tres perfiles obligatorios
+
+| Perfil | Evidencia real (entrega de DS) | Evidencia controlada (fixture) |
+| --- | --- | --- |
+| Éxito | `int-001`: testimonio → caso de éxito, boletín y LinkedIn; "menos de 3 meses" y "portfolio" conservados, sin alertas | `s4-001-exito` y sus variantes |
+| Duda técnica | `int-017`: pregunta técnica → FAQ prudente sobre indentación, sin plazos ni garantías | `s4-002-duda_tecnica` |
+| Spam | No hay spam en el dataset compartido (0 excluidos) | `s4-003-spam`: excluido por Datos (`texto_repetitivo`, `bajo_umbral`); el activo forzado se marca `activo_de_mensaje_excluido` |
+
+### Pendiente
+
+- Decisión humana y justificación por fila en el reporte generado (columna vacía
+  a propósito).
+- Versión editada y aprobada por curaduría, cuando SS la entregue.
+- Repetir con el código de DS una vez fusionado, para que el SHA auditado esté en
+  `develop`.
+
 ## Condiciones para cerrar el reporte
 
 - Integrar y probar las alertas del script de Gustavo, distinguiendo errores

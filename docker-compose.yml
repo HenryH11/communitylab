@@ -23,8 +23,13 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - NVIDIA_API_KEY=${NVIDIA_API_KEY:-}
     volumes:
-      # Persistencia de informes, ciclos y logs fuera del contenedor
-      - ./salida:/app/salida
-      # Montaje de lectura para poder actualizar configuración en caliente
-      - ./configuracion:/app/configuracion:ro
+      # Hereda el directorio preparado para UID 1000 en la imagen.
+      - communitylab-salida:/app/salida
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
+
+volumes:
+  communitylab-salida:

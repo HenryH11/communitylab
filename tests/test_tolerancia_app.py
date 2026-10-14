@@ -47,7 +47,7 @@ def test_app_no_usa_st_rerun(arbol):
 
 def test_frontend_local_no_importa_ni_llama_proveedores(arbol):
     """Esta rama es offline: conectar IA requiere una integración explícita."""
-    for archivo in (APP, APP.with_name("local.py")):
+    for archivo in (APP, APP.with_name("local.py"), APP.with_name("bridge.py")):
         codigo = ast.parse(archivo.read_text(encoding="utf-8-sig"))
         for nodo in ast.walk(codigo):
             if isinstance(nodo, ast.ImportFrom):
@@ -57,7 +57,10 @@ def test_frontend_local_no_importa_ni_llama_proveedores(arbol):
 
 
 def test_errores_se_muestran_en_pantalla(arbol):
-    assert llamadas(arbol, "st", "error")
+    from src.app.bridge import aplicar_evento, estado_inicial
+    salida = aplicar_evento(estado_inicial(), {"id": "error-visible", "accion": "cargar", "contenido": "{", "nombre": "entrada.json"})
+    assert salida["aviso"]["tipo"] == "error"
+    assert "JSON inválido" in salida["aviso"]["texto"]
 
 
 # Regresión: SS movió json.load dentro del try (PR #19).

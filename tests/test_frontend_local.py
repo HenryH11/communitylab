@@ -87,59 +87,83 @@ def test_plantillas_son_simulaciones_con_fuentes(lote):
     assert simular_plantilla(cargar_entrada(json.dumps(lote)), "Post para LinkedIn")["borradores"] == []
 
 
-def test_navegacion_sin_datos_y_agente_inactivo():
+def test_componente_streamlit_se_inicializa():
     at = AppTest.from_file(APP).run(timeout=30)
     assert not at.exception
-    for pagina in ["Plantillas", "Analítica", "Agente en vivo", "Ayuda", "Carga", "Inicio"]:
-        abrir(at, pagina)
-    pulsar(at, "Cargar mis datos")
-    assert at.radio(key="pagina").value == "Carga"
-    abrir(at, "Agente en vivo")
-    assert next(b for b in at.button if b.label == "Enviar consulta").disabled
-    assert at.text_area[0].disabled
+    assert len(at.get("component_instance")) == 1
+    assert at.session_state.estado_local["datos"] == []
 
 
-def test_ejemplo_filtros_metricas_y_persistencia():
-    at = abrir(AppTest.from_file(APP).run(timeout=30), "Carga")
-    pulsar(at, "Usar ejemplo del proyecto")
-    assert len(at.session_state.datos) == 23
-    at.text_input[0].set_value("Camila").run(timeout=30)
-    assert len(at.dataframe[0].value) == 1
-    at.text_input[0].set_value("sin-coincidencia-123").run(timeout=30)
-    assert not at.dataframe
-    abrir(at, "Analítica")
-    assert [(m.label, m.value) for m in at.metric] == [("Mensajes", "23"), ("Canales", "15"), ("Testimonios declarados", "8"), ("Preguntas declaradas", "9")]
-    abrir(at, "Plantillas")
-    pulsar(at, "Generar borrador simulado")
-    assert len(at.session_state.resultado["borradores"]) == 8
-    assert at.warning and "SIMULADO" in at.warning[0].value
-    at.multiselect[0].set_value([0]).run(timeout=30)
-    abrir(at, "Ayuda")
-    abrir(at, "Plantillas")
-    assert at.multiselect[0].value == [0]
-    assert at.session_state.resultado["plantilla"] == "Post para LinkedIn"
+def test_eventos_carga_error_simulacion_y_vaciado(lote):
+    from src.app.bridge import aplicar_evento, estado_inicial
+    estado = aplicar_evento(estado_inicial(), {"id": "1", "accion": "ejemplo"})
+    assert len(estado["datos"]) == 23
+    resultado = aplicar_evento(estado, {"id": "2", "accion": "simular", "formato": "instagram"})
+    assert resultado["resultado"]["plantilla"] == "Post para Instagram"
+    assert len(resultado["resultado"]["borradores"]) == 8
+    assert not resultado["resultado"]["generado_por_ia"]
+    error = aplicar_evento(resultado, {"id": "3", "accion": "cargar", "contenido": "{", "nombre": "invalido.json"})
+    assert error["aviso"]["tipo"] == "error" and "columna 2" in error["aviso"]["texto"]
+    assert error["datos"] == resultado["datos"] and error["resultado"] == resultado["resultado"]
+    reemplazo = aplicar_evento(error, {"id": "4", "accion": "cargar", "contenido": json.dumps(lote), "nombre": "nuevo.json"})
+    assert len(reemplazo["datos"]) == 1 and reemplazo["resultado"] is None
+    vacio = aplicar_evento(reemplazo, {"id": "5", "accion": "vaciar"})
+    assert not vacio["datos"] and vacio["resultado"] is None
 
 
-def test_error_conserva_lote_valido_y_reemplazo_retira_resultado(lote):
-    at = abrir(AppTest.from_file(APP).run(timeout=30), "Carga")
-    pulsar(at, "Usar ejemplo del proyecto")
-    abrir(at, "Plantillas")
-    pulsar(at, "Generar borrador simulado")
-    abrir(at, "Carga")
-    # Pegar y pulsar sin esperar una recarga intermedia debe leer el valor nuevo.
-    at.text_area[0].set_value("{")
-    pulsar(at, "Validar JSON pegado")
-    assert at.error and "JSON inválido" in at.error[0].value
-    assert "columna 2" in at.error[0].value
-    assert len(at.session_state.datos) == 23
-    assert at.session_state.resultado
-    at.text_area[0].set_value(json.dumps(lote))
-    pulsar(at, "Validar JSON pegado")
-    assert len(at.session_state.datos) == 1
-    assert at.session_state.resultado is None
-    abrir(at, "Plantillas")
-    pulsar(at, "Generar borrador simulado")
-    assert not at.session_state.resultado["borradores"]
-    abrir(at, "Carga")
-    pulsar(at, "Vaciar sesión")
-    assert not at.session_state.datos and at.session_state.resultado is None
+def test_eventos_repetidos_y_invalidos_no_se_reprocesan():
+    from src.app.bridge import aplicar_evento, estado_inicial
+    original = estado_inicial()
+    for evento in (None, [], {}, {"id": None}, {"id": "x"*101}):
+        assert aplicar_evento(original, evento) == original
+    estado = aplicar_evento(original, {"id": "mismo", "accion": "ejemplo"})
+    assert aplicar_evento(estado, {"id": "mismo", "accion": "vaciar"}) == estado
+    for evento in ({"id": "a", "accion": []}, {"id": "b", "accion": "simular", "formato": []}, {"id": "c", "accion": "cargar", "contenido": None}):
+        salida = aplicar_evento(estado, evento)
+        assert salida["aviso"]["tipo"] == "error" and salida["datos"] == estado["datos"]
+
+
+def test_formatos_del_boceto_requieren_datos_y_son_offline():
+    from src.app.bridge import FORMATOS, aplicar_evento, estado_inicial
+    for i, formato in enumerate(FORMATOS):
+        vacio = aplicar_evento(estado_inicial(), {"id": f"v-{i}", "accion": "simular", "formato": formato})
+        assert vacio["aviso"]["tipo"] == "error"
+        estado = aplicar_evento(estado_inicial(), {"id": "base", "accion": "ejemplo"})
+        salida = aplicar_evento(estado, {"id": str(i), "accion": "simular", "formato": formato})
+        assert salida["resultado"]["formato"] == formato
+        assert not salida["resultado"]["guardado_en_nube"]
+
+
+def test_vistas_extraidas_del_svg_tienen_geometria_y_textos_originales():
+    vistas = json.loads(APP.with_name("frontend").joinpath("design.json").read_text(encoding="utf-8"))
+    assert set(vistas) == {"inicio", "plantillas", "resultado", "agente", "analiticas", "ayuda", "datos", "mapa", "estados", "movil_inicio", "movil_resultado"}
+    assert all(v["width"] == 1440 and v["height"] == 875 for k,v in vistas.items() if not k.startswith("movil_"))
+    assert vistas["inicio"]["elementos"]["cml-00033"] == {"x": 60, "y": 399, "w": 219, "h": 42, "texto": "", "tipo": "rectangle", "font": 14}
+    assert "Tu comunidad habla." in vistas["inicio"]["svg"]
+    assert "Post para Instagram" in vistas["plantillas"]["svg"]
+    assert "Sentimiento de comunidad" in vistas["plantillas"]["svg"]
+    assert all("<script" not in v["svg"] and "javascript:" not in v["svg"] for v in vistas.values())
+
+
+def test_descarga_exporta_solo_seleccion_valida_y_marcas_de_simulacion():
+    from src.app.bridge import aplicar_evento, estado_inicial
+    from src.app.downloads import registrar_descarga
+    estado = aplicar_evento(estado_inicial(), {"id": "base", "accion": "ejemplo"})
+    estado = aplicar_evento(estado, {"id": "generar", "accion": "simular", "formato": "instagram"})
+    salida = aplicar_evento(estado, {"id": "descarga", "accion": "descargar", "indices": [1, 3]})
+    exportacion = salida["exportacion"]
+    assert len(exportacion["contenido"]["borradores"]) == 2
+    assert exportacion["contenido"]["borradores"][0]["fuentes"] == ["int-003"]
+    assert not exportacion["contenido"]["generado_por_ia"] and not exportacion["contenido"]["guardado_en_nube"]
+    class Gestor:
+        def add(self, contenido, mimetype, coordenadas, **kwargs):
+            assert json.loads(contenido)["borradores"] == exportacion["contenido"]["borradores"]
+            assert mimetype == "application/json" and kwargs["is_for_static_download"]
+            assert kwargs["file_name"] == "communitylab_borradores_simulados.json"
+            return "/media/seleccion.json"
+    assert registrar_descarga(exportacion, Gestor()) == "/media/seleccion.json"
+    for seleccion in ([], [True], [999], [0, 0], [-1], "todos"):
+        error = aplicar_evento(estado, {"id": "error", "accion": "descargar", "indices": seleccion})
+        assert error["aviso"]["tipo"] == "error" and error["exportacion"] is None
+    datos = aplicar_evento(estado, {"id": "datos", "accion": "descargar_datos"})
+    assert len(datos["exportacion"]["contenido"]["mensajes"]) == 23

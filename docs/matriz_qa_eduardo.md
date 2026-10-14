@@ -18,7 +18,7 @@
 | 8 | Seguridad de API Key | Seguridad | ✅ Completada | .gitignore activo | 08/10/26 | .env no subido al repositorio |
 | 9 | Validación del contrato JSON | Integridad | ⏳ Pendiente | - | - | Verificar los 7 campos obligatorios |
 | 10 | Pruebas de estrés | Capacidad | ⏳ Pendiente | - | - | Probar con 100+ mensajes |
-| 11 | Gobernanza de Git | Agilidad | ✅ Completada | PR #19 abierto | 08/10/26 | Commits con Conventional Commits |
+| 11 | Gobernanza de Git | Agilidad | ✅ Completada | PR #19 fusionado + PR #24 y #25 revisados | 11/10/26 | Aprobaciones formales en GitHub |
 | 12 | Pruebas cruzadas E2E | Integración | ⏳ Pendiente | - | - | Data → IA → UI → OCI |
 
 ## Resumen

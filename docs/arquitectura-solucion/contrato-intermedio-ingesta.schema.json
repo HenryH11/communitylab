@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://communitylab.one-g10/schemas/contrato-intermedio-ingesta.json",
+  "title": "CommunityLab - Contrato Intermedio (Ingesta -> IA)",
+  "description": "Fragmento plano de transporte DA → DS. Siete campos por interacción; no es el paquete de estados ni el plan de procesamiento.",
+  "type": "object",
+  "required": [
+    "origen_comunidad",
+    "periodo_referencia",
+    "interacciones"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "origen_comunidad": {
+      "type": "string",
+      "description": "Se propaga sin cambios desde el Contrato de Entrada."
+    },
+    "periodo_referencia": {
+      "type": "string",
+      "description": "Se propaga sin cambios desde el Contrato de Entrada."
+    },
+    "interacciones": {
+      "type": "array",
+      "minItems": 0,
+      "description": "Ya pasadas por limpieza y puntuacion de relevancia; puede venir vacio si ningun mensaje del lote fue relevante.",
+      "items": {
+        "$ref": "#/$defs/interaccion_enriquecida"
+      }
+    }
+  },
+  "$defs": {
+    "interaccion_enriquecida": {
+      "type": "object",
+      "required": [
+        "id",
+        "autor",
+        "canal",
+        "tipo",
+        "texto",
+        "fecha",
+        "idioma"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID provisto por la entrada, único en toda la entrega. DA valida unicidad entre lotes; JSON Schema no puede imponer unicidad por campo.",
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$"
+        },
+        "autor": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "canal": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "testimonio",
+            "pregunta_tecnica",
+            "pregunta_programa",
+            "comentario",
+            "feedback"
+          ],
+          "description": "Clasificación de origen acordada con DA; pregunta_programa no implica elegibilidad automática para FAQ."
+        },
+        "texto": {
+          "type": "string",
+          "description": "Texto ya normalizado: minusculas y espacios homogeneizados, sin HTML ni ruido, deduplicado contra otras interacciones del lote.",
+          "minLength": 1
+        },
+        "fecha": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha original provista por la entrada, ISO 8601 con segundos y zona horaria; DA no inventa metadatos."
+        },
+        "idioma": {
+          "type": "string",
+          "description": "Idioma provisto por la entrada; la implementación no lo detecta automáticamente.",
+          "examples": [
+            "es",
+            "en",
+            "pt"
+          ],
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    }
+  }
+}

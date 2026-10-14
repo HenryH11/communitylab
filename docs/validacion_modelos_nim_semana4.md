@@ -1,33 +1,32 @@
 # CommunityLab – Semana 4
-## Validación de modelos NVIDIA NIM y tolerancia a fallos
+## Validación de modelos NVIDIA NIM y paquete de trazabilidad para auditoría
 
 **Proyecto:** CommunityLab – Hackathon ONE G10 / Equipo 39  
 **Subequipo:** Cerebro de IA – Data Science  
 **Rama:** `feature/DS-Semana4`  
-**Fecha:** 14 de octubre de 2026
+**Fecha:** 14 de octubre de 2026  
+**Versión de auditoría:** `1.2`
 
 ---
 
 ## 1. Propósito
 
-Este documento registra la validación técnica realizada sobre los modelos usados por CommunityLab en NVIDIA NIM, los cambios aplicados durante Semana 4 y la evidencia obtenida mediante pruebas reales y automatizadas.
+Este documento registra la validación técnica realizada por Data Science sobre los modelos usados en NVIDIA NIM y la preparación del paquete de trazabilidad que será utilizado por el equipo encargado de la auditoría.
 
-El objetivo principal fue asegurar que:
+El objetivo fue asegurar que:
 
 - NVIDIA NIM continúe como proveedor primario.
-- Gemini se mantenga únicamente como proveedor de respaldo.
+- Gemini se mantenga como proveedor de respaldo.
 - Los modelos configurados respondan correctamente en análisis y generación.
-- El fallback se active por causas válidas y quede trazado.
-- La auditoría distinga entre interacciones afectadas y eventos reales de fallback.
-- La configuración final quede respaldada por pruebas reproducibles.
+- Cada análisis y activo generado registre proveedor, modelo, tier y fallback.
+- El JSON de salida conserve también el resumen analítico de la comunidad.
+- La ejecución quede asociada a un SHA exacto y reproducible.
 
 ---
 
-## 2. Problemas detectados
+## 2. Problemas detectados durante Semana 4
 
-Durante las pruebas reales se identificaron tres problemas principales.
-
-### 2.1 Modelos Llama retirados
+### 2.1 Modelos retirados
 
 Los modelos:
 
@@ -36,17 +35,11 @@ meta/llama-3.1-8b-instruct
 meta/llama-3.3-70b-instruct
 ```
 
-devolvieron:
+devolvieron `HTTP 410 Gone` en llamadas reales a NVIDIA NIM.
 
-```text
-HTTP 410 Gone
-```
+Esto impedía completar correctamente varias rutas de generación.
 
-en llamadas reales a NVIDIA NIM.
-
-Esto impedía completar rutas de generación.
-
-### 2.2 Gemma no respondía de forma utilizable
+### 2.2 Gemma no resultó viable en el entorno probado
 
 El modelo estándar:
 
@@ -54,55 +47,61 @@ El modelo estándar:
 google/gemma-4-31b-it
 ```
 
-agotaba el timeout configurado y provocaba que todos los lotes de análisis terminaran en Gemini.
+agotaba el tiempo disponible y activaba Gemini como proveedor de respaldo.
 
-### 2.3 Métrica de fallback ambigua
-
-La auditoría inicial mostraba:
+Se realizaron pruebas controladas:
 
 ```text
-Fallbacks en análisis: 23
+Gemma batch, timeout 15 s
+→ OpenAITimeoutError
+→ 15.25 s
+
+Gemma individual, timeout 15 s
+→ OpenAITimeoutError
+→ 15.26 s
+
+Gemma RAW mínimo, timeout 30 s
+→ OpenAITimeoutError
+→ 30.36 s
 ```
 
-pero el detalle de observabilidad mostró que realmente existieron:
+La llamada RAW utilizó únicamente:
 
 ```text
-23 interacciones afectadas
-4 eventos reales de fallback batch
+Responde únicamente: OK
 ```
 
-La métrica fue corregida para separar ambos conceptos.
+por lo que el problema observado no dependía solamente del esquema estructurado o del tamaño del lote.
+
+### 2.3 DeepSeek tampoco respondió de forma utilizable
+
+Se evaluó:
+
+```text
+deepseek-ai/deepseek-v4.1-flash
+```
+
+dentro de NVIDIA NIM.
+
+Resultados:
+
+```text
+Análisis estructurado, timeout 15 s
+→ OpenAITimeoutError
+→ 15.25 s
+
+RAW, timeout 30 s
+→ OpenAITimeoutError
+→ 30.25 s
+```
+
+No se asumió que el modelo estuviera retirado; únicamente se concluyó que no fue viable en el entorno probado durante esta sesión.
 
 ---
 
-## 3. Cambios aplicados
+## 3. Modelos seleccionados
 
-### 3.1 Fallback ante HTTP 410
-
-Se añadió soporte explícito para reconocer:
-
-```text
-HTTP 410
-```
-
-como motivo válido de fallback de proveedor.
-
-Esto permite:
-
-```text
-NVIDIA NIM
-→ HTTP 410
-→ fallback
-→ Gemini
-```
-
-sin confundir este caso con un retry normal.
-
----
-
-### 3.2 Modelos NVIDIA NIM actualizados
-
-La configuración final propuesta queda:
+La configuración validada quedó:
 
 | Tier | Modelo |
 |---|---|
@@ -122,124 +121,24 @@ Proveedor de respaldo:
 Gemini
 ```
 
----
-
-### 3.3 Timeout NVIDIA actualizado
-
-El timeout pasó de:
+Timeout NVIDIA:
 
 ```text
-3 s
+15 segundos
 ```
-
-a:
-
-```text
-15 s
-```
-
-El cambio fue definido a partir de tiempos reales observados con Nemotron Lightning.
 
 ---
 
-## 4. Evidencia real de disponibilidad
+## 4. Evidencia real de Nemotron 3.5 Lightning
 
-### 4.1 Gemma – análisis batch
-
-Prueba real con 10 mensajes:
+### Análisis individual estructurado
 
 ```text
-NVIDIA/GEMMA: ERROR
-OpenAITimeoutError
-Request timed out.
-Tiempo: 15.25 s
+Resultado: OK
+Tiempo: 1.24 s
 ```
 
-### 4.2 Gemma – análisis individual
-
-```text
-NVIDIA/GEMMA INDIVIDUAL: ERROR
-OpenAITimeoutError
-Request timed out.
-Tiempo: 15.26 s
-```
-
-### 4.3 Gemma – llamada RAW mínima
-
-Prompt:
-
-```text
-Responde únicamente: OK
-```
-
-Resultado:
-
-```text
-GEMMA RAW: ERROR
-OpenAITimeoutError
-Request timed out.
-Tiempo: 30.36 s
-```
-
-La prueba RAW descarta que el problema dependa únicamente del prompt estructurado o del tamaño del lote.
-
----
-
-## 5. Evaluación de DeepSeek
-
-Se probó:
-
-```text
-deepseek-ai/deepseek-v4.1-flash
-```
-
-dentro de NVIDIA NIM.
-
-### Análisis estructurado
-
-```text
-DEEPSEEK V4.1 FLASH ANALISIS: ERROR
-OpenAITimeoutError
-Request timed out.
-Tiempo: 15.25 s
-```
-
-### Llamada RAW
-
-```text
-DEEPSEEK RAW: ERROR
-OpenAITimeoutError
-Request timed out.
-Tiempo: 30.25 s
-```
-
-Resultado:
-
-```text
-No viable en el entorno probado durante esta sesión.
-```
-
-No se afirma que el modelo esté retirado; únicamente que no respondió de forma utilizable en las pruebas ejecutadas.
-
----
-
-## 6. Validación real de Nemotron 3.5 Lightning
-
-Modelo:
-
-```text
-nvidia/nemotron-3.5-lightning-30b-a3b
-```
-
-### 6.1 Análisis individual estructurado
-
-Resultado:
-
-```text
-OK
-```
-
-Salida:
+Salida observada:
 
 ```text
 sentimiento: muy_positivo
@@ -248,81 +147,72 @@ subtema: primer trabajo analista datos
 tipo_detectado: testimonio
 ```
 
-Tiempo:
-
-```text
-1.24 s
-```
-
-### 6.2 Lote de 10 mensajes
-
-Resultado:
+### Lote de 10 mensajes
 
 ```text
 10 enviados
 10 recibidos
+Tiempo: 8.56 s
 ```
 
-Tiempo:
+### Dataset completo
 
-```text
-8.56 s
-```
-
-### 6.3 Dataset completo
-
-Se procesaron los 23 mensajes reales en lotes:
-
-```text
-10 / 10 / 3
-```
-
-Resultados:
+Se procesaron 23 mensajes en lotes de `10 / 10 / 3`.
 
 ```text
 Lote 1: 10/10 | 7.63 s
 Lote 2: 10/10 | 9.04 s
 Lote 3: 3/3   | 10.09 s
+
+Total: 23/23
 ```
 
-Total:
-
-```text
-23/23
-```
-
-Esta evidencia sustenta el uso de Nemotron Lightning como modelo estándar.
+Esta evidencia sustentó el reemplazo de Gemma por Nemotron Lightning como modelo estándar y el aumento del timeout de `3 s` a `15 s`.
 
 ---
 
-## 7. Evidencia real del fallback de análisis
+## 5. Fallback y tolerancia a fallos
 
-Antes del cambio final de modelo estándar, la auditoría real produjo:
+Se añadió soporte explícito para reconocer:
+
+```text
+HTTP 410
+```
+
+como motivo válido para fallback de proveedor.
+
+El flujo queda:
+
+```text
+NVIDIA NIM
+→ error apto para fallback
+→ Gemini
+```
+
+manteniendo separados los conceptos de:
+
+```text
+retry
+fallback de proveedor
+recuperación posterior
+```
+
+---
+
+## 6. Evidencia real del fallback de análisis
+
+Antes del cambio final de modelo estándar, una ejecución real produjo:
 
 ```text
 Interacciones de entrada: 23
-Excluidas por Data: 0
 Resultados DS: 23
-Activos generados: 35
 Interacciones con fallback en análisis: 23
 Eventos de fallback en análisis: 4
 Activos con fallback: 0
 Eventos de fallback en generación: 0
 ```
 
-La observabilidad mostró:
-
-```text
-4 eventos:
-analizar_lote
-tier: estandar
-proveedor_primario: nvidia_nim
-proveedor_final: gemini
-fallback: true
-motivo: timeout
-```
-
-También se registraron:
+La observabilidad mostró además:
 
 ```text
 12 llm_error
@@ -334,108 +224,139 @@ consistentes con:
 4 lotes × 3 intentos NVIDIA
 ```
 
-antes de activar Gemini.
+antes de utilizar Gemini.
 
-Esto constituye evidencia real de que el mecanismo de retry y fallback funcionó.
+Esta ejecución se conserva como evidencia real de que el mecanismo de fallback funcionó.
 
 ---
 
-## 8. Auditoría de generación
+## 7. Corrección de las métricas de fallback
 
-Tras reemplazar los modelos retirados, una ejecución real produjo:
+La auditoría inicial mostraba de forma ambigua:
 
 ```text
-23 interacciones procesadas
-35 activos generados
-0 activos con fallback
-0 eventos de fallback en generación
+Fallbacks en análisis: 23
 ```
 
-Ejemplos de trazabilidad:
-
-### `int-001` – caso de éxito
+Se corrigió para diferenciar:
 
 ```text
-tier: razonamiento
-proveedor_primario: nvidia_nim
-proveedor_usado: nvidia_nim
-modelo: nvidia/nemotron-3-super-120b-a12b
-fallback_activado: false
+interacciones_con_fallback_analisis
+eventos_fallback_analisis
+activos_con_fallback
+eventos_fallback_generacion
 ```
 
-### `int-002` – FAQ
+De esta manera se distingue entre:
+
+- cantidad de interacciones afectadas;
+- cantidad real de eventos de cambio de proveedor.
+
+---
+
+## 8. Recuperación del resumen analítico
+
+La versión inicial del paquete de Semana 4 conservaba toda la información por interacción, pero había dejado fuera del bloque `resumen` las agregaciones analíticas que existían previamente.
+
+En la versión `1.2` se recuperaron mediante la lógica estable de:
 
 ```text
-tier: rapido
-proveedor_primario: nvidia_nim
-proveedor_usado: nvidia_nim
-modelo: nvidia/nemotron-3.5-lightning-30b-a3b
-fallback_activado: false
+src/agentes/resumen_entrega.py
+```
+
+El JSON vuelve a incluir:
+
+```text
+sentimiento_predominante
+sentimientos_predominantes
+distribucion_sentimientos
+temas_principales
+distribucion_temas
+distribucion_tipos_detectados
+```
+
+Estas métricas se calculan automáticamente a partir de los resultados reales de la ejecución y no están hardcodeadas.
+
+La versión `1.2` conserva simultáneamente:
+
+### Resumen analítico
+
+```text
+sentimiento predominante
+distribución de sentimientos
+temas principales
+distribución de temas
+distribución de tipos detectados
+```
+
+### Trazabilidad operativa
+
+```text
+proveedor
+modelo
+tier
+fallback
+motivo de fallback
+SHA
+errores
+fallos
 ```
 
 ---
 
 ## 9. Pruebas automatizadas
 
-### Pruebas específicas de fallback 410
+Resultados obtenidos durante la validación:
 
 ```text
+Pruebas específicas de fallback HTTP 410:
 57 passed
-```
 
-### Batería relevante previa
-
-```text
+Batería relevante previa:
 115 passed
-```
 
-### Batería relevante después del cambio estándar
-
-```text
+Batería relevante final:
 116 passed
-```
 
-### Pruebas del proveedor NVIDIA
-
-```text
+Proveedor NVIDIA:
 13 passed
-```
 
-### Pruebas de entrega IA
-
-```text
+Entrega IA:
 18 passed
+
+Auditoría Semana 4 v1.2:
+9 passed
 ```
 
-### Suite completa
+Suite completa:
 
 ```text
 439 passed
 132 subtests passed
-1 failed
-1 warning
+1 fallo conocido
+1 warning externo
 ```
 
-El único fallo restante es:
+El único fallo conocido corresponde a:
 
 ```text
 tests/agents/test_tolerancia_estados_manuales.py::
 test_enrutador_tolera_estado_sin_campos
 ```
 
-El test espera:
+El test espera únicamente:
 
 ```python
 {"rutas": []}
 ```
 
-mientras el router actual devuelve adicionalmente:
+mientras el router actual devuelve además:
 
 ```python
 {"tier_modelo": "rapido"}
 ```
 
-Este fallo no corresponde al cambio de modelos de esta tarea.
+Este fallo no corresponde a los cambios de modelos, fallback o auditoría realizados en esta tarea.
 
 ---
 
@@ -456,17 +377,81 @@ elegible_contenido
 elegible_faq
 ```
 
-El informe de Data consulta la configuración efectiva del modelo a través de:
+Data Science:
 
-```python
-obtener_configuracion_modelo()
-```
-
-Por ello, al cambiar el modelo estándar de DS, solamente fue necesario actualizar la expectativa del test que todavía esperaba Gemma.
+- conserva `tipo_original`;
+- genera `tipo_detectado`;
+- no utiliza `tipo_original` como ground truth humano para el análisis LLM.
 
 ---
 
-## 11. Commits relevantes
+## 11. Ejecución final vigente
+
+**IMPORTANTE:** esta ejecución reemplaza las salidas anteriores de Semana 4 para efectos del paquete que se entregará al equipo de auditoría.
+
+SHA exacto utilizado:
+
+```text
+4331b6eb866b05062e189a4ee937c72531771513
+```
+
+Rama:
+
+```text
+feature/DS-Semana4
+```
+
+Resultado:
+
+```text
+Auditoría Semana 4 generada correctamente.
+
+Working tree limpio: True
+Interacciones de entrada: 23
+Excluidas por Data: 0
+Resultados DS: 23
+Activos generados: 26
+
+Interacciones con fallback en análisis: 0
+Eventos de fallback en análisis: 0
+
+Activos con fallback: 0
+Eventos de fallback en generación: 0
+```
+
+El archivo generado es:
+
+```text
+salida/auditoria_semana4/auditoria_semana4.json
+```
+
+La carpeta `salida/` está ignorada por Git, por lo que este archivo debe compartirse directamente como artefacto de ejecución y no forzarse al repositorio.
+
+---
+
+## 12. Sobre la variación en la cantidad de activos
+
+El número de activos puede variar entre ejecuciones porque la clasificación producida por el LLM puede modificar `tipo_detectado` y, en consecuencia, las rutas resultantes.
+
+Las ejecuciones históricas se conservan como evidencia de regresión y estabilidad, pero no se consideran ground truth humano.
+
+Para auditoría debe utilizarse únicamente el JSON asociado al SHA exacto de la ejecución que se está revisando.
+
+La ejecución vigente es:
+
+```text
+4331b6eb866b05062e189a4ee937c72531771513
+```
+
+con:
+
+```text
+26 activos generados
+```
+
+---
+
+## 13. Commits relevantes
 
 ```text
 a21e646
@@ -493,98 +478,70 @@ fix(ds): aclarar metricas de fallback en auditoria
 fix(ds): reemplazar modelo estandar y ajustar timeout NIM
 ```
 
----
-
-## 12. Auditoría real final
-
-La auditoría final debe ejecutarse con:
-
-```powershell
-python scripts\generar_auditoria_semana4.py --fecha-referencia "2026-10-14T10:14:00-05:00"
+```text
+c8f4e1c
+docs(ds): documentar validacion real de modelos NIM Semana 4
 ```
-
-Configuración esperada:
 
 ```text
-estándar → nvidia/nemotron-3.5-lightning-30b-a3b
-rápido → nvidia/nemotron-3.5-lightning-30b-a3b
-razonamiento → nvidia/nemotron-3-super-120b-a12b
-timeout NVIDIA → 15 s
-fallback → Gemini
+4331b6e
+fix(ds): recuperar resumen analitico en auditoria Semana 4
 ```
-
-### Resultado final
-
-Auditoría Semana 4 generada correctamente.
-Archivo: D:\ALURA\HackatonG39-Semana1\salida\auditoria_semana4\auditoria_semana4.json
-Commit: 65e64a36baa79689e686c6cdb1cf926c91634d56
-Rama: feature/DS-Semana4
-Working tree limpio: True
-Interacciones de entrada: 23
-Excluidas por Data: 0
-Resultados DS: 23
-Activos generados: 32
-Interacciones con fallback en análisis: 0
-Eventos de fallback en análisis: 0
-Activos con fallback: 0
-Eventos de fallback en generación: 0
-
-No debe reemplazarse esta sección con valores estimados.
 
 ---
 
-## 13. Criterio de cierre
+## 14. Archivo que debe utilizar el equipo de auditoría
 
-La tarea puede considerarse técnicamente cerrada cuando:
+El archivo vigente es:
 
-- el SHA ejecutado coincide con el commit final;
-- el working tree está limpio;
-- la auditoría final se genera correctamente;
-- las trazas identifican proveedor, modelo, tier y fallback;
-- no existen errores finales no explicados;
-- las exclusiones corresponden a Data;
-- el JSON de auditoría queda disponible para revisión;
-- la documentación conserva también la ejecución anterior como evidencia del funcionamiento real del fallback.
+```text
+salida/auditoria_semana4/auditoria_semana4.json
+```
+
+Generado sobre:
+
+```text
+4331b6eb866b05062e189a4ee937c72531771513
+```
+
+Este archivo reemplaza los JSON generados en ejecuciones anteriores.
+
+Contiene:
+
+- interacciones de entrada;
+- decisiones provenientes de Data;
+- análisis de DS;
+- sentimiento, tema, subtema y tipo detectado;
+- rutas;
+- activos generados;
+- resumen analítico;
+- proveedor y modelo por análisis;
+- proveedor y modelo por activo;
+- tier utilizado;
+- información de fallback;
+- errores y fallos;
+- configuración de IA;
+- SHA del dataset;
+- SHA exacto del código.
 
 ---
 
-## 14. Resumen
+## 15. Estado final
 
-La decisión final se sustenta en pruebas reales:
-
-```text
-Llama 3.1 / 3.3
-→ HTTP 410
-→ reemplazo
-
-Gemma
-→ timeout 3 s
-→ timeout 15 s
-→ timeout RAW 30 s
-→ no viable en esta ejecución
-
-DeepSeek V4.1 Flash
-→ timeout 15 s
-→ timeout RAW 30 s
-→ no viable en esta ejecución
-
-Nemotron 3.5 Lightning
-→ individual OK
-→ lote 10/10 OK
-→ dataset 23/23 OK
-→ adoptado para estándar y rápido
-
-Nemotron 3 Super
-→ generación estructurada OK
-→ mantenido para razonamiento
-```
-
-La arquitectura mantiene separadas las responsabilidades de:
+La configuración final mantiene:
 
 ```text
-retry
-fallback de proveedor
-recuperación posterior
+NVIDIA NIM como proveedor primario
+Gemini como proveedor de respaldo
+Nemotron Lightning para rápido/estándar
+Nemotron Super para razonamiento
+timeout NVIDIA de 15 s
 ```
 
-y conserva NVIDIA NIM como proveedor principal.
+El paquete de trazabilidad `1.2` recupera el resumen analítico previo y añade la información necesaria para separar resultados por proveedor/modelo en la auditoría.
+
+La salida vigente para revisión es exclusivamente la generada sobre:
+
+```text
+4331b6eb866b05062e189a4ee937c72531771513
+```

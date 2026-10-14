@@ -16,8 +16,16 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+RAIZ = Path(__file__).resolve().parents[1]
+
+if str(RAIZ) not in sys.path:
+    sys.path.insert(0, str(RAIZ))
+
 
 from src.agentes.auditoria_semana4 import (
     capturar_configuracion_ia_auditoria,
@@ -29,8 +37,6 @@ from src.agentes.observabilidad import configurar_logging
 from src.agentes.procesamiento import procesar_paquete_entrega
 from src.datos.entrega_ia import preparar_paquete_ia
 
-
-RAIZ = Path(__file__).resolve().parents[1]
 
 DATASET_POR_DEFECTO = (
     RAIZ

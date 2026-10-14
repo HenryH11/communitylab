@@ -140,17 +140,17 @@ de simulación y no implica una escritura en OCI.
 
 ## Fuentes editables del diseño
 
-Ubicación recomendada para los dos archivos exportados:
-`docs/referencias/communitylab_boceto_interfaz_2026-10-14.excalidraw` y
-`docs/referencias/communitylab_boceto_interfaz_2026-10-14.svg`. El usuario se
-encarga de trasladarlos; el chat no los ha movido ni renombrado.
+Los dos archivos exportados están incluidos en `docs/referencias/`:
+`Sin título-2026-10-14-0930.excalidraw` y `Sin título-2026-10-14-0930.svg`.
+Se conservan los nombres originales de exportación. La escena contiene 676
+elementos y su SVG reproduce exactamente las once vistas utilizadas por la app.
 
 `src/app/frontend/design.json` contiene las vistas vectoriales extraídas, por lo
-que la app funciona sin los originales de Descargas. Para regenerarlas después
+que la app funciona sin leer los originales durante su ejecución. Para regenerarlas después
 de editar el boceto, exporta la escena y su SVG correspondientes y ejecuta:
 
 ```powershell
-../.runtime_frontend/Scripts/python.exe scripts/preparar_boceto_frontend.py docs/referencias/communitylab_boceto_interfaz_2026-10-14.excalidraw docs/referencias/communitylab_boceto_interfaz_2026-10-14.svg
+../.runtime_frontend/Scripts/python.exe scripts/preparar_boceto_frontend.py 'docs/referencias/Sin título-2026-10-14-0930.excalidraw' 'docs/referencias/Sin título-2026-10-14-0930.svg'
 ```
 
 `app.js` contiene las interacciones; `style.css` define los controles. No hay

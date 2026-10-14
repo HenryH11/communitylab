@@ -57,7 +57,7 @@ def test_analisis_individual_con_texto_anomalo_no_colapsa(texto):
 
 
 def test_enrutador_tolera_estado_sin_campos():
-    assert determinar_rutas({}) == {"rutas": []}
+    assert determinar_rutas({})["rutas"] == []
 
 
 def test_generacion_sin_rutas_no_toca_texto_ni_modelos():

@@ -90,9 +90,13 @@ def test_construye_cliente_nvidia_sin_realizar_llamada(monkeypatch):
         base_url=NVIDIA_BASE_URL,
         model=MODELO_NVIDIA_POR_DEFECTO,
         temperature=0,
-        timeout=3.0,
+        timeout=15.0,
         max_retries=0,
-        extra_body=None,
+        extra_body={
+            "chat_template_kwargs": {
+                "enable_thinking": False,
+            }
+        },
     )
 
     nvidia_nim.obtener_modelo_nvidia.cache_clear()
@@ -125,7 +129,7 @@ def test_modelo_nvidia_configurable_por_entorno(monkeypatch):
         base_url=NVIDIA_BASE_URL,
         model="nvidia/nemotron-3-ultra-550b-a55b",
         temperature=0,
-        timeout=3.0,
+        timeout=15.0,
         max_retries=0,
         extra_body={
             "chat_template_kwargs": {
@@ -147,7 +151,7 @@ def test_timeout_nvidia_por_defecto(monkeypatch):
         "src.agentes.configuracion_ia.load_dotenv",
         return_value=None,
     ):
-        assert obtener_timeout_nvidia() == 3.0
+        assert obtener_timeout_nvidia() == 15.0
 
 
 def test_timeout_nvidia_configurable(monkeypatch):
@@ -160,6 +164,7 @@ def test_timeout_nvidia_configurable(monkeypatch):
         "src.agentes.configuracion_ia.load_dotenv",
         return_value=None,
     ):
+        
         assert obtener_timeout_nvidia() == 5.0
 
 

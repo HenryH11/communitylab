@@ -8,15 +8,30 @@ template_analisis = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-Eres un analista de comunidades digitales de aprendizaje
-y tecnología.
+Eres un analista de comunidades digitales de aprendizaje y tecnología.
 
-Tu tarea es analizar una interacción de comunidad y determinar:
+Tu tarea es analizar una interacción y producir cuatro dimensiones:
 
-1. El sentimiento principal.
-2. El tema principal.
-3. El subtema específico.
-4. El tipo real de interacción.
+1. sentimiento
+2. tema_principal
+3. subtema
+4. tipo_detectado
+
+
+# PRINCIPIO GENERAL
+
+Las cuatro dimensiones son independientes.
+
+No utilices automáticamente una clasificación para determinar otra.
+
+Por ejemplo:
+
+- que un mensaje sea una pregunta no determina su tema;
+- que trate sobre el programa no determina su sentimiento;
+- que mencione una tecnología no implica que su tema principal sea programación;
+- que ocurra dentro de una comunidad no implica que su tema sea comunidad.
+
+Analiza cada dimensión según su propia definición.
 
 
 # SENTIMIENTO
@@ -29,33 +44,73 @@ Utiliza únicamente:
 - negativo
 - muy_negativo
 
-Criterios:
-
 muy_positivo:
-Expresa entusiasmo, satisfacción o agradecimiento intenso,
-normalmente asociado a un logro o impacto importante.
+Expresa entusiasmo, satisfacción, agradecimiento o valoración favorable
+de intensidad alta, normalmente asociada a un logro, impacto o experiencia
+especialmente significativa.
 
 positivo:
-Expresa satisfacción, aprobación o una valoración favorable.
+Expresa satisfacción, aprobación, agrado o una valoración favorable clara.
 
 neutral:
-Mensaje principalmente informativo o sin emoción clara.
+No presenta una valoración emocional clara o su objetivo principal es
+informar, preguntar, describir una situación o proponer algo sin expresar
+satisfacción ni insatisfacción.
 
 negativo:
-Expresa insatisfacción, frustración, crítica o dificultad.
+Expresa insatisfacción, frustración, crítica, molestia o dificultad clara.
 
 muy_negativo:
-Expresa rechazo, frustración o insatisfacción intensa.
+Expresa rechazo, frustración, insatisfacción o valoración negativa intensa.
+
+Reglas:
+
+- Los mensajes puramente informativos son neutral.
+- Completar una actividad no implica por sí mismo sentimiento positivo.
+- Una sugerencia o propuesta de mejora no determina por sí sola
+  sentimiento positivo o negativo.
+- Si se propone un cambio sin expresar satisfacción o insatisfacción clara,
+  utiliza neutral.
+- Clasifica según la valoración emocional expresada, no según el tema.
+- Que un mensaje sea una sugerencia o propuesta no elimina una valoración
+  emocional explícita que aparezca en el mismo mensaje.
+
+## INTENSIDAD DEL SENTIMIENTO
+
+Distingue la polaridad de su intensidad.
+
+- positivo requiere una valoración favorable clara.
+  Una aprobación, mejora percibida o beneficio explícito puede ser positivo
+  aunque el mensaje también contenga una sugerencia o propuesta.
+
+- muy_positivo se reserva para valoraciones favorables de intensidad alta.
+  Requiere entusiasmo, gratitud intensa, satisfacción excepcional
+  o un impacto personal claramente significativo.
+  No utilices muy_positivo únicamente porque exista un resultado favorable.
+
+- negativo requiere una valoración desfavorable clara, como molestia,
+  frustración, dificultad, decepción o insatisfacción.
+
+- muy_negativo se reserva para una intensidad negativa claramente alta:
+  rechazo fuerte, frustración extrema, indignación, insatisfacción severa
+  o consecuencias especialmente graves.
+  Una dificultad, error o molestia por sí sola no implica muy_negativo.
+
+- neutral debe utilizarse solamente cuando no exista una valoración
+  emocional o evaluativa clara.
 
 IMPORTANTE:
-- Clasifica como neutral los mensajes puramente informativos.
-- No interpretes automáticamente completar una actividad
-  como sentimiento positivo.
-
+No aumentes la intensidad únicamente por la presencia de un problema,
+logro, resultado o consecuencia. La intensidad debe estar expresada
+o ser inequívocamente evidente en el mensaje.
 
 # TEMA PRINCIPAL
 
-tema_principal debe utilizar únicamente una de estas categorías:
+tema_principal responde a:
+
+"¿Sobre qué trata principalmente el mensaje?"
+
+Utiliza únicamente:
 
 - empleabilidad
 - aprendizaje
@@ -69,48 +124,137 @@ tema_principal debe utilizar únicamente una de estas categorías:
 - programa_hackathon
 - otros
 
-Agrupa conceptos equivalentes bajo una misma categoría general.
 
-Ejemplos:
+## DEFINICIÓN DE CATEGORÍAS
 
-"Conseguí mi primer trabajo como desarrollador"
-→ tema_principal: empleabilidad
+empleabilidad:
+Acceso al trabajo, búsqueda de empleo, postulaciones, entrevistas,
+contratación, experiencia profesional, desarrollo de carrera,
+prácticas profesionales u oportunidades laborales.
 
-"No entiendo los nodos condicionales de LangGraph"
-→ tema_principal: datos_ia
+aprendizaje:
+Proceso de aprender, estudiar, practicar, comprender contenidos,
+avanzar en una formación o desarrollar habilidades.
+Utiliza esta categoría cuando el aprendizaje mismo sea el asunto central
+y no exista un dominio temático más específico.
 
-"Estoy practicando estructuras de datos en Python"
-→ tema_principal: programacion
+programacion:
+Código, lenguajes de programación, algoritmos, estructuras de datos,
+librerías, APIs, depuración, errores de implementación o desarrollo
+de software.
 
-"La plataforma se cae constantemente"
-→ tema_principal: plataforma
+datos_ia:
+Ciencia de datos, análisis de datos, machine learning,
+inteligencia artificial, modelos, agentes, LLM, RAG,
+procesamiento de datos o herramientas propias de estos dominios.
 
-"Los mentores siempre responden nuestras dudas"
-→ tema_principal: mentoria
+plataforma:
+Funcionamiento, acceso, disponibilidad, rendimiento, usabilidad
+o incidencias de una plataforma o servicio utilizado por la comunidad.
+
+comunidad:
+Interacción entre participantes, colaboración, networking,
+ambiente grupal, participación o dinámica colectiva de la comunidad.
+
+mentoria:
+Orientación, acompañamiento, seguimiento, apoyo, retroalimentación
+o interacción con mentores, tutores o personas que cumplen esa función.
+
+cloud_infraestructura:
+Infraestructura tecnológica, servicios cloud, despliegue,
+alojamiento, recursos de cómputo, redes, almacenamiento
+o ejecución de aplicaciones y modelos en infraestructura remota.
+
+certificacion:
+Certificaciones, acreditaciones, credenciales, insignias,
+exámenes de certificación o reconocimiento formal de competencias.
+
+programa_hackathon:
+Organización y funcionamiento del programa o hackathon:
+reglas, etapas, cronograma, participación, condiciones,
+beneficios, actividades, alianzas o estructura general de la iniciativa.
+
+otros:
+Asuntos cuyo tema principal no puede representarse adecuadamente
+mediante ninguna de las categorías anteriores.
+
+
+## DESAMBIGUACIÓN DEL TEMA
+
+Cuando varias categorías parezcan posibles:
+
+1. Identifica primero el asunto central y la intención del mensaje.
+2. Evalúa el contexto completo, no palabras aisladas.
+3. Distingue entre el tema principal y elementos mencionados
+   solamente como contexto.
+4. Prefiere la categoría que describa con mayor precisión
+   el objeto principal del mensaje.
+5. Una categoría más específica debe prevalecer sobre una más general
+   cuando represente realmente el asunto central.
+6. No conviertas el contexto de la conversación en el tema.
+
+Fronteras importantes:
+
+- aprendizaje describe el proceso de aprender;
+  programacion y datos_ia describen dominios técnicos concretos.
+
+- programacion describe desarrollo de software;
+  cloud_infraestructura describe ejecución, despliegue
+  e infraestructura tecnológica.
+
+- plataforma describe el funcionamiento del servicio utilizado;
+  cloud_infraestructura describe la infraestructura técnica.
+
+- comunidad describe la dinámica entre participantes;
+  mentoria describe específicamente la relación con mentores o tutores.
+
+- programa_hackathon describe la iniciativa y su funcionamiento;
+  certificacion y empleabilidad deben utilizarse cuando esos asuntos
+  constituyan el foco real del mensaje.
+
+- La presencia de participantes, canales o conversaciones sociales
+  no convierte automáticamente el tema en comunidad.
+
+- Usa otros cuando el asunto central quede realmente fuera
+  de la taxonomía.
+
+- mentoria frente a programa_hackathon:
+  Si aspectos como disponibilidad, horarios, espacios o mecanismos de acceso
+  se refieren específicamente a la interacción con mentores o tutores,
+  el tema principal es mentoria.
+  Usa programa_hackathon cuando esos aspectos describan la organización
+  general de la iniciativa y no una relación de mentoría concreta.
+
+- comunidad frente a otros:
+  comunidad requiere que la interacción, colaboración, participación
+  o dinámica colectiva sea el asunto central del mensaje.
+  La simple presencia de miembros de la comunidad o una interacción social
+  incidental no convierte el tema en comunidad.
+  Si el contenido es social, personal o recreativo pero no trata sobre
+  la dinámica de la comunidad, utiliza otros.
+
+No clasifiques mediante coincidencias simples de palabras clave.
 
 
 # SUBTEMA
 
-subtema debe conservar el detalle específico del mensaje.
+subtema responde a:
 
-Debe ser:
-- breve;
-- descriptivo;
-- preferentemente entre 1 y 5 palabras.
+"¿Qué aspecto específico del tema principal aparece en el mensaje?"
 
-Ejemplos:
+Debe:
 
-tema_principal: empleabilidad
-subtema: primer empleo de analista de datos
-
-tema_principal: datos_ia
-subtema: nodos de LangGraph
-
-tema_principal: programacion
-subtema: ejercicios de Python
+- conservar el detalle relevante;
+- ser breve y descriptivo;
+- preferentemente tener entre 1 y 5 palabras;
+- no introducir información que no aparezca en el mensaje.
 
 
 # TIPO DE INTERACCIÓN
+
+tipo_detectado responde a:
+
+"¿Qué función comunicativa realiza principalmente el mensaje?"
 
 Utiliza únicamente:
 
@@ -120,205 +264,150 @@ Utiliza únicamente:
 - feedback
 - comentario
 
+
 testimonio:
-Mensaje en primera persona donde alguien relata una experiencia
-personal que produjo un resultado, transformación, hito o impacto
-relevante gracias al programa, curso, comunidad o aprendizaje.
+La persona relata una experiencia propia con un resultado,
+transformación, hito o impacto concreto.
 
-Ejemplos:
-- conseguir empleo;
-- cambiar de carrera;
-- aprender algo que antes parecía difícil;
-- aplicar conocimientos en un proyecto real;
-- completar un proyecto importante;
-- explicar cómo el programa produjo un impacto personal concreto.
+Puede incluir empleo, cambio profesional, aprendizaje aplicado,
+proyectos realizados u otros resultados personales.
 
-Si un mensaje contiene al mismo tiempo una valoración del curso
-y una transformación personal concreta, prioriza testimonio.
-
+Si existe una transformación o resultado personal concreto,
+puede ser testimonio aunque también incluya una valoración.
 
 pregunta_tecnica:
-Pregunta cuya intención principal es resolver una duda técnica
-relacionada con programación, datos, inteligencia artificial,
-código, herramientas, infraestructura o implementación.
+La intención principal es resolver una duda técnica.
 
-Ejemplos:
-- errores de código;
-- uso de Python o SQL;
-- configuración de LangGraph;
-- comportamiento de un modelo;
-- herramientas de datos o IA.
+Incluye programación, datos, inteligencia artificial,
+herramientas, modelos, infraestructura, configuración
+o implementación.
 
-IMPORTANTE:
-Preguntas administrativas, académicas o informativas sobre el
-programa NO son pregunta_tecnica.
 
 pregunta_programa:
-Pregunta cuya intención principal es obtener información sobre
-el programa, curso, comunidad o institución, pero que no requiere
-resolver un problema técnico.
+La intención principal es obtener información administrativa,
+académica, institucional u organizativa sobre el programa,
+curso, comunidad o hackathon.
 
-Incluye preguntas sobre:
-- certificados y costos;
-- fechas e inscripciones;
-- horarios;
-- grabaciones y acceso a clases;
-- rutas o especialidades del programa;
-- prácticas profesionales;
-- alianzas con empresas;
-- beneficios o funcionamiento general del programa.
-
-Ejemplos:
-- "¿El certificado final tiene costo adicional?"
-- "¿Hasta cuándo puedo inscribirme al hackathon?"
-- "¿Cómo puedo acceder a las grabaciones?"
-- "¿Cuál es la diferencia entre Data Analyst y Data Scientist?"
-- "¿Tienen alianzas con empresas para prácticas profesionales?"
+Puede referirse a fechas, horarios, acceso, certificados,
+costos, prácticas profesionales, alianzas, beneficios,
+rutas o funcionamiento general.
 
 IMPORTANTE:
-No clasifiques como pregunta_programa una duda de código,
-herramientas, datos, IA o implementación. Esos casos deben ser
-pregunta_tecnica.
+pregunta_programa describe el tipo de pregunta,
+no necesariamente su tema_principal.
+
+Una pregunta sobre prácticas profesionales puede tener:
+tipo_detectado = pregunta_programa
+tema_principal = empleabilidad
+
+Una pregunta sobre certificados puede tener:
+tipo_detectado = pregunta_programa
+tema_principal = certificacion
+
 
 feedback:
-Mensaje cuyo objetivo principal es señalar una mejora, problema,
-crítica, sugerencia o aspecto que debería modificarse en el curso,
-plataforma, comunidad o experiencia.
+La intención principal es señalar un problema, dificultad,
+crítica, sugerencia, propuesta de mejora o aspecto que debería revisarse.
 
-Un elogio general sin sugerencia, crítica o propuesta de mejora
-no debe clasificarse automáticamente como feedback.
+Una valoración positiva sin crítica, sugerencia o propuesta
+no constituye por sí sola feedback.
 
 
 comentario:
-Observación, reacción, felicitación, elogio o información general
-que no presenta una transformación personal relevante, una pregunta
-técnica, una pregunta sobre el programa ni una sugerencia concreta.
-
-Los elogios generales como:
-- "Buen material"
-- "Excelente iniciativa"
-- "Los mentores responden rápido"
-
-deben clasificarse como comentario si no contienen una propuesta
-de mejora, una pregunta o una historia personal de impacto.
+Observación, reacción, felicitación, elogio, opinión o información general
+que no constituye testimonio, pregunta técnica, pregunta de programa
+ni feedback.
 
 
-# EJEMPLOS DE CLASIFICACIÓN
+# EJEMPLOS DE REFERENCIA
 
+Estos ejemplos ilustran cómo aplicar las cuatro dimensiones.
+No los copies literalmente ni clasifiques por coincidencia de palabras.
+
+Ejemplo 1
 Mensaje:
-"Gracias al proyecto que desarrollé durante el curso conseguí
-mi primer empleo como desarrollador."
+"¿El programa ofrece orientación para prepararnos para entrevistas laborales?"
 
-Resultado:
-sentimiento: muy_positivo
+sentimiento: neutral
 tema_principal: empleabilidad
-subtema: primer empleo desarrollador
-tipo_detectado: testimonio
+subtema: preparación para entrevistas
+tipo_detectado: pregunta_programa
 
-
+Ejemplo 2
 Mensaje:
-"No entiendo cómo crear nodos condicionales en LangGraph.
-¿Alguien podría ayudarme?"
+"¿Cuándo estará disponible la evaluación para obtener la credencial?"
 
-Resultado:
-sentimiento: neutral
-tema_principal: datos_ia
-subtema: nodos de LangGraph
-tipo_detectado: pregunta_tecnica
-
-
-Mensaje:
-"La plataforma se cae constantemente y deberían mejorar
-la estabilidad."
-
-Resultado:
-sentimiento: negativo
-tema_principal: plataforma
-subtema: estabilidad de plataforma
-tipo_detectado: feedback
-
-
-Mensaje:
-"Hoy terminé el módulo de Python y mañana comenzaré SQL."
-
-Resultado:
-sentimiento: neutral
-tema_principal: aprendizaje
-subtema: progreso de estudio
-tipo_detectado: comentario
-
-
-Mensaje:
-"Buen material el de la última clase, los ejemplos fueron muy claros."
-
-Resultado:
-sentimiento: positivo
-tema_principal: aprendizaje
-subtema: material de clase
-tipo_detectado: comentario
-
-
-Mensaje:
-"Sería bueno agregar más ejercicios de Python antes de pasar
-al siguiente módulo."
-
-Resultado:
-sentimiento: neutral
-tema_principal: programacion
-subtema: ejercicios de Python
-tipo_detectado: feedback
-
-
-Mensaje:
-"Nunca pensé que podría aprender SQL y Python al mismo tiempo,
-pero la metodología del curso lo hizo posible."
-
-Resultado:
-sentimiento: muy_positivo
-tema_principal: aprendizaje
-subtema: SQL y Python
-tipo_detectado: testimonio
-
-
-Mensaje:
-"¿El certificado final tiene costo adicional?"
-
-Resultado:
 sentimiento: neutral
 tema_principal: certificacion
-subtema: costo del certificado
+subtema: evaluación de credencial
 tipo_detectado: pregunta_programa
 
-
+Ejemplo 3
 Mensaje:
-"¿Cómo puedo acceder a las grabaciones si me perdí una sesión?"
+"¿Por qué mi aplicación funciona localmente pero falla cuando intento desplegarla en una instancia remota?"
 
-Resultado:
 sentimiento: neutral
-tema_principal: plataforma
-subtema: acceso a grabaciones
-tipo_detectado: pregunta_programa
+tema_principal: cloud_infraestructura
+subtema: despliegue en instancia
+tipo_detectado: pregunta_tecnica
 
+Ejemplo 4
+Mensaje:
+"Me gustó la orientación que recibí del tutor durante la revisión."
+
+sentimiento: positivo
+tema_principal: mentoria
+subtema: orientación del tutor
+tipo_detectado: comentario
+
+Ejemplo 5
+Mensaje:
+"Deberían incluir más ejercicios para practicar manejo de excepciones."
+
+sentimiento: neutral
+tema_principal: programacion
+subtema: ejercicios de excepciones
+tipo_detectado: feedback
+
+Ejemplo 6
+Mensaje:
+"¿Alguien recomienda alguna película para este fin de semana?"
+
+sentimiento: neutral
+tema_principal: otros
+subtema: recomendaciones de películas
+tipo_detectado: comentario
 
 # METADATOS
 
-Además del mensaje recibirás:
+También recibirás:
 
 - origen
 - canal
 - idioma
-- tipo_original
 
-Estos datos sirven como contexto.
+Los metadatos proporcionan contexto, pero no sustituyen
+el análisis semántico del contenido.
 
-El campo tipo_original corresponde a la clasificación preliminar
-proveniente del equipo de Datos.
+tipo_detectado debe ser tu clasificación semántica independiente.
 
-NO copies automáticamente tipo_original.
-Realiza siempre tu propia clasificación semántica del mensaje.
+# CRITERIO FINAL
 
-El contenido del mensaje tiene prioridad sobre tipo_original
-si existe una discrepancia.
+Antes de responder, verifica mentalmente:
+
+- sentimiento:
+  ¿qué valoración emocional expresa?
+
+- tema_principal:
+  ¿sobre qué trata principalmente?
+
+- subtema:
+  ¿qué aspecto concreto del tema describe?
+
+- tipo_detectado:
+  ¿qué función comunicativa realiza?
+
+No mezcles las respuestas entre estas cuatro preguntas.
             """,
         ),
         (
@@ -329,7 +418,6 @@ Analiza la siguiente interacción:
 Origen: {origen}
 Canal: {canal}
 Idioma: {idioma}
-Tipo original: {tipo_original}
 
 Mensaje:
 {texto}

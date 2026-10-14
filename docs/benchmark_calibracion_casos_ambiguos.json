@@ -1,0 +1,104 @@
+{
+  "tipo_evaluacion": "exploratoria_cualitativa_casos_ambiguos",
+  "objetivo": "Observar estabilidad y diferencias semánticas entre proveedores bajo los mismos casos ambiguos.",
+  "es_ground_truth_humano": false,
+  "permite_concluir_superioridad_proveedor": false,
+  "sin_fallback": true,
+  "tipo_original_enviado_al_llm": false,
+  "ruta_analisis": "analisis",
+  "tier_nvidia": "estandar",
+  "configuracion_experimental": {
+    "timeout_nvidia_benchmark_segundos": 30.0,
+    "timeout_productivo_modificado": false
+  },
+  "proveedores": {
+    "nvidia_nim": {
+      "modelo_ejecutado": "google/gemma-4-31b-it"
+    },
+    "gemini": {
+      "modelo_ejecutado": "gemini-3.5-flash-lite"
+    }
+  },
+  "trazabilidad_codigo": {
+    "commit_head": "eeae694",
+    "working_tree_con_cambios": true
+  },
+  "resumen_ejecucion": {
+    "total_casos": 4,
+    "respuestas_validas_nvidia": 4,
+    "respuestas_validas_gemini": 3,
+    "comparaciones_completas": 3,
+    "ejecucion_completa": false
+  },
+  "resultados": [
+    {
+      "id": "int-006",
+      "autor": "Ricardo Mena",
+      "texto": "Sería genial tener más talleres prácticos sobre despliegue de modelos en la nube antes del hackathon.",
+      "dilema": "¿Sentimiento neutral o positivo? ¿Tema cloud_infraestructura o programa_hackathon?",
+      "evaluacion_nvidia": {
+        "sentimiento": "neutral",
+        "tema_principal": "cloud_infraestructura",
+        "subtema": "talleres de despliegue de modelos",
+        "tipo_detectado": "feedback"
+      },
+      "evaluacion_gemini": {
+        "sentimiento": "neutral",
+        "tema_principal": "cloud_infraestructura",
+        "subtema": "talleres de despliegue",
+        "tipo_detectado": "feedback"
+      }
+    },
+    {
+      "id": "int-011",
+      "autor": "Gabriela Núñez",
+      "texto": "El networking que generé en este programa me abrió puertas para colaborar en proyectos open source.",
+      "dilema": "¿Tema comunidad o empleabilidad? ¿Sentimiento positivo o muy_positivo?",
+      "evaluacion_nvidia": {
+        "sentimiento": "positivo",
+        "tema_principal": "comunidad",
+        "subtema": "networking y proyectos open source",
+        "tipo_detectado": "testimonio"
+      },
+      "evaluacion_gemini": {
+        "sentimiento": "positivo",
+        "tema_principal": "comunidad",
+        "subtema": "networking y proyectos open source",
+        "tipo_detectado": "testimonio"
+      }
+    },
+    {
+      "id": "int-016",
+      "autor": "Isabel Quiroga",
+      "texto": "Nunca pensé que podría aprender SQL y Python al mismo tiempo, pero la metodología del curso lo hizo posible.",
+      "dilema": "¿Sentimiento positivo o muy_positivo? ¿Tema aprendizaje o programación?",
+      "evaluacion_nvidia": {
+        "sentimiento": "muy_positivo",
+        "tema_principal": "aprendizaje",
+        "subtema": "metodología de aprendizaje",
+        "tipo_detectado": "testimonio"
+      },
+      "evaluacion_gemini": {
+        "error": "GoogleAPIError"
+      }
+    },
+    {
+      "id": "int-020",
+      "autor": "Lucía Paredes",
+      "texto": "Sugiero agregar más ejercicios prácticos antes de pasar al módulo de estructuras de datos, se siente un salto grande.",
+      "dilema": "¿Sentimiento negativo o neutral? ¿Sugerencia feedback o comentario?",
+      "evaluacion_nvidia": {
+        "sentimiento": "neutral",
+        "tema_principal": "aprendizaje",
+        "subtema": "ejercicios prácticos",
+        "tipo_detectado": "feedback"
+      },
+      "evaluacion_gemini": {
+        "sentimiento": "neutral",
+        "tema_principal": "aprendizaje",
+        "subtema": "ejercicios prácticos",
+        "tipo_detectado": "feedback"
+      }
+    }
+  ]
+}

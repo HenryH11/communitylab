@@ -18,12 +18,17 @@ from langchain_core.runnables import RunnableConfig
 RAIZ = Path(__file__).resolve().parents[2]
 LOGGER = logging.getLogger("communitylab.ciencia_datos")
 NOMBRE_ARCHIVO_LOG = "ciencia_datos.jsonl"
-_CAMPOS_METADATA = ("etapa", "intento", "id_interaccion", "ids_interaccion", "ruta")
+_CAMPOS_METADATA = ("etapa", "intento", "id_interaccion", "ids_interaccion", "ruta", "tier")
 _CAMPOS_TOKENS = ("input_tokens", "output_tokens", "total_tokens")
 
 _id_ejecucion: ContextVar[str | None] = ContextVar("id_ejecucion", default=None)
 _ruta_log: Path | None = None
 _bloqueo_configuracion = threading.Lock()
+
+_contexto_llamada_ia: ContextVar[dict[str, object] | None] = ContextVar(
+    "contexto_llamada_ia",
+    default=None,
+)
 
 
 class FormateadorJson(logging.Formatter):
@@ -99,6 +104,40 @@ def contexto_ejecucion(id_ejecucion: str | None = None):
         yield identificador
     finally:
         _id_ejecucion.reset(token)
+
+
+@contextmanager
+def contexto_llamada_ia(
+    *,
+    id_interaccion: str | None = None,
+    ids_interaccion: list[str] | None = None,
+    ruta: str | None = None,
+):
+    """Propaga correlación de una llamada IA sin alterar firmas públicas."""
+    contexto = {}
+
+    if id_interaccion is not None:
+        contexto["id_interaccion"] = id_interaccion
+
+    if ids_interaccion is not None:
+        contexto["ids_interaccion"] = list(ids_interaccion)
+
+    if ruta is not None:
+        contexto["ruta"] = ruta
+
+    token = _contexto_llamada_ia.set(contexto)
+
+    try:
+        yield
+    finally:
+        _contexto_llamada_ia.reset(token)
+
+
+def obtener_contexto_llamada_ia() -> dict[str, object]:
+    """Devuelve una copia segura del contexto de correlación activo."""
+    return dict(
+        _contexto_llamada_ia.get() or {}
+    )
 
 
 def _contexto_desde_metadata(metadata: dict | None) -> dict:
@@ -201,6 +240,7 @@ def config_ejecucion(
     id_interaccion: str | None = None,
     ids_interaccion: list[str] | None = None,
     ruta: str | None = None,
+    tier: str | None = None,
 ) -> RunnableConfig:
     """Config de LangChain con callback y metadatos para correlacionar logs."""
     metadata: dict[str, object] = {"etapa": etapa, "intento": intento}
@@ -210,6 +250,8 @@ def config_ejecucion(
         metadata["ids_interaccion"] = list(ids_interaccion)
     if ruta is not None:
         metadata["ruta"] = ruta
+    if tier is not None:
+        metadata["tier"] = tier
 
     return {
         "callbacks": [MANEJADOR_OBSERVABILIDAD],

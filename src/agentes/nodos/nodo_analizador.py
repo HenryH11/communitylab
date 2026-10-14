@@ -10,13 +10,16 @@ from src.agentes.reintentos import (
     ejecutar_con_reintentos,
 )
 
+from src.agentes.configuracion_ia import (
+    PROVEEDOR_NVIDIA_NIM,
+    obtener_proveedor_analisis,
+)
 
 def _entrada_analisis(estado: EstadoAgente) -> dict:
     return {
         "origen": estado.get("origen", ""),
         "canal": estado.get("canal", ""),
         "idioma": estado.get("idioma", "es"),
-        "tipo_original": estado.get("tipo_original", ""),
         "texto": estado["texto"],
     }
 
@@ -65,6 +68,7 @@ def _analizar_individualmente(estado: EstadoAgente) -> dict:
                 "etapa": "analizar_mensaje",
                 "id_interaccion": identificador,
             },
+            max_intentos=_max_intentos_externos(),
         )
     except Exception as error:
         return _error_analisis("analizar_mensaje", error, identificador)
@@ -151,7 +155,11 @@ def analizar_lote(estados: list[EstadoAgente]) -> list[dict]:
     try:
         respuesta = ejecutar_con_reintentos(
             invocar,
-            contexto={"etapa": "analizar_lote", "ids_interaccion": ids_lote},
+            contexto={
+                "etapa": "analizar_lote",
+                "ids_interaccion": ids_lote,
+            },
+            max_intentos=_max_intentos_externos(),
         )
     except Exception as error:
         return [
@@ -191,3 +199,19 @@ def analizar_lote(estados: list[EstadoAgente]) -> list[dict]:
         resultados.append(resultado)
 
     return resultados
+
+
+def _max_intentos_externos() -> int | None:
+    """
+    NVIDIA controla sus intentos dentro del fallback.
+
+    Gemini mantiene la política histórica de reintentos
+    de la aplicación.
+    """
+    if (
+        obtener_proveedor_analisis()
+        == PROVEEDOR_NVIDIA_NIM
+    ):
+        return 1
+
+    return None

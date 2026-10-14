@@ -3,54 +3,63 @@
 import argparse
 from copy import deepcopy
 from datetime import datetime, timezone
-import html
 import json
 from pathlib import Path
-import re
 import time
 from typing import TYPE_CHECKING, cast
-import unicodedata
 
 if TYPE_CHECKING:
     from src.agentes.estado_agente import EstadoAgente
 
 if __package__:
     from .relevancia import TIPOS, ConfiguracionRelevancia, leer_fecha, seleccionar_lote
+    from .limpieza import (
+        ETIQUETAS,
+        _CATEGORIAS_CONTROL,
+        _texto_visible,
+        caracteres_especiales_preservados,
+        contar_caracteres_no_ascii,
+        detectar_mojibake,
+        estimar_tokens,
+        limpiar_texto,
+        reparar_mojibake,
+    )
+    from .ciclos_transporte import (
+        _CAMPOS_CONTRATO_NELSON,
+        _CARACTERES_NO_SEGUROS_ARCHIVO,
+        _interaccion_para_entrega,
+        _nombre_seguro,
+        construir_ciclos,
+        guardar_ciclos,
+        validar_destino_ciclos,
+        validar_tamano_ciclo,
+    )
 else:
     from relevancia import TIPOS, ConfiguracionRelevancia, leer_fecha, seleccionar_lote
+    from limpieza import (
+        ETIQUETAS,
+        _CATEGORIAS_CONTROL,
+        _texto_visible,
+        caracteres_especiales_preservados,
+        contar_caracteres_no_ascii,
+        detectar_mojibake,
+        estimar_tokens,
+        limpiar_texto,
+        reparar_mojibake,
+    )
+    from ciclos_transporte import (
+        _CAMPOS_CONTRATO_NELSON,
+        _CARACTERES_NO_SEGUROS_ARCHIVO,
+        _interaccion_para_entrega,
+        _nombre_seguro,
+        construir_ciclos,
+        guardar_ciclos,
+        validar_destino_ciclos,
+        validar_tamano_ciclo,
+    )
 
 
 RAIZ = Path(__file__).resolve().parents[2]
-# Lista acotada: conserva expresiones técnicas como a < b y tipos como <T>.
-ETIQUETAS = re.compile(
-    r"</?(?:p|div|span|br|a|b|strong|em|i|ul|ol|li|pre|code|blockquote|h[1-6])\b[^>]*>",
-    re.IGNORECASE,
-)
-_CARACTERES_NO_SEGUROS_ARCHIVO = re.compile(r"[^A-Za-z0-9_-]+")
-
-
-def _nombre_seguro(texto):
-    """Reduce un campo de datos (origen_comunidad, periodo_referencia) a algo
-    seguro para usar en un nombre de archivo: solo letras/números/guiones. Evita
-    que un valor con `/` o `..` escriba fuera del directorio de ciclos."""
-    limpio = _CARACTERES_NO_SEGUROS_ARCHIVO.sub("_", texto).strip("_")
-    return limpio or "sin_nombre"
-
-
-def _texto_visible(texto):
-    """Decodifica HTML y elimina solo el marcado que la limpieza admite."""
-    texto = unicodedata.normalize("NFC", html.unescape(texto))
-    texto = re.sub(r"<(script|style)\b[^>]*>.*?</\1\s*>", " ", texto, flags=re.I | re.S)
-    return ETIQUETAS.sub(" ", texto)
-
-
-def limpiar_texto(texto):
-    texto = _texto_visible(texto)
-    texto = "".join(
-        " " if unicodedata.category(c) == "Cc" or c == "\ufffd" else c
-        for c in texto if c not in {"\u200b", "\ufeff"}
-    )
-    return " ".join(texto.split())
 
 
 def _cadena(objeto, campo, ruta, vacia=False):
@@ -102,50 +111,6 @@ def validar_y_limpiar(datos):
             for campo in ("autor", "canal"):
                 _cadena(mensaje, campo, ubicacion)
     return resultado
-
-
-def estimar_tokens(texto):
-    """Aproxima el consumo de tokens de un texto (~4 caracteres por token).
-
-    Solo estima el texto. No incluye prompts, metadatos, respuestas ni
-    reintentos, por lo que no representa cuota ni facturación de Gemini.
-    """
-    return max(1, round(len(texto) / 4)) if texto else 0
-
-
-_CATEGORIAS_CONTROL = {"Cc", "Cf"}
-
-
-def contar_caracteres_no_ascii(texto):
-    """Cuenta caracteres no ASCII 'significativos' (tildes, ñ, emojis, etc.),
-
-    excluyendo control/formato invisibles. Es un conteo auxiliar, no una
-    garantía de conservación del texto.
-    """
-    return sum(
-        1 for c in texto
-        if ord(c) > 127 and unicodedata.category(c) not in _CATEGORIAS_CONTROL
-    )
-
-
-def caracteres_especiales_preservados(original, limpio):
-    """Compara identidad y orden de Unicode visible, normalizado a NFC.
-
-    Admite la retirada de HTML, scripts, controles y espacios. Conserva los
-    unidores de emojis. U+FFFD avisa de una pérdida previa de información.
-    No detecta todos los casos posibles de texto previamente mal decodificado.
-    """
-    visible = _texto_visible(original)
-    if "\ufffd" in visible or "\ufffd" in limpio:
-        return False
-
-    def secuencia(texto):
-        return [c for c in unicodedata.normalize("NFC", texto)
-                if ord(c) > 127 and not c.isspace()
-                and unicodedata.category(c) != "Cc"
-                and c not in {"\u200b", "\ufeff"}]
-
-    return secuencia(visible) == secuencia(limpio)
 
 
 def actualizar_totales_rendimiento(rendimiento):
@@ -309,132 +274,6 @@ def construir_estados_agente(salida, informe, *, poblacion="contenido"):
     if recibidos != esperados:
         raise ValueError("Faltan IDs de la población indicada por el informe")
     return estados
-
-
-_CAMPOS_CONTRATO_NELSON = ("id", "autor", "canal", "tipo", "texto", "fecha", "idioma")
-
-
-def _interaccion_para_entrega(interaccion, *, permitir_texto_vacio=False):
-    """Proyecta una interacción ya depurada al contrato oficial de Nelson
-    (`docs/arquitectura-solucion/contrato-intermedio-ingesta.schema.json`):
-    exactamente `id`/`autor`/`canal`/`tipo`/`texto`/`fecha`/`idioma`, los siete
-    obligatorios y sin campos adicionales (`additionalProperties: false`). Los
-    campos internos nuestros (o cualquier extensión ajena) no cruzan esta
-    frontera. Falla si falta alguno — en el conjunto_datos real de hoy los siete están
-    presentes en el 100% de los casos, así que cumplirlo no cuesta nada."""
-    faltantes = [campo for campo in _CAMPOS_CONTRATO_NELSON if campo not in interaccion]
-    if faltantes:
-        raise ValueError(
-            "Interacción sin los campos obligatorios del contrato de entrega "
-            f"({', '.join(_CAMPOS_CONTRATO_NELSON)}): faltan {', '.join(faltantes)}"
-        )
-    for campo in _CAMPOS_CONTRATO_NELSON:
-        _cadena(interaccion, campo, "interaccion", vacia=campo == "texto" and permitir_texto_vacio)
-    if interaccion["tipo"] not in TIPOS:
-        raise ValueError("Tipo no admitido en la entrega")
-    if interaccion["id"] != interaccion["id"].strip():
-        raise ValueError("ID con espacios exteriores")
-    fecha = interaccion["fecha"]
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)", fecha):
-        raise ValueError("fecha debe ser ISO 8601 completa con zona horaria")
-    try:
-        leer_fecha(fecha)
-    except ValueError as error:
-        raise ValueError("fecha inválida en la entrega") from error
-    return {campo: interaccion[campo] for campo in _CAMPOS_CONTRATO_NELSON}
-
-
-def validar_tamano_ciclo(tamano):
-    if type(tamano) is not int or not 10 <= tamano <= 30:
-        raise ValueError("tamano_ciclo debe ser un entero entre 10 y 30")
-
-
-def construir_ciclos(salida, tamano_ciclo):
-    """Exporta fragmentos planos por origen, conservando el orden recibido.
-
-    N debe estar entre 10 y 30; un fragmento final puede tener menos de 10.
-    Estos archivos son transporte, no los ciclos operativos: esos se definen
-    en construir_plan_procesamiento. Cada interacción tiene siete campos válidos
-    e ID único en la entrega. Un lote vacío no genera archivos.
-    """
-    validar_tamano_ciclo(tamano_ciclo)
-    datos = validar_y_limpiar(salida)
-    lotes = datos["lotes"] if "lotes" in datos else [datos]
-    ciclos = []
-    vistos = set()
-    for lote_indice, lote in enumerate(lotes):
-        interacciones = lote["interacciones"]
-        origen = _nombre_seguro(lote["origen_comunidad"])
-        periodo = _nombre_seguro(lote["periodo_referencia"])
-        for ciclo_indice, inicio in enumerate(range(0, len(interacciones), tamano_ciclo)):
-            fragmento = [_interaccion_para_entrega(i) for i in interacciones[inicio:inicio + tamano_ciclo]]
-            for mensaje in fragmento:
-                if mensaje["id"] in vistos:
-                    raise ValueError("IDs repetidos en la entrega")
-                vistos.add(mensaje["id"])
-            ciclos.append({
-                "archivo": f"{origen}_{periodo}_lote{lote_indice}_ciclo{ciclo_indice}.json",
-                "contenido": {
-                    "origen_comunidad": lote["origen_comunidad"],
-                    "periodo_referencia": lote["periodo_referencia"],
-                    "interacciones": fragmento,
-                },
-                "lote_indice": lote_indice,
-                "ciclo_indice": ciclo_indice,
-                "cantidad": len(fragmento),
-            })
-    return ciclos
-
-
-def validar_destino_ciclos(directorio_ciclos, ciclos):
-    """Comprueba rutas y propiedad de archivos antes de escribir o retirar nada."""
-    directorio_ciclos = Path(directorio_ciclos).resolve()
-    raiz_salida = (RAIZ / "salida").resolve()
-    if raiz_salida not in directorio_ciclos.parents:
-        raise ValueError("directorio_ciclos debe estar dentro de salida/")
-    if directorio_ciclos.exists() and not directorio_ciclos.is_dir():
-        raise ValueError("El destino de ciclos no es un directorio")
-    def ruta_archivo(nombre):
-        if not isinstance(nombre, str) or not re.fullmatch(r"[A-Za-z0-9_-]+_lote\d+_ciclo\d+\.json", nombre):
-            raise ValueError("Nombre de fragmento inválido")
-        ruta = directorio_ciclos / nombre
-        if ruta.is_symlink() or ruta.resolve().parent != directorio_ciclos or (ruta.exists() and not ruta.is_file()):
-            raise ValueError("Ruta de fragmento no segura")
-        return ruta
-    ruta_manifiesto = directorio_ciclos / "manifiesto.json"
-    if ruta_manifiesto.is_symlink() or (ruta_manifiesto.exists() and not ruta_manifiesto.is_file()):
-        raise ValueError("La ruta del manifiesto no es segura")
-    anteriores = set()
-    if ruta_manifiesto.exists():
-        previo = cargar_json(ruta_manifiesto)
-        if not isinstance(previo, dict) or not isinstance(previo.get("ciclos"), list):
-            raise ValueError("El manifiesto anterior no es válido; no se modifica la carpeta")
-        for entrada in previo["ciclos"]:
-            if not isinstance(entrada, dict) or "archivo" not in entrada:
-                raise ValueError("El manifiesto anterior no es válido")
-            anteriores.add(ruta_archivo(entrada["archivo"]))
-    nuevos = [ruta_archivo(c["archivo"]) for c in ciclos]
-    if len(set(nuevos)) != len(nuevos):
-        raise ValueError("Nombres de fragmentos repetidos")
-    if any(p.exists() and p not in anteriores for p in nuevos):
-        raise ValueError("Un fragmento sobrescribiría un archivo ajeno al manifiesto")
-    return directorio_ciclos, anteriores, set(nuevos)
-
-
-def guardar_ciclos(directorio_ciclos, ciclos):
-    """Actualiza fragmentos y solo retira archivos del manifiesto anterior."""
-    directorio_ciclos, anteriores, nuevos = validar_destino_ciclos(directorio_ciclos, ciclos)
-    directorio_ciclos.mkdir(parents=True, exist_ok=True)
-    for ciclo in ciclos:
-        guardar_json(directorio_ciclos / ciclo["archivo"], ciclo["contenido"])
-    ruta_manifiesto = directorio_ciclos / "manifiesto.json"
-    guardar_json(ruta_manifiesto, {"ciclos": [
-        {"archivo": c["archivo"], "lote_indice": c["lote_indice"], "ciclo_indice": c["ciclo_indice"], "cantidad": c["cantidad"]}
-        for c in ciclos
-    ]})
-    for anterior in anteriores - nuevos:
-        anterior.unlink(missing_ok=True)
-    return ruta_manifiesto
 
 
 def cargar_json(ruta):

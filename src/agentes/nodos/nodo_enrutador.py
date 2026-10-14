@@ -1,13 +1,28 @@
 from typing import TypedDict
 
+from src.agentes.configuracion_ia import (
+    TIER_RAPIDO,
+    TIER_RAZONAMIENTO,
+    obtener_tier_por_ruta,
+)
 from src.agentes.estado_agente import EstadoAgente, Ruta
 
 
 UMBRAL_RELEVANCIA = 40
 
 
-class ResultadoRutas(TypedDict):
+class ResultadoRutas(TypedDict, total=False):
     rutas: list[Ruta]
+    tier_modelo: str
+
+
+def clasificar_tier_rutas(rutas: list[Ruta]) -> str:
+    """Determina el tier de mayor exigencia entre las rutas seleccionadas."""
+    if any(obtener_tier_por_ruta(r) == TIER_RAZONAMIENTO for r in rutas):
+        return TIER_RAZONAMIENTO
+    if any(obtener_tier_por_ruta(r) == TIER_RAPIDO for r in rutas):
+        return TIER_RAPIDO
+    return TIER_RAPIDO
 
 
 def determinar_rutas(state: EstadoAgente) -> ResultadoRutas:
@@ -34,11 +49,17 @@ def determinar_rutas(state: EstadoAgente) -> ResultadoRutas:
         if elegible_faq:
             rutas.append("preguntas_frecuentes")
 
-        return {"rutas": rutas}
+        return {
+            "rutas": rutas,
+            "tier_modelo": clasificar_tier_rutas(rutas),
+        }
 
     # Para el resto de activos se mantiene elegible_contenido.
     if elegible_contenido is False:
-        return {"rutas": []}
+        return {
+            "rutas": [],
+            "tier_modelo": TIER_RAPIDO,
+        }
 
     # Estados antiguos sin la decisión por ID conservan
     # el umbral de respaldo.
@@ -48,7 +69,10 @@ def determinar_rutas(state: EstadoAgente) -> ResultadoRutas:
         and not isinstance(puntaje, bool)
         and puntaje < UMBRAL_RELEVANCIA
     ):
-        return {"rutas": []}
+        return {
+            "rutas": [],
+            "tier_modelo": TIER_RAPIDO,
+        }
 
     # Una pregunta técnica relevante puede alimentar
     # las preguntas frecuentes.
@@ -71,5 +95,6 @@ def determinar_rutas(state: EstadoAgente) -> ResultadoRutas:
             rutas.append("linkedin")
 
     return {
-        "rutas": rutas
+        "rutas": rutas,
+        "tier_modelo": clasificar_tier_rutas(rutas),
     }

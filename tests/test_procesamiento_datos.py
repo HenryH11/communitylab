@@ -19,10 +19,12 @@ from src.datos.ingesta import (
     construir_estado_agente,
     construir_estados_agente,
     contar_caracteres_no_ascii,
+    detectar_mojibake,
     estimar_tokens,
     guardar_ciclos,
     limpiar_texto,
     procesar_datos,
+    reparar_mojibake,
 )
 from src.datos.relevancia import (
     ConfiguracionRelevancia,
@@ -522,6 +524,48 @@ class PruebasRendimiento(unittest.TestCase):
             _, informe = procesar(entrada)
         self.assertEqual(informe["rendimiento"]["lotes_con_alerta_caracteres"], [0])
         self.assertFalse(informe["rendimiento"]["lotes"][0]["caracteres_especiales_preservados"])
+
+
+class PruebasRobustezLimpiezaYTransporte(unittest.TestCase):
+    """Pruebas de modularización, detección/reparación de mojibake y transporte."""
+
+    def test_detectar_mojibake_encuentra_patrones_danados(self):
+        # UTF-8 mal decodificado como latin-1/cp1252:
+        # pÃ©sima = p\u00c3\u00a9sima, Â¿CÃ³mo = \u00c2\u00bfC\u00c3\u00b3mo
+        self.assertTrue(detectar_mojibake("p\u00c3\u00a9sima conexi\u00c3\u00b3n"))
+        self.assertTrue(detectar_mojibake("\u00c2\u00bfC\u00c3\u00b3mo est\u00c3\u00a1s?"))
+        self.assertTrue(detectar_mojibake("ma\u00c3\u00b1ana"))
+
+    def test_detectar_mojibake_sin_falsos_positivos_en_espanol_valido(self):
+        self.assertFalse(detectar_mojibake("pésima conexión"))
+        self.assertFalse(detectar_mojibake("¿Cómo estás?"))
+        self.assertFalse(detectar_mojibake("mañana por la tarde"))
+        self.assertFalse(detectar_mojibake("¡Hola a todos! Feliz año 🚀"))
+        self.assertFalse(detectar_mojibake("texto normal sin acentos"))
+
+    def test_reparar_mojibake_recupera_texto_original(self):
+        self.assertEqual(reparar_mojibake("p\u00c3\u00a9sima conexi\u00c3\u00b3n"), "pésima conexión")
+        self.assertEqual(reparar_mojibake("\u00c2\u00bfC\u00c3\u00b3mo est\u00c3\u00a1s?"), "¿Cómo estás?")
+        self.assertEqual(reparar_mojibake("ma\u00c3\u00b1ana"), "mañana")
+
+    def test_reparar_mojibake_con_emojis_y_texto_mixto(self):
+        # Cuando coexisten secuencias rotas y emojis UTF-8 válidos
+        texto_mixto = "p\u00c3\u00a9sima conexi\u00c3\u00b3n 🚀 y ma\u00c3\u00b1ana 👨‍💻"
+        reparado = reparar_mojibake(texto_mixto)
+        self.assertEqual(reparado, "pésima conexión 🚀 y mañana 👨‍💻")
+
+    def test_limpiar_texto_repara_mojibake_automaticamente(self):
+        texto_sucio = "<p>p\u00c3\u00a9sima conexi\u00c3\u00b3n con el servidor</p>"
+        self.assertEqual(limpiar_texto(texto_sucio), "pésima conexión con el servidor")
+
+    def test_importacion_directa_desde_submodulos_especializados(self):
+        from src.datos.limpieza import limpiar_texto as limpiar_sub, reparar_mojibake as reparar_sub
+        from src.datos.ciclos_transporte import validar_tamano_ciclo as validar_ciclo_sub
+
+        self.assertEqual(limpiar_sub("<b>hola</b>"), "hola")
+        self.assertEqual(reparar_sub("\u00c3\u00a9"), "é")
+        with self.assertRaises(ValueError):
+            validar_ciclo_sub(5)
 
 
 if __name__ == "__main__":

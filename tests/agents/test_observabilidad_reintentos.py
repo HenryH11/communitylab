@@ -26,6 +26,10 @@ from src.agentes.reintentos import (
     es_error_transitorio,
 )
 
+from src.agentes.errores_ia import (
+    ErrorConfiguracionProveedor,
+    ErrorSalidaProveedor,
+)
 
 LOGGER = "communitylab.ciencia_datos"
 
@@ -117,7 +121,14 @@ def test_agota_intentos_y_deja_traceback_solo_en_log(caplog):
     assert "ConnectionError" in linea["traceback"]
 
 
-def test_generacion_reintenta_solo_la_ruta_transitoria():
+def test_generacion_reintenta_solo_la_ruta_transitoria(
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        "COMMUNITYLAB_PROVEEDOR_GENERACION",
+        "gemini",
+    )
+
     generador = MagicMock()
     generador.invoke.side_effect = [
         TimeoutError("timeout"),
@@ -141,7 +152,14 @@ def test_generacion_reintenta_solo_la_ruta_transitoria():
     }
 
 
-def test_fallo_transitorio_agotado_queda_marcado_como_reintentable():
+def test_fallo_transitorio_agotado_queda_marcado_como_reintentable(
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        "COMMUNITYLAB_PROVEEDOR_GENERACION",
+        "gemini",
+    )
+
     generador = MagicMock()
     generador.invoke.side_effect = TimeoutError("timeout")
 
@@ -396,3 +414,15 @@ def test_contrato_expone_reintentables_e_id_ejecucion():
     assert entrega["ids_reintentables"] == ["id-a"]
     assert entrega["resumen_comunidad"]["total_fallos"] == 2
     assert entrega["resumen_comunidad"]["total_fallos_reintentables"] == 1
+
+
+def test_salida_invalida_del_proveedor_es_reintentable():
+    assert es_error_transitorio(
+        ErrorSalidaProveedor("salida inválida")
+    ) is True
+
+
+def test_error_configuracion_proveedor_no_es_reintentable():
+    assert es_error_transitorio(
+        ErrorConfiguracionProveedor("falta NVIDIA_API_KEY")
+    ) is False

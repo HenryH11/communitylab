@@ -3,6 +3,17 @@
 .gitignore
 .venv
 .env
+.env.*
+**/.env
+**/.env.*
+*.pem
+**/*.pem
+*.key
+**/*.key
+.oci
+**/.oci
+.ssh
+**/.ssh
 __pycache__
 *.pyc
 *.pyo
@@ -11,6 +22,7 @@ __pycache__
 salida/logs
 salida/test_*
 salida/experimentos
+salida
 .DS_Store
 *.egg-info
 build

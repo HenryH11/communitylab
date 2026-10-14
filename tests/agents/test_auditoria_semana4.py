@@ -170,7 +170,7 @@ def construir():
 def test_construye_paquete_sin_modificar_contrato_productivo():
     auditoria = construir()
 
-    assert auditoria["version_auditoria"] == "1.0"
+    assert auditoria["version_auditoria"] == "1.1"
     assert auditoria["ejecucion"]["commit_sha"] == "abc123"
     assert (
         auditoria["ejecucion"]["id_ejecucion"]
@@ -240,7 +240,57 @@ def test_fallback_de_activo_registra_gemini_y_motivo():
     assert traza["fallback_activado"] is True
     assert traza["motivo_fallback"] == "timeout"
 
-    assert auditoria["resumen"]["fallbacks_activos"] == 1
+    resumen = auditoria["resumen"]
+
+    assert resumen["interacciones_con_fallback_analisis"] == 0
+    assert resumen["eventos_fallback_analisis"] == 0
+    assert resumen["activos_con_fallback"] == 1
+    assert resumen["eventos_fallback_generacion"] == 1
+
+
+def test_resumen_distingue_eventos_de_interacciones_con_fallback():
+    lista_eventos = eventos()
+
+    evento_analisis = dict(lista_eventos[0])
+    evento_analisis.update(
+        proveedor_usado="gemini",
+        fallback_activado=True,
+        motivo_fallback="timeout",
+    )
+
+    # Simula dos eventos reales de fallback sobre la misma
+    # interacción, por ejemplo debido a un reprocesamiento.
+    lista_eventos[0] = dict(evento_analisis)
+    lista_eventos.insert(
+        0,
+        dict(evento_analisis),
+    )
+
+    auditoria = construir_paquete_auditoria(
+        datos_fuente=datos_fuente(),
+        paquete_ia=paquete_ia(),
+        salida_procesamiento=salida_ds(),
+        eventos_observabilidad=lista_eventos,
+        configuracion_ia=CONFIGURACION_IA,
+        metadatos_ejecucion={
+            "commit_sha": "abc123",
+            "working_tree_limpio": True,
+            "dataset": (
+                "src/datos/"
+                "mensajes_comunidad_simulados.json"
+            ),
+        },
+    )
+
+    resumen = auditoria["resumen"]
+
+    assert resumen[
+        "interacciones_con_fallback_analisis"
+    ] == 1
+
+    assert resumen[
+        "eventos_fallback_analisis"
+    ] == 2
 
 
 def test_no_hay_inconsistencias_con_evidencia_completa():

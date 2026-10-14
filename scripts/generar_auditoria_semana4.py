@@ -341,12 +341,20 @@ def main() -> None:
         f"{resumen['total_activos_generados']}"
     )
     print(
-        "Fallbacks en análisis: "
-        f"{resumen['fallbacks_analisis']}"
+        "Interacciones con fallback en análisis: "
+        f"{resumen['interacciones_con_fallback_analisis']}"
     )
     print(
-        "Fallbacks en activos: "
-        f"{resumen['fallbacks_activos']}"
+        "Eventos de fallback en análisis: "
+        f"{resumen['eventos_fallback_analisis']}"
+    )
+    print(
+        "Activos con fallback: "
+        f"{resumen['activos_con_fallback']}"
+    )
+    print(
+        "Eventos de fallback en generación: "
+        f"{resumen['eventos_fallback_generacion']}"
     )
 
 

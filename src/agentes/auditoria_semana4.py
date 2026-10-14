@@ -30,7 +30,7 @@ from src.agentes.configuracion_ia import (
 from src.agentes.proveedores.gemini import MODELO_GEMINI
 
 
-VERSION_AUDITORIA_SEMANA4 = "1.0"
+VERSION_AUDITORIA_SEMANA4 = "1.1"
 
 
 def capturar_configuracion_ia_auditoria() -> dict[str, Any]:
@@ -411,8 +411,29 @@ def construir_paquete_auditoria(
     inconsistencias: list[dict] = []
 
     total_activos = 0
-    fallbacks_analisis = 0
-    fallbacks_activos = 0
+    interacciones_con_fallback_analisis = 0
+    activos_con_fallback = 0
+
+    eventos_fallback_analisis = sum(
+        1
+        for evento in eventos_observabilidad
+        if (
+            evento.get("evento") == "proveedor_ia_resuelto"
+            and evento.get("etapa")
+            in {"analizar_mensaje", "analizar_lote"}
+            and evento.get("fallback_activado") is True
+        )
+    )
+
+    eventos_fallback_generacion = sum(
+        1
+        for evento in eventos_observabilidad
+        if (
+            evento.get("evento") == "proveedor_ia_resuelto"
+            and evento.get("etapa") == "generar_activos"
+            and evento.get("fallback_activado") is True
+        )
+    )
 
     for identificador, entrada in entradas.items():
         evaluacion = evaluaciones.get(
@@ -539,7 +560,7 @@ def construir_paquete_auditoria(
             elif traza_analisis.get(
                 "fallback_activado"
             ):
-                fallbacks_analisis += 1
+                interacciones_con_fallback_analisis += 1
 
         for ruta, contenido in resultado.get(
             "activos_generados",
@@ -569,7 +590,7 @@ def construir_paquete_auditoria(
             elif traza.get(
                 "fallback_activado"
             ):
-                fallbacks_activos += 1
+                activos_con_fallback += 1
 
         interacciones.append(registro)
 
@@ -598,11 +619,17 @@ def construir_paquete_auditoria(
             "total_activos_generados": (
                 total_activos
             ),
-            "fallbacks_analisis": (
-                fallbacks_analisis
+            "interacciones_con_fallback_analisis": (
+                interacciones_con_fallback_analisis
             ),
-            "fallbacks_activos": (
-                fallbacks_activos
+            "eventos_fallback_analisis": (
+                eventos_fallback_analisis
+            ),
+            "activos_con_fallback": (
+                activos_con_fallback
+            ),
+            "eventos_fallback_generacion": (
+                eventos_fallback_generacion
             ),
             "total_inconsistencias": len(
                 inconsistencias

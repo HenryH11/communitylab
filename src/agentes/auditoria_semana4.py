@@ -19,6 +19,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from src.agentes.entrega_resultados import preparar_entrega_resultados
 
 from src.agentes.configuracion_ia import (
     PROVEEDOR_GEMINI,
@@ -30,7 +31,7 @@ from src.agentes.configuracion_ia import (
 from src.agentes.proveedores.gemini import MODELO_GEMINI
 
 
-VERSION_AUDITORIA_SEMANA4 = "1.1"
+VERSION_AUDITORIA_SEMANA4 = "1.2"
 
 
 def capturar_configuracion_ia_auditoria() -> dict[str, Any]:
@@ -406,6 +407,14 @@ def construir_paquete_auditoria(
         )
     )
 
+    entrega_estable = preparar_entrega_resultados(
+        salida_procesamiento
+    )
+
+    resumen_comunidad = deepcopy(
+        entrega_estable["resumen_comunidad"]
+    )
+
     interacciones: list[dict] = []
     exclusiones_data: list[dict] = []
     inconsistencias: list[dict] = []
@@ -613,12 +622,7 @@ def construir_paquete_auditoria(
             "total_resultados_ds": len(
                 resultados
             ),
-            "total_pendientes": len(
-                ids_pendientes
-            ),
-            "total_activos_generados": (
-                total_activos
-            ),
+            **resumen_comunidad,
             "interacciones_con_fallback_analisis": (
                 interacciones_con_fallback_analisis
             ),

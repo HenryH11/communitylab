@@ -170,7 +170,7 @@ def construir():
 def test_construye_paquete_sin_modificar_contrato_productivo():
     auditoria = construir()
 
-    assert auditoria["version_auditoria"] == "1.1"
+    assert auditoria["version_auditoria"] == "1.2"
     assert auditoria["ejecucion"]["commit_sha"] == "abc123"
     assert (
         auditoria["ejecucion"]["id_ejecucion"]
@@ -181,6 +181,28 @@ def test_construye_paquete_sin_modificar_contrato_productivo():
     assert auditoria["resumen"]["total_excluidas_data"] == 1
     assert auditoria["resumen"]["total_resultados_ds"] == 1
     assert auditoria["resumen"]["total_activos_generados"] == 1
+
+    resumen = auditoria["resumen"]
+
+    assert resumen["sentimiento_predominante"] == "muy_positivo"
+    assert resumen["sentimientos_predominantes"] == [
+        "muy_positivo"
+    ]
+    assert resumen["distribucion_sentimientos"] == {
+        "muy_positivo": 1
+    }
+    assert resumen["temas_principales"] == [
+        {
+            "tema": "empleabilidad",
+            "cantidad": 1,
+        }
+    ]
+    assert resumen["distribucion_temas"] == {
+        "empleabilidad": 1
+    }
+    assert resumen["distribucion_tipos_detectados"] == {
+        "testimonio": 1
+    }
 
 
 def test_exclusion_data_se_conserva_por_id_y_motivo():

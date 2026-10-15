@@ -7,7 +7,7 @@
   },
   "archivos": {
     "uca_ia_tweets.json": {
-      "sha256": "472a5c6fb694b4b492daa2b2a61120e4faa585f21f11f77a51dd98f7e5dc6863",
+      "sha256": "26d57fe34dc9225f6446086313a5ca3a8e53d2a61aab8ffccc01158298d7c436",
       "casos": 200,
       "candidatos": 3181,
       "estrato": "sentimiento_esperado",
@@ -24,7 +24,7 @@
       }
     },
     "stackoverflow_es.json": {
-      "sha256": "4b56272234ead94eb578f1501e490b4aeb6d17dae35dbfceb3f39be8a2449ee7",
+      "sha256": "38aa3ccaadf1e5dbd5e0d4e87017970d45f3a0a99090bbe6dc017dc66b72132e",
       "casos": 200,
       "candidatos": 565,
       "estrato": "subtema_referencia",

@@ -171,6 +171,11 @@ def sha256(ruta):
     return hashlib.sha256(Path(ruta).read_bytes()).hexdigest()
 
 
+def escribir_json(ruta, datos):
+    """UTF-8 con saltos LF en cualquier sistema, para que el SHA del manifiesto coincida con git."""
+    Path(ruta).write_bytes((json.dumps(datos, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
+
+
 def distribucion(casos, campo):
     return dict(sorted(Counter(c[campo] for c in casos).items()))
 
@@ -191,8 +196,7 @@ def construir(uca_csv, so_dir, salida, semilla=SEMILLA, por_fuente=POR_FUENTE, e
         candidatos = [c for c in candidatos if clave_duplicado(c["texto"]) not in excluir]
         casos = muestrear_por_grupo(candidatos, estrato, por_fuente, semilla)
         ruta = salida / f"{nombre}.json"
-        ruta.write_text(json.dumps({"descripcion": descripcion, "casos": casos},
-                                   ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        escribir_json(ruta, {"descripcion": descripcion, "casos": casos})
         manifiesto["archivos"][ruta.name] = {
             "sha256": sha256(ruta), "casos": len(casos), "candidatos": len(candidatos),
             "estrato": estrato,
@@ -200,8 +204,7 @@ def construir(uca_csv, so_dir, salida, semilla=SEMILLA, por_fuente=POR_FUENTE, e
             "tema": distribucion(casos, "tema_esperado"),
             "tipo": distribucion(casos, "tipo_esperado"),
         }
-    (salida / "manifiesto.json").write_text(json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\n",
-                                            encoding="utf-8")
+    escribir_json(salida / "manifiesto.json", manifiesto)
     return manifiesto
 
 

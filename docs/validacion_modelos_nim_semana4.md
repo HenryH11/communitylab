@@ -1,30 +1,30 @@
 # CommunityLab – Semana 4
-## Validación de proveedores LLM, modelos NVIDIA NIM, trazabilidad y correcciones posteriores a auditoría
+## Validación técnica de proveedores LLM, modelos NVIDIA NIM y trazabilidad de Data Science
 
 **Proyecto:** CommunityLab – Hackathon ONE G10 / Equipo 39  
 **Subequipo:** Cerebro de IA – Data Science  
-**Rama de trabajo:** `feature/DS-Semana4`
+**Rama:** `feature/DS-Semana4`
 **Fecha:** 14 de octubre de 2026  
-**Estado:** validación técnica completada; pendiente únicamente regenerar el artefacto final sobre el SHA integrado y realizar el cierre remoto cuando se autorice.
+**Estado técnico:** validación local completada; paquete de trazabilidad final preparado para revisión de Data.
 
 ---
 
 ## 1. Objetivo
 
-Durante Semana 4 se trabajó en cuatro frentes principales:
+Durante Semana 4, Data Science trabajó en cuatro frentes:
 
-1. validar el uso de NVIDIA NIM como proveedor principal de IA;
+1. validar NVIDIA NIM como proveedor principal de IA;
 2. mantener Gemini como proveedor de respaldo;
 3. mejorar la trazabilidad de análisis, generación y fallback;
-4. corregir hallazgos detectados por Data en la auditoría del paquete generado por Data Science.
+4. corregir comportamientos detectados a partir de la retroalimentación recibida desde Data.
 
-El objetivo no fue reemplazar una solución estable por una experimental sin evidencia, sino probar alternativas de forma controlada, mantener un proveedor de respaldo y conservar la capacidad de reproducir cada ejecución mediante su SHA de código.
+Data Science no realiza la auditoría oficial. Su responsabilidad en esta etapa es producir, validar técnicamente y documentar las salidas que Data utilizará posteriormente para su revisión.
 
 ---
 
 ## 2. Arquitectura de proveedores
 
-La arquitectura vigente queda:
+La configuración vigente queda:
 
 ```text
 Proveedor primario:
@@ -34,11 +34,11 @@ Proveedor de respaldo:
 Gemini
 ```
 
-Esto implica que Gemini no fue eliminado del flujo.
+Gemini no fue eliminado del flujo.
 
-Gemini se conserva como proveedor de respaldo porque ya existía como implementación estable del proyecto y permite recuperar la ejecución cuando NVIDIA NIM presenta un error apto para fallback.
+Se conserva como respaldo porque ya existía como implementación estable del proyecto y permite recuperar una ejecución cuando NVIDIA NIM presenta un error apto para cambio de proveedor.
 
-La lógica conceptual queda:
+El flujo conceptual es:
 
 ```text
 NVIDIA NIM
@@ -47,7 +47,7 @@ NVIDIA NIM
 → Gemini
 ```
 
-Se mantienen diferenciados tres conceptos:
+Se mantienen separados:
 
 ```text
 retry
@@ -55,7 +55,7 @@ fallback de proveedor
 recuperación posterior
 ```
 
-Un retry no debe registrarse automáticamente como fallback.
+Un retry no equivale automáticamente a fallback.
 
 ---
 
@@ -63,9 +63,13 @@ Un retry no debe registrarse automáticamente como fallback.
 
 El flujo estable anterior del proyecto utilizaba Gemini.
 
-Durante Semana 4 se evaluó NVIDIA NIM como proveedor principal para disponer de modelos especializados y comparar su comportamiento dentro del flujo real de CommunityLab.
+Durante Semana 4 se evaluó NVIDIA NIM como proveedor principal mediante pruebas reales de:
 
-La decisión final no se tomó únicamente por disponibilidad del proveedor, sino por pruebas reales de latencia, compatibilidad con salida estructurada, comportamiento por lotes y tolerancia a fallos.
+- latencia;
+- salida estructurada;
+- procesamiento por lotes;
+- comportamiento sobre el dataset completo;
+- tolerancia a fallos.
 
 La evolución fue:
 
@@ -77,11 +81,12 @@ NVIDIA NIM
 → pasa a proveedor primario
 
 Dentro de NVIDIA NIM:
+
 Llama 3.1 / 3.3
 → no utilizables por HTTP 410
 
 Gemma
-→ no viable por timeout
+→ no viable en el entorno probado por timeout
 
 DeepSeek
 → no viable en el entorno probado por timeout
@@ -95,11 +100,9 @@ Nemotron 3 Super
 
 ---
 
-## 4. Modelos evaluados dentro de NVIDIA NIM
+## 4. Evaluación de Llama 3.1 y Llama 3.3
 
-### 4.1 Llama 3.1 y Llama 3.3
-
-Se evaluaron:
+Modelos evaluados:
 
 ```text
 meta/llama-3.1-8b-instruct
@@ -118,9 +121,9 @@ No se mantuvieron como modelos activos.
 
 ### Justificación
 
-El error 410 indica que el endpoint/modelo no estaba disponible para continuar la ejecución en las condiciones probadas.
+El endpoint/modelo no estaba disponible para continuar las ejecuciones en las condiciones probadas.
 
-Además, se incorporó reconocimiento explícito de `HTTP 410` como error apto para activar fallback de proveedor.
+Además, se incorporó reconocimiento explícito de `HTTP 410` como error apto para fallback de proveedor.
 
 ---
 
@@ -132,7 +135,7 @@ Modelo evaluado:
 google/gemma-4-31b-it
 ```
 
-Resultados reales:
+Resultados observados:
 
 ```text
 Batch, timeout 15 s
@@ -148,7 +151,7 @@ RAW mínimo, timeout 30 s
 → 30.36 s
 ```
 
-La prueba RAW utilizó un prompt mínimo:
+La prueba RAW utilizó únicamente:
 
 ```text
 Responde únicamente: OK
@@ -160,9 +163,9 @@ Gemma no se mantuvo como modelo estándar.
 
 ### Justificación
 
-El timeout también apareció con una llamada RAW mínima, por lo que el comportamiento no podía atribuirse únicamente al esquema estructurado, al tamaño del lote o al prompt completo de CommunityLab.
+El timeout también apareció con una llamada RAW mínima, por lo que el problema observado no podía atribuirse únicamente al esquema estructurado, al tamaño del lote o al prompt completo de CommunityLab.
 
-La conclusión es específica al entorno probado: no se afirma que Gemma sea un modelo defectuoso en general.
+La conclusión aplica únicamente al entorno probado.
 
 ---
 
@@ -192,11 +195,9 @@ DeepSeek no se mantuvo como modelo activo.
 
 ### Justificación
 
-El comportamiento observado no fue utilizable dentro del tiempo definido para el proyecto.
+No respondió dentro del tiempo utilizable para el proyecto en el entorno probado.
 
-No se considera un proveedor independiente: DeepSeek fue evaluado como modelo servido mediante NVIDIA NIM.
-
-Tampoco se afirma que esté retirado; únicamente que no fue viable en esta sesión y entorno.
+DeepSeek fue evaluado como modelo servido mediante NVIDIA NIM, no como proveedor independiente.
 
 ---
 
@@ -253,13 +254,13 @@ tier estándar
 
 ### Justificación
 
-Fue el modelo que mostró un comportamiento utilizable en las pruebas reales realizadas:
+Fue el modelo que mostró comportamiento utilizable en las pruebas reales:
 
 - respuesta individual correcta;
 - procesamiento batch correcto;
 - procesamiento completo 23/23;
-- compatibilidad con el flujo estructurado;
-- tiempos de respuesta dentro del timeout configurado.
+- compatibilidad con salida estructurada;
+- tiempos compatibles con el timeout configurado.
 
 ---
 
@@ -279,27 +280,15 @@ tier razonamiento
 
 ### Justificación
 
-El flujo de CommunityLab diferencia tareas por nivel de complejidad.
+CommunityLab diferencia tareas por nivel de complejidad.
 
-Nemotron Super se conserva para las tareas clasificadas como razonamiento, mientras Lightning cubre las tareas rápidas y estándar.
+Nemotron Super se conserva para tareas de razonamiento, mientras Lightning cubre tareas rápidas y estándar.
 
-En la auditoría anterior se observó además:
-
-```text
-Nemotron Super:
-12 activos
-0 alertas
-
-Nemotron Lightning:
-14 activos
-1 alerta
-```
-
-Estos valores se utilizan como evidencia operativa de esa ejecución, no como ground truth humano ni como benchmark universal entre modelos.
+Las distribuciones observadas por modelo sirven como evidencia operativa de cada ejecución, no como ground truth ni como benchmark universal.
 
 ---
 
-## 9. Configuración final de modelos
+## 9. Configuración final de IA
 
 | Tier | Modelo |
 |---|---|
@@ -307,48 +296,27 @@ Estos valores se utilizan como evidencia operativa de esa ejecución, no como gr
 | estándar | `nvidia/nemotron-3.5-lightning-30b-a3b` |
 | razonamiento | `nvidia/nemotron-3-super-120b-a12b` |
 
-Timeout NVIDIA:
-
 ```text
-15 segundos
+Proveedor primario: NVIDIA NIM
+Proveedor de respaldo: Gemini
+Timeout NVIDIA: 15 segundos
 ```
 
-Proveedor primario:
-
-```text
-NVIDIA NIM
-```
-
-Proveedor de respaldo:
-
-```text
-Gemini
-```
-
-No se modificaron nuevamente proveedor, modelos ni timeout durante la corrección posterior a la auditoría de Data.
+Durante las correcciones posteriores no se modificaron nuevamente proveedor, modelos ni timeout.
 
 ---
 
 ## 10. Fallback y tolerancia a fallos
 
-El flujo conserva:
-
-```text
-NVIDIA NIM
-→ retry
-→ error apto para fallback
-→ Gemini
-```
-
-Se agregó soporte explícito para:
+Se añadió soporte explícito para reconocer:
 
 ```text
 HTTP 410
 ```
 
-como causa válida de fallback.
+como causa válida de fallback de proveedor.
 
-Una ejecución histórica mostró:
+Una ejecución histórica permitió comprobar el mecanismo:
 
 ```text
 Interacciones de entrada: 23
@@ -371,29 +339,17 @@ consistentes con:
 4 lotes × 3 intentos NVIDIA
 ```
 
-antes de activar Gemini.
+antes de utilizar Gemini.
 
-### Interpretación
+Esta ejecución se conserva como evidencia histórica del funcionamiento del mecanismo.
 
-Esta ejecución demuestra que el mecanismo funcionó.
-
-No debe presentarse como el resultado final vigente.
-
-Las ejecuciones históricas se conservan como evidencia de estabilidad y regresión, no como ground truth humano.
+No representa el resultado final vigente.
 
 ---
 
-## 11. Corrección de métricas de fallback
+## 11. Métricas de fallback
 
-La métrica inicial:
-
-```text
-Fallbacks en análisis: 23
-```
-
-era ambigua porque podía confundirse el número de interacciones afectadas con la cantidad real de eventos de cambio de proveedor.
-
-Se separó en:
+Las métricas se separaron en:
 
 ```text
 interacciones_con_fallback_analisis
@@ -404,26 +360,28 @@ eventos_fallback_generacion
 
 ### Justificación
 
-Esto permite distinguir:
+Esto evita confundir:
 
-- cuántas interacciones fueron afectadas;
-- cuántas veces realmente ocurrió un cambio de proveedor;
-- cuántos activos fueron generados mediante fallback.
+- cantidad de interacciones afectadas;
+- cantidad real de cambios de proveedor;
+- cantidad de activos generados mediante fallback.
 
 ---
 
-## 12. Paquete de trazabilidad de Semana 4
+## 12. Paquete de trazabilidad de Data Science
 
-Se creó un paquete específico de auditoría/trazabilidad en:
+El artefacto principal generado por DS es:
 
 ```text
 salida/auditoria_semana4/auditoria_semana4.json
 ```
 
-El paquete incluye por interacción:
+Aunque el nombre del archivo conserva `auditoria_semana4` por compatibilidad con la implementación existente, para Data Science este archivo debe entenderse como un **paquete de trazabilidad y evidencia de ejecución**.
+
+Contiene:
 
 ```text
-datos de entrada
+entrada
 decisiones provenientes de Data
 análisis DS
 sentimiento
@@ -442,21 +400,21 @@ fallos
 SHA
 ```
 
-También conserva el resumen analítico general.
+La carpeta `salida/` está ignorada por Git y el archivo se comparte directamente como artefacto de ejecución.
 
 ---
 
 ## 13. Recuperación del resumen analítico
 
-En una versión inicial del paquete se conservó la trazabilidad por interacción, pero se perdió parte del resumen analítico que ya existía en el flujo.
+Una versión inicial del paquete conservaba la trazabilidad por interacción, pero había perdido parte del resumen analítico estable.
 
-Se corrigió reutilizando la lógica estable de:
+Se recuperó reutilizando:
 
 ```text
 src/agentes/resumen_entrega.py
 ```
 
-El resumen incluye:
+El paquete vuelve a incluir:
 
 ```text
 sentimiento_predominante
@@ -469,17 +427,13 @@ distribucion_tipos_detectados
 
 ### Justificación
 
-No se duplicó la lógica del producto.
-
-Se reutilizó la implementación existente para mantener consistencia entre la entrega normal y el paquete de auditoría.
+Se reutilizó la lógica estable del producto en lugar de duplicarla.
 
 ---
 
 ## 14. Responsabilidades entre Data y Data Science
 
-Se mantienen los límites de ownership.
-
-Data es fuente de verdad para:
+Data continúa siendo fuente de verdad para:
 
 ```text
 score_relevancia
@@ -497,7 +451,9 @@ produce tipo_detectado
 
 `tipo_original` no se envía al LLM.
 
-El flujo conceptual es:
+Tampoco se utiliza como ground truth automático.
+
+El flujo es:
 
 ```text
 texto
@@ -506,7 +462,7 @@ texto
 → router
 ```
 
-y no:
+No:
 
 ```text
 tipo_original
@@ -514,41 +470,31 @@ tipo_original
 → forzar routing
 ```
 
-Esto evita convertir la clasificación original de Data en ground truth humano automático.
-
 ---
 
-## 15. Auditoría recibida desde Data
+## 15. Retroalimentación recibida desde Data
 
-Data revisó el paquete anterior generado sobre:
+Data revisó una entrega anterior generada sobre:
 
 ```text
 4331b6eb866b05062e189a4ee937c72531771513
 ```
 
-Resultado reportado:
+En esa revisión se reportaron tres puntos relevantes para DS:
 
-```text
-26 activos
-0 fallback
-1 activo con alerta
-```
+### `int-015`
 
-Los hallazgos principales fueron:
-
-### Hallazgo 1 — `int-015`
-
-La FAQ producía una salida similar a:
+La FAQ se generaba como una metainstrucción:
 
 ```text
 Una redacción breve que indique...
 ```
 
-La respuesta era una instrucción sobre cómo redactar, no una respuesta final publicable.
+en lugar de producir una respuesta final publicable.
 
-### Hallazgo 2 — `int-011`, `int-014`, `int-018`
+### `int-011`, `int-014`, `int-018`
 
-Data reportó estos registros con:
+Data tenía:
 
 ```text
 tipo_original = testimonio
@@ -560,17 +506,15 @@ mientras DS había producido:
 tipo_detectado = comentario
 ```
 
-Esto no se corrigió copiando `tipo_original`.
+Esto motivó revisar la frontera semántica entre ambos tipos.
 
-Se revisó la frontera semántica entre comentario y testimonio.
+No se corrigió copiando `tipo_original`.
 
-### Hallazgo 3 — `int-023`
+### `int-023`
 
-Se detectó como caso casi duplicado de `int-002`.
+Caso casi duplicado de `int-002`.
 
-Este punto queda reservado para Semana 5.
-
-No se implementó deduplicación en esta tarea.
+Se dejó reservado para Semana 5.
 
 ---
 
@@ -582,25 +526,18 @@ Archivo:
 src/agentes/prompts/preguntas_frecuentes.py
 ```
 
-### Causa identificada
+### Causa
 
-Los ejemplos few-shot incluían respuestas redactadas como metainstrucciones:
+Los ejemplos few-shot incluían respuestas redactadas como instrucciones:
 
 ```text
 Una redacción breve que indique...
-```
-
-```text
 Una explicación breve centrada...
 ```
 
-El modelo podía imitar esa estructura.
+### Cambio
 
-### Corrección
-
-Se reemplazaron los ejemplos por respuestas finales y publicables.
-
-También se añadió una regla explícita:
+Se reemplazaron por respuestas finales y se añadió:
 
 ```text
 Entrega directamente una respuesta final lista para publicar.
@@ -609,15 +546,13 @@ No describas cómo debería redactarse la respuesta ni expliques qué debería d
 
 ### Justificación
 
-El problema no estaba en el router ni en el proveedor.
+La causa estaba en el prompt.
 
-Era una señal incorrecta introducida por el propio prompt.
-
-Por ello se corrigió la fuente del comportamiento en vez de añadir lógica posterior de parcheo.
+No era necesario modificar router, proveedor ni arquitectura.
 
 ---
 
-## 17. Corrección de la frontera testimonio/comentario
+## 17. Refinamiento testimonio / comentario
 
 Archivo:
 
@@ -625,14 +560,12 @@ Archivo:
 src/agentes/prompts/analisis.py
 ```
 
-La definición previa de testimonio ya establecía:
+La definición previa ya indicaba:
 
 ```text
 La persona relata una experiencia propia con un resultado,
 transformación, hito o impacto concreto.
 ```
-
-Sin embargo, el modelo tendía a interpretar como testimonio principalmente los logros más evidentes.
 
 Se aclaró:
 
@@ -641,7 +574,7 @@ Un testimonio no requiere necesariamente empleo, certificación
 ni un logro extraordinario.
 ```
 
-También se incorporaron ejemplos conceptuales de impacto:
+También se añadieron ejemplos conceptuales:
 
 ```text
 aplicar lo aprendido en una situación real
@@ -654,33 +587,21 @@ Y se mantuvo la frontera negativa:
 
 ```text
 No clasificar como testimonio un elogio, agradecimiento u opinión
-si no existe una experiencia propia con resultado,
+si no existe experiencia propia con resultado,
 transformación o impacto concreto.
 ```
 
 ### Justificación
 
-La corrección se diseñó como una regla semántica general.
+La mejora es semántica y general.
 
-No se añadieron instrucciones especiales por ID.
-
-No se utilizó:
-
-```text
-int-011 → testimonio
-int-014 → testimonio
-int-018 → testimonio
-```
-
-como regla hardcodeada.
+No se añadieron reglas especiales por ID.
 
 ---
 
-## 18. Validación focalizada después de los cambios
+## 18. Validación focalizada de los casos revisados
 
 ### `int-011`
-
-Resultado:
 
 ```text
 Sentimiento: positivo
@@ -692,15 +613,9 @@ Rutas:
 - linkedin
 ```
 
-### Razón semántica
-
 La persona relata una experiencia propia donde el networking produjo una oportunidad concreta de colaboración.
 
----
-
 ### `int-014`
-
-Resultado:
 
 ```text
 Sentimiento: positivo
@@ -712,17 +627,9 @@ Rutas:
 - linkedin
 ```
 
-### Razón semántica
-
-Es un caso fronterizo, pero existe impacto concreto: el acompañamiento permitió comprender conceptos que anteriormente resultaban difíciles.
-
-No es únicamente una opinión positiva sobre el mentor.
-
----
+Existe impacto concreto: el acompañamiento permitió comprender conceptos anteriormente difíciles.
 
 ### `int-015`
-
-Resultado:
 
 ```text
 Sentimiento: neutral
@@ -732,24 +639,13 @@ Ruta:
 - preguntas_frecuentes
 ```
 
-FAQ final:
+Respuesta generada:
 
 > La diferencia entre las rutas de especialización debe confirmarse con la información oficial del programa, ya que la pregunta no especifica los planes de estudio ni los contenidos específicos de cada ruta.
 
-### Razón de aceptación
-
-La salida:
-
-- responde directamente;
-- no inventa diferencias específicas;
-- remite a la fuente oficial cuando faltan datos;
-- ya no reproduce una metainstrucción.
-
----
+La salida ya es final, prudente y publicable.
 
 ### `int-018`
-
-Resultado:
 
 ```text
 Sentimiento: positivo
@@ -761,21 +657,11 @@ Rutas:
 - linkedin
 ```
 
-### Razón semántica
-
-La persona describe:
-
-```text
-formación terminada
-+
-aplicación real de lo aprendido en su trabajo
-```
-
-Existe una experiencia propia con resultado concreto.
+Existe formación completada y aplicación real de lo aprendido.
 
 ---
 
-## 19. Pruebas añadidas para los prompts
+## 19. Pruebas de regresión de prompts
 
 Se añadieron pruebas en:
 
@@ -783,125 +669,83 @@ Se añadieron pruebas en:
 tests/agents/test_prompts_generadores.py
 ```
 
-Estas pruebas no llaman a un modelo real.
+Verifican propiedades generales:
 
-Verifican propiedades generales del prompt:
+- que FAQ pida respuestas finales;
+- que desaparezcan metainstrucciones problemáticas;
+- que testimonio contemple impactos concretos;
+- que no requiera logros extraordinarios.
 
-- que las FAQ pidan una respuesta final;
-- que ya no existan metainstrucciones problemáticas;
-- que el concepto de testimonio incluya impactos concretos;
-- que no sea obligatorio tener empleo, certificación o un logro extraordinario.
-
-Resultado:
+Resultado focalizado:
 
 ```text
 9 passed
 ```
 
-### Justificación
-
-No se hardcodearon IDs ni resultados esperados del dataset.
-
-El objetivo de estas pruebas es proteger la semántica del prompt, no convertir la salida histórica del LLM en verdad absoluta.
+No se hardcodearon IDs ni resultados concretos del dataset.
 
 ---
 
-## 20. Nueva ejecución completa posterior a la corrección
+## 20. Primera ejecución completa posterior a la corrección
 
-Commit del código utilizado para esta ejecución:
+SHA:
 
 ```text
 204b29d9870c0a0fd70f0d626efaa14479c4c4ff
 ```
 
-Commit:
-
-```text
-204b29d
-fix(ds): refinar prompts de analisis y FAQ
-```
-
 Resultado:
 
 ```text
-Interacciones de entrada: 23
-Excluidas por Data: 0
-Resultados DS: 23
-Activos generados: 35
+23 interacciones
+0 excluidas por Data
+23 resultados DS
+35 activos
 
-Interacciones con fallback en análisis: 0
-Eventos de fallback en análisis: 0
-Activos con fallback: 0
-Eventos de fallback en generación: 0
-```
-
-Validación adicional:
-
-```text
-Errores: 0
-Fallos: 0
-Inconsistencias: 0
+0 fallback de análisis
+0 fallback de generación
+0 errores
+0 fallos
+0 inconsistencias
 ```
 
 ---
 
 ## 21. Explicación del cambio de 26 a 35 activos
 
-Ejecución anterior:
+La ejecución anterior generaba:
 
 ```text
 26 activos
 ```
 
-Nueva ejecución:
+Después del refinamiento:
 
 ```text
 35 activos
 ```
 
-Diferencia:
-
-```text
-+9 activos
-```
-
-Los tres casos recuperados como testimonio producen tres rutas cada uno:
-
-```text
-caso_exito
-boletin
-linkedin
-```
-
-Por tanto:
+Los tres casos recuperados como testimonio generan tres rutas cada uno:
 
 ```text
 int-011 → +3
 int-014 → +3
 int-018 → +3
-
-Total adicional = 9
 ```
 
-Entonces:
+Por tanto:
 
 ```text
 26 + 9 = 35
 ```
 
-### Justificación
-
-El aumento no se produjo por cambios en el router.
-
-Tampoco se produjo por copiar `tipo_original`.
-
-Se produjo porque el análisis semántico detectó correctamente tres testimonios que antes estaban en el lado conservador de la frontera `comentario/testimonio`.
+El aumento no se produjo por cambios en el router ni por uso de `tipo_original`.
 
 ---
 
-## 22. Distribución del nuevo lote
+## 22. Distribución observada
 
-### Tipos detectados
+Tipos detectados:
 
 ```text
 testimonio: 8
@@ -911,7 +755,7 @@ pregunta_tecnica: 4
 feedback: 2
 ```
 
-### Sentimientos
+Sentimientos:
 
 ```text
 neutral: 11
@@ -919,13 +763,7 @@ positivo: 7
 muy_positivo: 5
 ```
 
-Sentimiento predominante:
-
-```text
-neutral
-```
-
-### Rutas
+Rutas:
 
 ```text
 caso_exito: 8
@@ -941,104 +779,31 @@ Total:
 35 activos
 ```
 
-### Temas
-
-```text
-programacion: 6
-empleabilidad: 5
-programa_hackathon: 4
-aprendizaje: 3
-comunidad: 2
-mentoria: 2
-certificacion: 1
-```
-
 ---
 
-## 23. Validación de encoding de `int-015`
+## 23. Verificación de encoding
 
-Durante una inspección con PowerShell se observaron caracteres como:
+PowerShell mostró temporalmente textos como:
 
 ```text
 especializaciÃ³n
 ```
 
-Se verificó el archivo con Python utilizando:
-
-```text
-encoding="utf-8"
-```
-
-y el contenido real del JSON fue correcto:
+Se verificó el JSON con Python utilizando UTF-8 y el contenido real era correcto:
 
 ```text
 especialización
 ```
 
-### Conclusión
-
-El problema observado correspondía a la representación de PowerShell, no a corrupción del JSON.
-
-No se realizó una modificación adicional por este punto.
+No fue necesario realizar cambios por este punto.
 
 ---
 
-## 24. Suite completa antes de integrar cambios externos
+## 24. Integración de cambios recientes de `develop`
 
-Resultado previo:
+Después de completar las correcciones de DS se revisaron cambios nuevos ya integrados en `develop`.
 
-```text
-441 passed
-132 subtests passed
-1 failed
-1 warning
-```
-
-Único fallo:
-
-```text
-tests/agents/test_tolerancia_estados_manuales.py::
-test_enrutador_tolera_estado_sin_campos
-```
-
-El test esperaba:
-
-```python
-{"rutas": []}
-```
-
-pero el router devolvía correctamente:
-
-```python
-{
-    "rutas": [],
-    "tier_modelo": "rapido",
-}
-```
-
-No se modificó el router para satisfacer ese test.
-
----
-
-## 25. Revisión de cambios nuevos en `develop`
-
-Después de finalizar las correcciones de DS se revisó el estado de GitHub.
-
-Se encontraron ya fusionados:
-
-```text
-PR #30
-test(datos): preparar auditoria de Semana 4 y compatibilidad con tiers
-```
-
-y:
-
-```text
-PR #31
-feat(datos): auditor de coherencia semantica y auditoria de la entrega de DS
-```
-
-El PR #30 incluye la corrección del test:
+Entre ellos se encontraba la actualización del test de tolerancia del router.
 
 Antes:
 
@@ -1054,34 +819,24 @@ assert determinar_rutas({})["rutas"] == []
 
 ### Justificación
 
-El campo:
+`tier_modelo` es un campo válido del router.
 
-```text
-tier_modelo
-```
+El fallo estaba en una expectativa desactualizada del test, no en la implementación del router.
 
-forma parte válida del resultado del router.
-
-Por tanto, el problema estaba en la expectativa desactualizada del test y no en la implementación del router.
+Por ello no se modificó el router.
 
 ---
 
-## 26. Integración local de `develop`
+## 25. Merge local de `origin/develop`
 
-Se hizo:
-
-```text
-git fetch origin
-```
-
-y posteriormente se integró localmente:
+Se integró localmente:
 
 ```text
 origin/develop
 → feature/DS-Semana4
 ```
 
-El merge utilizó:
+El merge utilizó la estrategia:
 
 ```text
 ort
@@ -1089,25 +844,13 @@ ort
 
 y no produjo conflictos.
 
-Archivos incorporados desde Data/Gustavo:
-
-```text
-docs/reporte_consistencia_semana4.md
-scripts/auditoria_consistencia.py
-tests/agents/test_consistencia_semana4.py
-tests/agents/test_tolerancia_estados_manuales.py
-tests/fixtures/casos_consistencia_semana4.json
-tests/test_auditoria_consistencia.py
-tests/test_tolerancia_persistencia_oci.py
-```
-
-No fue necesario modificar manualmente archivos de ownership de Data.
+Se incorporaron pruebas y archivos de soporte provenientes de otros subequipos sin modificar manualmente su lógica.
 
 ---
 
-## 27. Suite completa después de integrar `develop`
+## 26. Suite completa integrada
 
-Resultado final de la suite integrada:
+Resultado:
 
 ```text
 475 passed
@@ -1116,64 +859,62 @@ Resultado final de la suite integrada:
 1 warning
 ```
 
-Warning:
-
-```text
-DeprecationWarning en dependencia externa google-genai
-```
+El warning corresponde a una deprecación externa de `google-genai`.
 
 ### Conclusión
 
-El fallo anterior quedó resuelto al incorporar la actualización oficial del test desde Data.
-
-No se modificó el router para conseguir este resultado.
-
-La suite integrada queda completamente verde.
+La suite integrada quedó completamente verde.
 
 ---
 
-## 28. Auditor semántico de Data/Gustavo
+## 27. Ejecución final vigente
 
-La integración añadió:
+El paquete final fue regenerado después de integrar `develop` y consolidar la documentación.
 
-```text
-scripts/auditoria_consistencia.py
-```
-
-junto con:
+SHA exacto del código:
 
 ```text
-tests/agents/test_consistencia_semana4.py
-tests/test_auditoria_consistencia.py
-tests/fixtures/casos_consistencia_semana4.json
-docs/reporte_consistencia_semana4.md
+8f32be8d8ef51d41a04b251ec9e719b258e94f88
 ```
 
-### Importancia
+Rama:
 
-El auditor de Data es independiente del paquete de trazabilidad generado por DS.
+```text
+feature/DS-Semana4
+```
 
-Data conserva la responsabilidad de revisar consistencia y alertas.
+Resultado:
 
-DS no debe presentar su propia salida de trazabilidad como auditoría oficial de Data.
+```text
+Working tree limpio: True
+
+Interacciones de entrada: 23
+Excluidas por Data: 0
+Resultados DS: 23
+Activos generados: 35
+
+Interacciones con fallback en análisis: 0
+Eventos de fallback en análisis: 0
+
+Activos con fallback: 0
+Eventos de fallback en generación: 0
+```
+
+Artefacto final de trazabilidad:
+
+```text
+salida/auditoria_semana4/auditoria_semana4.json
+```
+
+Este archivo reemplaza la salida anterior para la siguiente revisión de Data.
 
 ---
 
-## 29. Estado de `int-023`
+## 28. Estado de `int-023`
 
-`int-023` permanece fuera del alcance de esta corrección.
+`int-023` permanece reservado para Semana 5.
 
-Es un caso casi duplicado de:
-
-```text
-int-002
-```
-
-con diferencias de acentuación.
-
-Queda reservado para Semana 5.
-
-No se implementó:
+No se implementó en esta tarea:
 
 ```text
 deduplicación
@@ -1183,9 +924,9 @@ reglas especiales para duplicados
 
 ---
 
-## 30. Cambios que deliberadamente NO se realizaron
+## 29. Cambios que deliberadamente no se realizaron
 
-Durante esta tarea no se modificó:
+No se modificó:
 
 ```text
 src/datos/*
@@ -1195,21 +936,21 @@ Tampoco se realizó:
 
 ```text
 hardcoding por ID
-uso de tipo_original como ground truth
+uso de tipo_original como ground truth automático
 cambio del router para forzar rutas
-cambio de proveedor después de la auditoría
-cambio de modelos después de la auditoría
-cambio del timeout después de la auditoría
+nuevo cambio de proveedor tras la revisión
+nuevo cambio de modelos tras la revisión
+nuevo cambio de timeout tras la revisión
 deduplicación de int-023
 ```
 
 ### Justificación
 
-El objetivo era corregir la causa mínima de cada hallazgo sin alterar responsabilidades entre subequipos ni introducir arquitectura nueva innecesariamente.
+El objetivo fue corregir las causas mínimas necesarias sin alterar ownership ni introducir arquitectura nueva sin evidencia.
 
 ---
 
-## 31. Commits relevantes de Data Science
+## 30. Commits relevantes de Data Science
 
 ```text
 a21e646
@@ -1256,18 +997,25 @@ docs(ds): actualizar evidencia final de auditoria Semana 4
 fix(ds): refinar prompts de analisis y FAQ
 ```
 
-También existe un commit local posterior de documentación y un merge local de `origin/develop`.
-
-El SHA definitivo del código integrado debe registrarse después de consultar `HEAD` y regenerar la salida final.
+```text
+8f32be8
+docs(ds): consolidar validacion tecnica de Semana 4
+```
 
 ---
 
-## 32. Estado reproducible del paquete anterior a la integración
+## 31. Archivo que debe recibir Data
 
-El paquete de 35 activos fue generado sobre:
+Archivo principal:
 
 ```text
-204b29d9870c0a0fd70f0d626efaa14479c4c4ff
+salida/auditoria_semana4/auditoria_semana4.json
+```
+
+SHA del código que produjo esa salida:
+
+```text
+8f32be8d8ef51d41a04b251ec9e719b258e94f88
 ```
 
 Resultado:
@@ -1282,33 +1030,34 @@ Resultado:
 0 inconsistencias
 ```
 
-Este paquete sirve como evidencia válida de la corrección de prompts.
-
-Sin embargo, después de integrar `develop`, debe generarse una última salida sobre el nuevo SHA para que el artefacto final de Semana 4 represente exactamente el código integrado.
+Aunque el nombre del archivo mantiene `auditoria_semana4.json`, la responsabilidad de DS es entregar la trazabilidad. La revisión o auditoría posterior corresponde al equipo de Data.
 
 ---
 
-## 33. Paso final pendiente antes del cierre
+## 32. Qué debe revisar Data
 
-Antes de cerrar y compartir el paquete definitivo con Data se debe:
+Especialmente:
 
 ```text
-1. confirmar que el working tree está limpio;
-2. obtener el SHA actual de feature/DS-Semana4;
-3. regenerar las 23 interacciones;
-4. ejecutar el auditor de consistencia incorporado desde Data;
-5. confirmar activos, fallback, errores, fallos e inconsistencias;
-6. registrar el nuevo SHA y los resultados en este documento;
-7. realizar únicamente después el push remoto, previa confirmación.
+int-011
+int-014
+int-015
+int-018
 ```
 
-No debe reutilizarse como salida final el SHA `204b29d` después de haber integrado nuevos commits desde `develop`.
+junto con el nuevo resultado global:
+
+```text
+35 activos
+```
+
+`int-023` queda explícitamente fuera de este cierre y reservado para Semana 5.
 
 ---
 
-## 34. Conclusión técnica
+## 33. Conclusión
 
-La Semana 4 permitió estabilizar el flujo de IA alrededor de:
+Semana 4 deja una configuración estable:
 
 ```text
 NVIDIA NIM como proveedor primario
@@ -1318,27 +1067,40 @@ Nemotron Super para razonamiento
 timeout NVIDIA de 15 s
 ```
 
-La selección se basó en pruebas reales y no únicamente en preferencia de modelo.
+La selección se sustentó en pruebas reales.
 
-Se descartaron configuraciones que presentaron:
+Los problemas observados durante la evaluación fueron:
 
 ```text
-HTTP 410
-timeouts persistentes
+Llama → HTTP 410
+Gemma → timeout
+DeepSeek dentro de NIM → timeout
 ```
 
-y se mantuvieron aquellas que completaron correctamente las pruebas reales.
-
-Posteriormente, la auditoría de Data permitió identificar dos problemas semánticos:
+La retroalimentación de Data permitió corregir:
 
 ```text
-FAQ generada como metainstrucción
+FAQ redactada como metainstrucción
 frontera demasiado conservadora entre comentario y testimonio
 ```
 
-Ambos se corrigieron en los prompts, sin tocar el router ni utilizar `tipo_original` como ground truth.
+sin alterar el router ni utilizar `tipo_original` como ground truth.
 
-La ejecución posterior consiguió:
+La integración final deja:
+
+```text
+475 passed
+132 subtests passed
+0 failed
+```
+
+y el paquete de trazabilidad final está asociado a:
+
+```text
+8f32be8d8ef51d41a04b251ec9e719b258e94f88
+```
+
+con:
 
 ```text
 23/23 interacciones
@@ -1349,13 +1111,4 @@ La ejecución posterior consiguió:
 0 inconsistencias
 ```
 
-y la integración con los cambios recientes de Data dejó la suite completa en:
-
-```text
-475 passed
-132 subtests passed
-0 failed
-1 warning externo
-```
-
-El único paso técnico pendiente es regenerar el artefacto definitivo sobre el SHA integrado actual y registrar esos datos finales antes de publicar la rama.
+Este es el estado técnico que Data Science entrega para la siguiente revisión del equipo de Data.

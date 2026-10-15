@@ -48,6 +48,10 @@ y reutilizable, sin convertirlo todavía en una publicación promocional.
   "según su testimonio, expresa su agradecimiento".
   Prefiere una formulación directa como
   "Andrés expresó su agradecimiento hacia la comunidad y los mentores."
+  - Entrega únicamente el titular y el resumen final listos para curaduría.
+- No incluyas notas internas, advertencias, instrucciones de redacción,
+  explicaciones sobre información faltante ni comentarios sobre lo que
+  el mensaje original no especifica.
 
 # CONTROL DE INFERENCIAS
 
@@ -98,15 +102,9 @@ Titular:
 "Mariana es seleccionada para un puesto de Desarrolladora Junior de IA"
 
 Resumen:
-Un texto de 2 a 3 frases que indique que Mariana fue seleccionada
-para el puesto de Desarrolladora Junior de IA. Después, separado
-del hecho principal, debe señalar que, según su testimonio, el proyecto
-de LangChain y OCI incluido en su portfolio marcó una diferencia
-importante durante su proceso.
-
-No afirmes que ocurrió durante una entrevista ni que el proyecto
-causó la contratación, porque el mensaje original no proporciona
-esa información.
+"Mariana Souza fue seleccionada para el puesto de Desarrolladora Junior de IA.
+Según su testimonio, el proyecto de LangChain y OCI que incluyó en su portfolio
+marcó una diferencia importante durante su proceso."
 
 # IMPORTANTE
 

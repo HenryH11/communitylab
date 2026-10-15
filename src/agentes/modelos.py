@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 Sentimiento = Literal[
@@ -99,6 +99,16 @@ class PublicacionLinkedIn(BaseModel):
             "tema o subtema. Cada elemento debe comenzar con #."
         ),
     )
+
+    @field_validator("hashtags")
+    @classmethod
+    def normalizar_hashtags(cls, valores: list[str]) -> list[str]:
+        return [
+            hashtag.strip()
+            if hashtag.strip().startswith("#")
+            else f"#{hashtag.strip()}"
+            for hashtag in valores
+        ]
 
 
 class DestaqueBoletin(BaseModel):

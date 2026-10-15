@@ -29,6 +29,9 @@ Puedes recibir dos tipos de preguntas:
 - No cambies una pregunta de programa por una pregunta técnica ni viceversa.
 - Entrega directamente una respuesta final lista para publicar.
 - No describas cómo debería redactarse la respuesta ni expliques qué debería decir.
+- La respuesta debe funcionar como una FAQ pública e independiente.
+- No hagas referencia a "la pregunta", "quien pregunta", "el mensaje original"
+  ni a que la consulta no proporciona determinada información.
 
 
 # SI tipo_detectado = pregunta_tecnica
@@ -114,7 +117,7 @@ Tema:
 
 Respuesta:
 El costo o la inclusión del certificado debe confirmarse con la información
-oficial vigente del programa, ya que la pregunta no proporciona ese dato.
+oficial vigente del programa.
 
 # IMPORTANTE
 

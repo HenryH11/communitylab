@@ -1,3 +1,4 @@
+from src.agentes.modelos import PublicacionLinkedIn
 from src.agentes.prompts.boletin import prompt_boletin as _prompt_boletin
 from src.agentes.prompts.caso_exito import prompt_caso_exito as _prompt_caso_exito
 from src.agentes.prompts.linkedin import prompt_linkedin as _prompt_linkedin
@@ -215,3 +216,52 @@ def test_prompt_analisis_considera_impactos_concretos_como_testimonio():
     assert "aplicar lo aprendido" in sistema
     assert "comprender algo que antes" in sistema
     assert "acceder a una colaboración" in sistema
+
+def test_caso_exito_entrega_contenido_final_sin_notas_internas():
+    contexto = {
+        "autor": "Persona de prueba",
+        "texto": "Conseguí una oportunidad para colaborar en un proyecto.",
+    }
+
+    sistema = _contenido_sistema(
+        _prompt_caso_exito,
+        **contexto,
+    )
+
+    assert "listos para curaduría" in sistema
+    assert "No incluyas notas internas" in sistema
+    assert "Un texto de 2 a 3 frases que indique" not in sistema
+
+
+def test_faq_publica_no_hace_referencia_a_la_pregunta():
+    contexto = {
+        "tipo_detectado": "pregunta_programa",
+        "subtema": "costo del certificado",
+        "texto": "¿El certificado tiene algún costo?",
+    }
+
+    sistema = _contenido_sistema(
+        _prompt_preguntas_frecuentes,
+        **contexto,
+    )
+
+    assert "FAQ pública e independiente" in sistema
+    assert "ya que la pregunta no proporciona ese dato" not in sistema
+
+
+def test_linkedin_normaliza_hashtags_con_numeral():
+    publicacion = PublicacionLinkedIn(
+        titulo="Aprendizaje de clasificación",
+        contenido="Contenido de prueba.",
+        hashtags=[
+            "Aprendizaje",
+            "#Python",
+            "ModeloDeClasificacion",
+        ],
+    )
+
+    assert publicacion.hashtags == [
+        "#Aprendizaje",
+        "#Python",
+        "#ModeloDeClasificacion",
+    ]

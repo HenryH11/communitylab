@@ -77,6 +77,44 @@ def test_instruccion_del_prompt_filtrada_en_la_salida():
     assert auditar_activo("Por favor no inventes datos.", "Pide que no inventes datos.") == []
 
 
+@pytest.mark.parametrize(
+    ("original", "salida", "detalle"),
+    [
+        ("El networking que generé en este programa me abrió puertas para colaborar en proyectos open source.",
+         "Gabriela Núñez indica que el networking le abrió puertas para colaborar en proyectos open source. "
+         "No se especifica el tipo de proyectos ni el alcance de la colaboración.",
+         "no se especifica"),
+        ("El acompañamiento del mentor fue clave para entender conceptos de machine learning.",
+         "Laura Ocampo destaca al mentor. No se menciona ningún logro adicional en el mensaje original.",
+         "no se menciona, mensaje original"),
+        ("¿El certificado final tiene costo adicional o está incluido en el programa?",
+         "El costo debe confirmarse con la información oficial, ya que la pregunta no proporciona ese dato.",
+         "ya que la pregunta no proporciona"),
+    ],
+)
+def test_comentario_interno_para_el_revisor(original, salida, detalle):
+    alertas = auditar_activo(original, salida, metadatos=("Gabriela Núñez", "Laura Ocampo"))
+    assert [(a["tipo"], a["detalle"]) for a in alertas] == [("comentario_interno", detalle)]
+
+
+def test_redaccion_prudente_no_es_comentario_interno():
+    original = "¿Por qué me sale KeyError en Python?"
+    salida = "Con la información recibida no se puede confirmar la causa; consulta la documentación oficial."
+    assert auditar_activo(original, salida) == []
+
+
+def test_hashtag_sin_almohadilla():
+    entrega = {
+        "interacciones": [{"id": "a-1", "autor": "Ana", "canal": "#logros", "texto": "Terminé 2 cursos de Python."}],
+        "activos": [{"id_interaccion": "a-1", "tipo": "linkedin",
+                     "contenido": {"contenido": "Ana terminó 2 cursos de Python.",
+                                   "hashtags": ["#Python", "Aprendizaje", "ModeloDeClasificación"]}}],
+    }
+    filas = auditar_entrega(entrega, None, SIN_OPCIONES)
+    assert filas[0]["alertas"] == [
+        {"tipo": "hashtag_sin_almohadilla", "detalle": "Aprendizaje, ModeloDeClasificación"}]
+
+
 def test_entrega_marca_activos_sin_original_y_de_mensajes_excluidos():
     entrega = {
         "interacciones": [{"id": "a-1", "autor": "Ana", "canal": "#logros", "texto": "Terminé 2 cursos."}],

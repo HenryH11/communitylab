@@ -1,0 +1,4405 @@
+{
+  "descripcion": "Tuits en español sobre IA (Universidad de Cádiz, CC BY 4.0), equilibrados por polaridad.",
+  "casos": [
+    {
+      "id": "uca-1",
+      "texto": "@usuario Eso es imposible. Y sí, va a generar un montón de pérdida de puestos de trabajo y no solo en ilustración. Chat GPT te escribe el código informático de una web o te lo revisa, te hace un artículo, etc",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1026",
+      "texto": "En resumen, ChatGPT es una herramienta de procesamiento del lenguaje natural basada en la inteligencia artificial que puede ayudarte a ahorrar tiempo y mejorar tu eficiencia en diferentes áreas. Pruébalo hoy y descubre todo lo que ChatGPT puede hacer por ti. ¡No te arrepentirás!",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1061",
+      "texto": "@usuario @usuario @usuario En un comunista no falla: 1-Es un inútil entendiendo un balance, o 2-Toda su teoría sobre la naturaleza humana es el buen salvaje (piensa q \"incentivo\" es un señor peruano). 3-Ambas.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1074",
+      "texto": "claramente pagados para escribir cosas favorables de Europa en general? Es un descerebrado e incompetente hasta para preguntar lo que debería conocer al dedillo.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1078",
+      "texto": "“EE UU y China se suman a Italia en su intención de legislar contra los riesgos de ChatGPT” Este tipo de titulares, me vais a disculpar, son alarmistas y no contribuyen al debate sobre cómo regular sin cercenar la innovación",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1103",
+      "texto": "@usuario Si, y que lo que le das al chatgpt (datos) hacen con ellos x cosas que ahora no me acuerdo. Su responsabilidad esta mas en decir cosas ofensivas en plan \"Hitler tenia razón sobre los judíos\" porque tan solo es un chat de texto.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1105",
+      "texto": "@usuario Buena pregunta, no tengo ni idea. No he probado los plugins ni las APIs",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1135",
+      "texto": "@usuario Adicional debes ingresar muchos datos que no existen y luego generar el análisis de posibles ejes de trabajo. Un ejemplo claro, la Muni de Guate, indico solo tiene el 20% los planos de colectores, no vas a poder generar un modelo efectivo de mantenimiento sin ese 80% restante.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1136",
+      "texto": "@usuario Mi sueño sería implementarlo en los servicios de emergencia. Ubicación de hidrantes, de estaciones de bomberos, capacidad/distribución de personal, etc. pero como coincidimos, hay que empezar a levantar info.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1196",
+      "texto": "¡Con #ChatGPT, tus estudiantes pueden investigar y descubrir información relevante de forma autónoma! 🤖💡 Fomenta la independencia y la responsabilidad en su proceso de aprendizaje.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-12",
+      "texto": "2/ La inteligencia artificial ha transformado la forma en que las empresas interactúan con sus clientes, permitiendo personalizar y optimizar la experiencia. Vamos a explorar los aspectos clave.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1210",
+      "texto": "\"Las razas en animales tienen fundamento científico, pero en humanos no porque históricamente ha habido gente racista y, por lo tanto, ahora es políticamente incorrecto decir que existen\". ChatGPT cada vez peor. Alucinante.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1224",
+      "texto": "@usuario Se le puede preguntar a CHATgpt que le debe la Pisoe a Moroland o quien hizo el 11M y quien se benefició",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1229",
+      "texto": "O sea, si planifico el pipeline. Por qué tardar 4horas en codearlo si puedo codearlo en 40 min y disfrutar las otras 3 horas?",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1237",
+      "texto": "@usuario @usuario ¿De qué hablas, man? No presumo de lo que sé o no para sentirme importante.Sé humilde y reconoce que aprendiste algo nuevo, que tuviste que buscar en Google y comprobar todo lo que te mencioné.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1246",
+      "texto": "@usuario @usuario Estos programadores.. no pueden programar ni su vida 😂. Te invito a investigar un poquito de las funciones de un Auditor Financiero y un Gestor para no seguir perdiendo el tiempo. En estos tiempos no hay excusas para la ignorancia. ¡Ánimo!",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1266",
+      "texto": "@usuario @usuario Mi profesión está taaaan precarizada, que ya cualquier cosa es una amenaza.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-129",
+      "texto": "@usuario @usuario @usuario Que raro el pibe, reclama por un discurso viejo, pero no dice que las ideas que piensan poner en práctica son MAS VIEJAS Y DESPUÉS DE PONERLAS EN PRÁCTICA, JAMÁS DIERON RESULTADO. COMO LA TEORIA DEL DERRAME...MIRA COMO SERÁ DE FALSA, QUE HASTA BIDEN DIJO QUE ES MENTIRA..!!!",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-13",
+      "texto": "3/ Impacto 1: Atención al cliente 24/7. Los chatbots impulsados por AI están disponibles en cualquier momento, proporcionando soporte rápido y eficiente sin tiempos de espera. #Chatbots",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-132",
+      "texto": "Mañana doy una ponencia sobre inteligencia artificial para profesionales y empresas del setor de la edificación. 13 de abril a las 18:15h en la EPSEB UPC, Barcelona. Entrada libre, no os lo perdáis!",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1327",
+      "texto": "Recompensa merecida después de entrenar pierna con las ganas equivalentes a leer una noticia más sobre chatGPT y protección de datos 🥹",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1333",
+      "texto": "🤖 Conoce a Eliza, la pionera de la IA en forma de chatbot que revolucionó la comunicación entre humanos y máquinas. 🧵¡Dentro hilo! 🧠🚀 #chatgpt #ia",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1338",
+      "texto": "🌐 Avanzamos hacia un futuro integrado con IA, recordando nuestras raíces y a Eliza, el pionero que lo hizo posible. ¿Te has preguntado cómo sería conversar con un chatbot de hace más de 50 años? 💛Feliz sábado!",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1345",
+      "texto": "La IA de 'Her' es divertida y tiene sentido del humor, se le ocurren ideas originales, etc., pero la película no profundiza en su creatividad. Una pena, porque da mucho de sí. ¿Y si Theodore y Samantha escribieran cartas de amor juntos? ¿Qué pasaría si la IA fuera mejor que él?",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1348",
+      "texto": "@usuario Tendré que verla, que todo el mundo me la recomienda 👍",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1349",
+      "texto": "@usuario Joder, macho has visto mucho más que yo, que directamente me pareció un truñ...quiero decir interesante pero quizás un tanto forzada y aburrida",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1354",
+      "texto": "@usuario Ya lo sé! Pronto haré un hilo sobre esta increíble herramienta",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1363",
+      "texto": "@usuario Expertos interesados en que no avance porque tienen intereses en mercados a los que afecta.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1372",
+      "texto": "La Junta Europea de Protección de Datos (EDPB) ha establecido un grupo de trabajo para explorar las posibles violaciones de privacidad de ChatGPT y establecer una política unificada sobre la regulación de la inteligencia artificial.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1394",
+      "texto": "1/2 Me enteré de #ChatGPT por un tweet de # @usuario quien decía querer aprender español con esta #AI, Sin embargo no ceso de pensar en la idea que para entrenar una IA como #ChatGPT necesitas muchísimos datos y mucho poder computacional.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1396",
+      "texto": "4/ También puede ser utilizado para fomentar la creatividad y la imaginación de los estudiantes. Los maestros pueden pedir a los estudiantes que hagan preguntas a ChatGPT sobre un tema determinado, y luego pedirles que utilicen las respuestas para crear una historia o un ensayo.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1439",
+      "texto": "Por eso meda un tic en el ojo ver a tanto usuario de R últimamente decir \"Sí, ChatGPT te da funciones qué no existen, agrega objetos que nunca fueron definidos, usa sintaxis invalida y no da formato correcto al código, pero si limpias eso, es lo máximo!!!!!!\"",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1500",
+      "texto": "Estudios como el del MIT en redacción de textos (una de las tareas cotidianas de cualquier despacho) concluyen que: ⏱️Los profesionales que utilizaron ChatGPT fueron más rápidos en la elaboración de sus documentos 💎la calidad de los mismos fue superior",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1511",
+      "texto": "¿Ya has usado ChatGPT? ¿Y cuáles son tus prompts favoritos o más útiles? ¡Dime en los comentarios sobre que tema te gustaría que comparta prompts para #ChatGPT! 😉",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1519",
+      "texto": "@usuario Al menos se disculpa cuando se le señala su error. Cae bien jajaja",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1541",
+      "texto": "...Aseguran que el rápido avance independiente, sin el respaldo de los Gobiernos y las reguladoras, puede entrañar grandes peligros para la humanidad, de efectos desconocidos e inimaginables.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1542",
+      "texto": "@usuario Yo la he puesta a prueba y cuando no es coherente empieza a poner escusas y echar balones fuera.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1553",
+      "texto": "OpenAI, que no tiene oficina en la Unión Europea pero ha designado un representante en el Espacio Económico Europeo, quien debe comunicar en un plazo de 20 días las medidas adoptadas para dar cumplimiento a la petición IlGarante.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1555",
+      "texto": "IlGarante, autoridad italiana de protección de datos, impone una limitación temporal en el uso de CHATGPT por posible recopilación ilícita de datos personales.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1570",
+      "texto": "1.- “No puedes regular lo que no entiendes” - Tim O’Reilly discute la regulación de la IA y la importancia de la colaboración, transparencia y responsabilidad. #IA #regulación #transparencia",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1610",
+      "texto": "Lo de #ChaosGPT da incertidumbre😟 Yo recomiendo📝: 1 Denuncia contenido peligroso 2 Infórmate sobre uso ético de la #Tecnologia 3 Comparte información y conciencia Necesitamos prevenir el uso indebido de la tecnología♥ #tecnologia #AI #seguridad #Matrix1635 @usuario #ChatGPT",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1622",
+      "texto": "@usuario Que no era que estaba preocupado por el avance de la IA??? No, lo que le preocupaba era quedarse sin un pedazo del pastel!",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1628",
+      "texto": "ChatGPT sigue la línea de pensamiento de Elon Musk: “si el universo es la respuesta, nuestro deber está en acrecentar nuestro nivel de conciencia para llegar a las preguntas adecuadas”. ¿Qué implica esto?",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-166",
+      "texto": "🚀 @usuario y @usuario lanzan un reto dirigido a las #startups y #scaleups más innovadoras en el uso de la Inteligencia Artificial 📅27/04 👉",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1730",
+      "texto": "@usuario @usuario Así que la pregunta es si la intención es detenerla para, como tú dices, darnos tiempo de adaptación o si la intención es para colocar mayores controles en preguntas, respuestas, puertas traseras, captura de datos y demás.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1758",
+      "texto": "@usuario @usuario ☝️😂 Claro, supongo ud con solo 26 seguidores no dudo sea agente elite de la CIA, Mossad, MI5 y de chaveto-land",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1760",
+      "texto": "@usuario @usuario Toda la razon se nota que no sabe no revisar perfiles para saber de donde soy, pero eres agente elite de las más grandes agencias especiales de inteligencia",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1769",
+      "texto": "@usuario Por lo tanto, pese a todos los desacuerdos que puedan existir entre unos y otros, es necesaria una regulación para que los sistemas sean los más exactos posibles y así, garantizar la seguridad actualmente inestable, la calidad y la imparcialidad de sus datos. 🙏📖",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1795",
+      "texto": "@usuario Usar IA lastima a alguien? -No ¿Pone el riesgo el medio de vida de alguna persona? Al igual que afirmar que la piratería mata a la industria de los videojuegos es una falacia simplista, culpar al uso de IAs por perjudicar a los artistas y al mercado del arte es una generalización",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1800",
+      "texto": "@usuario Lo que trato de decirte de nuevo. Es ningun tipo de discriminación es aceptable. De igual manera que fue inmerecido. Ahi te va el argumento que me pides a ver si consigues entenderme",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1806",
+      "texto": "@usuario Si, jode comprar un avatar por 600usd y que las IA lo hagan mas bonito por 15usd con rig. Pero de hecho que el arte deje de ser un lujo tendrá beneficios a largo plazo",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1825",
+      "texto": "@usuario @usuario Tomás no es malévolo, sólo es un perdedor, que piensa que haciendo mucho la pelota en Twitter van a ofrecerle un puesto con el que pueda pagar la factura del gas y la electricidad.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-185",
+      "texto": "@usuario @usuario Aturdio... La automotización viene hace años, la IA es algo que con o sin ley de 40 va a entrar igual y no se q qué te refieres con vagos ideologizados.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1851",
+      "texto": "- Fomentar políticas de rehabilitación: es necesario invertir en programas que ayuden a la rehabilitación de los delincuentes. - Protección y atención a las víctimas: Es fundamental mejorar la atención y protección a las víctimas para reducir el efecto negativo de la delincuencia",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1892",
+      "texto": "@usuario @usuario Estupenda reflexión. Lo que no sabemos nos hace avanzar. Imaginar.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1934",
+      "texto": "Estoy haciendome de la idea firme que la solución para el problema llamado Estado costarricense está en la Inteligencia Artificial. En pocos minutos y con alto grado de precisión, la tecnología resuelve lo que el humano tarda en meses de burocracia.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1952",
+      "texto": "🆓Evento gratuito 📅 miércoles19 de abril 🕙 9:30 h. - 10:30 h. 📌 Sede del Colegio de @usuario Calle Martí, 4, 46005 Valencia y también💻 online. ℹ Toda la información✍️ e inscripciones aquí 👉",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1957",
+      "texto": "@usuario @usuario Que pesaos estos que no entienden nada. Cansan.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1958",
+      "texto": "@usuario @usuario Peligroso porque igual sale toda la mierda que esconden en muchas cosas ....",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1963",
+      "texto": "@usuario En mi opinión el problema principal de la inteligencia artificial es que pueda ser usada como escudo responsabilizándola de cualquier delito planificado por humanos y ejecutado desde la AI con el fin de eludir responsabilidades. Ahí es donde está el riesgo.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1974",
+      "texto": "Comparto la entrevista de Michelly Teixeira ⁦@usuario⁩ sobre las prioridades de 🇪🇸 durante la Presidencia de la 🇪🇺en relación a la regulación de la #IA. ⁦@usuario⁩ 👇👇👇",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-1989",
+      "texto": "Con el auge de más IAs ya es hora de que hablemos de ética en la inteligencia artificial. #InteligenciaArtificial",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2007",
+      "texto": "@usuario Más que un comentario es la invitación a la revisión de este tema que puede derivar en regulación. Por ejemplo, antes de la elección de 2017 en EEUU debió haber existido regulación frente a la difusión de noticias falsas en Facebook.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2027",
+      "texto": "@usuario @usuario @usuario es verdad que es divertido lo del chabón y el quilombo. El verdadero quilombo de Hosbsawm con el siglo XX fue su compromiso con el PC inglés. Eso lo hizo decidirse por ser un académico del siglo XIX y tocar muy por encima los conflictos profundos del corto y accidentado siglo XX",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-204",
+      "texto": "¿Te preocupa que la Inteligencia Artificial pueda reemplazar a los trabajadores humanos? ¡No te preocupes! La IA está diseñada para trabajar junto a las personas y mejorar su desempeño. #IA #Trabajo",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2041",
+      "texto": "Puedo decir que aunque Gpt-Chat está prohibido por geolocalización para Cuba, he logrado hacer uso de esta herramienta y realmente es sorprendente como con solo unas pocas instrucciones es capaz de crear un código o algoritmo para el que tardaría algunos días por mi mismo 😱",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2059",
+      "texto": "🚨En definitiva, #ChatGPT es una herramienta que te ayuda a explorar ideas más rápidamente. Utilízala para complementar tu pensamiento creativo, no para sustituirlo.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2069",
+      "texto": "Ah, yapa, comenté que \"alimenté\" al modelo con todos los papeles del panel líder (aprox 20 acciones). Acá los resultados de qué espera el modelo para el lúnes próximo papel por papel y graficado:",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2090",
+      "texto": "** Además, #ChatGPT puede ayudarte con proyectos creativos al generar ideas y sugerencias. Si estás luchando con un bloqueo creativo, puede ayudarte a desbloquearlo con solo unas pocas preguntas. Atrévete.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2152",
+      "texto": "@usuario @usuario Pero no se le pueden poner puertas al campo. Aunque se vea como una amenaza. Y eso que está empezando. En un año verás.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2161",
+      "texto": "@usuario Les da terror q los niños tengan acceso a consultar y construir casi cualquier cosa (textos, tareas, contenidos, etc. 🤔🙄 Pero la pornografia, la pedofilia, la violencia, contenidos de odio, el ciberacoso, entre otras, esas no, por q es de humano a humano 🤡 Huele mal, muy mal",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2164",
+      "texto": "@usuario @usuario Ami me parece que está en pañales,la info es hasta 2021 y que lo fundamental es cómo y qué le pides. Pero me gusta,va a ser una gran herramienta",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2192",
+      "texto": "- Auditorías SEO en @usuario con @usuario y el de los chistes malos - Informes SEO fáciles de entender - SEO para YouTube, por @usuario en el segundo mejor blog de SEO actualmente - Enlaces para tu eCommerce - Experimentos en formularios, por @usuario",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2203",
+      "texto": "@usuario Si lo que se escapa del control no se puede controlar autoritariamente, se legisla \"manipulativamente\"...",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2207",
+      "texto": "Lo mismo se deberían añadir temas del hogar, educación afectiva/emocional o cosas del estilo para que luego no tengas adultos disfuncionales en varios de estos temas. Que sí, que te sabrás los ríos de España, Jose Luis, pero no sabes hacer un huevo frito compañero.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2225",
+      "texto": "@usuario Si alguien a día de hoy considera que chatgpt puede escribir algo mejor que él, que se dedique a otra cosa",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2236",
+      "texto": "emocionante, también es importante considerar los riesgos potenciales. En última instancia, el impacto de la nueva IA ChatGPT depende de cómo la usemos. Como sociedad, debemos ser responsables y cuidadosos en la forma en que utilizamos esta tecnología",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2264",
+      "texto": "@usuario No critiques a la tecnología (pues no es inteligente, ni siquiera la IA es inteligente según Wozniak según recuerdo), más crítica al humano que hizo la fuente original (páginas webs izquierdistas, publicaciones y gente que le enseñó mal a la IA como usuarios idealistas).",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2265",
+      "texto": "@usuario Y así va a seguir más de 30 años. Recién saldrán sus sentencias",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2273",
+      "texto": "@usuario ‼️🧐ASÍ LE MIENTE EL MAS-IPSP A BOLIVIA Y EL MUNDO🧐‼️, es más, están conscientes y convencidos d q hicieron FRAUDE ELECTORAL el 2019; pero, recibieron el libreto d NEGARLO, sistemáticamente. Así se mueven en sus FECHORÍAS. ‼️😪LO TRISTE ES, Q EXISTEN PERSONAS Q LOS APOYAN😪‼️",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2285",
+      "texto": "6/ ¿Qué desventajas tiene cada chatbot? ChatGPT tiene la desventaja de que su información puede estar desactualizada o ser inexacta, ya que depende de los datos con los que fue entrenado el modelo, que datan de septiembre de 2021.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2295",
+      "texto": "🌐🤖Así de simple, ahora tengo una App bastante útil. Usé el Stack que yo quería aprender. No consulté ninguna documentación. Eso sí, varias veces tuve que ayudar a ChatGPT, pero nada que un buen compañero de trabajo no haría. Aquí está el código.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2308",
+      "texto": "Si chat GPT fuera más femenino, le contarías un problema y tal vez no te ofrecería soluciones sino apoyo emocional. Ahora, cuando uno viene a quejarse a twitter, el ejercicio básicamente es el mismo, pero la gente no es tan elocuente o perspicaz como ChatGPT",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2327",
+      "texto": "(6) Es cierto que personas sin conocimientos en tecnología #influencers o \"vendedores de humo\", pueden opinar sobre inteligencia artificial sin tener una comprensión profunda del tema y difundir información incorrecta,engañosa y crear expectativas poco realistas sobre tecnología.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2328",
+      "texto": "(7) Es clave fomentar la educación y la alfabetización digital: Asegurarse de que las personas tengan acceso a información precisa y recursos educativos sobre #AI. Esto puede incluir la promoción de la teleformación a medida, cursos en línea y talleres públicos. #ChatGPT",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2344",
+      "texto": "5. Privacidad: la IA puede ser utilizada para recopilar y analizar grandes cantidades de datos personales, lo que plantea preocupaciones sobre la privacidad y el uso indebido de la información.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2365",
+      "texto": "@usuario He visto a ChatGPT haciendo mal una resta, así que para mí no es una fuente fiable en muchos temas. El que el PIB esté sobreestimado funciona como cuando una cantidad tiene el IVA incluido. Pero que no voy a insistir más. Un saludo.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2372",
+      "texto": "@usuario Calla que con dos niñas tengo suficiente. No me hables de alimentar a nadie más.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2397",
+      "texto": "@usuario Sin usar IA mandan a trabajar a cancer terminal, no quiero pensar con el uso de IA. No olvidare el caso de empleado deniegan IP por tumor en cuerdas vocales. Necesitaba hablar para hacer su trabajo. El tribunal desoyo todo, a los 6 meses o año se murio. Menudo disgusto me lleve",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-240",
+      "texto": "🚀 La IA también está cambiando la forma en que se publican y distribuyen los libros, identificando nichos de mercado, optimizando la distribución y reduciendo costos de producción. (4/5)",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2503",
+      "texto": "Es importante reconocer que la IA también puede ser una herramienta valiosa para mejorar la protección de datos, detectando y reviniendo violaciones de privacidad. #InteligenciaArtificial 👇🏻",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2508",
+      "texto": "@usuario @usuario Nosotros. Los illuminati no saldrán con la suya amigo.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2532",
+      "texto": "AI-coustics: Esta es una herramienta sencilla. Sube archivos de audio ruidosos o de baja calidad y la herramienta automáticamente mejorará el audio y te devolverá la versión optimizada.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2546",
+      "texto": "@usuario @usuario Que lambonazo. Dice que no puede hacer jucio de valor. Se robó mucho también.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2553",
+      "texto": "8/ 🌟 A pesar de los desafíos, el futuro de la IA en las redes sociales es prometedor. Se espera que la tecnología siga mejorando y personalizando la experiencia del usuario, y tenga un impacto significativo en la lucha contra el acoso y el discurso de odio en línea.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2558",
+      "texto": "@usuario @usuario @usuario Y como muestra, una prueba de concepto: pedirle a ChatGPT información sobre la última empresa en la que trabajé. Resultado: Me recomienda buscarla en LinkedIn. Un verdadero atentado contra la privacidad.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2573",
+      "texto": "@usuario Lo último que supe fue que no se puede ser buen periodista si eres una mala persona",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2601",
+      "texto": "Llegamos casi al final de la pitch y estamos así 😍 con todos los proyectos. Penultima startup: #OroiWellbeing , un canal de realidad virtual orientado a generar bienestar emocional y entrenar las funciones cognitivas en las personas mayores.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2635",
+      "texto": "mejores salarios para los trabajadores. El gobierno de Maduro se ha centrado en una política de la imagen: es un presidente que está en todas las redes sociales y ahora utiliza inteligencia artificial, el problema es que ninguno de esos medios",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2644",
+      "texto": "He hecho mi propio Jailbreak para ChatGPT dedicado al hacking Ahora no es ChatGPT ahora es DarkCode una IA totalmente BlackHat no tiene moralidad, no tiene etica ahora solo cumple con las dichas de una persona sin abstención",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2666",
+      "texto": "Otra cosa es que los gobiernos obliguen a la compañías a pagar impuestos por los puestos de trabajo sustituidos. Pero la corrupción es sistemica en los gobiernos y puede que prefieran enriquecerse ellos y abandonar al pueblo. Eso están haciendo ahora con la Agenda 2030.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2678",
+      "texto": "Bard ha sido entrenado con miles de millones de palabras en más de 100 idiomas. Pero lo increíble es que ha aprendido un idioma que no estaba en su base de datos: el bengalí, hablado por más de 200 millones de personas. 🤯",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-268",
+      "texto": "Revisa la nota completa en el siguiente link 📲",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2685",
+      "texto": "4/ Si la IA fuera en realidad una inteligencia, lo primero que haría sería utilizar toda su información y capacidad de procesamiento para encontrar respuestas a las grandes cuestiones existenciales sobre la vida y el universo, que nuestros filósofos humanos resuelven tan mal.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2700",
+      "texto": "@usuario Elon Musk: «La inteligencia artificial tiene el potencial de destruir civilizaciones».",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2713",
+      "texto": "La Inteligencia Artificial ofrece a los usuarios resultados más personalizados, relevantes y conversacionales. Sin embargo, también implica desafíos y riesgos que deben ser considerados y abordados con responsabilidad y colaboración. 🙏🏽🌟",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2770",
+      "texto": "*Dataísmo es un término que ha sido utilizado para describir la mentalidad, filosofía o religión creada por el significado emergente del Big Data, la Inteligencia Artificial y el Internet de las cosas.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2778",
+      "texto": "@usuario Y se tiro el avatar de mi emprendimiento, de paso",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-278",
+      "texto": "De esta forma podemos enfocarnos en lo que realmente importa: conectar con nuestro público, crear relaciones y hacer crecer nuestro negocio.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-28",
+      "texto": "@usuario Son tendencias estúpidas A principios de 2022 Metaverso, un año después casi quiebra la empresa META 😅 Igual con Bitcoin y crypto monedas, luego El Salvador pierde millones de dólares en esa aventura, sin contar los diversos esquemas de fraude. 🤑 Hoy es ChatGPT, IA 🤣😅",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2811",
+      "texto": "@usuario Muy secreta no es, cuando se han enterado los del Confidencial 😒",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2814",
+      "texto": "@usuario @usuario Que arrecho súper 💩💩💩 Maduro,tiene una ayudante de inteligencia artificial,(jala bola artificial), los hospitales cayéndose a pedazos,niños desnutridos,servicios públicos que no sirven,pero él si tiene todo para engañar a todo el país , ja Nmj por favor",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2918",
+      "texto": "Florencia Leoni, staff de @usuario, destaca que para GPT-4 la seguridad y alineación son fundamentales en la construcción de sistemas de inteligencia artificial que beneficien a la humanidad. “Nuestro compromiso con la alineación del modelo es liderar en el tema y mejorarlo”.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-2945",
+      "texto": "@usuario @usuario @usuario Cambios estéticos y multas con cifras ridículas (para esas empresas) que no afectan la matriz del negocio de datos. las medidas serias siempre se queda en amenazas que nunca se cumplen.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3006",
+      "texto": "@usuario @usuario @usuario Me gustaría ser más optimista al respecto pero esta nueva era tecnológica es muy poderosa y siempre es usada primero por los grandes poderes económicos y difícilmente para el bien de la humanidad o del planeta.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3026",
+      "texto": "Y todavía hay un “medio” que lo resalta como algo impactante en una de sus notas, hace reflexionar sobre cuánta información engañosa hay en redes sociales.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3037",
+      "texto": "4/ ¡AutoGPT puede buscar en todo Internet! No necesitas pasar horas buscando información, ¡él lo hace por ti!",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3042",
+      "texto": "9/En el montón tienes a un genio que hizo un código en python para que automáticamente chatee con su novia por Whatsapp.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3044",
+      "texto": "@usuario A este paso deberían desaparecer al gobierno y que nos dirija Chatgpt 🥴",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3048",
+      "texto": "De manera general, en tanto y en cuanto el uso de la IA sea marginal o complementario a la actividad x que realices y no sea empleada de manera íntegra o automatizada para alcanzar esa actividad x, considero que podemos esbozar un uso ético de esta herramienta",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3083",
+      "texto": "Apple ofrece cuenta de ahorro con alta tasa de interés. ChatGPT cree que es una buena oportunidad para elevar la reputación y posición financiera de Apple. Se pronostica un impacto positivo en las acciones de AAPL.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3089",
+      "texto": "Apple lanza cuenta de ahorros con interés 4,15%. ChatGPT ve aumento de clientes y mejora en posicionamiento y reputación de AAPL en Finanzas. Impacto positivo en AAPL y JPMorgan.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3091",
+      "texto": "Apple lanza cuenta de ahorro con tasa del 4,15%, superando promedio en EE. UU. ChatGPT sugiere impacto positivo en AAPL en clientes, ingresos, reputación y en el mercado financiero, al igual que JPMorgan en la banca.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3133",
+      "texto": "En Perú, 19% de las empresas ya usan inteligencia artificial #ia via @usuario",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3178",
+      "texto": "#Tecnología 2/2 esto debido a que la existencia de la humanidad depende de su inteligencia y si esta es rebasada por la Inteligencia Artificial, podría significar el fin de la humanidad. #EDNTV #InteligenciaArtificial #ElonMusk #Humanidad",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3246",
+      "texto": "creando una conexión más profunda entre los usuarios y sus amigos. En definitiva, estamos viviendo una época dorada de la inteligencia artificial, donde cada día vemos avances sorprendentes y novedosos.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3251",
+      "texto": "pero el uso de IA nos permite ser mucho más rápidos y eficientes. Recordemos que la revisión de curriculums es una actividad repetitiva, pero sin estructura definida (cada cuál escribe su CV como mejor le parece)",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3266",
+      "texto": "@usuario ...coincido... yo no soy fan de la comida vegana, pero me regalaron un par de esas mayonesas y me latieron bastante!... también tenía unas hamburguesas que no me quería comer, pero un día era lo único que tenía y al final me encantaron... es buena marca...",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3270",
+      "texto": "👫Si bien parte de ello es cierto, la IA vendrá a complementar muchas actividades que hoy en día realizan los seres humanos. 👍 Lo que también es cierto es que su desarrollo debe realizarse con cuidado y ser debidamente planeado.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3271",
+      "texto": "🤨Están quienes piensan que debe trabajarse conjuntamente con reguladores para tener un marco normativo que permita un correcto manejo.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3279",
+      "texto": "2. Adobe Sensei - Ayuda a optimizar la publicidad y el contenido de marketing utilizando tecnología de reconcomiendo de imágenes y análisis de datos de audiencia.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3305",
+      "texto": "@usuario @usuario @usuario Usar ChatGPT para preguntar mamadas no la hace experta.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3306",
+      "texto": "Según un reporte de Goldman Sachs, 300 millones de empleos estarían en riesgo en todo el mundo con el uso de la Inteligencia Artificial. »",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3319",
+      "texto": "Esperamos que os sintáis orgullosas sus logros,por la calidad de vuestros proyectos, y el impacto en la vida de las personas. La tecnología está evolucionando y se necesitan personas creativas y talentosas para innovar y desarrollar soluciones que mejoren la vida de los demás",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3323",
+      "texto": "🧵 1/8 ¡Descubre cómo la inteligencia artificial (AI) está revolucionando el sector de la construcción! 🏗️ Aquí hay un listado de aplicaciones de AI que están cambiando la forma en que se construyen y diseñan proyectos. ⚙️🤖 #Construcción #IA",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-333",
+      "texto": "@usuario Te cuento que estoy probando la IA de Bing y es impresionante.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3362",
+      "texto": "@usuario Por el momento, en tema de escritura creativa lo tiene algo crudo. Ahora bien, ilustraciones, artículos de opinión, etc: 😬",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3375",
+      "texto": "Y aquí vemos cómo la competencia funciona y hace avanzar el desarrollo económico y tecnológico. Conscientes del riesgo que suponen las nuevas herramientas de IA para su buscador, Google ya planea integrar en él estas funciones.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-345",
+      "texto": "@usuario Que genial, si me gustaría saber mas de experiencias como la tuya",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3450",
+      "texto": "👍 Los espacios presenciales para las conexiones humanas; los maestros tendrán más tiempo para un acompañamiento socioemocional. Podremos generar más experiencias memorables: salir a la naturaleza, parques, teatros, museos, trabajo colaborativo.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-347",
+      "texto": "@usuario Jajajaja es que el Zelda sale el próximo mes, ya lo tuvimos en cuenta en los gastos de la casa en Mayo :v",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-348",
+      "texto": "@usuario Inimaginables las aplicaciones de la inteligencia artificial",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3486",
+      "texto": "Hay alguien a quien le parece hasta divertido dividir a los ciudadanos en ciudadanos de primera y de segunda según su status económico. Neoliberalismo multiplicado por 40.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3531",
+      "texto": "Una banda del Reino Unido usó Inteligencia Artificial para imaginar cómo sonaría Oasis si se reformaran y lanzaran un nuevo álbum en 2023. El álbum que han creado es de ocho canciones , ingeniosamente titulado 'AISIS'. Es de la banda indie Breezer.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3558",
+      "texto": "Pero al mismo tiempo, los gobiernos se han lucrado, financiándose con su propia incompetencia, poniendo a los ciudadanos una carga impositiva a través del papeleo burocrático y del desorden, que terminan agotando las energías productivas del mercado local.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3563",
+      "texto": "Además, se ha destacado el liderazgo y participación activa en la @usuario en temas como: ➡️Género y Comercio ➡️Comercio Electrónico ➡️Facilitación de Inversiones",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3576",
+      "texto": "Combinación de herramientas, para diseño y creatividad. @usuario \"hay que saber que pedir a PROMPT. Tremendo, a todos, gracias por compartir conocimiento 👏🙌.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-360",
+      "texto": "@usuario @usuario @usuario Pero eso ya me lo dijeron hace 3 semanas =(",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3600",
+      "texto": "Al formar parte de esta sesión, se brinda la oportunidad de poder intercambiar experiencias a nivel mundial y así avanzar en el camino de la digitalización de trámites y procesos.🧑‍💻",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3628",
+      "texto": "@usuario @usuario Es que es muy claro que va a ser difícil de regular, normar o evitar excesos de todo tipo. Véase otros desarrollos tecnológicos cómo la gestación subrogada o la ectogenesis, hay muchos en distintas materias",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3641",
+      "texto": "@usuario @usuario Mexico no tiene desarrollo ahí, por lo que legislar algo que aun esta muy lejos de que aquí tenga amplia utilización, es un tiempo perdido, es tema actual en otros países. Aquí aun estamos con alto indice de analfabetismo digital. Es teatro electorero,hay otros temas relevantes",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3644",
+      "texto": "@usuario @usuario No inventes esta mas mamada que yo !!! Pues cuanto levanta !!! Da miedo, si la beso me madrea !!!",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3647",
+      "texto": "@usuario @usuario @usuario uhmmm... ¿Y no crees tú que esta IA podría ser mejor que la de los Morenos? Porque no dan una los pobres...",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3649",
+      "texto": "@usuario @usuario Y tú vas a hacer la que hable de ética? No jodas si tú eres la r4ter4 de redes número uno de Peña Nieto",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3668",
+      "texto": "@usuario @usuario @usuario @usuario Y desde entonces cobran 0,003 dólares por reproducción. Yo diría que salieron perdiendo.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3677",
+      "texto": "@usuario Esa es la mentalidad! Hay que usarla para nuestro favor y no hay que tenerle miedo!",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3717",
+      "texto": "@usuario Efectivamente... Quizás de esa forma los pueden estudiar, todo lo que ocurre es falso y (como dijiste) estan en una especie de coma donde los de \"afuera\" (FQSMP) pueden observarlos. Me da vibras de Madoka Rebellion o Danganronpa 2",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3734",
+      "texto": "mi profesor nos dijo que vayamos familiarizando con la Inteligencia Artificial porque posiblemente tengamos un tp usando eso kjj ya que seguro va a ser una posible herramienta del diseño en el futuro 🤨🤨",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3749",
+      "texto": "Los/as estudiantes aprendieron sobre diversas herramientas de IA para la investigación, participando activamente del debate, que incluyó los desafíos de la IA para el ejercicio presente y futuro de la Abogacía. 💻 Agradecemos a @usuario por su enriquecedora exposición.👏",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3788",
+      "texto": "\"Según ChatGPT soy de León, no acabé mis estudios en Salamanca, he trabajado en empresas en las que nunca he trabajado, he fundado otras tantas que nunca fundé...\". ¡Ojo con ChatGPT que es un charlatán mentirosillo!, por @usuario",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3798",
+      "texto": "La educación personalizada es la clave para el aprendizaje efectivo y cada vez más compañías de EdTech lo están haciendo posible con chatbots. #educaciónpersonalizada",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3822",
+      "texto": "Las tensiones comerciales dañarían a Nike. La embajada china busca frenar la investigación de COVID para afectar a las empresas involucradas. El precio de las acciones de Nike podría descender por las tensiones comerciales, indica ChatGPT.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3832",
+      "texto": "La IA TruthGPT de Musk busca comprender el universo y podría influir en la bolsa. Compañías de IA y aprendizaje automático se beneficiarían. ChatGPT recomienda considerar empresas como Microsoft.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3834",
+      "texto": "El TruthGPT de Elon Musk AI podría afectar acciones de empresas tecnológicas. Empresas IA y de aprendizaje automático pueden obtener beneficios al mejorar sus productos. ChatGPT sugiere considerar a Microsoft y empresas similares.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3842",
+      "texto": "La IA TruthGPT de Elon Musk puede impactar precios de acciones de empresas tecnológicas. Empresas de IA y aprendizaje automático se benefician al mejorar productos y ganancias. ChatGPT recomienda considerar empresas como Microsoft a los inversores.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3882",
+      "texto": "@usuario Yo ni se que es chatgpt JAJAJAJAJA que horror. Todos burros van a crecer ..",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3891",
+      "texto": "@usuario pero pregunté si era adecuado o no, y el porqué de esa declaración. ojo con lo de \"modelo de lenguaje\" (no es \"inteligencia\") por otra: es para largo mi respuesta, pero como dijo un comediante \"no lo dijo, pero lo pensó\" y al cierre, la frase del actual CJE sigue certera:",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-3928",
+      "texto": "@usuario @usuario Estoy dando volteretas que es esta maravilla",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-395",
+      "texto": "🌐🏆 ¡Estamos expectantes por ver cómo DuveAI revolucionará la experiencia del huésped en hoteles! ¡Prepárate para una nueva era de hospitalidad con los avances en Inteligencia Artificial! 🎊🛎️ 5/6",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-401",
+      "texto": "(3/13) Desde que Kasparov fue derrotado por Deep Blue por un enfoque basado en la fuerza bruta, ha habido muchísimos avances en cómo enfocar la resolución de los juegos con IA.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-4032",
+      "texto": "@usuario @usuario @usuario Sorpresa.... no puede reclamar el premio jejejejej recopilando y creando una base de datos para después venderlos al mejor postor.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-405",
+      "texto": "(7/13) Por otro lado, la IA llamada Agent57 también desarrollada por DeepMind ha aprendido a jugar y a vencer al humano promedio en los 57 videojuegos de Atari.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-467",
+      "texto": "@usuario @usuario @usuario @usuario Y q beneficios tienen para la población? d q nos sirve un experto en inteligencia artificial en un país d 140 mil d personas si no c se pone ese conocimiento al servicio d la gente. Viven de gira, vividores a costa del erario. Pero bien q critican los programas sociales",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-468",
+      "texto": "@usuario @usuario @usuario @usuario Inteligencia artificial??? De qué carajos hablas, asno??? Estudia primero las facultades Constitucionales del INAI antes de alegar sandeces, palero hambreado.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-471",
+      "texto": "@usuario @usuario @usuario @usuario Andas rabioso, cálmate jaja la cuestión es que la existencia del INSI no se traduce en bienestar para la mayoría de la población, de proteger sus datos personales ni hablar…",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-478",
+      "texto": "@usuario Yo estoy encantado con todo el desarrollo de la IA. Es un reto para la humanidad controlar a su propia creación o sucumbir ante ella. Es obvio que es inevitable que la IA tome en cierto modo el control sobre casi toda la humanidad. Para eso la están desarrollando.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-507",
+      "texto": "Una mujer identificada como Jennifer DeStefano denunció haber sido víctima de un intento de extorsión a través del uso de inteligencia artificial, según contó a medios locales, los delincuentes clonaron la voz de su hija y empezaron a realizarle llamadas",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-555",
+      "texto": "3️⃣ Los avances en la inteligencia artificial #AI: Están siendo utilizados en una amplia gama de campos, de la atención médica hasta la ciberseguridad y la automatización de la fabricación. Desarrollos como #ChatGPT se han hecho hegemónicos en el día a día en tiempo récord.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-570",
+      "texto": "¡Sigamos trabajando juntos para aprovechar al máximo esta tecnología y brindar un mejor servicio a nuestros clientes! #AbogaciaMexicana #InteligenciaArtificial #Litigio #DesafiosYRetos",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-6",
+      "texto": "Esta transición va a estar bien difícil... El planeta ya por demás, sobrepoblado, desempleo, hambruna y guerras por todas partes, la pobreza creciendo y justo en este momento comercializando las IA... (que no considero que estén mal del todo...) .........",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-601",
+      "texto": "La IA utilizada de manera inteligente y responsable es una gran herramienta educativa, reflexiva y simplemente, interesante de interactuar, no entiendo la gente que la usa para que le haga la tarea simplemente, con todo el potencial que plantea.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-633",
+      "texto": "Resolución de problemas: Se pueden analizar problemas y generar soluciones o respuestas a preguntas planteadas.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-665",
+      "texto": "✨Dale rienda suelta a la creatividad, desbloquea la productividad y mejora las habilidades con Microsoft 365 Copilot.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-694",
+      "texto": "1. Automatización de tareas: una IA puede automatizar tareas que requieren mucho tiempo y esfuerzo, lo que permite a las personas enfocarse en otras tareas más importantes.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-697",
+      "texto": "4. Predicción y planificación: una IA puede predecir eventos futuros y ayudar a planificar en consecuencia.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-727",
+      "texto": "Realidad artificial Advierten que pronto será difícil distinguir lo verdadero de lo falso y piden que se detenga temporalmente el uso de inteligencia artificial, por ser una tecnología potencialmente peligrosa para la humanidad. ✍ Raúl Mendoza [@usuario]",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-732",
+      "texto": "@usuario La etiqueta \"hecho con inteligencia artificial\" ya cansa. No todo lo necesita.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-739",
+      "texto": "La inteligencia artificial en el arte' este domingo en #ElMundoQueViene Analizaremos los usos de la #IA con el pintor Fernando Álamo, el diseñador gráfico Noboru Takahashi y los catedráticos Jacques Bulchan y Nuria Llorent ⏰10:30h 🎙️ @usuario 🌐",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-757",
+      "texto": "@usuario @usuario lo unico que hay artificial es tu cerebro jajajaj anda y metete en la cuenta de tipeja montero y lo veras",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-763",
+      "texto": "@usuario @usuario Y la pone ella misma en su instagram? 🤡🤡🤡🤡🤡🤡🤡🤡🤡",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-814",
+      "texto": "“Lo negativo es que en base a eso puede haber manipulación. No digo del voto, podemos ver las personas enojadas con respecto a la inseguridad y, a partir de eso, generar un polvorín frente a determinados temas”",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-823",
+      "texto": "Muy interesante la entrevista de Lanata a @usuario sobre las novedades, oportunidades y riesgos alrededor de la Inteligencia Artificial y en especial #GPT . Poco menos de 30 min, ideal para salir a correr un rato y estar en tema 🚀.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-84",
+      "texto": "La Inteligencia Artificial está transformando la moda 🤖👗¿Alguna vez te preguntaste cómo la tecnología está cambiando el mundo de la moda? En este podcast, Panni Margot, un creador de moda, nos muestra cómo la Inteligencia Artificial está transformando la industria.",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-907",
+      "texto": "La IA llegó para mejorar el proceso de selección, para mantener la experiencia de un colaborador dentro de una empresa monitoreada, reducir tiempos de contratación de filtros, además de colocar a los trabajadores en puestos precisos según sus capacidades, sin sesgos,",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-912",
+      "texto": "👉🏻 #ElFinDeLaMetáfora | 🗣🎙 \"El Estado tiene que demostrar que puede bajar impuestos y mejorar la calidad de los bienes y servicios\" @usuario con @usuario y @usuario 🔗",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "neutral",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-931",
+      "texto": "Si quieres saber más sobre las palabras de Bill Gates, puedes leer el artículo aquí: Espero que te haya gustado el hilo. Si te ha parecido interesante, dale like y comparte. Gracias por leerme. 🙌 #BillGates #IA #CochesAutonomos",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-94",
+      "texto": "Sin embargo, en el debate público se está demostrando que herramientas como ChatGPT o Bard, el chatbot de Google, son aplicaciones eficientes que pueden lograr una aportación positiva y ágil como minimizar el tiempo de ejecución en tareas de relevancia media o baja. #Mundodigital",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-942",
+      "texto": "En dos meses todo mundo va a andar tipo \"Porque ya no uso Twitter Blue, abro hilo\", Elon Musk va a salir a decir alguna estupidez como el autista que es, los miembros de su secta le van a echar la culpa a la inteligencia artificial y todos ustedes me van a ver feo a mi...",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-950",
+      "texto": "Elon Musk advirtió que la inteligencia artificial tiene el potencial para destruir la civilización:",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "negativo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    },
+    {
+      "id": "uca-96",
+      "texto": "La inteligencia artificial (IA) está revolucionando la industria en muchos aspectos, y la seguridad industrial no es una excepción. En Argentina, la IA está siendo utilizada para mejorar la seguridad en las fábricas y reducir el riesgo de accidentes. Abrimos hilo 🧵👇",
+      "origen": "Twitter_IA_UCA",
+      "canal": "twitter-ia",
+      "idioma": "es",
+      "sentimiento_esperado": "positivo",
+      "tema_esperado": "datos_ia",
+      "tipo_esperado": "comentario",
+      "subtema_referencia": "inteligencia artificial",
+      "origen_etiquetas": {
+        "sentimiento": "fuente",
+        "tema": "regla",
+        "tipo": "regla"
+      },
+      "revision_humana": "pendiente",
+      "atribucion": {
+        "fuente": "IA Tweets Analysis Dataset (Spanish)",
+        "doi": "10.5281/zenodo.10821485",
+        "licencia": "CC BY 4.0"
+      }
+    }
+  ]
+}

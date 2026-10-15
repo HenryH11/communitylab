@@ -1,0 +1,44 @@
+{
+  "version": "pool_v2",
+  "semilla": 20261015,
+  "por_fuente": 200,
+  "entradas": {
+    "uca_csv_sha256": "30ec3697afafa85b2270e6d32f83f4e908601f2067d493bfcf28761589f72826"
+  },
+  "archivos": {
+    "uca_ia_tweets.json": {
+      "sha256": "472a5c6fb694b4b492daa2b2a61120e4faa585f21f11f77a51dd98f7e5dc6863",
+      "casos": 200,
+      "candidatos": 3181,
+      "estrato": "sentimiento_esperado",
+      "sentimiento": {
+        "negativo": 67,
+        "neutral": 67,
+        "positivo": 66
+      },
+      "tema": {
+        "datos_ia": 200
+      },
+      "tipo": {
+        "comentario": 200
+      }
+    },
+    "stackoverflow_es.json": {
+      "sha256": "4b56272234ead94eb578f1501e490b4aeb6d17dae35dbfceb3f39be8a2449ee7",
+      "casos": 200,
+      "candidatos": 565,
+      "estrato": "subtema_referencia",
+      "sentimiento": {
+        "neutral": 200
+      },
+      "tema": {
+        "cloud_infraestructura": 20,
+        "datos_ia": 40,
+        "programacion": 140
+      },
+      "tipo": {
+        "pregunta_tecnica": 200
+      }
+    }
+  }
+}

@@ -1,113 +1,30 @@
 # CommunityLab – Semana 4
-## Validación de modelos NVIDIA NIM y paquete de trazabilidad para auditoría
+## Validación de modelos NVIDIA NIM, trazabilidad y correcciones posteriores a auditoría
 
 **Proyecto:** CommunityLab – Hackathon ONE G10 / Equipo 39  
 **Subequipo:** Cerebro de IA – Data Science  
 **Rama:** `feature/DS-Semana4`  
 **Fecha:** 14 de octubre de 2026  
-**Versión de auditoría:** `1.2`
+**Versión del paquete de auditoría:** `1.2`
 
 ---
 
 ## 1. Propósito
 
-Este documento registra la validación técnica realizada por Data Science sobre los modelos usados en NVIDIA NIM y la preparación del paquete de trazabilidad que será utilizado por el equipo encargado de la auditoría.
+Este documento registra la validación técnica realizada por Data Science durante Semana 4, incluyendo:
 
-El objetivo fue asegurar que:
+- validación de modelos NVIDIA NIM;
+- fallback NVIDIA → Gemini;
+- trazabilidad por proveedor, modelo y tier;
+- paquete reproducible para auditoría;
+- correcciones realizadas a partir de la auditoría de Data;
+- nueva ejecución completa del lote de 23 interacciones.
 
-- NVIDIA NIM continúe como proveedor primario.
-- Gemini se mantenga como proveedor de respaldo.
-- Los modelos configurados respondan correctamente en análisis y generación.
-- Cada análisis y activo generado registre proveedor, modelo, tier y fallback.
-- El JSON de salida conserve también el resumen analítico de la comunidad.
-- La ejecución quede asociada a un SHA exacto y reproducible.
-
----
-
-## 2. Problemas detectados durante Semana 4
-
-### 2.1 Modelos retirados
-
-Los modelos:
-
-```text
-meta/llama-3.1-8b-instruct
-meta/llama-3.3-70b-instruct
-```
-
-devolvieron `HTTP 410 Gone` en llamadas reales a NVIDIA NIM.
-
-Esto impedía completar correctamente varias rutas de generación.
-
-### 2.2 Gemma no resultó viable en el entorno probado
-
-El modelo estándar:
-
-```text
-google/gemma-4-31b-it
-```
-
-agotaba el tiempo disponible y activaba Gemini como proveedor de respaldo.
-
-Se realizaron pruebas controladas:
-
-```text
-Gemma batch, timeout 15 s
-→ OpenAITimeoutError
-→ 15.25 s
-
-Gemma individual, timeout 15 s
-→ OpenAITimeoutError
-→ 15.26 s
-
-Gemma RAW mínimo, timeout 30 s
-→ OpenAITimeoutError
-→ 30.36 s
-```
-
-La llamada RAW utilizó únicamente:
-
-```text
-Responde únicamente: OK
-```
-
-por lo que el problema observado no dependía solamente del esquema estructurado o del tamaño del lote.
-
-### 2.3 DeepSeek tampoco respondió de forma utilizable
-
-Se evaluó:
-
-```text
-deepseek-ai/deepseek-v4.1-flash
-```
-
-dentro de NVIDIA NIM.
-
-Resultados:
-
-```text
-Análisis estructurado, timeout 15 s
-→ OpenAITimeoutError
-→ 15.25 s
-
-RAW, timeout 30 s
-→ OpenAITimeoutError
-→ 30.25 s
-```
-
-No se asumió que el modelo estuviera retirado; únicamente se concluyó que no fue viable en el entorno probado durante esta sesión.
+La auditoría oficial corresponde al equipo de Data. Data Science entrega el paquete de evidencia y trazabilidad necesario para esa revisión.
 
 ---
 
-## 3. Modelos seleccionados
-
-La configuración validada quedó:
-
-| Tier | Modelo |
-|---|---|
-| rápido | `nvidia/nemotron-3.5-lightning-30b-a3b` |
-| estándar | `nvidia/nemotron-3.5-lightning-30b-a3b` |
-| razonamiento | `nvidia/nemotron-3-super-120b-a12b` |
+## 2. Configuración vigente de IA
 
 Proveedor primario:
 
@@ -121,75 +38,21 @@ Proveedor de respaldo:
 Gemini
 ```
 
+Modelos:
+
+| Tier | Modelo |
+|---|---|
+| rápido | `nvidia/nemotron-3.5-lightning-30b-a3b` |
+| estándar | `nvidia/nemotron-3.5-lightning-30b-a3b` |
+| razonamiento | `nvidia/nemotron-3-super-120b-a12b` |
+
 Timeout NVIDIA:
 
 ```text
 15 segundos
 ```
 
----
-
-## 4. Evidencia real de Nemotron 3.5 Lightning
-
-### Análisis individual estructurado
-
-```text
-Resultado: OK
-Tiempo: 1.24 s
-```
-
-Salida observada:
-
-```text
-sentimiento: muy_positivo
-tema_principal: empleabilidad
-subtema: primer trabajo analista datos
-tipo_detectado: testimonio
-```
-
-### Lote de 10 mensajes
-
-```text
-10 enviados
-10 recibidos
-Tiempo: 8.56 s
-```
-
-### Dataset completo
-
-Se procesaron 23 mensajes en lotes de `10 / 10 / 3`.
-
-```text
-Lote 1: 10/10 | 7.63 s
-Lote 2: 10/10 | 9.04 s
-Lote 3: 3/3   | 10.09 s
-
-Total: 23/23
-```
-
-Esta evidencia sustentó el reemplazo de Gemma por Nemotron Lightning como modelo estándar y el aumento del timeout de `3 s` a `15 s`.
-
----
-
-## 5. Fallback y tolerancia a fallos
-
-Se añadió soporte explícito para reconocer:
-
-```text
-HTTP 410
-```
-
-como motivo válido para fallback de proveedor.
-
-El flujo queda:
-
-```text
-NVIDIA NIM
-→ error apto para fallback
-→ Gemini
-```
-
-manteniendo separados los conceptos de:
+Se mantienen diferenciados:
 
 ```text
 retry
@@ -199,9 +62,111 @@ recuperación posterior
 
 ---
 
-## 6. Evidencia real del fallback de análisis
+## 3. Evidencia de selección de modelos
 
-Antes del cambio final de modelo estándar, una ejecución real produjo:
+### 3.1 Llama 3.1 / 3.3
+
+Los modelos:
+
+```text
+meta/llama-3.1-8b-instruct
+meta/llama-3.3-70b-instruct
+```
+
+devolvieron `HTTP 410 Gone` en llamadas reales a NVIDIA NIM.
+
+Por ello se añadió `HTTP 410` como causa válida para activar fallback de proveedor.
+
+### 3.2 Gemma
+
+Modelo evaluado:
+
+```text
+google/gemma-4-31b-it
+```
+
+Resultados observados:
+
+```text
+Batch, timeout 15 s
+→ OpenAITimeoutError
+→ 15.25 s
+
+Individual, timeout 15 s
+→ OpenAITimeoutError
+→ 15.26 s
+
+RAW mínimo, timeout 30 s
+→ OpenAITimeoutError
+→ 30.36 s
+```
+
+No resultó viable en el entorno probado.
+
+### 3.3 DeepSeek dentro de NVIDIA NIM
+
+Modelo evaluado:
+
+```text
+deepseek-ai/deepseek-v4.1-flash
+```
+
+Resultados:
+
+```text
+Análisis estructurado, timeout 15 s
+→ OpenAITimeoutError
+→ 15.25 s
+
+RAW, timeout 30 s
+→ OpenAITimeoutError
+→ 30.25 s
+```
+
+No se afirma que el modelo esté retirado. Solo se concluye que no fue viable en el entorno probado durante esta sesión.
+
+### 3.4 Nemotron 3.5 Lightning
+
+Prueba individual estructurada:
+
+```text
+Resultado: OK
+Tiempo: 1.24 s
+```
+
+Lote de 10 mensajes:
+
+```text
+10 enviados
+10 recibidos
+Tiempo: 8.56 s
+```
+
+Dataset completo de análisis:
+
+```text
+Lote 1: 10/10 | 7.63 s
+Lote 2: 10/10 | 9.04 s
+Lote 3: 3/3   | 10.09 s
+
+Total: 23/23
+```
+
+Esta evidencia sustentó su uso para los tiers rápido y estándar.
+
+---
+
+## 4. Fallback y tolerancia a fallos
+
+El flujo mantiene:
+
+```text
+NVIDIA NIM
+→ error apto para fallback
+→ Gemini
+```
+
+Una ejecución anterior permitió comprobar el mecanismo real:
 
 ```text
 Interacciones de entrada: 23
@@ -212,7 +177,7 @@ Activos con fallback: 0
 Eventos de fallback en generación: 0
 ```
 
-La observabilidad mostró además:
+La observabilidad registró:
 
 ```text
 12 llm_error
@@ -224,21 +189,15 @@ consistentes con:
 4 lotes × 3 intentos NVIDIA
 ```
 
-antes de utilizar Gemini.
+antes de activar Gemini.
 
-Esta ejecución se conserva como evidencia real de que el mecanismo de fallback funcionó.
+Esta ejecución se conserva únicamente como evidencia histórica de funcionamiento del fallback.
 
 ---
 
-## 7. Corrección de las métricas de fallback
+## 5. Métricas de fallback
 
-La auditoría inicial mostraba de forma ambigua:
-
-```text
-Fallbacks en análisis: 23
-```
-
-Se corrigió para diferenciar:
+La auditoría diferencia:
 
 ```text
 interacciones_con_fallback_analisis
@@ -247,24 +206,18 @@ activos_con_fallback
 eventos_fallback_generacion
 ```
 
-De esta manera se distingue entre:
+Esto evita confundir:
 
-- cantidad de interacciones afectadas;
-- cantidad real de eventos de cambio de proveedor.
+- interacciones afectadas por fallback;
+- eventos reales de cambio de proveedor.
 
 ---
 
-## 8. Recuperación del resumen analítico
+## 6. Paquete de auditoría v1.2
 
-La versión inicial del paquete de Semana 4 conservaba toda la información por interacción, pero había dejado fuera del bloque `resumen` las agregaciones analíticas que existían previamente.
+El paquete mantiene el resumen analítico y la trazabilidad operativa.
 
-En la versión `1.2` se recuperaron mediante la lógica estable de:
-
-```text
-src/agentes/resumen_entrega.py
-```
-
-El JSON vuelve a incluir:
+### Resumen analítico
 
 ```text
 sentimiento_predominante
@@ -275,92 +228,447 @@ distribucion_temas
 distribucion_tipos_detectados
 ```
 
-Estas métricas se calculan automáticamente a partir de los resultados reales de la ejecución y no están hardcodeadas.
+### Trazabilidad
 
-La versión `1.2` conserva simultáneamente:
-
-### Resumen analítico
-
-```text
-sentimiento predominante
-distribución de sentimientos
-temas principales
-distribución de temas
-distribución de tipos detectados
-```
-
-### Trazabilidad operativa
+Por análisis y activo se conserva:
 
 ```text
 proveedor
 modelo
 tier
 fallback
-motivo de fallback
-SHA
+motivo_fallback
 errores
 fallos
+SHA
+```
+
+El artefacto sigue siendo:
+
+```text
+salida/auditoria_semana4/auditoria_semana4.json
+```
+
+`salida/` permanece ignorada por Git y el JSON se comparte directamente como artefacto de ejecución.
+
+---
+
+## 7. Auditoría de Data recibida
+
+Data revisó el paquete anterior generado sobre:
+
+```text
+4331b6eb866b05062e189a4ee937c72531771513
+```
+
+Resultado reportado:
+
+```text
+26 activos
+0 fallback
+1 activo con alerta
+```
+
+Hallazgos relevantes para Data Science:
+
+1. `int-015` produjo una FAQ redactada como metainstrucción y no como respuesta publicable.
+2. `int-011`, `int-014` e `int-018` fueron detectados como `comentario`, aunque sus textos describen experiencias personales con impactos concretos.
+3. `int-023`, prácticamente duplicado de `int-002`, queda reservado para Semana 5.
+
+No se utilizó `tipo_original` como ground truth automático para corregir estos casos.
+
+---
+
+## 8. Diagnóstico de `int-015`
+
+Archivo revisado:
+
+```text
+src/agentes/prompts/preguntas_frecuentes.py
+```
+
+La causa estaba en los ejemplos few-shot del prompt.
+
+El ejemplo incluía respuestas del tipo:
+
+```text
+Una redacción breve que indique que...
+```
+
+y:
+
+```text
+Una explicación breve centrada en...
+```
+
+Estas frases son metainstrucciones, no respuestas finales.
+
+Aunque el prompt indicaba posteriormente que los ejemplos no debían copiarse literalmente, el modelo podía imitar su estructura.
+
+### Corrección
+
+Los ejemplos se transformaron en respuestas finales y publicables.
+
+Además se añadió una regla explícita:
+
+```text
+Entrega directamente una respuesta final lista para publicar.
+No describas cómo debería redactarse la respuesta ni expliques qué debería decir.
+```
+
+No fue necesario implementar regeneración automática ni validadores adicionales.
+
+---
+
+## 9. Diagnóstico de testimonio vs comentario
+
+Archivo revisado:
+
+```text
+src/agentes/prompts/analisis.py
+```
+
+La definición previa ya indicaba:
+
+```text
+La persona relata una experiencia propia con un resultado,
+transformación, hito o impacto concreto.
+```
+
+Sin embargo, el modelo estaba siendo conservador cuando el impacto no era un logro extraordinario como empleo o cambio profesional.
+
+Se realizó una aclaración semántica general:
+
+```text
+Un testimonio no requiere necesariamente empleo, certificación
+ni un logro extraordinario.
+```
+
+También se aclaró que puede existir cuando la persona describe impactos concretos como:
+
+- aplicar lo aprendido;
+- comprender algo que antes resultaba difícil;
+- acceder a una colaboración u oportunidad;
+- mejorar una habilidad o capacidad.
+
+Se conserva la frontera negativa:
+
+```text
+Un elogio, agradecimiento u opinión sin experiencia propia
+con resultado, transformación o impacto concreto
+no debe clasificarse como testimonio.
+```
+
+No se añadieron reglas especiales por ID.
+
+---
+
+## 10. Principios preservados
+
+Durante la corrección:
+
+- no se modificó `src/datos/*`;
+- no se modificó el router para copiar la clasificación de Data;
+- `tipo_original` no se envía al LLM;
+- `tipo_original` no se usa como ground truth automático;
+- no se modificaron modelos;
+- no se modificó timeout;
+- no se modificó fallback;
+- no se implementó deduplicación;
+- `int-023` quedó fuera de alcance.
+
+El flujo continúa siendo:
+
+```text
+texto
+→ análisis semántico
+→ tipo_detectado
+→ router
+```
+
+y no:
+
+```text
+tipo_original
+→ forzar routing
 ```
 
 ---
 
-## 9. Pruebas automatizadas
+## 11. Validación focalizada después del cambio
 
-Resultados obtenidos durante la validación:
+### `int-011`
 
 ```text
-Pruebas específicas de fallback HTTP 410:
-57 passed
+Sentimiento: positivo
+Tipo detectado: testimonio
+Rutas:
+- caso_exito
+- boletin
+- linkedin
+```
 
-Batería relevante previa:
-115 passed
+La decisión es coherente con una experiencia propia donde el networking produjo una oportunidad concreta de colaboración.
 
-Batería relevante final:
-116 passed
+### `int-014`
 
-Proveedor NVIDIA:
-13 passed
+```text
+Sentimiento: positivo
+Tema: mentoria
+Tipo detectado: testimonio
+Rutas:
+- caso_exito
+- boletin
+- linkedin
+```
 
-Entrega IA:
-18 passed
+Es el caso más fronterizo, pero expresa un impacto concreto: el acompañamiento permitió comprender conceptos que anteriormente resultaban difíciles.
 
-Auditoría Semana 4 v1.2:
+### `int-015`
+
+```text
+Tipo detectado: pregunta_programa
+Ruta:
+- preguntas_frecuentes
+```
+
+FAQ generada:
+
+> La diferencia entre las rutas de especialización debe confirmarse con la información oficial del programa, ya que la pregunta no especifica los planes de estudio ni los contenidos específicos de cada ruta.
+
+La salida ya es final, prudente y publicable.
+
+### `int-018`
+
+```text
+Sentimiento: positivo
+Tema: aprendizaje
+Tipo detectado: testimonio
+Rutas:
+- caso_exito
+- boletin
+- linkedin
+```
+
+La persona describe formación terminada y aplicación real de lo aprendido en su trabajo.
+
+---
+
+## 12. Pruebas de regresión
+
+Se añadieron pruebas orientadas a las propiedades generales de los prompts.
+
+No se hardcodearon IDs para obligar al modelo a coincidir con `tipo_original`.
+
+Las pruebas verifican:
+
+- que el prompt de FAQ use respuestas finales;
+- que no conserve metainstrucciones como `"Una redacción breve que indique..."`;
+- que la definición de testimonio contemple impactos personales concretos sin requerir logros extraordinarios.
+
+Prueba focalizada del prompt:
+
+```text
 9 passed
 ```
 
-Suite completa:
+La batería relevante posterior quedó verde.
+
+---
+
+## 13. Nueva ejecución completa
+
+Commit exacto del código que produjo el nuevo JSON:
 
 ```text
-439 passed
-132 subtests passed
-1 fallo conocido
-1 warning externo
+204b29d9870c0a0fd70f0d626efaa14479c4c4ff
 ```
 
-El único fallo conocido corresponde a:
+Commit:
+
+```text
+204b29d
+fix(ds): refinar prompts de analisis y FAQ
+```
+
+Rama:
+
+```text
+feature/DS-Semana4
+```
+
+Resultado:
+
+```text
+Auditoría Semana 4 generada correctamente.
+
+Working tree limpio: True
+Interacciones de entrada: 23
+Excluidas por Data: 0
+Resultados DS: 23
+Activos generados: 35
+
+Interacciones con fallback en análisis: 0
+Eventos de fallback en análisis: 0
+
+Activos con fallback: 0
+Eventos de fallback en generación: 0
+```
+
+Validación adicional del JSON:
+
+```text
+Errores: 0
+Fallos: 0
+Inconsistencias: 0
+```
+
+---
+
+## 14. Comparación contra la ejecución anterior
+
+Ejecución anterior:
+
+```text
+23 interacciones
+26 activos
+```
+
+Nueva ejecución:
+
+```text
+23 interacciones
+35 activos
+```
+
+Diferencia:
+
+```text
++9 activos
+```
+
+La diferencia se explica completamente por:
+
+```text
+int-011
+comentario → testimonio
+0 activos → 3 activos
+
+int-014
+comentario → testimonio
+0 activos → 3 activos
+
+int-018
+comentario → testimonio
+0 activos → 3 activos
+```
+
+Por tanto:
+
+```text
+26 + 3 + 3 + 3 = 35
+```
+
+No se produjo un aumento por cambio del router ni por uso de `tipo_original`.
+
+---
+
+## 15. Distribución de rutas y resultados
+
+Distribución de rutas:
+
+```text
+caso_exito: 8
+boletin: 8
+linkedin: 8
+preguntas_frecuentes: 9
+insight_mejora: 2
+```
+
+Total:
+
+```text
+35 activos
+```
+
+Distribución de tipos detectados:
+
+```text
+testimonio: 8
+pregunta_programa: 5
+comentario: 4
+pregunta_tecnica: 4
+feedback: 2
+```
+
+Distribución de sentimientos:
+
+```text
+neutral: 11
+positivo: 7
+muy_positivo: 5
+```
+
+Sentimiento predominante:
+
+```text
+neutral
+```
+
+Temas principales:
+
+```text
+programacion: 6
+empleabilidad: 5
+programa_hackathon: 4
+aprendizaje: 3
+comunidad: 2
+mentoria: 2
+certificacion: 1
+```
+
+---
+
+## 16. Suite completa posterior
+
+Resultado:
+
+```text
+441 passed
+132 subtests passed
+1 failed
+1 warning
+```
+
+Único fallo:
 
 ```text
 tests/agents/test_tolerancia_estados_manuales.py::
 test_enrutador_tolera_estado_sin_campos
 ```
 
-El test espera únicamente:
+El test espera:
 
 ```python
 {"rutas": []}
 ```
 
-mientras el router actual devuelve además:
+mientras el router actual devuelve:
 
 ```python
-{"tier_modelo": "rapido"}
+{
+    "rutas": [],
+    "tier_modelo": "rapido",
+}
 ```
 
-Este fallo no corresponde a los cambios de modelos, fallback o auditoría realizados en esta tarea.
+Este fallo ya existía antes de la corrección de prompts y no fue introducido por `204b29d`.
+
+El warning corresponde a una advertencia deprecada en una dependencia externa de `google-genai`.
 
 ---
 
-## 10. Relación con Data
+## 17. Ownership de Data
 
 No se modificó lógica dentro de:
 
@@ -381,77 +689,12 @@ Data Science:
 
 - conserva `tipo_original`;
 - genera `tipo_detectado`;
-- no utiliza `tipo_original` como ground truth humano para el análisis LLM.
+- no envía `tipo_original` al LLM;
+- no utiliza ejecuciones históricas como ground truth humano.
 
 ---
 
-## 11. Ejecución final vigente
-
-**IMPORTANTE:** esta ejecución reemplaza las salidas anteriores de Semana 4 para efectos del paquete que se entregará al equipo de auditoría.
-
-SHA exacto utilizado:
-
-```text
-4331b6eb866b05062e189a4ee937c72531771513
-```
-
-Rama:
-
-```text
-feature/DS-Semana4
-```
-
-Resultado:
-
-```text
-Auditoría Semana 4 generada correctamente.
-
-Working tree limpio: True
-Interacciones de entrada: 23
-Excluidas por Data: 0
-Resultados DS: 23
-Activos generados: 26
-
-Interacciones con fallback en análisis: 0
-Eventos de fallback en análisis: 0
-
-Activos con fallback: 0
-Eventos de fallback en generación: 0
-```
-
-El archivo generado es:
-
-```text
-salida/auditoria_semana4/auditoria_semana4.json
-```
-
-La carpeta `salida/` está ignorada por Git, por lo que este archivo debe compartirse directamente como artefacto de ejecución y no forzarse al repositorio.
-
----
-
-## 12. Sobre la variación en la cantidad de activos
-
-El número de activos puede variar entre ejecuciones porque la clasificación producida por el LLM puede modificar `tipo_detectado` y, en consecuencia, las rutas resultantes.
-
-Las ejecuciones históricas se conservan como evidencia de regresión y estabilidad, pero no se consideran ground truth humano.
-
-Para auditoría debe utilizarse únicamente el JSON asociado al SHA exacto de la ejecución que se está revisando.
-
-La ejecución vigente es:
-
-```text
-4331b6eb866b05062e189a4ee937c72531771513
-```
-
-con:
-
-```text
-26 activos generados
-```
-
----
-
-## 13. Commits relevantes
+## 18. Commits relevantes de Data Science
 
 ```text
 a21e646
@@ -488,60 +731,82 @@ docs(ds): documentar validacion real de modelos NIM Semana 4
 fix(ds): recuperar resumen analitico en auditoria Semana 4
 ```
 
+```text
+d1b2ba3
+docs(ds): actualizar evidencia final de auditoria Semana 4
+```
+
+```text
+204b29d
+fix(ds): refinar prompts de analisis y FAQ
+```
+
 ---
 
-## 14. Archivo que debe utilizar el equipo de auditoría
+## 19. Artefacto vigente para Data
 
-El archivo vigente es:
+Archivo:
 
 ```text
 salida/auditoria_semana4/auditoria_semana4.json
 ```
 
-Generado sobre:
+SHA exacto del código que lo produjo:
 
 ```text
-4331b6eb866b05062e189a4ee937c72531771513
+204b29d9870c0a0fd70f0d626efaa14479c4c4ff
 ```
 
-Este archivo reemplaza los JSON generados en ejecuciones anteriores.
+Resultado vigente:
 
-Contiene:
+```text
+23 interacciones
+35 activos
+0 fallback de análisis
+0 fallback de generación
+0 errores
+0 fallos
+0 inconsistencias
+```
 
-- interacciones de entrada;
-- decisiones provenientes de Data;
-- análisis de DS;
-- sentimiento, tema, subtema y tipo detectado;
-- rutas;
-- activos generados;
-- resumen analítico;
-- proveedor y modelo por análisis;
-- proveedor y modelo por activo;
-- tier utilizado;
-- información de fallback;
-- errores y fallos;
-- configuración de IA;
-- SHA del dataset;
-- SHA exacto del código.
+Este JSON reemplaza al paquete anterior de 26 activos para una nueva revisión de Data.
 
 ---
 
-## 15. Estado final
+## 20. Pendiente separado
 
-La configuración final mantiene:
+`int-023` permanece reservado para Semana 5.
 
-```text
-NVIDIA NIM como proveedor primario
-Gemini como proveedor de respaldo
-Nemotron Lightning para rápido/estándar
-Nemotron Super para razonamiento
-timeout NVIDIA de 15 s
-```
-
-El paquete de trazabilidad `1.2` recupera el resumen analítico previo y añade la información necesaria para separar resultados por proveedor/modelo en la auditoría.
-
-La salida vigente para revisión es exclusivamente la generada sobre:
+No resolver dentro de esta tarea:
 
 ```text
-4331b6eb866b05062e189a4ee937c72531771513
+deduplicación
+normalización específica por tildes
+reglas especiales para duplicados
 ```
+
+---
+
+## 21. Estado de cierre técnico
+
+La corrección posterior a auditoría consiguió:
+
+```text
+int-015 → FAQ publicable
+int-011 → testimonio
+int-014 → testimonio
+int-018 → testimonio
+```
+
+sin utilizar `tipo_original` como ground truth y sin modificar el router.
+
+La ejecución completa produjo:
+
+```text
+35 activos
+0 errores
+0 fallos
+0 inconsistencias
+```
+
+Antes del cierre definitivo queda revisar e incorporar, si corresponde, cambios externos recientemente integrados en `develop`, volver a ejecutar la suite y confirmar que no introducen regresiones.

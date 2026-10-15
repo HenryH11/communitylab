@@ -121,9 +121,22 @@ Con la configuración del evaluador (lotes de 10 y 3 corridas), cada fuente de 2
 casos son 60 llamadas por proveedor. Las 2 fuentes con 2 proveedores suman unas 240
 llamadas. Ninguna corrida se hace sin el OK de Gustavo.
 
+## Revisión humana
+
+```powershell
+python -m scripts.revision_pool_evaluacion plantilla --salida revision_pool_v2.csv
+python -m scripts.revision_pool_evaluacion resumen --revision revision_pool_v2.csv
+```
+
+- **`plantilla`:**
+  - Elige 40 casos por fuente con la misma estratificación del pool y la semilla `20261016`.
+  - Escribe un CSV en UTF-8 con BOM, separado por `;`, para que Excel en español lo abra bien.
+  - El revisor escribe su nombre en `revisor`. Deja vacía una columna `*_revisado` si está de acuerdo con la etiqueta propuesta, o escribe la correcta usando el vocabulario de `src/agentes/modelos.py`.
+- **`resumen`:** calcula, por fuente y por etiqueta, cuántas se corrigieron, y marca `corregir_regla` cuando superan el 10 %.
+
 ## Pendiente
 
-- Revisión humana de 40 casos por fuente.
+- Completar la revisión humana de 40 casos por fuente.
 - Opción de DS para agrupar el sentimiento a 3 clases.
 - Decidir la tercera fuente (sintéticos o redactados).
 - Decidir si el pool entra en la Semana 5.1 o queda para después del congelamiento.

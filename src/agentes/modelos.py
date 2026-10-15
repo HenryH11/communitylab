@@ -164,7 +164,7 @@ class CasoDeExito(BaseModel):
 
     resumen: str = Field(
         description=(
-            "Historia breve de 2 a 3 frases basada únicamente "
+            "Historia breve de 1 a 3 frases basada únicamente "
             "en el mensaje original."
         )
     )

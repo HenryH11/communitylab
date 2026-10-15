@@ -38,10 +38,14 @@ def test_linkedin_incluye_few_shot_y_renderiza_contexto():
     sistema = _contenido_sistema(_prompt_linkedin, **contexto)
     usuario = _contenido_usuario(_prompt_linkedin, **contexto)
 
-    assert "EJEMPLO DE REFERENCIA" in sistema
+    assert "EJEMPLOS DE REFERENCIA" in sistema
+    assert "Andrés Kuri" in sistema
     assert "Mariana Souza" in sistema
-    assert "LangChain" in sistema
-    assert "OCI" in sistema
+    assert "Laura Ocampo" in sistema
+
+    assert "El mensaje original es la única fuente" in sistema
+    assert "AGRADECIMIENTO NO ES APOYO" in sistema
+    assert "No cierres la publicación con interpretaciones editoriales" in sistema
 
     assert contexto["autor"] in usuario
     assert contexto["tema_principal"] in usuario
@@ -60,10 +64,15 @@ def test_boletin_incluye_few_shot_y_renderiza_contexto():
     sistema = _contenido_sistema(_prompt_boletin, **contexto)
     usuario = _contenido_usuario(_prompt_boletin, **contexto)
 
-    assert "EJEMPLO DE REFERENCIA" in sistema
+    assert "EJEMPLOS DE REFERENCIA" in sistema
+    assert "Andrés Kuri" in sistema
     assert "Mariana Souza" in sistema
-    assert "Community Highlight" in sistema
-    assert "Logro de la comunidad" in sistema
+    assert "Laura Ocampo" in sistema
+
+    assert "El mensaje original es la única fuente" in sistema
+    assert "referencia temporal" in sistema
+    assert "otro proceso" in sistema
+    assert "Agradecimiento y apoyo son conceptos diferentes" in sistema
 
     assert contexto["autor"] in usuario
     assert contexto["tema_principal"] in usuario
@@ -77,6 +86,7 @@ def test_preguntas_frecuentes_incluye_few_shot_y_renderiza_contexto():
         "subtema": "enrutamiento condicional",
         "texto": "¿Cómo puedo elegir el siguiente nodo según el estado?",
     }
+
     sistema = _contenido_sistema(
         _prompt_preguntas_frecuentes,
         **contexto,
@@ -86,12 +96,12 @@ def test_preguntas_frecuentes_incluye_few_shot_y_renderiza_contexto():
         **contexto,
     )
 
-    assert "EJEMPLO TÉCNICO" in sistema
-    assert "EJEMPLO DE PROGRAMA" in sistema
-    assert "Tipo de pregunta: pregunta_tecnica" in usuario
-    assert "LangGraph" in sistema
-    assert "enrutamiento" in sistema.lower()
+    assert "EJEMPLOS DE REFERENCIA" in sistema
+    assert "PREGUNTA TÉCNICA CONCEPTUAL" in sistema
+    assert "PREGUNTA TÉCNICA QUE REQUIERE CONTEXTO" in sistema
+    assert "INFORMACIÓN DEL PROGRAMA" in sistema
 
+    assert contexto["tipo_detectado"] in usuario
     assert contexto["subtema"] in usuario
     assert contexto["texto"] in usuario
 
@@ -105,9 +115,14 @@ def test_caso_exito_incluye_few_shot_y_renderiza_contexto():
     sistema = _contenido_sistema(_prompt_caso_exito, **contexto)
     usuario = _contenido_usuario(_prompt_caso_exito, **contexto)
 
-    assert "EJEMPLO DE REFERENCIA" in sistema
+    assert "EJEMPLOS DE REFERENCIA" in sistema
     assert "Mariana Souza" in sistema
-    assert "según su testimonio" in sistema.lower()
+    assert "Laura Ocampo" in sistema
+    assert "Andrés Kuri" in sistema
+
+    assert "El mensaje original es la única fuente" in sistema
+    assert "No conviertas agradecimiento en evidencia de apoyo" in sistema
+    assert "No reasignes una duración a otro proceso" in sistema
 
     assert contexto["autor"] in usuario
     assert contexto["texto"] in usuario
@@ -144,19 +159,30 @@ def test_prompts_contienen_reglas_contra_informacion_inventada():
 
     for prompt, contexto in contextos:
         sistema = _contenido_sistema(prompt, **contexto).lower()
-        assert "no inventes" in sistema
+
+        assert "mensaje original" in sistema
+        assert (
+            "no inventes" in sistema
+            or "inventar" in sistema
+            or "información nueva" in sistema
+            or "hechos nuevos" in sistema
+        )
+
 
 def test_pregunta_programa_faq_prohibe_inventar_informacion_institucional():
     contexto = {
         "tipo_detectado": "pregunta_programa",
         "subtema": "costo del certificado",
-        "texto": "¿El certificado final tiene costo adicional o está incluido en el programa?",
+        "texto": (
+            "¿El certificado final tiene costo adicional "
+            "o está incluido en el programa?"
+        ),
     }
 
     sistema = _contenido_sistema(
         _prompt_preguntas_frecuentes,
         **contexto,
-    )
+    ).lower()
 
     usuario = _contenido_usuario(
         _prompt_preguntas_frecuentes,
@@ -164,11 +190,15 @@ def test_pregunta_programa_faq_prohibe_inventar_informacion_institucional():
     )
 
     assert "pregunta_programa" in sistema
-    assert "NO inventes precios, fechas, condiciones, beneficios" in sistema
-    assert "fuente oficial del programa" in sistema
-    assert "posterior validación humana" in sistema
-    assert "Tipo de pregunta: pregunta_programa" in usuario
-    assert "costo del certificado" in usuario
+    assert "no utilices conocimiento general" in sistema
+    assert "no inventes:" in sistema
+    assert "precios" in sistema
+    assert "fechas" in sistema
+    assert "políticas" in sistema
+    assert "información oficial vigente del programa" in sistema
+
+    assert contexto["tipo_detectado"] in usuario
+    assert contexto["texto"] in usuario
 
 
 def test_hash_prompt_es_determinista_y_cambia_con_la_plantilla():
@@ -197,9 +227,12 @@ def test_faq_usa_respuestas_finales_y_no_metainstrucciones():
         **contexto,
     )
 
+    assert "listo para curaduría o publicación" in sistema
+    assert "notas internas" in sistema
+    assert "instrucciones para otro redactor" in sistema
+
     assert "Una redacción breve que indique" not in sistema
     assert "Una explicación breve centrada" not in sistema
-    assert "respuesta final lista para publicar" in sistema
 
 
 def test_prompt_analisis_considera_impactos_concretos_como_testimonio():
@@ -220,6 +253,7 @@ def test_prompt_analisis_considera_impactos_concretos_como_testimonio():
     assert "comprender algo que antes" in sistema
     assert "acceder a una colaboración" in sistema
 
+
 def test_caso_exito_entrega_contenido_final_sin_notas_internas():
     contexto = {
         "autor": "Persona de prueba",
@@ -231,9 +265,12 @@ def test_caso_exito_entrega_contenido_final_sin_notas_internas():
         **contexto,
     )
 
-    assert "listos para curaduría" in sistema
-    assert "No incluyas notas internas" in sistema
+    assert "directamente publicable" in sistema
+    assert "notas internas" in sistema.lower()
+
     assert "Un texto de 2 a 3 frases que indique" not in sistema
+    assert "No se especifica el tipo de proyectos" not in sistema
+    assert "No se menciona ningún logro adicional" not in sistema
 
 
 def test_faq_publica_no_hace_referencia_a_la_pregunta():
@@ -246,10 +283,18 @@ def test_faq_publica_no_hace_referencia_a_la_pregunta():
     sistema = _contenido_sistema(
         _prompt_preguntas_frecuentes,
         **contexto,
-    )
+    ).lower()
 
-    assert "FAQ pública e independiente" in sistema
-    assert "ya que la pregunta no proporciona ese dato" not in sistema
+    assert (
+        "la faq debe funcionar independientemente "
+        "de la conversación que la originó"
+    ) in sistema
+
+    assert '"la pregunta"' in sistema
+    assert '"el mensaje original"' in sistema
+    assert '"la información proporcionada"' in sistema
+
+    assert "no explicar ausencias" in sistema
 
 
 def test_linkedin_normaliza_hashtags_con_numeral():

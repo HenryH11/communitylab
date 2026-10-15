@@ -13,9 +13,13 @@ ETIQUETAS = re.compile(
 _CATEGORIAS_CONTROL = {"Cc", "Cf"}
 
 # Detecta secuencias típicas de mojibake (UTF-8 interpretado como Latin-1 / Windows-1252)
-# Por ejemplo: Ã© (é), Ã± (ñ), Â¿ (¿), Â¡ (¡), â€œ (“), etc.
+# Por ejemplo: Ã© (é), Ã± (ñ), Â¿ (¿), Â¡ (¡), â€œ (“), â‚¬ (€), ðŸŽ‰ (🎉), etc.
+# Windows-1252 pone en 0x80–0x9F caracteres como € “ ” — ™ donde Latin-1 tiene controles;
+# por eso cada byte leído puede ser un carácter de U+0080–U+00FF o uno de esos.
+_CP1252_ALTOS = re.escape(bytes(range(0x80, 0xA0)).decode("cp1252", errors="ignore"))
+_BYTE_LEIDO = rf"[\u0080-\u00ff{_CP1252_ALTOS}]"
 PATRON_MOJIBAKE = re.compile(
-    r"(?:[\u00c2\u00c3][\u0080-\u00ff]|[\u00e2][\u0080-\u00ff]{2})+"
+    rf"(?:[\u00c2\u00c3]{_BYTE_LEIDO}|\u00e2{_BYTE_LEIDO}{{2}}|\u00f0{_BYTE_LEIDO}{{3}})+"
 )
 
 
@@ -24,6 +28,17 @@ def detectar_mojibake(texto: str) -> bool:
     if not isinstance(texto, str):
         return False
     return bool(PATRON_MOJIBAKE.search(texto))
+
+
+def _bytes_originales(texto: str) -> bytes:
+    """Recupera los bytes mal leídos: CP1252 y, para los bytes que CP1252 no define, Latin-1."""
+    datos = bytearray()
+    for caracter in texto:
+        try:
+            datos += caracter.encode("cp1252")
+        except UnicodeEncodeError:
+            datos += caracter.encode("latin-1")
+    return bytes(datos)
 
 
 def reparar_mojibake(texto: str) -> str:
@@ -36,7 +51,7 @@ def reparar_mojibake(texto: str) -> str:
 
     # Intento 1: Cadena completa (caso más común cuando todo el texto fue mal decodificado)
     try:
-        return texto.encode("latin-1").decode("utf-8")
+        return _bytes_originales(texto).decode("utf-8")
     except (UnicodeEncodeError, UnicodeDecodeError):
         pass
 
@@ -44,7 +59,7 @@ def reparar_mojibake(texto: str) -> str:
     def _arreglar_coincidencia(match: re.Match) -> str:
         pedazo = match.group(0)
         try:
-            return pedazo.encode("latin-1").decode("utf-8")
+            return _bytes_originales(pedazo).decode("utf-8")
         except (UnicodeEncodeError, UnicodeDecodeError):
             return pedazo
 

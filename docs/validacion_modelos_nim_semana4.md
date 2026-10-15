@@ -1112,3 +1112,126 @@ con:
 ```
 
 Este es el estado técnico que Data Science entrega para la siguiente revisión del equipo de Data.
+
+---
+
+## Cierre final de validación de Semana 4
+
+La validación final de Data Science se realizó sobre:
+
+```text
+Rama: feature/DS-Semana4
+SHA: 5162e6108b4e5ef96d91804c3193b955a0ced69b
+Working tree limpio: sí
+```
+
+### Resultado de pruebas
+
+Suite completa:
+
+```text
+485 passed
+132 subtests passed
+1 warning
+0 failed
+```
+
+Pruebas focalizadas de prompts:
+
+```text
+19 passed
+```
+
+También se verificó que no existan reglas específicas asociadas a los IDs
+de las interacciones revisadas. Los ajustes realizados corresponden a reglas
+generales de clasificación, fidelidad semántica y generación, acompañadas por
+ejemplos de referencia en los prompts.
+
+### Ejecución final sobre el dataset
+
+```text
+Interacciones de entrada: 23
+Excluidas por Data: 0
+Resultados DS: 23
+Activos generados: 35
+
+Interacciones con fallback en análisis: 0
+Eventos de fallback en análisis: 0
+Activos con fallback: 0
+Eventos de fallback en generación: 0
+
+Errores: 0
+Fallos: 0
+Inconsistencias: 0
+```
+
+Configuración utilizada:
+
+```text
+Proveedor principal: NVIDIA NIM
+Proveedor de respaldo: Gemini
+
+rápido:
+nvidia/nemotron-3.5-lightning-30b-a3b
+
+estándar:
+nvidia/nemotron-3.5-lightning-30b-a3b
+
+razonamiento:
+nvidia/nemotron-3-super-120b-a12b
+
+Timeout NVIDIA: 15 s
+```
+
+### Ajustes semánticos finales
+
+La calibración final reforzó reglas generales para:
+
+- preservar cantidades, rangos y comparadores como `menos de`, `más de`
+  y `al menos`;
+- evitar aumentar causalidad, certeza, dificultad o intensidad respecto
+  al mensaje original;
+- conservar correctamente estados como `seleccionado` frente a
+  `contratado`;
+- diferenciar `programa_hackathon`, `aprendizaje`, `plataforma`,
+  `programacion` y `datos_ia`;
+- evitar completar con conocimiento general información institucional
+  que debe provenir de fuentes oficiales del programa;
+- mantener precisión terminológica en respuestas técnicas;
+- generar FAQ directamente publicables, sin instrucciones internas ni
+  metacomentarios;
+- mantener la información original como fuente factual principal para
+  los activos generados.
+
+Los casos señalados durante la revisión de Data en Semana 4 fueron
+revisados nuevamente. Las divergencias de clasificación y generación
+detectadas en `int-011`, `int-014`, `int-015` e `int-018`, junto con los
+casos relacionados encontrados durante la revisión semántica de DS,
+quedaron corregidos mediante reglas generales y no mediante condiciones
+específicas por interacción.
+
+### Caso reservado para Semana 5
+
+`int-023` continúa intencionalmente sin deduplicación en Semana 4.
+
+Es un caso casi duplicado de `int-002`. La detección y tratamiento de
+duplicados se mantiene como trabajo de Semana 5 y no constituye un
+bloqueador del cierre actual.
+
+### Commits finales de calibración
+
+```text
+7cc4e91  refactor(ds): mejorar prompts y fidelidad semantica
+99f1905  fix(ds): reforzar fidelidad semantica de prompts
+5162e61  fix(ds): cerrar calibracion final de prompts
+```
+
+El archivo:
+
+```text
+salida/auditoria_semana4/auditoria_semana4.json
+```
+
+conserva ese nombre por compatibilidad, pero desde Data Science se entrega
+como paquete de trazabilidad y evidencia de ejecución. La auditoría o revisión
+posterior de estos resultados corresponde al equipo de Data.

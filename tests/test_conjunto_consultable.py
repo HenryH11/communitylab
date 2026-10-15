@@ -72,6 +72,7 @@ class PruebasConjuntoConsultable(unittest.TestCase):
             entrada, salida = Path(carpeta, "entrega.json"), Path(carpeta, "conjunto.json")
             entrada.write_text(json.dumps(entrega_v13(), ensure_ascii=False), encoding="utf-8")
             self.assertEqual(principal(["--entrega", str(entrada), "--mensajes", str(DATASET), "--salida", str(salida)]), 0)
+            self.assertNotIn(b"\r\n", salida.read_bytes())
             conjunto = json.loads(salida.read_text(encoding="utf-8"))
             self.assertEqual(conjunto["total"], 2)
             self.assertIn("¿Cómo", conjunto["registros"][1]["contenido_corto"])

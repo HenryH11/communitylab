@@ -78,7 +78,8 @@ def principal(argumentos=None):
     args = parser.parse_args(argumentos)
     leer = lambda ruta: json.loads(Path(ruta).read_text(encoding="utf-8"))
     conjunto = construir_conjunto_consultable(leer(args.entrega), leer(args.mensajes) if args.mensajes else None)
-    Path(args.salida).write_text(json.dumps(conjunto, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    # Bytes con saltos LF: en Windows, write_text escribiría CRLF en el archivo que CE sube al bucket.
+    Path(args.salida).write_bytes((json.dumps(conjunto, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     sin_fecha = sum(1 for r in conjunto["registros"] if not r["fecha"])
     print(json.dumps({"registros": conjunto["total"], "sin_fecha": sin_fecha}, ensure_ascii=False))
     return 0

@@ -253,6 +253,41 @@ juicio humano o fuentes técnicas aprobadas.
 | Duda técnica | `int-017`: pregunta técnica → FAQ prudente sobre indentación, sin plazos ni garantías | `s4-002-duda_tecnica` |
 | Spam | No hay spam en el dataset compartido (0 excluidos) | `s4-003-spam`: excluido por Datos (`texto_repetitivo`, `bajo_umbral`); el activo forzado se marca `activo_de_mensaje_excluido` |
 
+### Segunda corrida de DS (14 de octubre, noche)
+
+DS corrigió el prompt de FAQ (int-015) y la definición de testimonio (int-011,
+int-014, int-018) en `feature/DS-Semana4` y regeneró el paquete.
+
+| Campo | Valor |
+| --- | --- |
+| Archivo | `auditoria_semana4_v2.json`, versión 1.2 |
+| SHA-256 del archivo | `25bda8f78e8c968f…` |
+| Código que lo generó | `feature/DS-Semana4` `8f32be8` (incluye `develop` `46f6d41`) |
+| Activos | 35 en 19 interacciones; 0 fallback |
+
+El auditor sumó dos reglas a partir de la lectura manual de esta corrida:
+`comentario_interno` (notas del modelo para el revisor, como "no se especifica"
+o "mensaje original") y `hashtag_sin_almohadilla`.
+
+| Modelo | Activos | Con alertas |
+| --- | --- | --- |
+| `nemotron-3-super-120b-a12b` | 18 | 3 |
+| `nemotron-3.5-lightning-30b-a3b` | 17 | 5 |
+
+| ID | Ruta | Alerta | Decisión sugerida |
+| --- | --- | --- | --- |
+| int-011 | caso_exito | `comentario_interno`: "No se especifica el tipo de proyectos…" | Editar: quitar la nota |
+| int-014 | caso_exito | `comentario_interno`: "No se menciona ningún logro adicional… en el mensaje original" | Editar; revisar si califica como caso de éxito |
+| int-004, int-007, int-010, int-013 | preguntas_frecuentes | `comentario_interno`: "ya que la pregunta no proporciona/especifica…" | Menor: reformular hacia el lector |
+| int-003 | linkedin | `hashtag_sin_almohadilla`: Aprendizaje, ModeloDeClasificación | Corregir formato |
+| int-017 | preguntas_frecuentes | `entidad_sin_respaldo`: DataFrame | Falso positivo: término técnico de pandas |
+
+Con las reglas nuevas, la primera corrida (`4331b6e`) también marca int-004
+("No se especifica… en el mensaje recibido"). int-015 ya no aparece en la
+segunda corrida.
+
+Pendiente: repetir sobre `develop` cuando se fusione el PR de DS, con el SHA final.
+
 ### Pendiente
 
 - Decisión humana y justificación por fila en el reporte generado (columna vacía

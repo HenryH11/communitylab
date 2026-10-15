@@ -1,3 +1,5 @@
+import re
+
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -143,6 +145,16 @@ class SugerenciaPreguntasFrecuentes(BaseModel):
             "o institucional que no esté sustentada."
         )
     )
+
+    @field_validator("respuesta")
+    @classmethod
+    def limpiar_repeticiones_accidentales(cls, valor: str) -> str:
+        return re.sub(
+            r"\b(\w+)(?:\s+\1\b){2,}",
+            r"\1",
+            valor,
+            flags=re.IGNORECASE,
+        )
 
 
 class CasoDeExito(BaseModel):

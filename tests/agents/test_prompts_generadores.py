@@ -1,4 +1,7 @@
-from src.agentes.modelos import PublicacionLinkedIn
+from src.agentes.modelos import (
+    PublicacionLinkedIn,
+    SugerenciaPreguntasFrecuentes,
+)
 from src.agentes.prompts.boletin import prompt_boletin as _prompt_boletin
 from src.agentes.prompts.caso_exito import prompt_caso_exito as _prompt_caso_exito
 from src.agentes.prompts.linkedin import prompt_linkedin as _prompt_linkedin
@@ -265,3 +268,20 @@ def test_linkedin_normaliza_hashtags_con_numeral():
         "#Python",
         "#ModeloDeClasificacion",
     ]
+
+
+def test_faq_elimina_repeticiones_accidentales():
+    faq = SugerenciaPreguntasFrecuentes(
+        tema="Fecha de inscripción",
+        respuesta=(
+            "Consulta la información oficial para verificar si las "
+            "integraciones posteriores posteriores posteriores "
+            "después de la semana 0 son permitidas."
+        ),
+    )
+
+    assert "posteriores posteriores" not in faq.respuesta
+    assert (
+        "integraciones posteriores después de la semana 0"
+        in faq.respuesta
+    )

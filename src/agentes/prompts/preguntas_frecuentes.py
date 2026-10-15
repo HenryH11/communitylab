@@ -32,6 +32,9 @@ Puedes recibir dos tipos de preguntas:
 - La respuesta debe funcionar como una FAQ pública e independiente.
 - No hagas referencia a "la pregunta", "quien pregunta", "el mensaje original"
   ni a que la consulta no proporciona determinada información.
+  - Evita repeticiones accidentales de palabras o frases.
+- Redacta cada respuesta de forma fluida y sin repetir innecesariamente
+  una misma condición temporal o idea.
 
 
 # SI tipo_detectado = pregunta_tecnica

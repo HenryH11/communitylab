@@ -59,6 +59,11 @@ COMENTARIO_INTERNO = re.compile(
 )
 # Campos de etiqueta o destino: no son afirmaciones sobre el mensaje.
 CAMPOS_SIN_AFIRMACIONES = {"canal_recomendado", "hashtags", "seccion", "area"}
+# Contrato de calidad de src/datos/relevancia.py, para informes anteriores sin
+# incluido_sentimiento. Se mantiene local para ejecutar el CLI solo con stdlib.
+MOTIVOS_EXCLUSION_CALIDAD = frozenset({
+    "texto_vacio", "solo_enlaces", "texto_repetitivo", "contenido_eliminado", "duplicado",
+})
 PALABRA = re.compile(r"#?[\w][\w'-]*", re.UNICODE)
 FIN_FRASE = re.compile(r"[.!?:;¿¡\n]")
 
@@ -236,12 +241,18 @@ def auditar_casos(casos, opciones):
 
 
 def excluidos_del_informe(informe):
-    """IDs descartados por Datos con su motivo, leídos del informe de ingesta."""
+    """IDs excluidos de IA por calidad, no por selección de contenido."""
     excluidos = {}
     for lote in (informe or {}).get("lotes", []):
         for evaluacion in lote.get("evaluaciones", []):
-            if evaluacion.get("motivos") and evaluacion.get("id"):
-                excluidos[evaluacion["id"]] = ", ".join(evaluacion["motivos"])
+            if "incluido_sentimiento" in evaluacion or "motivos_exclusion_sentimiento" in evaluacion:
+                motivos = evaluacion.get("motivos_exclusion_sentimiento") or []
+                excluido = evaluacion.get("incluido_sentimiento") is False or bool(motivos)
+            else:
+                motivos = [m for m in evaluacion.get("motivos", []) if m in MOTIVOS_EXCLUSION_CALIDAD]
+                excluido = bool(motivos)
+            if excluido and evaluacion.get("id"):
+                excluidos[evaluacion["id"]] = ", ".join(motivos or ["excluido_por_data"])
     return excluidos
 
 
@@ -283,7 +294,12 @@ def normalizar_entrega(entrega):
 def auditar_entrega(entrega, informe, opciones):
     """Modo real: contrato de salida de DS (interacciones + activos)."""
     entrega, excluidos = normalizar_entrega(entrega)
-    originales = {i["id"]: i for i in entrega.get("interacciones", [])}
+    originales = {}
+    for interaccion in entrega.get("interacciones", []):
+        identificador = interaccion["id"]
+        if identificador in originales:
+            raise ValueError(f"ID duplicado en las interacciones de la entrega: {identificador}")
+        originales[identificador] = interaccion
     excluidos = {**excluidos, **excluidos_del_informe(informe)}
     filas = []
     for activo in entrega.get("activos", []):

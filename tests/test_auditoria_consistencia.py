@@ -150,6 +150,93 @@ def test_entrega_separa_alertas_por_modelo_y_respaldo():
         "resumen": resumen(filas), "filas": filas})
 
 
+@pytest.mark.parametrize("motivo", ["bajo_umbral", "texto_corto", "fuera_maximo_por_lote"])
+def test_no_confunde_seleccion_de_contenido_con_exclusion_de_ia(motivo):
+    entrega = {
+        "interacciones": [{"id": "a-1", "texto": "Terminé 2 cursos."}],
+        "activos": [{"id_interaccion": "a-1", "tipo": "boletin",
+                     "contenido": "Terminó 2 cursos."}],
+    }
+    informe = {"lotes": [{"evaluaciones": [{
+        "id": "a-1", "motivos": [motivo], "incluido_sentimiento": True,
+        "motivos_exclusion_sentimiento": [],
+    }]}]}
+    # La elegibilidad de una ruta se comprueba aparte: este mensaje no es ruido.
+    assert auditar_entrega(entrega, informe, SIN_OPCIONES)[0]["alertas"] == []
+
+
+@pytest.mark.parametrize("con_campos_actuales", [True, False])
+def test_mantiene_exclusion_por_ruido_en_informes_actuales_y_anteriores(con_campos_actuales):
+    evaluacion = {"id": "a-1", "motivos": ["texto_repetitivo", "bajo_umbral"]}
+    if con_campos_actuales:
+        evaluacion.update(incluido_sentimiento=False,
+                          motivos_exclusion_sentimiento=["texto_repetitivo"])
+    entrega = {
+        "interacciones": [{"id": "a-1", "texto": "compra ahora compra ahora"}],
+        "activos": [{"id_interaccion": "a-1", "tipo": "boletin", "contenido": "Gran logro."}],
+    }
+    informe = {"lotes": [{"evaluaciones": [evaluacion]}]}
+    assert auditar_entrega(entrega, informe, SIN_OPCIONES)[0]["alertas"] == [{
+        "tipo": "activo_de_mensaje_excluido",
+        "detalle": "el mensaje se excluyó antes de la IA (texto_repetitivo)",
+    }]
+
+
+def test_exclusion_explicita_sin_motivo_no_se_pierde():
+    entrega = {
+        "interacciones": [{"id": "a-1", "texto": "Mensaje excluido."}],
+        "activos": [{"id_interaccion": "a-1", "tipo": "boletin", "contenido": "Mensaje excluido."}],
+    }
+    informe = {"lotes": [{"evaluaciones": [{
+        "id": "a-1", "motivos": [], "incluido_sentimiento": False,
+    }]}]}
+    assert auditar_entrega(entrega, informe, SIN_OPCIONES)[0]["alertas"][0]["tipo"] == "activo_de_mensaje_excluido"
+
+
+def test_compatibilidad_de_exclusiones_anteriores_con_el_contrato_de_da():
+    from scripts.auditoria_consistencia import MOTIVOS_EXCLUSION_CALIDAD
+    from src.datos.relevancia import MOTIVOS_RUIDO
+
+    assert MOTIVOS_EXCLUSION_CALIDAD == MOTIVOS_RUIDO
+
+
+@pytest.mark.parametrize("anidada", [True, False])
+def test_rechaza_ids_duplicados_antes_de_elegir_un_original(anidada):
+    if anidada:
+        interacciones = [
+            {"id": "a-1", "entrada": {"texto": "Completé 2 cursos."}},
+            {"id": "a-1", "entrada": {"texto": "Completé 5 cursos."}},
+        ]
+    else:
+        interacciones = [
+            {"id": "a-1", "texto": "Completé 2 cursos."},
+            {"id": "a-1", "texto": "Completé 5 cursos."},
+        ]
+    with pytest.raises(ValueError, match="ID duplicado.*a-1"):
+        auditar_entrega({"interacciones": interacciones, "activos": []}, None, SIN_OPCIONES)
+
+
+def test_fuente_tecnica_aprobada_no_oculta_otra_entidad_nueva():
+    original = "¿Cómo reviso un error en pandas?"
+    salida = "Revisa el DataFrame antes de enviarlo a EmpresaInventada."
+    alertas = auditar_activo(original, salida, fuentes=["DataFrame"])
+    assert alertas == [{"tipo": "entidad_sin_respaldo", "detalle": "EmpresaInventada"}]
+
+
+def test_comentario_interno_es_aviso_y_no_rechazo_automatico():
+    # Explicación técnica legítima que la heurística no puede distinguir por sí sola.
+    original = "¿Cómo funciona un índice?"
+    salida = "Si no se especifica un índice, se utiliza el predeterminado."
+    entrega = {
+        "interacciones": [{"id": "a-1", "texto": original}],
+        "activos": [{"id_interaccion": "a-1", "tipo": "preguntas_frecuentes", "contenido": salida}],
+    }
+    fila = auditar_entrega(entrega, None, SIN_OPCIONES)[0]
+    assert fila["alertas"][0]["tipo"] == "comentario_interno"
+    assert fila["decision_sugerida"] == "revisar"
+    assert fila["decision_humana"] is None
+
+
 def test_entrega_anidada_de_ds_se_aplana_con_trazabilidad():
     def traza(modelo, fallback=False):
         return {"proveedor_usado": "gemini" if fallback else "nvidia_nim", "modelo": modelo,

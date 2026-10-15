@@ -1,9 +1,197 @@
 # Semana 4: preparación de la auditoría de consistencia
 
-Preparado el 12 y actualizado el 14 de octubre de 2026. DA: Gustavo y Jhonattan.
+Preparado el 12 y actualizado el 15 de octubre de 2026. DA: Gustavo y Jhonattan.
 
-**Estado: preparación y validación offline. No es el cierre de la auditoría con
-IA real, curaduría, estrés ni OCI.**
+**Estado: auditoría técnica de la entrega real de DS recibida y completada
+offline. Sin discrepancias bloqueantes detectadas en 35 activos. Pendientes el
+visto bueno humano de DA, la curaduría, el estrés y la evidencia OCI del equipo.**
+
+## Revisión cruzada de Jhonattan · 15 de octubre
+
+### Versiones y alcance actual
+
+- `develop`: `46f6d41`; los PR #30 y #31 ya están fusionados.
+- Auditor v2 de Gustavo, PR #33: `8d8d8b1`, todavía en borrador al revisar.
+- DS, PR #32: `73c5175`. La documentación identifica `5162e61` como el código
+  que produjo su última entrega; `73c5175` solo actualiza documentación.
+- Rama de ajustes: `feature/jhonattan-ajustes-auditor-v2`, creada desde
+  `8d8d8b1` (#33), con únicamente el commit de ajustes de DA trasladado mediante
+  `cherry-pick`. No incluye los commits del PR #32 ni el merge `424af25`.
+- La combinación con DS se validó separadamente en la rama local
+  `feature/jhonattan-revision-auditoria-semana4`, que sí incorpora #32 mediante
+  `424af25`. Los resultados de esa combinación no se atribuyen a la rama limpia.
+
+Solo se trabaja en Semana 4. No se modifica el dataset de referencia, el frontend
+ni la deduplicación reservada para Semana 5. Los cambios propios de esta revisión
+son el auditor de DA, sus pruebas y este reporte.
+
+### Resultado de la revisión del auditor v2
+
+| Punto | Evaluación técnica y acción |
+| --- | --- |
+| `comentario_interno` | Útil para notas como «mensaje original» o «la pregunta no proporciona». Se mantiene como señal para revisión: «Si no se especifica un índice…» puede ser una explicación técnica legítima. No se utiliza para rechazar automáticamente. |
+| `hashtag_sin_almohadilla` | Correcto revisarlo aparte: el aplanado omite hashtags. DS añadió normalización en #32, pero debe comprobarse la salida real. La regla solo verifica el prefijo; no certifica todas las convenciones de hashtags. |
+| `DataFrame` | No se añade una excepción global. La regla de mayúsculas es heurística. Una fuente técnica aprobada puede respaldar ese término, conservando alertas para otras entidades nuevas. La aprobación factual corresponde a revisión humana. |
+| Exclusiones del informe de DA | **Corregido en esta rama.** `motivos` explica selección de contenido y no equivale a exclusión de IA. Se usan `incluido_sentimiento` y `motivos_exclusion_sentimiento`; para informes antiguos se filtran solo los cinco motivos de ruido del contrato de DA. |
+| Exclusión explícita sin motivo | **Corregido en esta rama.** `incluido_sentimiento=False` se conserva aunque falte la explicación, con el marcador `excluido_por_data`. |
+| IDs duplicados | **Corregido en esta rama.** Se rechaza una entrega con IDs repetidos antes de comparar activos. Antes, el índice podía sustituir silenciosamente un original por otro. No es deduplicación semántica. |
+
+Se añadieron 11 casos de prueba al auditor. Ocho reprodujeron fallos antes de la
+corrección; los otros verifican límites de la heurística y coherencia con el
+contrato de DA. El auditor pasa de 31 a **42 pruebas**. Conserva únicamente
+dependencias de la biblioteca estándar en ejecución.
+
+### Conexión comprobada con el exportador de DS
+
+Se añadió una prueba al recorrido existente que ejecuta:
+
+```text
+Datos sintéticos → preparar_paquete_ia → procesamiento/grafo
+→ construir_paquete_auditoria de DS → auditar_entrega de DA
+```
+
+Resultado: **30 mensajes sintéticos**, 10 excluidos por spam, 20 válidos y
+**40 activos auditados sin alertas**. El auditor no modifica la entrega y no
+asigna decisiones humanas. Las respuestas y las trazas de proveedor se simulan;
+la red está bloqueada en el archivo de pruebas. Esto verifica compatibilidad
+entre módulos, no calidad ni latencia de NVIDIA/Gemini reales.
+
+La prueba del exportador se omite mediante `pytest.mark.skipif` si #32 no está
+disponible, sin importarlo durante la recolección. Se activa al incorporar DS.
+
+Validación local del 15 de octubre, con `.env` desactivado y sin red real:
+
+| Ejecución | Resultado |
+| --- | --- |
+| Auditor y recorrido de Semana 4, con DS #32 | 50 aprobadas |
+| Suite completa: `develop` `46f6d41` + #33 `8d8d8b1` + ajustes DA, sin #32 | **474 aprobadas, 132 subpruebas aprobadas; 0 fallidas, 1 omitida** (exportador de DS aún ausente) |
+| Suite completa: la misma combinación + DS #32 `73c5175` | **502 aprobadas, 132 subpruebas aprobadas; 0 fallidas, 0 omitidas** |
+| `unittest discover` en la rama limpia | 91 pruebas, OK |
+
+Las dos suites completas se repitieron antes de publicar. Esta diferencia es
+esperada: la rama limpia no transporta las funciones ni las pruebas de DS #32.
+No se deben anunciar 502 aprobadas al ejecutar solo la rama de ajustes.
+
+La suite incluye respuestas simuladas y pruebas de contratos. No se hicieron
+llamadas reales a IA ni escrituras en OCI. El primer intento de las 31 pruebas
+originales de Gustavo tuvo un error al crear temporales en el entorno restringido
+de Windows (30 aprobadas, 1 error de preparación). Fuera de ese entorno y con
+`--basetemp` dentro de `salida/`, las 31 pasaron antes de añadir los ajustes.
+
+### Tercera corrida de DS: entrega final recibida y auditada · 15 de octubre
+
+El usuario entregó `auditoria_semana4.json` como archivo completo desde Descargas.
+Se conservó una copia byte a byte en
+`salida/auditoria_jhonattan_semana4/2026-10-15/auditoria_ds_5162e61_completa.json`.
+El primer pegado estaba cortado dentro de `int-017` y no era JSON válido: no se
+reparó ni completó por suposición. Su revisión parcial queda como antecedente,
+separada y reemplazada para las conclusiones por este archivo completo.
+
+| Identificación de la evidencia | Valor |
+| --- | --- |
+| JSON | Versión 1.2; válido, UTF-8; 60 897 bytes |
+| SHA-256 del archivo completo | `456f5d874c36f767ef546831a3b9bb2efaf3cbfb1bd0fd61bf1b616410a12a57` |
+| Código DS declarado en el JSON | `5162e6108b4e5ef96d91804c3193b955a0ced69b` |
+| Ejecución declarada | `d5e2c90405464523b2779249540d1fd3`, `2026-10-15T04:48:53.756484+00:00` |
+| SHA-256 del dataset, contrastado con el archivo local | `63f19b4756d26c4f4fd64f6b289ada8fe1bee83c5f1ef1194f6009c3a7bfe045` |
+| SHA-256 del auditor local usado | `dd0f7b095236814895cea8269dc55b42016add56ad1eabfce1b2498a070ac221` |
+
+Se verificaron los 23 IDs únicos y todos los textos/metadatos contra el dataset;
+se recalcularon puntajes, elegibilidad, motivos y exclusiones con la preparación
+actual de DA y la fecha de referencia declarada. Coinciden. Los 23 análisis y
+35 activos validan con los modelos Pydantic; sus rutas coinciden con el enrutador.
+Los campos adicionales `area` y `canal_recomendado` coinciden con los metadatos
+que añade el generador. Los conteos y distribuciones del resumen se contrastaron
+con los registros. Las 58 trazas (23 análisis + 35 activos) son internamente
+coherentes con los modelos y proveedores declarados; todas indican NVIDIA sin
+fallback. No hay errores, fallos, pendientes ni exclusiones en este dataset.
+
+Auditor ejecutado sin fuentes excluyentes adicionales ni llamadas a IA:
+
+```powershell
+python -B scripts/auditoria_consistencia.py `
+  --entrega salida/auditoria_jhonattan_semana4/2026-10-15/auditoria_ds_5162e61_completa.json `
+  --proveedor por_activo --version-codigo 5162e6108b4e5ef96d91804c3193b955a0ced69b
+```
+
+| Modelo declarado en cada activo | Activos | Con alertas |
+| --- | --- | --- |
+| `nvidia/nemotron-3-super-120b-a12b` | 18 | 0 |
+| `nvidia/nemotron-3.5-lightning-30b-a3b` | 17 | 0 |
+| Total | **35** | **0** |
+
+Las rutas son 8 casos de éxito, 8 boletines, 8 publicaciones LinkedIn, 9 FAQ y
+2 insights. La comparación técnica asistida de los 35 activos contra su fuente
+no detectó discrepancias bloqueantes. No se modifica ninguna salida de DS.
+
+### Verificación de las observaciones anteriores
+
+| Observación de las corridas históricas | Resultado en el archivo completo de `5162e61` |
+| --- | --- |
+| `int-015`, FAQ redactada como instrucción | Respuesta final prudente; no inventa diferencias institucionales. Sin instrucción filtrada. |
+| `int-011`, `int-014`, `int-018`, testimonios sin activos | Se detectan como testimonios y cada uno genera caso de éxito, boletín y LinkedIn. |
+| `int-011` / `int-014`, notas internas en caso de éxito | No aparecen; se conservan oportunidad de colaborar y comprensión de conceptos sin inventar logros. |
+| `int-004`, `int-007`, `int-010`, `int-013`, metacomentarios en FAQ | No aparecen; las respuestas remiten a información oficial sin precios, fechas ni acuerdos inventados. |
+| `int-003`, hashtags sin `#` | Los tres hashtags llevan `#`. |
+| `int-017`, alerta heurística por `DataFrame` | El término ya no aparece en la nueva FAQ; no hizo falta una excepción ni fuente aprobada para silenciarlo. |
+| `int-020`, pérdida de insight por detectar comentario | Se detecta `feedback`, genera `insight_mejora` y conserva la propuesta de ejercicios. |
+| `int-023`, casi duplicado de `int-002` | Continúa presente, como estaba acordado. La deduplicación se mantiene fuera de Semana 4. |
+
+La revisión registra especial atención a «menos de 3 meses» (`int-001`), seis
+semanas (`int-003`), «seleccionada» frente a «contratada» (`int-022`) y oportunidad
+de colaborar frente a colaboración ya realizada (`int-011`). Los activos
+conservan estas distinciones. Los otros hechos de los testimonios e insights
+tampoco presentan añadidos bloqueantes en esta revisión.
+
+Las cuatro FAQ técnicas (`int-002`, `int-023`, `int-017`, `int-021`) se contrastaron
+con [LangGraph: conditional edges](https://docs.langchain.com/oss/python/langgraph/graph-api#conditional-edges),
+[Python: indentación](https://docs.python.org/3/reference/lexical_analysis.html#indentation),
+[W3C: Flexbox](https://www.w3.org/TR/css-flexbox-1/) y
+[W3C: Grid](https://www.w3.org/TR/css-grid-1/), según el caso. Son explicaciones
+generales; no prueban una solución específica sin ver el código del usuario.
+
+### Evidencia local y límites de la conclusión
+
+En `salida/auditoria_jhonattan_semana4/2026-10-15/` se conservan:
+
+- `auditoria_ds_5162e61_completa.json`: copia íntegra del archivo recibido;
+- `validacion_entrega_completa.json`: identidad, huellas y controles de contrato;
+- `reporte_automatico_completo.json` / `.md`: 35 filas, cero alertas;
+- `revision_tecnica_asistida_completa.json` / `.md`: comparación y justificación
+  por `(ID, ruta)`, con las 35 decisiones humanas todavía pendientes.
+
+Los artefactos completos permanecen fuera de Git por la regla `salida/`; el
+reporte versionado conserva su identificación y resultados. La revisión asistida
+no rellena `decision_humana` ni `justificacion`, ni suplanta el visto bueno del
+subequipo o la curaduría.
+
+No se recibieron los logs originales ni se volvió a llamar al proveedor. El SHA
+de ejecución, `working_tree_limpio` y `reproducible` son declaraciones del JSON,
+no una reproducción independiente de la corrida. El JSON no registra el timeout
+efectivo; no puede comprobarse una posible variable de entorno de aquella sesión.
+Tampoco certifica latencia, calidad general del modelo, etiquetas contra un
+ground truth humano conciliado, curaduría, estrés o persistencia real en OCI.
+El spam sigue cubierto por pruebas sintéticas: la entrega real no contiene spam.
+
+Los `0 inconsistencias` internos de DS y las `0 alertas` de nuestro auditor son
+comprobaciones distintas; ninguna equivale por sí sola a aprobación humana.
+
+### Dictamen y cierre de Semana 4
+
+La dirección del auditor v2 es correcta. La revisión técnica queda completada
+para esta entrega de 35 activos, con los ajustes de esta rama;
+**no se ha emitido un OK humano ni una aprobación de PR**.
+Para el cierre todavía faltan:
+
+- que DA confirme las decisiones y el visto bueno sobre esta entrega identificada;
+- revisar la versión editada/aprobada cuando SS entregue la curaduría;
+- registrar con SS/CE el estrés y la persistencia real que corresponden al equipo.
+
+## Evidencia histórica · 12–14 de octubre
+
+Las secciones siguientes conservan las versiones y decisiones de cada corrida.
+Los modelos Gemma/Llama, los PR pendientes y los resultados anteriores deben
+interpretarse según la fecha y el SHA indicados, no como estado final vigente.
 
 ## Alcance y reparto
 
@@ -209,8 +397,8 @@ decisión esperada).
 
 Los modelos de la tabla "Proveedores de la base integrada" (`gemma-4-31b-it`,
 `llama-3.1-8b`, `llama-3.3-70b`) son los de `develop`. DS los reemplazó en
-`feature/DS-Semana4` porque NVIDIA marcó los Llama como deprecados; esa rama aún
-no tiene PR.
+`feature/DS-Semana4` porque NVIDIA marcó los Llama como deprecados; en el momento
+de aquella corrida esa rama todavía no tenía PR. Ahora se revisa en el PR #32.
 
 Comando:
 

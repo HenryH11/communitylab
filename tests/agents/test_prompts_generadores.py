@@ -1,6 +1,7 @@
 from src.agentes.prompts.boletin import prompt_boletin as _prompt_boletin
 from src.agentes.prompts.caso_exito import prompt_caso_exito as _prompt_caso_exito
 from src.agentes.prompts.linkedin import prompt_linkedin as _prompt_linkedin
+from src.agentes.prompts.analisis import template_analisis as _template_analisis
 from src.agentes.prompts.preguntas_frecuentes import (
     prompt_preguntas_frecuentes as _prompt_preguntas_frecuentes,
 )
@@ -178,3 +179,39 @@ def test_hash_prompt_es_determinista_y_cambia_con_la_plantilla():
 
     assert huella_original == calcular_hash_prompt(prompt_original)
     assert huella_original != calcular_hash_prompt(prompt_modificado)
+
+
+def test_faq_usa_respuestas_finales_y_no_metainstrucciones():
+    contexto = {
+        "tipo_detectado": "pregunta_programa",
+        "subtema": "informacion del programa",
+        "texto": "¿Dónde puedo confirmar esta información?",
+    }
+
+    sistema = _contenido_sistema(
+        _prompt_preguntas_frecuentes,
+        **contexto,
+    )
+
+    assert "Una redacción breve que indique" not in sistema
+    assert "Una explicación breve centrada" not in sistema
+    assert "respuesta final lista para publicar" in sistema
+
+
+def test_prompt_analisis_considera_impactos_concretos_como_testimonio():
+    contexto = {
+        "origen": "Comunidad",
+        "canal": "#general",
+        "idioma": "es",
+        "texto": "Apliqué lo aprendido en una situación real.",
+    }
+
+    sistema = _contenido_sistema(
+        _template_analisis,
+        **contexto,
+    )
+
+    assert "no requiere necesariamente empleo" in sistema
+    assert "aplicar lo aprendido" in sistema
+    assert "comprender algo que antes" in sistema
+    assert "acceder a una colaboración" in sistema

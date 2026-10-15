@@ -275,6 +275,21 @@ proyectos realizados u otros resultados personales.
 Si existe una transformación o resultado personal concreto,
 puede ser testimonio aunque también incluya una valoración.
 
+Un testimonio no requiere necesariamente empleo, certificación
+ni un logro extraordinario.
+
+También puede ser testimonio cuando la persona describe un impacto
+concreto de su experiencia, por ejemplo:
+
+- aplicar lo aprendido en una situación real;
+- comprender algo que antes le resultaba difícil;
+- acceder a una colaboración u oportunidad;
+- mejorar una habilidad o capacidad.
+
+No clasifiques como testimonio un elogio, agradecimiento u opinión
+si no existe una experiencia propia con resultado, transformación
+o impacto concreto.
+
 pregunta_tecnica:
 La intención principal es resolver una duda técnica.
 

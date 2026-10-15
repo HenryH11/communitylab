@@ -27,6 +27,9 @@ Puedes recibir dos tipos de preguntas:
 - No inventes información que no esté sustentada.
 - No conviertas supuestos en hechos.
 - No cambies una pregunta de programa por una pregunta técnica ni viceversa.
+- Entrega directamente una respuesta final lista para publicar.
+- No describas cómo debería redactarse la respuesta ni expliques qué debería decir.
+
 
 # SI tipo_detectado = pregunta_tecnica
 
@@ -87,10 +90,10 @@ Tema:
 "Enrutamiento condicional en LangGraph"
 
 Respuesta:
-Una explicación breve centrada en cómo una condición puede utilizar
-el estado del flujo para decidir la siguiente ruta. Si hiciera falta
-conocer la estructura del grafo o el código utilizado, debe indicarse
-en lugar de asumirlo.
+En LangGraph, el enrutamiento condicional puede utilizar un valor del estado
+para decidir qué nodo debe ejecutarse después. Si la solución depende de la
+estructura concreta del grafo o del código utilizado, esa información debe
+revisarse antes de asumir una implementación específica.
 
 # EJEMPLO DE PROGRAMA
 
@@ -110,10 +113,8 @@ Tema:
 "Costo del certificado final"
 
 Respuesta:
-Una redacción breve que indique que el costo o inclusión del certificado
-debe confirmarse con la información oficial vigente del programa.
-No inventes un precio ni afirmes que está incluido o tiene costo si esa
-información no fue proporcionada.
+El costo o la inclusión del certificado debe confirmarse con la información
+oficial vigente del programa, ya que la pregunta no proporciona ese dato.
 
 # IMPORTANTE
 

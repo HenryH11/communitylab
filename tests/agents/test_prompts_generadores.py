@@ -455,3 +455,27 @@ def test_faq_tecnica_prioriza_precision_terminologica():
     assert "distribuciones unidimensionales" in sistema_normalizado
     assert "organizar elementos en filas y columnas" in sistema_normalizado
     assert "controlar ambas dimensiones" in sistema_normalizado
+
+
+def test_faq_programa_preserva_nucleo_lexico_y_fluidez():
+    contexto = {
+        "tipo_detectado": "pregunta_programa",
+        "subtema": "plazo de inscripción",
+        "texto": "¿Hasta cuándo puedo inscribirme al hackathon?",
+    }
+
+    sistema = _contenido_sistema(
+        _prompt_preguntas_frecuentes,
+        **contexto,
+    ).lower()
+
+    sistema_normalizado = " ".join(sistema.split())
+
+    assert "fidelidad léxica y fluidez" in sistema_normalizado
+    assert "se refiere al plazo de inscripción" in sistema_normalizado
+    assert "gramaticalmente natural en español" in sistema_normalizado
+    assert (
+        "el plazo de inscripción debe confirmarse con la información "
+        "oficial vigente del programa"
+        in sistema_normalizado
+    )

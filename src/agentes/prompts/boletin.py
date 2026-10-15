@@ -127,6 +127,24 @@ mensaje original.
 No transformes una expresión moderada, subjetiva o potencial en una
 afirmación más fuerte.
 
+Para percepciones, pensamientos o expectativas personales, conserva
+la forma semántica original siempre que sea posible.
+
+Por ejemplo:
+
+- "nunca pensé que podría aprender X"
+  debe conservarse como
+  "señala que nunca pensó que podría aprender X";
+
+  no lo reformules como:
+  "superó la creencia de que no podría aprender X",
+  "superó una barrera",
+  "venció una limitación"
+  u otras interpretaciones que añadan una narrativa de superación.
+
+No conviertas una percepción personal en una creencia, barrera,
+limitación o transformación psicológica que la persona no expresó.
+
 Ejemplos de cambios que deben evitarse:
 
 - "me abrió puertas para colaborar"
@@ -364,6 +382,12 @@ No escribas frases como:
 
 Simplemente omite aquello que no pueda afirmarse.
 
+Antes de responder, revisa que el titular y el resumen sean
+gramaticalmente naturales en español y que conserven artículos,
+preposiciones y relaciones temporales necesarias.
+
+Ejemplo:
+"a los 35 años" no debe simplificarse a "a 35 años".
 
 # EJEMPLOS DE REFERENCIA
 

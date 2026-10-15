@@ -330,3 +330,128 @@ def test_faq_elimina_repeticiones_accidentales():
         "integraciones posteriores después de la semana 0"
         in faq.respuesta
     )
+
+
+def test_boletin_preserva_comparadores_y_precision_cuantitativa():
+    contexto = {
+        "autor": "Persona de prueba",
+        "tema_principal": "empleabilidad",
+        "subtema": "primer empleo",
+        "tipo_detectado": "testimonio",
+        "texto": "Conseguí mi primer trabajo en menos de 3 meses.",
+    }
+
+    sistema = _contenido_sistema(
+        _prompt_boletin,
+        **contexto,
+    ).lower()
+
+    assert "fidelidad cuantitativa" in sistema
+    assert "menos de" in sistema
+    assert "más de" in sistema
+    assert "al menos" in sistema
+    assert "no elimines ni modifiques calificadores" in sistema
+    assert "consiguió su primer trabajo en menos de 3 meses" in sistema
+
+
+def test_analisis_distingue_estructura_programa_de_aprendizaje_y_plataforma():
+    contexto = {
+        "origen": "Comunidad",
+        "canal": "#general",
+        "idioma": "es",
+        "texto": "¿Cuál es la diferencia entre las rutas del programa?",
+    }
+
+    sistema = _contenido_sistema(
+        _template_analisis,
+        **contexto,
+    ).lower()
+
+    assert "programa_hackathon vs aprendizaje vs plataforma" in sistema
+    assert "rutas o trayectorias disponibles" in sistema
+    assert "tema_principal = programa_hackathon" in sistema
+    assert "no uses plataforma solo porque un recurso pueda estar alojado" in sistema
+    assert "tema_principal = plataforma" in sistema
+
+
+def test_faq_programa_no_completa_vacios_con_conocimiento_general():
+    contexto = {
+        "tipo_detectado": "pregunta_programa",
+        "subtema": "diferencias entre rutas",
+        "texto": (
+            "¿Cuál es la diferencia entre las rutas de "
+            "Data Analyst y Data Scientist dentro del programa?"
+        ),
+    }
+
+    sistema = _contenido_sistema(
+        _prompt_preguntas_frecuentes,
+        **contexto,
+    ).lower()
+
+    sistema_normalizado = " ".join(sistema.split())
+
+    assert "conocimiento general" in sistema_normalizado
+    assert "información oficial vigente del programa" in sistema_normalizado
+    assert "objetivos de una ruta" in sistema_normalizado
+    assert "profundidad de los contenidos" in sistema_normalizado
+    assert "diferencias entre trayectorias" in sistema_normalizado
+    assert (
+        "diferencias entre rutas data analyst y data scientist"
+        in sistema_normalizado
+    )
+    assert (
+        "las diferencias entre las rutas de data analyst y data scientist "
+        "deben confirmarse"
+        in sistema_normalizado
+    )
+
+
+def test_boletin_preserva_grado_y_modalidad_del_mensaje():
+    contexto = {
+        "autor": "Persona de prueba",
+        "tema_principal": "empleabilidad",
+        "subtema": "networking",
+        "texto": (
+            "El networking me abrió puertas para colaborar "
+            "en proyectos open source."
+        ),
+    }
+
+    sistema = _contenido_sistema(
+        _prompt_boletin,
+        **contexto,
+    ).lower()
+
+    sistema_normalizado = " ".join(sistema.split())
+
+    assert "fidelidad de grado y modalidad" in sistema_normalizado
+    assert "me abrió puertas para colaborar" in sistema_normalizado
+    assert "me permitió colaborar" in sistema_normalizado
+    assert "nunca pensé que podría aprenderlo" in sistema_normalizado
+    assert "consideraba imposible aprenderlo" in sistema_normalizado
+    assert "no aumentar" in sistema_normalizado
+
+
+def test_faq_tecnica_prioriza_precision_terminologica():
+    contexto = {
+        "tipo_detectado": "pregunta_tecnica",
+        "subtema": "diferencia entre Grid y Flexbox",
+        "texto": (
+            "¿Cuál es la diferencia práctica entre usar Grid y Flexbox "
+            "para un layout de dashboard?"
+        ),
+    }
+
+    sistema = _contenido_sistema(
+        _prompt_preguntas_frecuentes,
+        **contexto,
+    ).lower()
+
+    sistema_normalizado = " ".join(sistema.split())
+
+    assert "precisión terminológica" in sistema_normalizado
+    assert "layout no equivale necesariamente a tabla" in sistema_normalizado
+    assert "distribuciones unidimensionales" in sistema_normalizado
+    assert "organizar elementos en filas y columnas" in sistema_normalizado
+    assert "controlar ambas dimensiones" in sistema_normalizado

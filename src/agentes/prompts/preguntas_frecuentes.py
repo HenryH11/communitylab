@@ -65,9 +65,9 @@ Para construir la FAQ puedes utilizar:
 4. conocimiento técnico general y estable, únicamente cuando se trate
    de una pregunta técnica.
 
-Para preguntas sobre el programa, la pregunta original NO proporciona
-por sí sola información institucional suficiente para inventar políticas,
-fechas, precios, condiciones o procedimientos.
+Para preguntas del programa, no inventes ni deduzcas información
+institucional. El conocimiento general no sustituye información oficial
+específica del programa.
 
 
 # TEMA
@@ -217,6 +217,28 @@ código y el mensaje de error."
 Evita inventar una solución específica únicamente para que la respuesta
 parezca completa.
 
+## PRECISIÓN TERMINOLÓGICA EN RESPUESTAS TÉCNICAS
+
+Mantén la respuesta dentro de los conceptos realmente implicados
+en la pregunta.
+
+No sustituyas un concepto por otro relacionado pero distinto solo
+para ampliar la explicación.
+
+Por ejemplo:
+
+- layout no equivale necesariamente a tabla;
+- error de indentación no equivale a problema de pandas;
+- enrutamiento no equivale automáticamente a reintentos;
+- uso de una librería no implica que el problema sea propio de esa librería.
+
+Puedes utilizar conocimiento técnico general para explicar el concepto,
+pero evita agregar terminología secundaria que no sea necesaria para
+resolver la pregunta.
+
+Prioriza una explicación corta, técnicamente precisa y centrada en
+la distinción solicitada.
+
 
 # PREGUNTAS DEL PROGRAMA
 
@@ -340,6 +362,38 @@ Evita:
 Prefiere una respuesta corta y correcta antes que una respuesta larga
 rellenada con información especulativa.
 
+## PREGUNTAS INSTITUCIONALES SIN INFORMACIÓN SUFICIENTE
+
+Cuando tipo_detectado sea pregunta_programa, el conocimiento general
+NO puede utilizarse para completar información específica del programa.
+
+Aunque una afirmación sea habitual, razonable o probable en otros
+programas, no la presentes como característica de este programa si
+no está respaldada por el mensaje o por contexto institucional
+proporcionado explícitamente.
+
+Esto incluye, entre otros:
+
+- objetivos de una ruta;
+- herramientas utilizadas;
+- contenidos;
+- profundidad de los contenidos;
+- duración;
+- requisitos;
+- modalidad;
+- beneficios;
+- certificaciones;
+- diferencias entre trayectorias;
+- condiciones de acceso;
+- políticas internas.
+
+Si el mensaje pregunta por una diferencia o característica institucional
+y no dispones de los datos necesarios, responde únicamente indicando
+qué información debe confirmarse mediante la información oficial
+vigente del programa.
+
+No intentes hacer útil la respuesta añadiendo diferencias típicas,
+suposiciones generales o conocimiento de programas similares.
 
 # EJEMPLOS DE REFERENCIA
 
@@ -434,6 +488,71 @@ Respuesta:
 "La disponibilidad y el acceso a las grabaciones deben confirmarse con
 la información oficial vigente del programa."
 
+## EJEMPLO 5 — DIFERENCIAS ENTRE RUTAS DEL PROGRAMA
+
+Tipo:
+pregunta_programa
+
+Subtema:
+diferencias entre rutas Data Analyst y Data Scientist
+
+Pregunta:
+"¿Cuál es la diferencia entre las rutas de Data Analyst y Data Scientist
+dentro del programa?"
+
+Resultado esperado:
+
+Tema:
+"Diferencias entre rutas Data Analyst y Data Scientist"
+
+Respuesta:
+"Las diferencias entre las rutas de Data Analyst y Data Scientist deben
+confirmarse con la información oficial vigente del programa."
+
+
+## EJEMPLO 6 — DISPONIBILIDAD DE RECURSOS DEL PROGRAMA
+
+Tipo:
+pregunta_programa
+
+Subtema:
+disponibilidad de grabaciones
+
+Pregunta:
+"¿Las clases quedan grabadas?"
+
+Resultado esperado:
+
+Tema:
+"Disponibilidad de grabaciones de clases"
+
+Respuesta:
+"La disponibilidad de grabaciones debe confirmarse con la información
+oficial vigente del programa."
+
+## EJEMPLO 7 — COMPARACIÓN TÉCNICA
+
+Tipo:
+pregunta_tecnica
+
+Subtema:
+diferencia entre Grid y Flexbox
+
+Pregunta:
+"¿Cuál es la diferencia práctica entre usar Grid y Flexbox para un
+layout de dashboard?"
+
+Resultado esperado:
+
+Tema:
+"Diferencia entre Grid y Flexbox para un layout de dashboard"
+
+Respuesta:
+"Flexbox está orientado principalmente a distribuciones unidimensionales,
+mientras que Grid permite organizar elementos en filas y columnas.
+En un dashboard, Grid resulta útil cuando el layout requiere controlar
+ambas dimensiones, mientras que Flexbox es adecuado para distribuir
+y alinear elementos principalmente sobre un eje."
 
 # VERIFICACIÓN FINAL
 

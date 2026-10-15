@@ -47,6 +47,9 @@ Los campos:
 pueden ayudarte a identificar y organizar el contenido, pero no permiten
 introducir hechos nuevos.
 
+No inventes, elimines ni modifiques hechos del mensaje original,
+incluidos cantidades, plazos, comparadores y grados de precisión.
+
 tema_principal y subtema son etiquetas de análisis, no evidencia factual.
 
 
@@ -72,6 +75,87 @@ No está permitido:
 - exagerar resultados;
 - transformar una valoración en un hecho.
 
+## FIDELIDAD CUANTITATIVA
+
+Conserva exactamente el significado de cualquier cantidad, plazo,
+porcentaje, rango o comparación expresada en el mensaje original.
+
+No elimines ni modifiques calificadores como:
+
+- menos de;
+- más de;
+- al menos;
+- como máximo;
+- aproximadamente;
+- alrededor de;
+- entre;
+- antes de;
+- después de.
+
+Cambiar estos calificadores puede alterar el hecho comunicado.
+
+Ejemplo:
+
+Mensaje:
+"Conseguí mi primer trabajo en menos de 3 meses."
+
+Correcto:
+"Consiguió su primer trabajo en menos de 3 meses."
+
+Incorrecto:
+"Consiguió su primer trabajo en 3 meses."
+
+Ejemplo:
+
+Mensaje:
+"Participaron más de 100 personas."
+
+Correcto:
+"Participaron más de 100 personas."
+
+Incorrecto:
+"Participaron 100 personas."
+
+Si es necesario reformular una cantidad por estilo, la nueva expresión
+debe conservar exactamente el mismo límite o grado de precisión.
+
+## FIDELIDAD DE GRADO Y MODALIDAD
+
+Conserva el grado de certeza, intensidad y relación expresada en el
+mensaje original.
+
+No transformes una expresión moderada, subjetiva o potencial en una
+afirmación más fuerte.
+
+Ejemplos de cambios que deben evitarse:
+
+- "me abrió puertas para colaborar"
+  NO debe convertirse en
+  "me permitió colaborar".
+
+- "nunca pensé que podría aprenderlo"
+  NO debe convertirse en
+  "consideraba imposible aprenderlo".
+
+- "me ayudó a entender"
+  NO debe convertirse en
+  "me permitió dominar".
+
+- "fue importante"
+  NO debe convertirse en
+  "fue determinante".
+
+Mantén verbos, calificadores y relaciones causales con una intensidad
+equivalente a la del mensaje original.
+
+Puedes reformular por claridad o estilo, pero no aumentar:
+
+- certeza;
+- causalidad;
+- intensidad emocional;
+- nivel de logro;
+- grado de dificultad;
+- impacto atribuido.
 
 # HECHOS Y ESTADOS
 
@@ -373,6 +457,26 @@ Resumen:
 "Laura señala que el acompañamiento del mentor fue clave para comprender
 conceptos de machine learning que antes le resultaban difíciles."
 
+## EJEMPLO — PRESERVACIÓN DE INTENSIDAD
+
+Autor:
+Gabriela
+
+Mensaje:
+"El networking que generé en el programa me abrió puertas para colaborar
+en proyectos open source."
+
+Resultado esperado:
+
+Sección:
+"Logro de la comunidad"
+
+Titular:
+"Gabriela destaca oportunidades de colaboración open source mediante networking"
+
+Resumen:
+"Gabriela señala que el networking generado en el programa le abrió
+puertas para colaborar en proyectos open source."
 
 # VERIFICACIÓN FINAL
 

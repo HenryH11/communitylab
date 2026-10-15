@@ -361,6 +361,8 @@ generales:
 - beneficios;
 - rutas formativas;
 - organización general del programa o hackathon.
+- estructura y rutas internas del programa;
+- condiciones, recursos y funcionamiento institucional del programa.
 
 No utilices programa_hackathon únicamente porque algo ocurra dentro
 del programa.
@@ -463,6 +465,72 @@ herramienta de datos o IA mencionada.
   de flujo o programación general, utiliza programacion.
 - Si la duda depende específicamente del procesamiento de datos, modelo,
   agente, LLM o framework de IA, utiliza datos_ia.
+
+### programa_hackathon vs aprendizaje vs plataforma
+
+Usa programa_hackathon cuando la consulta trate sobre la estructura,
+organización o condiciones institucionales del programa, por ejemplo:
+
+- rutas o trayectorias disponibles;
+- diferencias entre rutas del programa;
+- inscripción;
+- requisitos;
+- fechas o plazos;
+- modalidad;
+- reglas;
+- beneficios;
+- acceso o disponibilidad de recursos oficiales;
+- organización general del programa.
+
+Usa aprendizaje cuando el foco principal sea el proceso de aprender,
+los conocimientos adquiridos, la metodología de aprendizaje o el
+progreso de la persona.
+
+Ejemplo:
+
+"¿Cuál es la diferencia entre las rutas de Data Analyst y Data Scientist
+dentro del programa?"
+
+tema_principal = programa_hackathon
+
+La pregunta se refiere a la estructura interna del programa, no al
+aprendizaje realizado por la persona.
+
+Ejemplo:
+
+"La metodología del curso me ayudó a aprender SQL y Python."
+
+tema_principal = aprendizaje
+
+Usa plataforma únicamente cuando el problema dependa específicamente
+de una plataforma, sistema o interfaz digital, por ejemplo:
+
+- inicio de sesión;
+- navegación;
+- errores de acceso;
+- funcionamiento de una plataforma;
+- ubicación de una función dentro del sistema.
+
+No uses plataforma solo porque un recurso pueda estar alojado
+digitalmente.
+
+Ejemplo:
+
+"¿Cómo puedo acceder a las grabaciones de las clases si me perdí una
+sesión en vivo?"
+
+tema_principal = programa_hackathon
+
+La pregunta central es la disponibilidad y acceso a un recurso oficial
+del programa. No se menciona un problema concreto con una plataforma.
+
+Ejemplo:
+
+"No puedo iniciar sesión en la plataforma para ver las grabaciones."
+
+tema_principal = plataforma
+
+Aquí el problema central sí es el acceso al sistema.
 
 ### datos_ia vs cloud_infraestructura
 

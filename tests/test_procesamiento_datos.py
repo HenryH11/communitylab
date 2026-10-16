@@ -516,8 +516,8 @@ class PruebasRendimiento(unittest.TestCase):
                 self.assertNotIn("tiempo", clave)
 
     def test_detecta_alerta_si_la_limpieza_pierde_caracteres_especiales(self):
-        """Simula una regresiÃ³n futura en `limpiar_texto` (que empiece a tirar
-        tildes/emoji) para confirmar que el log de rendimiento la detectarÃ­a."""
+        """Simula una regresión futura en `limpiar_texto` (que empiece a tirar
+        tildes/emoji) para confirmar que el log de rendimiento la detectaría."""
         entrada = lote(mensaje("uno", texto="Gracias por la ayuda con el código, mentores"))
         limpiador_con_bug = lambda texto: texto.encode("ascii", errors="ignore").decode("ascii")
         with mock.patch("src.datos.ingesta.limpiar_texto", side_effect=limpiador_con_bug):

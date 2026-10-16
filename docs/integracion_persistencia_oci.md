@@ -9,8 +9,33 @@ Usa `preparar_entrega_resultados()` y conserva cada activo de DS como
 
 El procesamiento de IA por sí solo no sube archivos. La interfaz debe conservar
 su resultado y llamar a `guardar_resultado_aprobado()` después de que una persona
-revise y seleccione los activos. El panel de aprobación aún no está conectado
-en `app.py`; esta entrega prepara y prueba ese tramo del backend.
+revise y seleccione los activos. El panel de `app.py` llama a este tramo mediante
+el adaptador `src/app/curaduria_oci.py` cuando se pulsa **Guardar aprobados en OCI**.
+La aprobación por sí sola no realiza escrituras.
+
+## Integración de curaduría (16 de octubre)
+
+El adaptador copia la salida de DS y sustituye únicamente el contenido de los
+activos aprobados por la versión editada. Conserva el resultado original y los
+campos del contrato. Antes de subir valida las ediciones con los modelos de DS;
+si el modelo normalizara el texto o los hashtags, pide corregirlo y aprobarlo
+explícitamente, en lugar de cambiar silenciosamente la versión aprobada.
+
+Cada resultado de procesamiento recibe una sesión de curaduría propia, incluso
+si otro lote contiene los mismos IDs. Un cambio posterior en el editor revoca
+la aprobación de ese activo. No se pueden reutilizar aprobaciones de otro lote.
+El adaptador conserva la selección por pares `(id_interaccion, tipo)` sin
+reconstruirlos separando cadenas con guiones bajos.
+
+El destino usa `OCI_BUCKET_NAME` (por defecto `bkt-communitylab-marketing`) y
+un período editable que inicia con el mes UTC actual (`AAAA-MM`). La clave sigue
+siendo `activos/{periodo}/{tipo}/{id}.json`. Repetir destino, tipo e ID puede
+sobrescribir el objeto anterior; no se implementa versionado adicional.
+
+La UI confirma únicamente los objetos incluidos en `guardados`. Conserva los
+recibos en la sesión para evitar reenviar esa versión al mismo destino y permite
+reintentar las subidas sin confirmación. Un error del SDK no expone detalles
+internos ni secretos. Estos recibos no sobreviven al cierre de la sesión.
 
 ```python
 from src.app.guardado import guardar_resultado_aprobado
@@ -59,14 +84,15 @@ perfil local e Instance Principals pertenece al conector.
 
 El bucket es obligatorio y explícito. Para el entorno compartido acordado se
 usa `bkt-communitylab-marketing` en Ashburn (`us-ashburn-1`). El prefijo de los
-objetos lo define `nombre_objeto_activo`: `assets/` en la base actual de
-`develop`, o `activos/` cuando se integre el cambio de Marco. Esta capa no
+objetos lo define `nombre_objeto_activo`: `activos/`, integrado con el cambio
+de Marco. Esta capa no
 duplica esa regla ni cambia credenciales o infraestructura.
 
 ## Pruebas sin servicios reales
 
 ```text
 python -m pytest tests/test_guardado_activos.py -q -rs
+python -m pytest tests/test_curaduria_oci.py -q -rs
 python -m pytest -q
 ```
 
@@ -76,9 +102,17 @@ errores 429/500/503, timeout, reintento parcial y ejecución del grafo real con
 respuestas de IA simuladas. Los casos que necesitan OCI se omiten si falta el
 SDK; los de aprobación vacía o inválida se ejecutan igualmente.
 
-Quedan pendientes la llamada desde el panel de aprobación de SS, la integración
-del conector definitivo del PR #21 y la prueba con Instance Principals desde la
-VM. Esta evidencia offline no confirma permisos IAM ni una subida real.
+La llamada desde el panel y el conector de Instance Principals están integrados.
+Queda pendiente la prueba con Instance Principals desde la VM. Esta evidencia
+offline no confirma permisos IAM ni una subida real. Las pruebas de pantalla
+requieren Streamlit, pandas, altair y OCI; se omiten si falta alguna de esas
+dependencias. Las pruebas de validación del adaptador siguen ejecutándose.
+
+Validación local del 16 de octubre: **519 passed, 150 subtests passed** con
+Python 3.12 en contenedor aislado sin red ni credenciales. Seis pruebas nuevas
+cubren el texto editado enviado desde Streamlit, la invalidación de aprobación,
+el cambio de lote con IDs repetidos, la validación previa y el reintento parcial.
+OCI está simulado; no se ejecutó una subida al bucket compartido.
 
 ### Resultados del 10 de octubre de 2026
 

@@ -5,11 +5,19 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 import streamlit as st
 import json
+import asyncio
+from copy import deepcopy
+from datetime import datetime, timezone
 import pandas as pd
 import altair as alt
 
 from src.datos.entrega_ia import preparar_paquete_ia
 from src.agentes.grafo import procesar_paquete_entrega
+from src.app.curaduria_oci import (
+    contexto_curaduria,
+    guardar_curaduria,
+    validar_activo_curado,
+)
 
 st.set_page_config(page_title="CommunityLab", layout="wide")
 
@@ -104,6 +112,7 @@ if archivo_subido is not None:
 # ============ RESULTADOS ============
 if "resultado" in st.session_state:
     resultado = st.session_state["resultado"]
+    curaduria = contexto_curaduria(st.session_state, resultado)
     resultados = resultado.get("resultados_por_id", {})
     total = len(resultados)
     con_activos = sum(1 for r in resultados.values() if r.get("activos_generados"))
@@ -206,7 +215,8 @@ if "resultado" in st.session_state:
                 for tipo, activo in data["activos_generados"].items():
                     st.markdown(f"#### **{tipo.replace('_', ' ').title()}**")
 
-                    key_activo = f"{id_msg}_{tipo}"
+                    clave = (id_msg, tipo)
+                    key_activo = f"{curaduria['lote']}_{id_msg}_{tipo}"
                     if key_activo not in st.session_state:
                         st.session_state[key_activo] = activo.copy()
 
@@ -231,17 +241,30 @@ if "resultado" in st.session_state:
                         else:
                             activo_editado[k] = v
 
+                    # Una aprobación corresponde a una versión exacta del texto.
+                    if (
+                        clave in curaduria["aprobados"]
+                        and curaduria["aprobados"][clave] != activo_editado
+                    ):
+                        curaduria["aprobados"].pop(clave)
+                        curaduria["guardados"].pop(clave, None)
+                        curaduria["informe"] = None
+                        st.session_state[f"aprobado_{key_activo}"] = False
+
                     col_btn1, col_btn2 = st.columns([1, 3])
                     with col_btn1:
                         if st.button(f"✅ Aprobar", key=f"btn_{key_activo}"):
-                            campos_vacios = [
-                                k for k, val in activo_editado.items()
-                                if isinstance(val, str) and not val.strip()
-                            ]
-                            if campos_vacios:
-                                st.error(f"❌ No puedes aprobar con campos vacíos: {', '.join(campos_vacios)}")
+                            try:
+                                validar_activo_curado(tipo, activo_editado)
+                            except (ValueError, TypeError):
+                                st.error(
+                                    "Revisa los campos del activo antes de "
+                                    "aprobar: textos completos y hashtags "
+                                    "válidos (3 a 4, con #)."
+                                )
                             else:
-                                st.session_state[key_activo] = activo_editado
+                                st.session_state[key_activo] = deepcopy(activo_editado)
+                                curaduria["aprobados"][clave] = deepcopy(activo_editado)
                                 st.session_state[f"aprobado_{key_activo}"] = True
                                 st.success(f"✅ {tipo} aprobado correctamente.")
 
@@ -252,12 +275,59 @@ if "resultado" in st.session_state:
 
     # ============ RESUMEN DE APROBADOS ============
     st.markdown('<div class="section-title">📦 Activos aprobados listos para OCI</div>', unsafe_allow_html=True)
-    aprobados = [k for k in st.session_state if k.startswith("aprobado_") and st.session_state[k]]
+    aprobados = curaduria["aprobados"]
 
     if aprobados:
         st.success(f"✅ {len(aprobados)} activo(s) aprobado(s).")
-        for key in aprobados:
-            nombre_limpio = key.replace("aprobado_", "")
-            st.write(f"- {nombre_limpio}")
+        for identificador, tipo in aprobados:
+            st.write(f"- {identificador}: {tipo}")
     else:
         st.info("Aún no has aprobado ningún activo. Edita y aprueba arriba para preparar el guardado en OCI.")
+
+    bucket = os.getenv("OCI_BUCKET_NAME", "bkt-communitylab-marketing")
+    periodo = st.text_input(
+        "Período de almacenamiento",
+        value=datetime.now(timezone.utc).strftime("%Y-%m"),
+        key=f"periodo_oci_{curaduria['lote']}",
+        help="Usa letras, números, guiones o guiones bajos.",
+    )
+    # El recibo corresponde también al destino, no solo al contenido.
+    destino = (bucket, periodo)
+    pendientes = {
+        clave: contenido for clave, contenido in aprobados.items()
+        if curaduria["guardados"].get(clave) != (destino, contenido)
+    }
+    st.caption(f"Destino: {bucket} · período {periodo}")
+    if st.button(
+        "Guardar aprobados en OCI",
+        key="guardar_aprobados_oci",
+        disabled=not pendientes,
+    ):
+        with st.spinner("Guardando los activos aprobados..."):
+            try:
+                informe = asyncio.run(guardar_curaduria(
+                    resultado, pendientes, periodo=periodo, bucket=bucket
+                ))
+            except Exception:
+                curaduria["informe"] = None
+                st.error(
+                    "No se pudo confirmar el guardado. Revisa el período, "
+                    "la configuración y los permisos de OCI. Puedes reintentar."
+                )
+            else:
+                curaduria["informe"] = informe
+                for guardado in informe["guardados"]:
+                    clave = (guardado["id_interaccion"], guardado["tipo"])
+                    curaduria["guardados"][clave] = (
+                        destino, deepcopy(pendientes[clave])
+                    )
+
+    informe = curaduria["informe"]
+    if informe:
+        if informe["guardados"]:
+            st.success(f"OCI confirmó {len(informe['guardados'])} activo(s) guardado(s).")
+        for fallo in informe["fallidos"]:
+            st.error(
+                f"Sin confirmación de guardado: {fallo['id_interaccion']} "
+                f"({fallo['tipo']}). Puedes reintentar."
+            )

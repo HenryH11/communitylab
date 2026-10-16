@@ -153,6 +153,11 @@ Andá directo a tu sección si no te interesa el resto.
   ni inicio de sesión. Es una mejora opcional (el producto mínimo viable ya está cubierto con el
   conjunto de datos simulado).
 
+- **`conjunto_consultable.py`** — índice limpio de las salidas del MVP para el
+  agente en vivo (Semana 5.1, subfase A): un registro por interacción con `id`,
+  `canal`, `sentimiento`, `tema`, `tipo`, `contenido_corto` y `fecha`. Formato y
+  decisiones en [`../../docs/conjunto_consultable.md`](../../docs/conjunto_consultable.md).
+
 Las pruebas viven en `../../tests/` y la documentación de fuentes de datos en
 [`../../docs/fuentes_de_datos_acceso.md`](../../docs/fuentes_de_datos_acceso.md).
 El panorama completo de cómo esta carpeta se conecta con el resto del sistema

@@ -81,130 +81,183 @@ if archivo_subido is not None:
     try:
         datos = json.load(archivo_subido)
         st.success("✅ Archivo cargado correctamente")
-        
+
         if st.button("🚀 Procesar con IA (Gemini + LangGraph)"):
             with st.spinner("Procesando mensajes con inteligencia artificial..."):
                 try:
-                    paquete = preparar_paquete_ia(datos, fecha_referencia="2026-09-17T12:00:00Z", tamano_ciclo=20)
+                    paquete = preparar_paquete_ia(
+                        datos,
+                        fecha_referencia="2026-09-17T12:00:00Z",
+                        tamano_ciclo=20,
+                    )
                     resultado = procesar_paquete_entrega(paquete)
+                    st.session_state["resultado"] = resultado
                     st.success("✅ Procesamiento completado")
-                    
-                    resultados = resultado.get("resultados_por_id", {})
-                    total = len(resultados)
-                    con_activos = sum(1 for r in resultados.values() if r.get("activos_generados"))
-                    
-                    # ============ MÉTRICAS ============
-                    st.markdown('<div class="section-title">📊 Resultados del análisis</div>', unsafe_allow_html=True)
-                    m1, m2, m3, m4 = st.columns(4)
-                    m1.metric("Mensajes procesados", total)
-                    m2.metric("Con contenido", con_activos)
-                    m3.metric("Sin contenido", total - con_activos)
-                    
-                    # Contar FAQs elegibles
-                    faqs = sum(1 for r in resultados.values() if r.get("elegible_faq"))
-                    m4.metric("Elegibles para FAQ", faqs)
-                    
-                    st.markdown("---")
-                    
-                    # ============ GRÁFICAS ============
-                    st.markdown('<div class="section-title">📈 Visualización de datos</div>', unsafe_allow_html=True)
-                    
-                    # Preparar DataFrame
-                    data_graficas = []
-                    for id_msg, data in resultados.items():
-                        data_graficas.append({
-                            "autor": data.get("autor", "Anónimo"),
-                            "canal": data.get("canal", "N/A"),
-                            "sentimiento": data.get("sentimiento", "N/A"),
-                            "tema": data.get("tema_principal", "N/A"),
-                            "tipo": data.get("tipo_detectado", "N/A"),
-                            "score": data.get("score_relevancia", 0),
-                            "elegible": "Sí" if data.get("elegible_contenido") else "No",
-                            "tiene_activos": "Sí" if data.get("activos_generados") else "No",
-                        })
-                    df = pd.DataFrame(data_graficas)
-                    
-                    col_g1, col_g2 = st.columns(2)
-                    
-                    with col_g1:
-                        st.markdown("**Distribución por tema principal**")
-                        chart_temas = alt.Chart(df).mark_bar().encode(
-                            x=alt.X('tema:N', sort='-y', title='Tema'),
-                            y=alt.Y('count():Q', title='Cantidad'),
-                            color=alt.Color('tema:N', legend=None),
-                            tooltip=['tema:N', 'count():Q']
-                        ).properties(height=300)
-                        st.altair_chart(chart_temas, use_container_width=True)
-                    
-                    with col_g2:
-                        st.markdown("**Distribución por sentimiento**")
-                        chart_sent = alt.Chart(df).mark_arc(innerRadius=50).encode(
-                            theta=alt.Theta('count():Q'),
-                            color=alt.Color('sentimiento:N', legend=alt.Legend(title="Sentimiento")),
-                            tooltip=['sentimiento:N', 'count():Q']
-                        ).properties(height=300)
-                        st.altair_chart(chart_sent, use_container_width=True)
-                    
-                    col_g3, col_g4 = st.columns(2)
-                    
-                    with col_g3:
-                        st.markdown("**Distribución por canal**")
-                        chart_canal = alt.Chart(df).mark_bar().encode(
-                            x=alt.X('count():Q', title='Cantidad'),
-                            y=alt.Y('canal:N', sort='-x', title='Canal'),
-                            color=alt.Color('canal:N', legend=None),
-                            tooltip=['canal:N', 'count():Q']
-                        ).properties(height=300)
-                        st.altair_chart(chart_canal, use_container_width=True)
-                    
-                    with col_g4:
-                        st.markdown("**Elegibles para contenido**")
-                        chart_eleg = alt.Chart(df).mark_arc(innerRadius=50).encode(
-                            theta=alt.Theta('count():Q'),
-                            color=alt.Color('elegible:N', legend=alt.Legend(title="Elegible")),
-                            tooltip=['elegible:N', 'count():Q']
-                        ).properties(height=300)
-                        st.altair_chart(chart_eleg, use_container_width=True)
-                    
-                    st.markdown("---")
-                    
-                    # ============ DETALLES ============
-                    st.markdown('<div class="section-title">📝 Detalle por mensaje</div>', unsafe_allow_html=True)
-                    
-                    for id_msg, data in resultados.items():
-                        autor = data.get("autor", "Anónimo")
-                        tema = data.get("tema_principal", "sin tema")
-                        sentimiento = data.get("sentimiento", "N/A")
-                        tiene_activos = bool(data.get("activos_generados"))
-                        icono = "📝" if tiene_activos else "💬"
-                        
-                        with st.expander(f"{icono} {autor} — {tema} · {sentimiento}"):
-                            c1, c2 = st.columns(2)
-                            with c1:
-                                st.write(f"**Canal:** {data.get('canal', 'N/A')}")
-                                st.write(f"**Tipo detectado:** {data.get('tipo_detectado', 'N/A')}")
-                                st.write(f"**Score relevancia:** {data.get('score_relevancia', 'N/A')}")
-                            with c2:
-                                st.write(f"**Sentimiento:** {sentimiento}")
-                                st.write(f"**Subtema:** {data.get('subtema', 'N/A')}")
-                                elegible = data.get("elegible_contenido", False)
-                                st.write(f"**Elegible para contenido:** {'Sí' if elegible else 'No'}")
-                                if "elegible_faq" in data:
-                                    st.write(f"**Elegible para FAQ:** {'Sí' if data['elegible_faq'] else 'No'}")
-                            
-                            st.markdown(f"*Texto original:* {data.get('texto', '')}")
-                            
-                            if tiene_activos:
-                                st.markdown("### 🎯 Activos generados")
-                                for tipo, activo in data["activos_generados"].items():
-                                    st.markdown(f"**{tipo.replace('_', ' ').title()}**")
-                                    for k, v in activo.items():
-                                        st.write(f"- **{k}:** {v}")
-                    
                 except Exception as e:
                     st.error(f"❌ Error durante el procesamiento: {e}")
-    
+
     except json.JSONDecodeError:
         st.error("❌ El archivo no es un JSON válido. Por favor, verifica el formato y vuelve a intentarlo.")
     except Exception as e:
         st.error(f"❌ Error al cargar el archivo: {e}")
+
+# ============ RESULTADOS ============
+if "resultado" in st.session_state:
+    resultado = st.session_state["resultado"]
+    resultados = resultado.get("resultados_por_id", {})
+    total = len(resultados)
+    con_activos = sum(1 for r in resultados.values() if r.get("activos_generados"))
+
+    st.markdown('<div class="section-title">📊 Resultados del análisis</div>', unsafe_allow_html=True)
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Mensajes procesados", total)
+    m2.metric("Con contenido", con_activos)
+    m3.metric("Sin contenido", total - con_activos)
+    faqs = sum(1 for r in resultados.values() if r.get("elegible_faq"))
+    m4.metric("Elegibles para FAQ", faqs)
+
+    st.markdown("---")
+
+    # ============ GRÁFICAS ============
+    st.markdown('<div class="section-title">📈 Visualización de datos</div>', unsafe_allow_html=True)
+
+    data_graficas = []
+    for id_msg, data in resultados.items():
+        data_graficas.append({
+            "autor": data.get("autor", "Anónimo"),
+            "canal": data.get("canal", "N/A"),
+            "sentimiento": data.get("sentimiento", "N/A"),
+            "tema": data.get("tema_principal", "N/A"),
+            "elegible": "Sí" if data.get("elegible_contenido") else "No",
+        })
+    df = pd.DataFrame(data_graficas)
+
+    col_g1, col_g2 = st.columns(2)
+    with col_g1:
+        st.markdown("**Distribución por tema principal**")
+        chart_temas = alt.Chart(df).mark_bar().encode(
+            x=alt.X('tema:N', sort='-y', title='Tema'),
+            y=alt.Y('count():Q', title='Cantidad'),
+            color=alt.Color('tema:N', legend=None),
+            tooltip=['tema:N', 'count():Q']
+        ).properties(height=300)
+        st.altair_chart(chart_temas, use_container_width=True)
+
+    with col_g2:
+        st.markdown("**Distribución por sentimiento**")
+        chart_sent = alt.Chart(df).mark_arc(innerRadius=50).encode(
+            theta=alt.Theta('count():Q'),
+            color=alt.Color('sentimiento:N', legend=alt.Legend(title="Sentimiento")),
+            tooltip=['sentimiento:N', 'count():Q']
+        ).properties(height=300)
+        st.altair_chart(chart_sent, use_container_width=True)
+
+    col_g3, col_g4 = st.columns(2)
+    with col_g3:
+        st.markdown("**Distribución por canal**")
+        chart_canal = alt.Chart(df).mark_bar().encode(
+            x=alt.X('count():Q', title='Cantidad'),
+            y=alt.Y('canal:N', sort='-x', title='Canal'),
+            color=alt.Color('canal:N', legend=None),
+            tooltip=['canal:N', 'count():Q']
+        ).properties(height=300)
+        st.altair_chart(chart_canal, use_container_width=True)
+
+    with col_g4:
+        st.markdown("**Elegibles para contenido**")
+        chart_eleg = alt.Chart(df).mark_arc(innerRadius=50).encode(
+            theta=alt.Theta('count():Q'),
+            color=alt.Color('elegible:N', legend=alt.Legend(title="Elegible")),
+            tooltip=['elegible:N', 'count():Q']
+        ).properties(height=300)
+        st.altair_chart(chart_eleg, use_container_width=True)
+
+    st.markdown("---")
+
+    # ============ DETALLES CON CURADURÍA ============
+    st.markdown('<div class="section-title">📝 Detalle por mensaje y curaduría</div>', unsafe_allow_html=True)
+
+    for id_msg, data in resultados.items():
+        autor = data.get("autor", "Anónimo")
+        tema = data.get("tema_principal", "sin tema")
+        sentimiento = data.get("sentimiento", "N/A")
+        tiene_activos = bool(data.get("activos_generados"))
+        icono = "📝" if tiene_activos else "💬"
+
+        with st.expander(f"{icono} {autor} — {tema} · {sentimiento}"):
+            c1, c2 = st.columns(2)
+            with c1:
+                st.write(f"**Canal:** {data.get('canal', 'N/A')}")
+                st.write(f"**Tipo detectado:** {data.get('tipo_detectado', 'N/A')}")
+                st.write(f"**Score relevancia:** {data.get('score_relevancia', 'N/A')}")
+            with c2:
+                st.write(f"**Sentimiento:** {sentimiento}")
+                st.write(f"**Subtema:** {data.get('subtema', 'N/A')}")
+                elegible = data.get("elegible_contenido", False)
+                st.write(f"**Elegible para contenido:** {'Sí' if elegible else 'No'}")
+                if "elegible_faq" in data:
+                    st.write(f"**Elegible para FAQ:** {'Sí' if data['elegible_faq'] else 'No'}")
+
+            st.markdown(f"*Texto original:* {data.get('texto', '')}")
+
+            if tiene_activos:
+                st.markdown("### 🎯 Activos generados")
+
+                for tipo, activo in data["activos_generados"].items():
+                    st.markdown(f"#### **{tipo.replace('_', ' ').title()}**")
+
+                    key_activo = f"{id_msg}_{tipo}"
+                    if key_activo not in st.session_state:
+                        st.session_state[key_activo] = activo.copy()
+
+                    activo_editado = {}
+                    for k, v in st.session_state[key_activo].items():
+                        if isinstance(v, str):
+                            nuevo_valor = st.text_area(
+                                f"✏️ {k}",
+                                value=v,
+                                key=f"edit_{key_activo}_{k}",
+                                height=100
+                            )
+                            activo_editado[k] = nuevo_valor
+                        elif isinstance(v, list):
+                            nuevo_valor = st.text_area(
+                                f"✏️ {k} (uno por línea)",
+                                value="\n".join(str(x) for x in v),
+                                key=f"edit_{key_activo}_{k}",
+                                height=80
+                            )
+                            activo_editado[k] = [line for line in nuevo_valor.split("\n") if line.strip()]
+                        else:
+                            activo_editado[k] = v
+
+                    col_btn1, col_btn2 = st.columns([1, 3])
+                    with col_btn1:
+                        if st.button(f"✅ Aprobar", key=f"btn_{key_activo}"):
+                            campos_vacios = [
+                                k for k, val in activo_editado.items()
+                                if isinstance(val, str) and not val.strip()
+                            ]
+                            if campos_vacios:
+                                st.error(f"❌ No puedes aprobar con campos vacíos: {', '.join(campos_vacios)}")
+                            else:
+                                st.session_state[key_activo] = activo_editado
+                                st.session_state[f"aprobado_{key_activo}"] = True
+                                st.success(f"✅ {tipo} aprobado correctamente.")
+
+                    if st.session_state.get(f"aprobado_{key_activo}"):
+                        st.info("🟢 Este activo ya fue aprobado para guardar en OCI.")
+
+                    st.markdown("---")
+
+    # ============ RESUMEN DE APROBADOS ============
+    st.markdown('<div class="section-title">📦 Activos aprobados listos para OCI</div>', unsafe_allow_html=True)
+    aprobados = [k for k in st.session_state if k.startswith("aprobado_") and st.session_state[k]]
+
+    if aprobados:
+        st.success(f"✅ {len(aprobados)} activo(s) aprobado(s).")
+        for key in aprobados:
+            nombre_limpio = key.replace("aprobado_", "")
+            st.write(f"- {nombre_limpio}")
+    else:
+        st.info("Aún no has aprobado ningún activo. Edita y aprueba arriba para preparar el guardado en OCI.")

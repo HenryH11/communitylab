@@ -6,6 +6,7 @@ no implementa el auditor semántico de Gustavo y no simula aprobación en la UI.
 
 from copy import deepcopy
 import json
+from importlib.util import find_spec
 from pathlib import Path
 import socket
 from unittest.mock import Mock
@@ -180,3 +181,38 @@ def test_int020_divergencia_de_tipo_puede_perder_insight_sin_cambiar_original():
     assert determinar_rutas(estado)["rutas"] == []
     assert estado == original
     assert estado["tipo_original"] == "feedback"
+
+
+@pytest.mark.skipif(find_spec("src.agentes.auditoria_semana4") is None,
+                    reason="Requiere el exportador del PR #32 de DS")
+def test_exportador_real_de_ds_se_conecta_al_auditor_de_da(monkeypatch):
+    from scripts.auditoria_consistencia import auditar_entrega, resumen
+    from src.agentes.auditoria_semana4 import construir_paquete_auditoria
+
+    datos, referencias = entrada(("exito", "duda_tecnica", "spam"))
+    simular(monkeypatch, datos, referencias)
+    paquete = preparar_paquete_ia(datos, fecha_referencia=CASOS["fecha_referencia"], tamano_ciclo=10)
+    procesamiento = procesar_paquete_entrega(paquete)
+    # Las cadenas están simuladas: estas trazas también lo están y no certifican
+    # una ejecución real de NVIDIA, Gemini ni observabilidad de sus clientes.
+    eventos = []
+    traza = {"evento": "proveedor_ia_resuelto", "proveedor_primario": "nvidia_nim",
+             "proveedor_usado": "nvidia_nim", "modelo": "modelo-simulado", "fallback_activado": False}
+    for resultado in procesamiento["resultados"]:
+        eventos.append({**traza, "etapa": "analizar_mensaje", "id_interaccion": resultado["id"]})
+        eventos.extend({**traza, "etapa": "generar_activos", "id_interaccion": resultado["id"], "ruta": ruta}
+                       for ruta in resultado["activos_generados"])
+    evidencia = construir_paquete_auditoria(
+        datos_fuente=datos, paquete_ia=paquete, salida_procesamiento=procesamiento,
+        eventos_observabilidad=eventos, configuracion_ia={},
+        metadatos_ejecucion={"naturaleza": "prueba_sintetica_sin_red"},
+    )
+    copia = deepcopy(evidencia)
+    filas = auditar_entrega(evidencia, paquete["informe"], {"fuentes": [], "excluidas": []})
+    assert evidencia == copia
+    assert evidencia["inconsistencias"] == []
+    assert evidencia["resumen"]["total_excluidas_data"] == 10
+    assert resumen(filas)["activos"] == 40
+    assert resumen(filas)["con_alertas"] == 0
+    assert all(f["decision_humana"] is None for f in filas)
+    assert not any(f["id_interaccion"].startswith("s4-spam-") for f in filas)

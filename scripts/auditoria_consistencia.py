@@ -51,8 +51,19 @@ INSTRUCCION = re.compile(
     r"|\bdevuelve\s+(?:solo|unicamente|un\s+json)\b"
     r"|\bcomo\s+(?:modelo|asistente)\s+de\s+(?:ia|lenguaje)\b"
 )
+# Notas del modelo para el revisor: hablan del mensaje, no al lector del activo.
+COMENTARIO_INTERNO = re.compile(
+    r"\bmensaje\s+original\b"
+    r"|\bno\s+se\s+(?:especifica|menciona|indica|detalla)n?\b"
+    r"|\b(?:ya\s+que\s+)?la\s+pregunta\s+no\s+(?:proporciona|especifica|indica|menciona|incluye)\b"
+)
 # Campos de etiqueta o destino: no son afirmaciones sobre el mensaje.
 CAMPOS_SIN_AFIRMACIONES = {"canal_recomendado", "hashtags", "seccion", "area"}
+# Contrato de calidad de src/datos/relevancia.py, para informes anteriores sin
+# incluido_sentimiento. Se mantiene local para ejecutar el CLI solo con stdlib.
+MOTIVOS_EXCLUSION_CALIDAD = frozenset({
+    "texto_vacio", "solo_enlaces", "texto_repetitivo", "contenido_eliminado", "duplicado",
+})
 PALABRA = re.compile(r"#?[\w][\w'-]*", re.UNICODE)
 FIN_FRASE = re.compile(r"[.!?:;¿¡\n]")
 
@@ -171,10 +182,23 @@ def auditar_activo(original, salida, *, metadatos=(), fuentes=(), excluidas=(), 
     if filtradas:
         alertas.append({"tipo": "instruccion_filtrada", "detalle": ", ".join(dict.fromkeys(filtradas))})
 
+    internos = [m.group(0) for m in COMENTARIO_INTERNO.finditer(salida_plana) if m.group(0) not in respaldo_plano]
+    if internos:
+        alertas.append({"tipo": "comentario_interno", "detalle": ", ".join(dict.fromkeys(internos))})
+
     vetadas = [p for p in excluidas if sin_tildes(p) in salida_plana]
     if vetadas:
         alertas.append({"tipo": "palabra_excluida", "detalle": ", ".join(vetadas)})
     return alertas
+
+
+def alertas_de_formato(contenido):
+    """Problemas de forma que el texto aplanado no muestra (los hashtags se omiten en él)."""
+    hashtags = contenido.get("hashtags", []) if isinstance(contenido, dict) else []
+    sin_almohadilla = [h for h in hashtags if isinstance(h, str) and not h.startswith("#")]
+    if sin_almohadilla:
+        return [{"tipo": "hashtag_sin_almohadilla", "detalle": ", ".join(sin_almohadilla)}]
+    return []
 
 
 def fila(id_interaccion, ruta, original, salida, alertas, **extra):
@@ -207,7 +231,7 @@ def auditar_casos(casos, opciones):
         for ruta, contenido in (perfil.get("activos_simulados") or {}).items():
             salida = texto_de(contenido).replace("{autor}", autor)
             filas.append(fila(perfil["perfil"], ruta, entrada["texto"], salida,
-                              auditar_activo(entrada["texto"], salida, **comunes),
+                              auditar_activo(entrada["texto"], salida, **comunes) + alertas_de_formato(contenido),
                               esperado="aceptable", origen="activo_simulado"))
         for variante in perfil.get("variantes_para_auditor", []):
             filas.append(fila(perfil["perfil"], variante["id"], entrada["texto"], variante["salida"],
@@ -217,12 +241,18 @@ def auditar_casos(casos, opciones):
 
 
 def excluidos_del_informe(informe):
-    """IDs descartados por Datos con su motivo, leídos del informe de ingesta."""
+    """IDs excluidos de IA por calidad, no por selección de contenido."""
     excluidos = {}
     for lote in (informe or {}).get("lotes", []):
         for evaluacion in lote.get("evaluaciones", []):
-            if evaluacion.get("motivos") and evaluacion.get("id"):
-                excluidos[evaluacion["id"]] = ", ".join(evaluacion["motivos"])
+            if "incluido_sentimiento" in evaluacion or "motivos_exclusion_sentimiento" in evaluacion:
+                motivos = evaluacion.get("motivos_exclusion_sentimiento") or []
+                excluido = evaluacion.get("incluido_sentimiento") is False or bool(motivos)
+            else:
+                motivos = [m for m in evaluacion.get("motivos", []) if m in MOTIVOS_EXCLUSION_CALIDAD]
+                excluido = bool(motivos)
+            if excluido and evaluacion.get("id"):
+                excluidos[evaluacion["id"]] = ", ".join(motivos or ["excluido_por_data"])
     return excluidos
 
 
@@ -264,7 +294,12 @@ def normalizar_entrega(entrega):
 def auditar_entrega(entrega, informe, opciones):
     """Modo real: contrato de salida de DS (interacciones + activos)."""
     entrega, excluidos = normalizar_entrega(entrega)
-    originales = {i["id"]: i for i in entrega.get("interacciones", [])}
+    originales = {}
+    for interaccion in entrega.get("interacciones", []):
+        identificador = interaccion["id"]
+        if identificador in originales:
+            raise ValueError(f"ID duplicado en las interacciones de la entrega: {identificador}")
+        originales[identificador] = interaccion
     excluidos = {**excluidos, **excluidos_del_informe(informe)}
     filas = []
     for activo in entrega.get("activos", []):
@@ -279,7 +314,7 @@ def auditar_entrega(entrega, informe, opciones):
         metadatos = (interaccion.get("autor", ""), interaccion.get("canal", ""))
         alertas = auditar_activo(interaccion["texto"], salida, metadatos=metadatos,
                                  fuentes=opciones["fuentes"], excluidas=opciones["excluidas"],
-                                 excluido=excluidos.get(ident))
+                                 excluido=excluidos.get(ident)) + alertas_de_formato(activo["contenido"])
         filas.append(fila(ident, activo["tipo"], interaccion["texto"], salida, alertas, **trazabilidad(activo)))
     return filas
 

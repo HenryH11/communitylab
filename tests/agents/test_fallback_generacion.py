@@ -617,6 +617,72 @@ class _Error400NormalGeneracion(Exception):
         self.status_code = 400
 
 
+class _ErrorNvidiaGoneGeneracion(Exception):
+    def __init__(self):
+        super().__init__(
+            "Error code: 410 - "
+            "{'status': 410, 'title': 'Gone', "
+            "'detail': 'The model is no longer available'}"
+        )
+        self.status_code = 410
+
+
+def test_generacion_nvidia_error_410_activa_fallback_gemini(
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        "COMMUNITYLAB_PROVEEDOR_GENERACION",
+        PROVEEDOR_NVIDIA_NIM,
+    )
+
+    generador_nvidia = MagicMock()
+    generador_nvidia.invoke.side_effect = (
+        _ErrorNvidiaGoneGeneracion()
+    )
+
+    generador_gemini = MagicMock()
+    generador_gemini.invoke.return_value = (
+        SugerenciaPreguntasFrecuentes(
+            tema="LangGraph",
+            respuesta="Conecta los nodos mediante edges.",
+        )
+    )
+
+    def obtener_generadores(proveedor):
+        if proveedor == PROVEEDOR_NVIDIA_NIM:
+            return {
+                "preguntas_frecuentes": generador_nvidia
+            }
+
+        if proveedor == PROVEEDOR_GEMINI:
+            return {
+                "preguntas_frecuentes": generador_gemini
+            }
+
+        raise AssertionError(proveedor)
+
+    with patch(
+        "src.agentes.nodos.nodos_generadores._obtener_generadores",
+        side_effect=obtener_generadores,
+    ):
+        resultado = generar_activos(
+            _estado_faq()
+        )
+
+    assert resultado["fallos"] == []
+    assert resultado["errores"] == []
+
+    assert (
+        resultado["activos_generados"]
+        ["preguntas_frecuentes"]
+        ["tema"]
+        == "LangGraph"
+    )
+
+    generador_nvidia.invoke.assert_called_once()
+    generador_gemini.invoke.assert_called_once()
+
+
 def test_generacion_nvidia_error_400_normal_no_activa_fallback_gemini(
     monkeypatch,
 ):

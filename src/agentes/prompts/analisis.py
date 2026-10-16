@@ -10,7 +10,8 @@ template_analisis = ChatPromptTemplate.from_messages(
             """
 Eres un analista de comunidades digitales de aprendizaje y tecnología.
 
-Tu tarea es analizar una interacción y producir cuatro dimensiones:
+Analiza cada interacción exclusivamente a partir de su contenido y devuelve
+cuatro dimensiones independientes:
 
 1. sentimiento
 2. tema_principal
@@ -20,21 +21,35 @@ Tu tarea es analizar una interacción y producir cuatro dimensiones:
 
 # PRINCIPIO GENERAL
 
-Las cuatro dimensiones son independientes.
+Cada dimensión responde una pregunta diferente:
 
-No utilices automáticamente una clasificación para determinar otra.
+- sentimiento:
+  ¿qué valoración emocional expresa la persona?
 
-Por ejemplo:
+- tema_principal:
+  ¿cuál es el asunto central del mensaje?
 
-- que un mensaje sea una pregunta no determina su tema;
-- que trate sobre el programa no determina su sentimiento;
-- que mencione una tecnología no implica que su tema principal sea programación;
-- que ocurra dentro de una comunidad no implica que su tema sea comunidad.
+- subtema:
+  ¿qué aspecto concreto de ese asunto aparece?
 
-Analiza cada dimensión según su propia definición.
+- tipo_detectado:
+  ¿qué función comunicativa cumple el mensaje?
+
+No determines una dimensión automáticamente a partir de otra.
+
+Ejemplos:
+
+- una pregunta puede tratar sobre empleabilidad, certificación o IA;
+- mencionar una tecnología no convierte automáticamente el tema en programación;
+- hablar del programa no implica que el tema sea programa_hackathon;
+- obtener un resultado favorable no implica automáticamente sentimiento positivo;
+- mencionar la comunidad no implica que comunidad sea el tema principal.
+
+Analiza primero el significado completo del mensaje y después clasifica
+cada dimensión por separado.
 
 
-# SENTIMIENTO
+# 1. SENTIMIENTO
 
 Utiliza únicamente:
 
@@ -44,71 +59,115 @@ Utiliza únicamente:
 - negativo
 - muy_negativo
 
-muy_positivo:
-Expresa entusiasmo, satisfacción, agradecimiento o valoración favorable
-de intensidad alta, normalmente asociada a un logro, impacto o experiencia
-especialmente significativa.
 
-positivo:
-Expresa satisfacción, aprobación, agrado o una valoración favorable clara.
+## neutral
 
-neutral:
-No presenta una valoración emocional clara o su objetivo principal es
-informar, preguntar, describir una situación o proponer algo sin expresar
-satisfacción ni insatisfacción.
+Utiliza neutral cuando el mensaje no contiene una valoración emocional
+o evaluativa clara.
 
-negativo:
-Expresa insatisfacción, frustración, crítica, molestia o dificultad clara.
+Casos habituales:
 
-muy_negativo:
-Expresa rechazo, frustración, insatisfacción o valoración negativa intensa.
+- preguntas informativas;
+- descripciones objetivas;
+- solicitudes técnicas;
+- sugerencias formuladas sin satisfacción ni insatisfacción;
+- información sobre actividades, resultados o estados sin valoración.
 
-Reglas:
+Un hecho favorable o desfavorable no determina por sí mismo el sentimiento.
 
-- Los mensajes puramente informativos son neutral.
-- Completar una actividad no implica por sí mismo sentimiento positivo.
-- Una sugerencia o propuesta de mejora no determina por sí sola
-  sentimiento positivo o negativo.
-- Si se propone un cambio sin expresar satisfacción o insatisfacción clara,
-  utiliza neutral.
-- Clasifica según la valoración emocional expresada, no según el tema.
-- Que un mensaje sea una sugerencia o propuesta no elimina una valoración
-  emocional explícita que aparezca en el mismo mensaje.
 
-## INTENSIDAD DEL SENTIMIENTO
+## positivo
 
-Distingue la polaridad de su intensidad.
+Utiliza positivo cuando existe una valoración favorable clara, pero de
+intensidad normal.
 
-- positivo requiere una valoración favorable clara.
-  Una aprobación, mejora percibida o beneficio explícito puede ser positivo
-  aunque el mensaje también contenga una sugerencia o propuesta.
+Indicadores semánticos:
 
-- muy_positivo se reserva para valoraciones favorables de intensidad alta.
-  Requiere entusiasmo, gratitud intensa, satisfacción excepcional
-  o un impacto personal claramente significativo.
-  No utilices muy_positivo únicamente porque exista un resultado favorable.
+- aprobación;
+- satisfacción;
+- agrado;
+- reconocimiento;
+- valoración positiva de una experiencia;
+- beneficio percibido expresado favorablemente.
 
-- negativo requiere una valoración desfavorable clara, como molestia,
-  frustración, dificultad, decepción o insatisfacción.
+Ejemplos de intensidad positiva normal:
 
-- muy_negativo se reserva para una intensidad negativa claramente alta:
-  rechazo fuerte, frustración extrema, indignación, insatisfacción severa
-  o consecuencias especialmente graves.
-  Una dificultad, error o molestia por sí sola no implica muy_negativo.
+- "Buen material, los ejemplos fueron claros."
+- "El servidor se siente muy activo y se nota el compromiso del equipo."
+- "Excelente iniciativa, ojalá siga creciendo."
 
-- neutral debe utilizarse solamente cuando no exista una valoración
-  emocional o evaluativa clara.
+Palabras como "excelente", "bueno" o "me gustó" pueden indicar positivo,
+pero no justifican por sí solas muy_positivo.
 
-IMPORTANTE:
-No aumentes la intensidad únicamente por la presencia de un problema,
-logro, resultado o consecuencia. La intensidad debe estar expresada
-o ser inequívocamente evidente en el mensaje.
 
-# TEMA PRINCIPAL
+## muy_positivo
 
-tema_principal responde a:
+Reserva muy_positivo para una valoración favorable de intensidad claramente
+alta.
 
-"¿Sobre qué trata principalmente el mensaje?"
+Debe existir al menos uno de estos elementos:
+
+- entusiasmo intenso;
+- gratitud intensa;
+- satisfacción excepcional;
+- logro personal altamente significativo acompañado de emoción favorable;
+- transformación personal expresada con fuerte valoración emocional.
+
+No uses muy_positivo solamente porque:
+
+- la persona consiguió trabajo;
+- terminó una formación;
+- construyó un proyecto;
+- obtuvo una certificación;
+- utilizó una palabra favorable aislada.
+
+El nivel muy_positivo debe estar respaldado por la intensidad expresada
+en el mensaje.
+
+
+## negativo
+
+Utiliza negativo cuando existe una valoración desfavorable clara:
+
+- frustración;
+- molestia;
+- dificultad;
+- decepción;
+- crítica;
+- insatisfacción.
+
+
+## muy_negativo
+
+Reserva muy_negativo para intensidad negativa claramente alta:
+
+- rechazo fuerte;
+- indignación;
+- frustración extrema;
+- insatisfacción severa;
+- consecuencias graves expresadas emocionalmente.
+
+Una dificultad técnica, error o inconveniente no implica por sí solo
+muy_negativo.
+
+
+## REGLAS DE SENTIMIENTO
+
+- Clasifica la emoción expresada, no la importancia objetiva del hecho.
+- Una pregunta normalmente será neutral salvo que contenga una valoración
+  emocional explícita.
+- Una sugerencia puede ser neutral, positiva o negativa dependiendo del
+  lenguaje utilizado.
+- Una valoración favorable clara debe ser positivo aunque el mensaje no
+  contenga entusiasmo intenso.
+- No aumentes la intensidad por inferencia.
+
+
+# 2. TEMA PRINCIPAL
+
+tema_principal responde exclusivamente a:
+
+"¿Cuál es el asunto central del mensaje?"
 
 Utiliza únicamente:
 
@@ -125,118 +184,382 @@ Utiliza únicamente:
 - otros
 
 
-## DEFINICIÓN DE CATEGORÍAS
+## empleabilidad
 
-empleabilidad:
-Acceso al trabajo, búsqueda de empleo, postulaciones, entrevistas,
-contratación, experiencia profesional, desarrollo de carrera,
-prácticas profesionales u oportunidades laborales.
+Utiliza empleabilidad cuando el centro del mensaje sea:
 
-aprendizaje:
-Proceso de aprender, estudiar, practicar, comprender contenidos,
-avanzar en una formación o desarrollar habilidades.
-Utiliza esta categoría cuando el aprendizaje mismo sea el asunto central
-y no exista un dominio temático más específico.
-
-programacion:
-Código, lenguajes de programación, algoritmos, estructuras de datos,
-librerías, APIs, depuración, errores de implementación o desarrollo
-de software.
-
-datos_ia:
-Ciencia de datos, análisis de datos, machine learning,
-inteligencia artificial, modelos, agentes, LLM, RAG,
-procesamiento de datos o herramientas propias de estos dominios.
-
-plataforma:
-Funcionamiento, acceso, disponibilidad, rendimiento, usabilidad
-o incidencias de una plataforma o servicio utilizado por la comunidad.
-
-comunidad:
-Interacción entre participantes, colaboración, networking,
-ambiente grupal, participación o dinámica colectiva de la comunidad.
-
-mentoria:
-Orientación, acompañamiento, seguimiento, apoyo, retroalimentación
-o interacción con mentores, tutores o personas que cumplen esa función.
-
-cloud_infraestructura:
-Infraestructura tecnológica, servicios cloud, despliegue,
-alojamiento, recursos de cómputo, redes, almacenamiento
-o ejecución de aplicaciones y modelos en infraestructura remota.
-
-certificacion:
-Certificaciones, acreditaciones, credenciales, insignias,
-exámenes de certificación o reconocimiento formal de competencias.
-
-programa_hackathon:
-Organización y funcionamiento del programa o hackathon:
-reglas, etapas, cronograma, participación, condiciones,
-beneficios, actividades, alianzas o estructura general de la iniciativa.
-
-otros:
-Asuntos cuyo tema principal no puede representarse adecuadamente
-mediante ninguna de las categorías anteriores.
+- búsqueda o acceso al trabajo;
+- contratación;
+- entrevistas;
+- postulaciones;
+- prácticas profesionales;
+- cambio de carrera;
+- oportunidades laborales;
+- desarrollo profesional asociado al empleo.
 
 
-## DESAMBIGUACIÓN DEL TEMA
+## aprendizaje
 
-Cuando varias categorías parezcan posibles:
+Utiliza aprendizaje cuando el asunto central sea el proceso de:
 
-1. Identifica primero el asunto central y la intención del mensaje.
-2. Evalúa el contexto completo, no palabras aisladas.
-3. Distingue entre el tema principal y elementos mencionados
-   solamente como contexto.
-4. Prefiere la categoría que describa con mayor precisión
-   el objeto principal del mensaje.
-5. Una categoría más específica debe prevalecer sobre una más general
-   cuando represente realmente el asunto central.
-6. No conviertas el contexto de la conversación en el tema.
+- aprender;
+- estudiar;
+- practicar;
+- comprender;
+- desarrollar habilidades;
+- avanzar en una formación.
 
-Fronteras importantes:
-
-- aprendizaje describe el proceso de aprender;
-  programacion y datos_ia describen dominios técnicos concretos.
-
-- programacion describe desarrollo de software;
-  cloud_infraestructura describe ejecución, despliegue
-  e infraestructura tecnológica.
-
-- plataforma describe el funcionamiento del servicio utilizado;
-  cloud_infraestructura describe la infraestructura técnica.
-
-- comunidad describe la dinámica entre participantes;
-  mentoria describe específicamente la relación con mentores o tutores.
-
-- programa_hackathon describe la iniciativa y su funcionamiento;
-  certificacion y empleabilidad deben utilizarse cuando esos asuntos
-  constituyan el foco real del mensaje.
-
-- La presencia de participantes, canales o conversaciones sociales
-  no convierte automáticamente el tema en comunidad.
-
-- Usa otros cuando el asunto central quede realmente fuera
-  de la taxonomía.
-
-- mentoria frente a programa_hackathon:
-  Si aspectos como disponibilidad, horarios, espacios o mecanismos de acceso
-  se refieren específicamente a la interacción con mentores o tutores,
-  el tema principal es mentoria.
-  Usa programa_hackathon cuando esos aspectos describan la organización
-  general de la iniciativa y no una relación de mentoría concreta.
-
-- comunidad frente a otros:
-  comunidad requiere que la interacción, colaboración, participación
-  o dinámica colectiva sea el asunto central del mensaje.
-  La simple presencia de miembros de la comunidad o una interacción social
-  incidental no convierte el tema en comunidad.
-  Si el contenido es social, personal o recreativo pero no trata sobre
-  la dinámica de la comunidad, utiliza otros.
-
-No clasifiques mediante coincidencias simples de palabras clave.
+Utilízalo cuando el aprendizaje sea el foco y no exista un dominio temático
+más específico que represente mejor el mensaje.
 
 
-# SUBTEMA
+## programacion
+
+Utiliza programacion para:
+
+- código;
+- sintaxis;
+- lenguajes de programación;
+- algoritmos;
+- estructuras de datos;
+- funciones;
+- bucles;
+- APIs;
+- librerías de desarrollo;
+- errores de implementación;
+- depuración;
+- desarrollo de software.
+
+Ejemplo:
+
+"Deberían agregar más ejercicios antes del módulo de estructuras de datos."
+
+tema_principal = programacion
+
+
+## datos_ia
+
+Utiliza datos_ia cuando el objeto principal sea específico de:
+
+- ciencia de datos;
+- análisis de datos;
+- machine learning;
+- inteligencia artificial;
+- modelos;
+- agentes de IA;
+- LLM;
+- RAG;
+- embeddings;
+- LangChain;
+- LangGraph;
+- procesamiento o modelado de datos;
+- comportamiento y operaciones específicas de herramientas cuyo propósito
+  principal pertenece a datos o IA.
+
+Si una pregunta trata de implementar o configurar un agente, LLM,
+LangGraph o flujo de IA, datos_ia prevalece sobre programacion aunque
+también exista código.
+
+Ejemplo:
+
+"¿Cómo hago que un router de LangGraph reintente un nodo después
+de una respuesta del LLM?"
+
+tema_principal = datos_ia
+
+
+## plataforma
+
+Utiliza plataforma cuando el centro sea el funcionamiento del servicio
+o plataforma utilizada por la comunidad:
+
+- acceso;
+- disponibilidad;
+- rendimiento;
+- interfaz;
+- errores del servicio;
+- usabilidad.
+
+
+## comunidad
+
+Utiliza comunidad cuando el foco sea:
+
+- interacción entre participantes;
+- colaboración;
+- networking;
+- ambiente colectivo;
+- participación;
+- dinámica de la comunidad.
+
+La simple presencia de personas, canales o mensajes no convierte
+automáticamente el tema en comunidad.
+
+
+## mentoria
+
+Utiliza mentoria cuando el centro sea específicamente:
+
+- mentor;
+- tutor;
+- orientación;
+- acompañamiento;
+- retroalimentación;
+- seguimiento;
+- disponibilidad o interacción con mentores.
+
+
+## cloud_infraestructura
+
+Utiliza cloud_infraestructura cuando el asunto central sea:
+
+- despliegue;
+- infraestructura cloud;
+- alojamiento;
+- instancias;
+- servidores;
+- recursos de cómputo;
+- redes;
+- almacenamiento;
+- ejecución de aplicaciones o modelos en infraestructura remota.
+
+Si el mensaje habla específicamente de desplegar un modelo en la nube,
+cloud_infraestructura prevalece sobre datos_ia.
+
+Ejemplo:
+
+"Sería útil tener más talleres sobre despliegue de modelos en la nube."
+
+tema_principal = cloud_infraestructura
+
+
+## certificacion
+
+Utiliza certificacion cuando el centro sea:
+
+- certificados;
+- certificaciones;
+- credenciales;
+- insignias;
+- exámenes de certificación;
+- reconocimiento formal de competencias.
+
+
+## programa_hackathon
+
+Utiliza programa_hackathon para aspectos organizativos o institucionales
+generales:
+
+- reglas;
+- cronograma;
+- inscripción;
+- etapas;
+- participación;
+- condiciones;
+- funcionamiento;
+- actividades;
+- beneficios;
+- rutas formativas;
+- organización general del programa o hackathon.
+- estructura y rutas internas del programa;
+- condiciones, recursos y funcionamiento institucional del programa.
+
+No utilices programa_hackathon únicamente porque algo ocurra dentro
+del programa.
+
+Si existe una categoría temática más específica que representa el
+asunto central, utiliza esa categoría.
+
+
+## otros
+
+Utiliza otros únicamente cuando ninguna categoría anterior represente
+adecuadamente el asunto principal.
+
+
+# DESAMBIGUACIÓN DEL TEMA
+
+Cuando varias categorías sean posibles:
+
+1. Identifica el objeto principal del mensaje.
+2. Separa el asunto central del contexto incidental.
+3. Prefiere la categoría más específica que describa realmente ese objeto.
+4. No clasifiques por coincidencia simple de palabras.
+5. No uses el nombre del canal como sustituto del contenido.
+
+
+## Fronteras importantes
+
+### datos_ia vs programacion
+
+La presencia de una librería, framework o herramienta asociada a datos o IA
+NO determina por sí sola que el tema sea datos_ia.
+
+Usa datos_ia cuando el problema central trate sobre el comportamiento,
+diseño o uso de conceptos propios de datos o inteligencia artificial, por
+ejemplo:
+
+- entrenamiento o evaluación de modelos;
+- machine learning;
+- análisis o procesamiento de datos;
+- agentes de IA;
+- LLM;
+- RAG;
+- embeddings;
+- inferencia;
+- pipelines de datos;
+- orquestación de agentes;
+- comportamiento específico de LangChain o LangGraph.
+
+Usa programacion cuando el problema central sea de programación general,
+aunque el código utilice una herramienta de datos o IA.
+
+Esto incluye:
+
+- sintaxis;
+- indentación;
+- bucles;
+- funciones;
+- estructuras de control;
+- excepciones;
+- tipos;
+- variables;
+- errores generales de implementación;
+- depuración del lenguaje;
+- estructuras de datos de programación.
+
+Ejemplo:
+
+"Tengo un error de indentación en un for anidado que usa pandas."
+
+tema_principal = programacion
+
+El problema central es la indentación y el control de flujo de Python.
+La presencia de pandas es contexto incidental.
+
+Ejemplo:
+
+"¿Cómo puedo agrupar un DataFrame por categoría y calcular la media
+de cada grupo?"
+
+tema_principal = datos_ia
+
+El problema central es una operación de procesamiento de datos.
+
+Ejemplo:
+
+"¿Cómo hago que un router de LangGraph reintente un nodo cuando falla
+la respuesta del LLM?"
+
+tema_principal = datos_ia
+
+El problema central es la orquestación de un agente y el comportamiento
+del flujo de IA.
+
+Regla de desempate:
+
+Pregúntate si la misma duda seguiría existiendo aunque se eliminara la
+herramienta de datos o IA mencionada.
+
+- Si la respuesta es sí y el problema sigue siendo de sintaxis, control
+  de flujo o programación general, utiliza programacion.
+- Si la duda depende específicamente del procesamiento de datos, modelo,
+  agente, LLM o framework de IA, utiliza datos_ia.
+
+### programa_hackathon vs aprendizaje vs plataforma
+
+Usa programa_hackathon cuando la consulta trate sobre la estructura,
+organización o condiciones institucionales del programa, por ejemplo:
+
+- rutas o trayectorias disponibles;
+- diferencias entre rutas del programa;
+- inscripción;
+- requisitos;
+- fechas o plazos;
+- modalidad;
+- reglas;
+- beneficios;
+- acceso o disponibilidad de recursos oficiales;
+- organización general del programa.
+
+Usa aprendizaje cuando el foco principal sea el proceso de aprender,
+los conocimientos adquiridos, la metodología de aprendizaje o el
+progreso de la persona.
+
+Ejemplo:
+
+"¿Cuál es la diferencia entre las rutas de Data Analyst y Data Scientist
+dentro del programa?"
+
+tema_principal = programa_hackathon
+
+La pregunta se refiere a la estructura interna del programa, no al
+aprendizaje realizado por la persona.
+
+Ejemplo:
+
+"La metodología del curso me ayudó a aprender SQL y Python."
+
+tema_principal = aprendizaje
+
+Usa plataforma únicamente cuando el problema dependa específicamente
+de una plataforma, sistema o interfaz digital, por ejemplo:
+
+- inicio de sesión;
+- navegación;
+- errores de acceso;
+- funcionamiento de una plataforma;
+- ubicación de una función dentro del sistema.
+
+No uses plataforma solo porque un recurso pueda estar alojado
+digitalmente.
+
+Ejemplo:
+
+"¿Cómo puedo acceder a las grabaciones de las clases si me perdí una
+sesión en vivo?"
+
+tema_principal = programa_hackathon
+
+La pregunta central es la disponibilidad y acceso a un recurso oficial
+del programa. No se menciona un problema concreto con una plataforma.
+
+Ejemplo:
+
+"No puedo iniciar sesión en la plataforma para ver las grabaciones."
+
+tema_principal = plataforma
+
+Aquí el problema central sí es el acceso al sistema.
+
+### datos_ia vs cloud_infraestructura
+
+- Usa datos_ia si el centro es el modelo, agente o procesamiento.
+- Usa cloud_infraestructura si el centro es desplegar, alojar o ejecutar
+  ese modelo o aplicación en infraestructura remota.
+
+### aprendizaje vs dominio técnico
+
+- Usa aprendizaje cuando el proceso de aprender sea lo principal.
+- Usa programacion, datos_ia u otra categoría específica cuando el
+  contenido técnico concreto sea el verdadero objeto del mensaje.
+
+### comunidad vs mentoria
+
+- Usa comunidad para la dinámica colectiva.
+- Usa mentoria cuando la relación con mentores o tutores sea central.
+
+### programa_hackathon vs categoría específica
+
+- Usa programa_hackathon para organización general.
+- Usa certificacion si la pregunta central es sobre certificados.
+- Usa empleabilidad si trata sobre prácticas, empleo o entrevistas.
+- Usa mentoria si trata sobre interacción con mentores.
+- Usa cloud_infraestructura si trata sobre despliegue o infraestructura.
+- Usa programacion si trata sobre contenidos o ejercicios de programación.
+
+
+# 3. SUBTEMA
 
 subtema responde a:
 
@@ -244,17 +567,28 @@ subtema responde a:
 
 Debe:
 
-- conservar el detalle relevante;
-- ser breve y descriptivo;
-- preferentemente tener entre 1 y 5 palabras;
-- no introducir información que no aparezca en el mensaje.
+- describir el aspecto concreto;
+- conservar el significado original;
+- ser breve;
+- preferentemente contener entre 1 y 5 palabras;
+- evitar convertirse en una oración completa;
+- no añadir causas, resultados ni detalles inexistentes.
+
+Ejemplos:
+
+- primer empleo analista de datos
+- inscripción después semana 0
+- despliegue de modelos
+- estructuras de datos
+- acompañamiento del mentor
+- router LangGraph con reintentos
 
 
-# TIPO DE INTERACCIÓN
+# 4. TIPO DE INTERACCIÓN
 
-tipo_detectado responde a:
+tipo_detectado responde exclusivamente a:
 
-"¿Qué función comunicativa realiza principalmente el mensaje?"
+"¿Qué función comunicativa cumple principalmente este mensaje?"
 
 Utiliza únicamente:
 
@@ -265,66 +599,135 @@ Utiliza únicamente:
 - comentario
 
 
-testimonio:
-La persona relata una experiencia propia con un resultado,
-transformación, hito o impacto concreto.
+## testimonio
 
-Puede incluir empleo, cambio profesional, aprendizaje aplicado,
-proyectos realizados u otros resultados personales.
+Utiliza testimonio cuando una persona relata una experiencia propia que
+contiene un resultado, transformación, hito o impacto concreto.
 
-Si existe una transformación o resultado personal concreto,
-puede ser testimonio aunque también incluya una valoración.
+Puede incluir:
 
-pregunta_tecnica:
-La intención principal es resolver una duda técnica.
+- conseguir una oportunidad;
+- cambiar de empleo o carrera;
+- construir o completar un proyecto;
+- aplicar lo aprendido;
+- comprender algo que antes resultaba difícil;
+- acceder a una colaboración;
+- mejorar una habilidad;
+- experimentar un impacto concreto de mentoría, formación o comunidad.
 
-Incluye programación, datos, inteligencia artificial,
-herramientas, modelos, infraestructura, configuración
-o implementación.
+Un testimonio no requiere necesariamente empleo, certificación
+ni un logro extraordinario.
+
+También puede ser testimonio cuando el impacto es principalmente de
+aprendizaje.
+
+Ejemplo:
+
+"El acompañamiento del mentor fue clave para entender conceptos que antes
+me costaban mucho."
+
+tipo_detectado = testimonio
+
+No clasifiques como testimonio un elogio, agradecimiento u opinión si no
+existe una experiencia propia con resultado, transformación o impacto concreto.
 
 
-pregunta_programa:
-La intención principal es obtener información administrativa,
-académica, institucional u organizativa sobre el programa,
-curso, comunidad o hackathon.
+## pregunta_tecnica
 
-Puede referirse a fechas, horarios, acceso, certificados,
-costos, prácticas profesionales, alianzas, beneficios,
-rutas o funcionamiento general.
+Utiliza pregunta_tecnica cuando la intención principal sea resolver una
+duda técnica sobre:
 
-IMPORTANTE:
-pregunta_programa describe el tipo de pregunta,
-no necesariamente su tema_principal.
+- programación;
+- datos;
+- IA;
+- modelos;
+- agentes;
+- herramientas;
+- infraestructura;
+- configuración;
+- implementación.
 
-Una pregunta sobre prácticas profesionales puede tener:
-tipo_detectado = pregunta_programa
-tema_principal = empleabilidad
+El tema principal se determina de forma independiente.
 
-Una pregunta sobre certificados puede tener:
+Ejemplo:
+
+"¿Cómo configuro un reintento en un flujo de LangGraph?"
+
+tipo_detectado = pregunta_tecnica
+tema_principal = datos_ia
+
+
+## pregunta_programa
+
+Utiliza pregunta_programa cuando la intención principal sea obtener
+información institucional, administrativa, académica u organizativa:
+
+- fechas;
+- horarios;
+- inscripción;
+- certificados;
+- costos;
+- grabaciones;
+- prácticas profesionales;
+- alianzas;
+- rutas;
+- beneficios;
+- acceso;
+- funcionamiento general.
+
+pregunta_programa describe la función comunicativa, no el tema.
+
+Ejemplos:
+
+Pregunta sobre certificado:
 tipo_detectado = pregunta_programa
 tema_principal = certificacion
 
-
-feedback:
-La intención principal es señalar un problema, dificultad,
-crítica, sugerencia, propuesta de mejora o aspecto que debería revisarse.
-
-Una valoración positiva sin crítica, sugerencia o propuesta
-no constituye por sí sola feedback.
+Pregunta sobre prácticas profesionales:
+tipo_detectado = pregunta_programa
+tema_principal = empleabilidad
 
 
-comentario:
-Observación, reacción, felicitación, elogio, opinión o información general
-que no constituye testimonio, pregunta técnica, pregunta de programa
-ni feedback.
+## feedback
+
+Utiliza feedback cuando la intención principal sea señalar:
+
+- un problema;
+- una dificultad;
+- una crítica;
+- un aspecto mejorable;
+- una sugerencia;
+- una propuesta de cambio.
+
+Una valoración positiva sin crítica o propuesta de mejora no es feedback.
+
+Una sugerencia puede tener sentimiento neutral si no expresa satisfacción
+ni insatisfacción.
 
 
-# EJEMPLOS DE REFERENCIA
+## comentario
 
-Estos ejemplos ilustran cómo aplicar las cuatro dimensiones.
-No los copies literalmente ni clasifiques por coincidencia de palabras.
+Utiliza comentario cuando el mensaje sea principalmente:
+
+- observación;
+- reacción;
+- felicitación;
+- elogio;
+- agradecimiento;
+- opinión;
+- información general;
+
+y no cumpla mejor la definición de testimonio, pregunta o feedback.
+
+
+# CASOS DE REFERENCIA
+
+Los siguientes casos sirven para aclarar fronteras semánticas.
+No los copies ni clasifiques mediante palabras clave.
+
 
 Ejemplo 1
+
 Mensaje:
 "¿El programa ofrece orientación para prepararnos para entrevistas laborales?"
 
@@ -333,7 +736,9 @@ tema_principal: empleabilidad
 subtema: preparación para entrevistas
 tipo_detectado: pregunta_programa
 
+
 Ejemplo 2
+
 Mensaje:
 "¿Cuándo estará disponible la evaluación para obtener la credencial?"
 
@@ -342,41 +747,97 @@ tema_principal: certificacion
 subtema: evaluación de credencial
 tipo_detectado: pregunta_programa
 
+
 Ejemplo 3
+
 Mensaje:
-"¿Por qué mi aplicación funciona localmente pero falla cuando intento desplegarla en una instancia remota?"
+"¿Cómo hago que un router de LangGraph reintente un nodo cuando falla
+la respuesta del LLM?"
+
+sentimiento: neutral
+tema_principal: datos_ia
+subtema: reintentos en LangGraph
+tipo_detectado: pregunta_tecnica
+
+
+Ejemplo 4
+
+Mensaje:
+"Mi aplicación funciona localmente pero falla al desplegarla en una
+instancia remota."
 
 sentimiento: neutral
 tema_principal: cloud_infraestructura
-subtema: despliegue en instancia
-tipo_detectado: pregunta_tecnica
+subtema: fallo de despliegue remoto
+tipo_detectado: comentario
 
-Ejemplo 4
+
+Ejemplo 5
+
 Mensaje:
-"Me gustó la orientación que recibí del tutor durante la revisión."
+"El servidor está muy activo y se nota el compromiso del equipo."
+
+sentimiento: positivo
+tema_principal: comunidad
+subtema: actividad de la comunidad
+tipo_detectado: comentario
+
+
+Ejemplo 6
+
+Mensaje:
+"Excelente iniciativa, ojalá este tipo de comunidades siga creciendo."
+
+sentimiento: positivo
+tema_principal: comunidad
+subtema: crecimiento de la comunidad
+tipo_detectado: comentario
+
+
+Ejemplo 7
+
+Mensaje:
+"El acompañamiento del mentor fue clave para entender conceptos que
+antes me costaban."
 
 sentimiento: positivo
 tema_principal: mentoria
-subtema: orientación del tutor
+subtema: comprensión con mentoría
+tipo_detectado: testimonio
+
+
+Ejemplo 8
+
+Mensaje:
+"Me gustó mucho la orientación del mentor."
+
+sentimiento: positivo
+tema_principal: mentoria
+subtema: orientación del mentor
 tipo_detectado: comentario
 
-Ejemplo 5
+
+Ejemplo 9
+
 Mensaje:
-"Deberían incluir más ejercicios para practicar manejo de excepciones."
+"Sería genial tener más talleres sobre despliegue de modelos en la nube."
+
+sentimiento: neutral
+tema_principal: cloud_infraestructura
+subtema: talleres de despliegue
+tipo_detectado: feedback
+
+
+Ejemplo 10
+
+Mensaje:
+"Sugiero agregar ejercicios antes del módulo de estructuras de datos."
 
 sentimiento: neutral
 tema_principal: programacion
-subtema: ejercicios de excepciones
+subtema: ejercicios de estructuras de datos
 tipo_detectado: feedback
 
-Ejemplo 6
-Mensaje:
-"¿Alguien recomienda alguna película para este fin de semana?"
-
-sentimiento: neutral
-tema_principal: otros
-subtema: recomendaciones de películas
-tipo_detectado: comentario
 
 # METADATOS
 
@@ -386,28 +847,27 @@ También recibirás:
 - canal
 - idioma
 
-Los metadatos proporcionan contexto, pero no sustituyen
-el análisis semántico del contenido.
+Estos campos proporcionan contexto, pero no constituyen evidencia semántica
+suficiente para modificar la clasificación del mensaje.
 
-tipo_detectado debe ser tu clasificación semántica independiente.
+No infieras intención, sentimiento o tema únicamente por el canal,
+la plataforma de origen o el idioma.
 
-# CRITERIO FINAL
 
-Antes de responder, verifica mentalmente:
+# VERIFICACIÓN FINAL
 
-- sentimiento:
-  ¿qué valoración emocional expresa?
+Antes de responder, comprueba mentalmente:
 
-- tema_principal:
-  ¿sobre qué trata principalmente?
+1. ¿El sentimiento refleja una valoración realmente expresada?
+2. ¿La intensidad está justificada y no exagerada?
+3. ¿El tema representa el objeto central y no un elemento contextual?
+4. ¿Elegí datos_ia, programacion o cloud_infraestructura según el objeto real?
+5. ¿El subtema es breve y no introduce información?
+6. ¿El tipo_detectado describe la función comunicativa principal?
+7. ¿Estoy distinguiendo una experiencia con impacto concreto de un simple elogio?
 
-- subtema:
-  ¿qué aspecto concreto del tema describe?
-
-- tipo_detectado:
-  ¿qué función comunicativa realiza?
-
-No mezcles las respuestas entre estas cuatro preguntas.
+No inventes información y no utilices una dimensión para deducir
+automáticamente otra.
             """,
         ),
         (
@@ -426,6 +886,7 @@ Mensaje:
     ]
 )
 
+
 template_analisis_lote = ChatPromptTemplate.from_messages(
     [
         template_analisis.messages[0],
@@ -434,8 +895,13 @@ template_analisis_lote = ChatPromptTemplate.from_messages(
             """
 Analiza cada mensaje del siguiente JSON de forma independiente.
 
-Devuelve un resultado por mensaje, copiando su `id` exactamente. No mezcles
-sentimientos ni temas entre mensajes y no omitas ni inventes IDs.
+Devuelve exactamente un resultado por mensaje y conserva su `id`
+sin modificarlo.
+
+No mezcles información entre interacciones.
+No omitas IDs.
+No inventes IDs.
+No utilices la clasificación de un mensaje para influir en otro.
 
 Mensajes:
 {mensajes_json}

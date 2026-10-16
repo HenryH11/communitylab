@@ -1,6 +1,8 @@
+import re
+
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 Sentimiento = Literal[
@@ -100,6 +102,16 @@ class PublicacionLinkedIn(BaseModel):
         ),
     )
 
+    @field_validator("hashtags")
+    @classmethod
+    def normalizar_hashtags(cls, valores: list[str]) -> list[str]:
+        return [
+            hashtag.strip()
+            if hashtag.strip().startswith("#")
+            else f"#{hashtag.strip()}"
+            for hashtag in valores
+        ]
+
 
 class DestaqueBoletin(BaseModel):
     seccion: str = Field(
@@ -134,6 +146,16 @@ class SugerenciaPreguntasFrecuentes(BaseModel):
         )
     )
 
+    @field_validator("respuesta")
+    @classmethod
+    def limpiar_repeticiones_accidentales(cls, valor: str) -> str:
+        return re.sub(
+            r"\b(\w+)(?:\s+\1\b){2,}",
+            r"\1",
+            valor,
+            flags=re.IGNORECASE,
+        )
+
 
 class CasoDeExito(BaseModel):
     titular: str = Field(
@@ -142,7 +164,7 @@ class CasoDeExito(BaseModel):
 
     resumen: str = Field(
         description=(
-            "Historia breve de 2 a 3 frases basada únicamente "
+            "Historia breve de 1 a 3 frases basada únicamente "
             "en el mensaje original."
         )
     )

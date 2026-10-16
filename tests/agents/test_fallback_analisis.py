@@ -327,6 +327,57 @@ class _Error400Normal(Exception):
         self.status_code = 400
 
 
+class _ErrorNvidiaGoneAnalisis(Exception):
+    def __init__(self):
+        super().__init__(
+            "Error code: 410 - "
+            "{'status': 410, 'title': 'Gone', "
+            "'detail': 'The model is no longer available'}"
+        )
+        self.status_code = 410
+
+
+def test_analisis_nvidia_error_410_activa_fallback_gemini(
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        "COMMUNITYLAB_PROVEEDOR_ANALISIS",
+        PROVEEDOR_NVIDIA_NIM,
+    )
+
+    cadena_nvidia = MagicMock()
+    cadena_nvidia.invoke.side_effect = _ErrorNvidiaGoneAnalisis()
+
+    cadena_gemini = MagicMock()
+    cadena_gemini.invoke.return_value = AnalisisMensaje(
+        sentimiento="neutral",
+        tema_principal="datos_ia",
+        subtema="fallback modelo retirado",
+        tipo_detectado="pregunta_tecnica",
+    )
+
+    def obtener_cadena(proveedor):
+        if proveedor == PROVEEDOR_NVIDIA_NIM:
+            return cadena_nvidia
+
+        if proveedor == PROVEEDOR_GEMINI:
+            return cadena_gemini
+
+        raise AssertionError(proveedor)
+
+    with patch(
+        "src.agentes.cadenas._obtener_cadena_analisis",
+        side_effect=obtener_cadena,
+    ):
+        resultado = analizar_mensaje(
+            _estado()
+        )
+
+    assert resultado.get("fallos", []) == []
+    cadena_nvidia.invoke.assert_called_once()
+    cadena_gemini.invoke.assert_called_once()
+
+
 def test_analisis_nvidia_error_400_normal_no_activa_fallback_gemini(
     monkeypatch,
 ):

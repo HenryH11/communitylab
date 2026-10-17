@@ -3,6 +3,13 @@
 
 Uso:
     python -m scripts.evaluar_holdout_proveedores
+    python -m scripts.evaluar_holdout_proveedores --modo-sentimiento 3-clases
+
+Modos de evaluación:
+- exacto (predeterminado): compara los cinco niveles de sentimiento.
+- 3-clases: agrupa muy_positivo/positivo y muy_negativo/negativo.
+- El agrupamiento solo afecta las métricas; conserva las predicciones originales.
+
 
 Características:
 - mismo prompt para ambos proveedores;
@@ -46,6 +53,29 @@ DIMENSIONES = {
 }
 
 
+def normalizar_sentimiento(sentimiento: str, modo: str = "exacto") -> str:
+    """Adapta el sentimiento para su comparación durante la evaluación."""
+
+    if modo == "exacto":
+        return sentimiento
+
+    if modo == "3-clases":
+        equivalencias = {
+            "muy_positivo": "positivo",
+            "positivo": "positivo",
+            "neutral": "neutral",
+            "negativo": "negativo",
+            "muy_negativo": "negativo",
+        }
+
+        if sentimiento not in equivalencias:
+            raise ValueError(f"Sentimiento no reconocido: {sentimiento}")
+
+        return equivalencias[sentimiento]
+
+    raise ValueError(f"Modo de sentimiento no reconocido: {modo}")
+
+
 def parsear_argumentos() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fixture", type=Path, default=FIXTURE_POR_DEFECTO)
@@ -54,6 +84,12 @@ def parsear_argumentos() -> argparse.Namespace:
     parser.add_argument("--tamano-lote", type=int, default=10)
     parser.add_argument("--max-intentos", type=int, default=3)
     parser.add_argument("--pausa", type=float, default=3.0)
+    parser.add_argument(
+        "--modo-sentimiento",
+        choices=("exacto", "3-clases"),
+        default="exacto",
+        help="Modo de evaluación del sentimiento: exacto o agrupado en 3 clases.",
+    )
     return parser.parse_args()
 
 
@@ -62,6 +98,41 @@ def cargar_holdout(ruta: Path) -> tuple[list[dict], str]:
     huella = hashlib.sha256(contenido).hexdigest()
     datos = json.loads(contenido.decode("utf-8"))
     casos = datos["casos"]
+
+    if not isinstance(casos, list) or not casos:
+        raise ValueError(
+            "El fixture debe contener una lista con al menos un caso."
+        )
+
+    campos_obligatorios = {
+        "id",
+        "texto",
+        "origen",
+        "canal",
+        "idioma",
+        "sentimiento_esperado",
+        "tema_esperado",
+        "tipo_esperado",
+    }
+
+    for numero, caso in enumerate(casos, start=1):
+        if not isinstance(caso, dict):
+            raise ValueError(
+                f"El caso {numero} debe ser un objeto JSON."
+            )
+
+        faltantes = campos_obligatorios - caso.keys()
+
+        if faltantes:
+            raise ValueError(
+                f"El caso {numero} no contiene los campos obligatorios: "
+                f"{', '.join(sorted(faltantes))}"
+            )
+
+        if not isinstance(caso["id"], str) or not caso["id"].strip():
+            raise ValueError(
+                f"El caso {numero} tiene un ID inválido."
+            )
 
     ids = [caso["id"] for caso in casos]
     if len(ids) != len(set(ids)):
@@ -201,43 +272,66 @@ def ejecutar_corrida(
     return {"resultados": resultados, "retries": retries, "tiempos": tiempos}
 
 
-def evaluar_corrida(casos: list[dict], resultados: dict) -> dict:
-    resumen = {}
 
-    for campo_predicho, campo_esperado in DIMENSIONES.items():
-        correctos = 0
-        por_clase = defaultdict(lambda: {"correctos": 0, "total": 0})
+def evaluar_corrida(
+    casos: list[dict],
+    resultados: dict,
+    modo_sentimiento: str = "exacto",
+) -> dict:
+    total = len(casos)
+    acumulados = {
+        campo: {
+            "correctos": 0,
+            "por_clase": defaultdict(
+                lambda: {"correctos": 0, "total": 0}
+            ),
+        }
+        for campo in DIMENSIONES
+    }
+    triples = 0
 
-        for caso in casos:
+    for caso in casos:
+        coincidencias = 0
+
+        for campo_predicho, campo_esperado in DIMENSIONES.items():
             esperado = caso[campo_esperado]
             obtenido = resultados[caso["id"]][campo_predicho]
 
-            por_clase[esperado]["total"] += 1
-            if obtenido == esperado:
-                correctos += 1
-                por_clase[esperado]["correctos"] += 1
+            if campo_predicho == "sentimiento":
+                esperado = normalizar_sentimiento(
+                    esperado, modo_sentimiento
+                )
+                obtenido = normalizar_sentimiento(
+                    obtenido, modo_sentimiento
+                )
 
-        resumen[campo_predicho] = {
-            "correctos": correctos,
-            "total": len(casos),
-            "accuracy": correctos / len(casos),
-            "por_clase": dict(por_clase),
+            acierto = esperado == obtenido
+            acumulado = acumulados[campo_predicho]
+
+            acumulado["correctos"] += acierto
+            acumulado["por_clase"][esperado]["total"] += 1
+            acumulado["por_clase"][esperado]["correctos"] += acierto
+
+            coincidencias += acierto
+
+        triples += coincidencias == len(DIMENSIONES)
+
+    resumen = {
+        campo: {
+            "correctos": valores["correctos"],
+            "total": total,
+            "accuracy": valores["correctos"] / total,
+            "por_clase": dict(valores["por_clase"]),
         }
-
-    triples = sum(
-        all(
-            resultados[caso["id"]][campo_predicho]
-            == caso[campo_esperado]
-            for campo_predicho, campo_esperado in DIMENSIONES.items()
-        )
-        for caso in casos
-    )
+        for campo, valores in acumulados.items()
+    }
 
     resumen["triple_correcto"] = {
         "correctos": triples,
-        "total": len(casos),
-        "accuracy": triples / len(casos),
+        "total": total,
+        "accuracy": triples / total,
     }
+
     return resumen
 
 
@@ -245,7 +339,11 @@ def modo(valores: list[str]) -> str:
     return Counter(valores).most_common(1)[0][0]
 
 
-def resultados_moda(casos: list[dict], corridas: list[dict]) -> dict:
+def resultados_moda(
+    casos: list[dict],
+    corridas: list[dict],
+    modo_sentimiento: str = "exacto",
+) -> dict:
     salida = {}
 
     for caso in casos:
@@ -257,12 +355,23 @@ def resultados_moda(casos: list[dict], corridas: list[dict]) -> dict:
                 corrida["resultados"][identificador][campo]
                 for corrida in corridas
             ]
+
+            if campo == "sentimiento":
+                valores = [
+                    normalizar_sentimiento(valor, modo_sentimiento)
+                    for valor in valores
+                ]
+
             salida[identificador][campo] = modo(valores)
+
 
     return salida
 
-
-def estabilidad(casos: list[dict], corridas: list[dict]) -> dict:
+def estabilidad(
+    casos: list[dict],
+    corridas: list[dict],
+    modo_sentimiento: str = "exacto",
+) -> dict:
     salida = {}
 
     for campo in DIMENSIONES:
@@ -273,7 +382,15 @@ def estabilidad(casos: list[dict], corridas: list[dict]) -> dict:
                 corrida["resultados"][caso["id"]][campo]
                 for corrida in corridas
             }
+
+            if campo == "sentimiento":
+                valores = {
+                    normalizar_sentimiento(valor, modo_sentimiento)
+                    for valor in valores
+                }
+
             estables += len(valores) == 1
+
 
         salida[campo] = {
             "estables": estables,
@@ -302,52 +419,56 @@ def main() -> None:
 
     ejecuciones = {"nvidia": [], "gemini": []}
 
-    for numero in range(1, args.corridas + 1):
-        ejecuciones["nvidia"].append(
-            ejecutar_corrida(
-                PROVEEDOR_NVIDIA_NIM,
-                numero,
-                casos,
-                args.tamano_lote,
-                args.max_intentos,
-                args.pausa,
-                huella,
-                args.salida,
+    for nombre, proveedor in (
+        ("nvidia", PROVEEDOR_NVIDIA_NIM),
+        ("gemini", PROVEEDOR_GEMINI),
+    ):
+        for numero in range(1, args.corridas + 1):
+            ejecuciones[nombre].append(
+                ejecutar_corrida(
+                    proveedor,
+                    numero,
+                    casos,
+                    args.tamano_lote,
+                    args.max_intentos,
+                    args.pausa,
+                    huella,
+                    args.salida,
+                )
             )
-        )
-
-    for numero in range(1, args.corridas + 1):
-        ejecuciones["gemini"].append(
-            ejecutar_corrida(
-                PROVEEDOR_GEMINI,
-                numero,
-                casos,
-                args.tamano_lote,
-                args.max_intentos,
-                args.pausa,
-                huella,
-                args.salida,
-            )
-        )
 
     resumen = {
         "holdout_sha256": huella,
         "casos": len(casos),
         "corridas_por_proveedor": args.corridas,
         "tamano_lote": args.tamano_lote,
+        "modo_sentimiento": args.modo_sentimiento,
     }
 
     for nombre, corridas in ejecuciones.items():
         resumen[nombre] = {
             "metricas_por_corrida": [
-                evaluar_corrida(casos, corrida["resultados"])
+                evaluar_corrida(
+                    casos,
+                    corrida["resultados"],
+                    args.modo_sentimiento,
+                )
                 for corrida in corridas
             ],
             "metricas_moda": evaluar_corrida(
                 casos,
-                resultados_moda(casos, corridas),
+                resultados_moda(
+                    casos,
+                    corridas,
+                    args.modo_sentimiento,
+                ),
+                args.modo_sentimiento,
             ),
-            "estabilidad": estabilidad(casos, corridas),
+            "estabilidad": estabilidad(
+                casos,
+                corridas,
+                args.modo_sentimiento,
+            ),
             "retries_externos": sum(
                 len(corrida["retries"]) for corrida in corridas
             ),
@@ -359,6 +480,7 @@ def main() -> None:
                 ),
                 3,
             ),
+
         }
 
     args.salida.mkdir(parents=True, exist_ok=True)

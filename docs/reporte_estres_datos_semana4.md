@@ -71,7 +71,20 @@ La fase de volumen más grande (2400 mensajes) tardó menos de 3 s en una laptop
 3. **La limpieza resiste entradas hostiles:** HTML, caracteres invisibles, emojis, texto de unos 5700 caracteres y mojibake de Windows, sin caídas y con los textos recuperados.
 4. **Recurrencia entre autores:** la misma duda escrita por otra persona (`faq-int-023`) no se marca como copia y se conserva.
 
+## Corrida con IA de DS (sáb 17 oct 2026)
+
+DS corrió los 3 lotes juntos por el flujo completo (Data → LangGraph → NVIDIA NIM, con Gemini de respaldo) sobre esta rama (`7c5e231`). El paquete `estres_lotes_ds.json` (auditoría v1.2) da:
+
+- 29 entradas, 7 excluidas por Data y 22 procesadas por DS; 19 con activos, 35 activos y 0 errores, fallos o inconsistencias.
+- Latencia y timeouts de NVIDIA NIM: el respaldo a Gemini se activó en el análisis de 21 interacciones y en 12 activos. El flujo terminó sin caídas.
+
+Cruce de DA con la preparación de Datos de este reporte:
+
+- Las 7 exclusiones son las mismas (ruido-02 a 07 y ruido-12) y ningún mensaje excluido tiene activos.
+- Coinciden los 19 elegibles de contenido y los 7 de FAQ. Los textos de entrada son los del fixture.
+- `scripts/auditoria_consistencia.py --entrega`: 35 activos y 0 alertas.
+- **ruido-01** (spam semántico): la IA lo etiqueta con el subtema «estafa o spam de dinero» y no genera activos, pero cuenta como `neutral` en la distribución de sentimiento. Cómo excluirlo se decide con DS.
+
 ## Pendiente del resto del equipo
 
-- **DS:** correr los 3 lotes por el grafo con IA y anotar las caídas o los respaldos a Gemini.
 - **CE:** verificar que los JSON resultantes se guarden en el bucket (Object Storage).

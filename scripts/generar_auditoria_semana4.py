@@ -26,7 +26,7 @@ RAIZ = Path(__file__).resolve().parents[1]
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
-
+from src.agentes.huellas import calcular_sha256_lf
 from src.agentes.auditoria_semana4 import (
     capturar_configuracion_ia_auditoria,
     cargar_eventos_observabilidad,
@@ -130,6 +130,14 @@ def calcular_sha256(ruta: Path) -> str:
             hash_sha256.update(bloque)
 
     return hash_sha256.hexdigest()
+
+
+def construir_huellas_dataset(ruta: Path) -> dict[str, str]:
+    """Obtiene las huellas original y canónica LF del dataset."""
+    return {
+        "dataset_sha256": calcular_sha256(ruta),
+        "dataset_sha256_lf": calcular_sha256_lf(ruta),
+    }
 
 
 def ruta_relativa(ruta: Path) -> str:
@@ -267,7 +275,7 @@ def main() -> None:
             "working_tree_limpio"
         ],
         "dataset": ruta_relativa(dataset),
-        "dataset_sha256": calcular_sha256(dataset),
+        **construir_huellas_dataset(dataset),
         "fecha_referencia": argumentos.fecha_referencia,
         "fecha_ejecucion_utc": datetime.now(
             timezone.utc

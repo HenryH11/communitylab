@@ -26,6 +26,7 @@ import argparse
 import hashlib
 import json
 import time
+
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -36,7 +37,7 @@ from src.agentes.configuracion_ia import (
 from src.agentes.modelo_ia import obtener_modelo_analisis_estructurado
 from src.agentes.modelos import AnalisisLote
 from src.agentes.prompts.analisis import template_analisis_lote
-
+from src.agentes.huellas import calcular_sha256_lf
 
 RAIZ = Path(__file__).resolve().parents[1]
 FIXTURE_POR_DEFECTO = (
@@ -52,6 +53,13 @@ DIMENSIONES = {
     "tipo_detectado": "tipo_esperado",
 }
 
+SENTIMIENTOS_VALIDOS = frozenset({
+    "muy_positivo",
+    "positivo",
+    "neutral",
+    "negativo",
+    "muy_negativo",
+})
 
 def normalizar_sentimiento(sentimiento: str, modo: str = "exacto") -> str:
     """Adapta el sentimiento para su comparación durante la evaluación."""
@@ -158,6 +166,7 @@ def ejecutar_corrida(
     pausa: float,
     huella: str,
     salida: Path,
+    huella_lf: str | None = None,
 ) -> dict:
     cadena = construir_cadena(proveedor)
     resultados = {}
@@ -259,6 +268,7 @@ def ejecutar_corrida(
                 "proveedor": proveedor,
                 "corrida": numero_corrida,
                 "holdout_sha256": huella,
+                "holdout_sha256_lf": huella_lf,
                 "resultados": resultados,
                 "retries_externos": retries,
                 "tiempos_lote_s": tiempos,
@@ -298,12 +308,23 @@ def evaluar_corrida(
             obtenido = resultados[caso["id"]][campo_predicho]
 
             if campo_predicho == "sentimiento":
+                if esperado not in SENTIMIENTOS_VALIDOS:
+                    raise ValueError(
+                        f"Sentimiento esperado no reconocido: {esperado}"
+                    )
+
                 esperado = normalizar_sentimiento(
                     esperado, modo_sentimiento
                 )
-                obtenido = normalizar_sentimiento(
-                    obtenido, modo_sentimiento
-                )
+
+                try:
+                    obtenido = normalizar_sentimiento(
+                        obtenido, modo_sentimiento
+                    )
+                except ValueError:
+                    if modo_sentimiento != "3-clases":
+                        raise
+                    obtenido = None
 
             acierto = esperado == obtenido
             acumulado = acumulados[campo_predicho]
@@ -360,9 +381,12 @@ def resultados_moda(
                 valores = [
                     normalizar_sentimiento(valor, modo_sentimiento)
                     for valor in valores
+                    if valor in SENTIMIENTOS_VALIDOS
                 ]
 
-            salida[identificador][campo] = modo(valores)
+            salida[identificador][campo] = (
+                modo(valores) if valores else None
+            )
 
 
     return salida
@@ -384,6 +408,9 @@ def estabilidad(
             }
 
             if campo == "sentimiento":
+                if not valores.issubset(SENTIMIENTOS_VALIDOS):
+                    continue
+
                 valores = {
                     normalizar_sentimiento(valor, modo_sentimiento)
                     for valor in valores
@@ -410,6 +437,7 @@ def main() -> None:
         raise ValueError("--tamano-lote debe ser >= 1.")
 
     casos, huella = cargar_holdout(args.fixture)
+    huella_lf = calcular_sha256_lf(args.fixture)
 
     print("=" * 80)
     print("HOLDOUT")
@@ -434,11 +462,13 @@ def main() -> None:
                     args.pausa,
                     huella,
                     args.salida,
+                    huella_lf=huella_lf,
                 )
             )
 
     resumen = {
         "holdout_sha256": huella,
+        "holdout_sha256_lf": huella_lf,
         "casos": len(casos),
         "corridas_por_proveedor": args.corridas,
         "tamano_lote": args.tamano_lote,

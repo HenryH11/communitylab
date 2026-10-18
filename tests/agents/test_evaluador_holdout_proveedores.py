@@ -8,6 +8,8 @@ import sys
 
 import pytest
 
+from src.agentes.huellas import calcular_sha256_lf
+
 import scripts.evaluar_holdout_proveedores as evaluador
 from scripts.evaluar_holdout_proveedores import (
     FIXTURE_POR_DEFECTO,
@@ -291,6 +293,7 @@ def test_main_respeta_modo_y_guarda_json(
         pausa,
         huella,
         salida,
+        huella_lf=None,
     ):
         llamadas.append((proveedor, numero_corrida))
 
@@ -334,6 +337,12 @@ def test_main_respeta_modo_y_guarda_json(
 
     resumen = json.loads(ruta_resumen.read_text(encoding="utf-8"))
 
+    assert resumen["holdout_sha256"] == hashlib.sha256(
+        fixture.read_bytes()
+    ).hexdigest()
+
+    assert resumen["holdout_sha256_lf"] == calcular_sha256_lf(fixture)
+
     assert resumen["modo_sentimiento"] == modo_esperado
     assert resumen["casos"] == 1
     assert resumen["corridas_por_proveedor"] == 3
@@ -360,3 +369,154 @@ def test_main_respeta_modo_y_guarda_json(
 
         assert datos["retries_externos"] == 0
         assert datos["tiempo_total_lotes_s"] == 0.3
+
+
+@pytest.mark.parametrize("modo", ["exacto", "3-clases"])
+def test_prediccion_desconocida_no_interrumpe_evaluacion(modo):
+    casos = [{
+        "id": "test-001",
+        "sentimiento_esperado": "neutral",
+        "tema_esperado": "datos_ia",
+        "tipo_esperado": "comentario",
+    }]
+
+    resultados = {
+        "test-001": {
+            "sentimiento": "desconocido",
+            "tema_principal": "datos_ia",
+            "tipo_detectado": "comentario",
+        }
+    }
+
+    metricas = evaluar_corrida(casos, resultados, modo)
+
+    assert metricas["sentimiento"]["correctos"] == 0
+    assert metricas["triple_correcto"]["correctos"] == 0
+
+
+@pytest.mark.parametrize("modo", ["exacto", "3-clases"])
+def test_moda_no_falla_con_prediccion_desconocida(modo):
+    casos = [{"id": "test-001"}]
+
+    corridas = construir_corridas_simuladas([
+        "positivo",
+        "desconocido",
+        "positivo",
+    ])
+
+    resultado = resultados_moda(casos, corridas, modo)
+
+    assert resultado["test-001"]["sentimiento"] == "positivo"
+
+
+@pytest.mark.parametrize("modo", ["exacto", "3-clases"])
+@pytest.mark.parametrize("sentimientos", [
+    ["positivo", "desconocido", "positivo"],
+    ["desconocido", "desconocido", "desconocido"],
+])
+def test_estabilidad_no_acepta_predicciones_desconocidas(
+    modo, sentimientos
+):
+    casos = [{"id": "test-001"}]
+    corridas = construir_corridas_simuladas(sentimientos)
+
+    resultado = estabilidad(casos, corridas, modo)
+
+    assert resultado["sentimiento"]["estables"] == 0
+
+
+@pytest.mark.parametrize("modo", ["exacto", "3-clases"])
+def test_rechaza_etiqueta_esperada_invalida(modo):
+    casos = [{
+        "id": "test-001",
+        "sentimiento_esperado": "desconocido",
+        "tema_esperado": "datos_ia",
+        "tipo_esperado": "comentario",
+    }]
+
+    resultados = {
+        "test-001": {
+            "sentimiento": "desconocido",
+            "tema_principal": "datos_ia",
+            "tipo_detectado": "comentario",
+        }
+    }
+
+    with pytest.raises(ValueError):
+        evaluar_corrida(casos, resultados, modo)
+
+
+@pytest.mark.parametrize("modo", ["exacto", "3-clases"])
+def test_todas_las_predicciones_invalidas(modo):
+    casos = [{
+        "id": "test-001",
+        "sentimiento_esperado": "neutral",
+        "tema_esperado": "datos_ia",
+        "tipo_esperado": "comentario",
+    }]
+
+    corridas = construir_corridas_simuladas([
+        "desconocido",
+        "desconocido",
+        "desconocido",
+    ])
+
+    predicciones = resultados_moda(casos, corridas, modo)
+
+    assert predicciones["test-001"]["sentimiento"] is None
+
+    metricas = evaluar_corrida(casos, predicciones, modo)
+
+    assert metricas["sentimiento"]["correctos"] == 0
+    assert metricas["triple_correcto"]["correctos"] == 0
+
+    estabilidad_resultado = estabilidad(casos, corridas, modo)
+    assert estabilidad_resultado["sentimiento"]["estables"] == 0
+
+
+def test_corrida_individual_conserva_ambos_hashes(
+    tmp_path, monkeypatch
+):
+    class CadenaSimulada:
+        def invoke(self, argumentos):
+            return {
+                "resultados": [{
+                    "id": "test-001",
+                    "sentimiento": "neutral",
+                    "tema_principal": "programacion",
+                    "subtema": "Consulta de Python",
+                    "tipo_detectado": "pregunta_tecnica",
+                }]
+            }
+
+    monkeypatch.setattr(
+        evaluador,
+        "construir_cadena",
+        lambda proveedor: CadenaSimulada(),
+    )
+
+    casos = [{
+        "id": "test-001",
+        "texto": "¿Cómo funciona Python?",
+        "origen": "Discord",
+        "canal": "#dudas",
+        "idioma": "es",
+    }]
+
+    evaluador.ejecutar_corrida(
+        proveedor="nvidia",
+        numero_corrida=1,
+        casos=casos,
+        tamano_lote=1,
+        max_intentos=1,
+        pausa=0,
+        huella="hash-original",
+        salida=tmp_path,
+        huella_lf="hash-canonico",
+    )
+
+    archivo = tmp_path / "nvidia_corrida_1.json"
+    resultado = json.loads(archivo.read_text(encoding="utf-8"))
+
+    assert resultado["holdout_sha256"] == "hash-original"
+    assert resultado["holdout_sha256_lf"] == "hash-canonico"

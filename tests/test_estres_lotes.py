@@ -103,6 +103,24 @@ def test_una_caida_se_reporta_y_corta_el_verde(monkeypatch):
     assert "RuntimeError: caída simulada" in reporte["fases"]["base"][2]["errores"]
 
 
+def test_una_caida_en_la_referencia_se_reporta_sin_cortar_la_auditoria(monkeypatch):
+    original = estres.preparar_paquete_ia
+
+    def falla_con_ruido(datos, **opciones):
+        if datos["lotes"][0]["origen_comunidad"] == "Estres_Ruido_Spam":
+            raise ValueError("entrada malformada")
+        return original(datos, **opciones)
+
+    monkeypatch.setattr(estres, "preparar_paquete_ia", falla_con_ruido)
+    reporte = estres.auditar(DATOS, configuracion=CONFIGURACION, repeticiones=2, hilos=2, volumen=1)
+    ruido = reporte["fases"]["base"][2]
+    assert not reporte["resumen"]["en_verde"] and not reporte["resumen"]["mojibake_reparado"]
+    assert ruido["caidas"] == 3 and ruido["total"] is None
+    assert ruido["errores"] == ["ValueError: entrada malformada"]
+    # Los otros lotes se siguen auditando.
+    assert reporte["fases"]["base"][0]["caidas"] == 0 and reporte["fases"]["base"][0]["total"] == 8
+
+
 def test_cli_escribe_reportes_y_sale_en_cero(tmp_path, capsys):
     salida_json, salida_md = tmp_path / "estres.json", tmp_path / "estres.md"
     codigo = estres.principal(["--repeticiones", "2", "--volumen", "2", "--salida-json", str(salida_json),

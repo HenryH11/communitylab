@@ -81,6 +81,10 @@ def resumir(paquete):
     }
 
 
+CAMPOS_RESUMEN = ("total", "seleccionadas_contenido", "incluidas_sentimiento", "excluidas_calidad", "motivos",
+                  "elegibles_faq", "ciclos", "pendientes")
+
+
 def huella(paquete):
     return json.dumps(paquete, ensure_ascii=False, sort_keys=True)
 
@@ -88,16 +92,25 @@ def huella(paquete):
 def correr(entregas, *, fecha_referencia, configuracion, repeticiones, hilos):
     """Corre cada entrega `repeticiones` veces en paralelo y compara contra una corrida de referencia."""
     copias = [deepcopy(e) for e in entregas]
-    referencia = [preparar_paquete_ia(e, fecha_referencia=fecha_referencia, configuracion=configuracion) for e in entregas]
-    esperadas = [huella(p) for p in referencia]
+
+    def preparar(indice):
+        try:
+            return preparar_paquete_ia(entregas[indice], fecha_referencia=fecha_referencia,
+                                       configuracion=configuracion), None
+        except Exception as error:  # se cuenta como caída y se reporta, no se oculta
+            return None, f"{type(error).__name__}: {error}"
+
+    # Si la corrida de referencia también falla, se reporta como caída en vez de cortar la auditoría.
+    referencia, errores_referencia = zip(*(preparar(i) for i in range(len(entregas))))
+    referencia = list(referencia)
+    esperadas = [huella(p) if p is not None else None for p in referencia]
     trabajos = [indice for _ in range(repeticiones) for indice in range(len(entregas))]
 
     def una(indice):
         inicio = time.perf_counter()
-        try:
-            paquete = preparar_paquete_ia(entregas[indice], fecha_referencia=fecha_referencia, configuracion=configuracion)
-        except Exception as error:  # se cuenta como caída y se reporta, no se oculta
-            return indice, f"{type(error).__name__}: {error}", False, time.perf_counter() - inicio
+        paquete, error = preparar(indice)
+        if error:
+            return indice, error, False, time.perf_counter() - inicio
         return indice, None, huella(paquete) == esperadas[indice], time.perf_counter() - inicio
 
     with ThreadPoolExecutor(max_workers=hilos) as ejecutor:
@@ -106,16 +119,17 @@ def correr(entregas, *, fecha_referencia, configuracion, repeticiones, hilos):
     for indice, entrega in enumerate(entregas):
         propios = [r for r in resultados if r[0] == indice]
         tiempos = sorted(r[3] for r in propios)
+        error_referencia = errores_referencia[indice]
         lotes.append({
             "origen_comunidad": " + ".join(lote["origen_comunidad"] for lote in entrega["lotes"]),
             "corridas": len(propios),
-            "caidas": sum(r[1] is not None for r in propios),
-            "errores": sorted({r[1] for r in propios if r[1]}),
+            "caidas": sum(r[1] is not None for r in propios) + bool(error_referencia),
+            "errores": sorted({r[1] for r in propios if r[1]} | ({error_referencia} if error_referencia else set())),
             "distintas_a_la_referencia": sum(r[1] is None and not r[2] for r in propios),
             "entrada_intacta": entrega == copias[indice],
             "segundos_mediana": round(tiempos[len(tiempos) // 2], 6) if tiempos else None,
             "segundos_max": round(tiempos[-1], 6) if tiempos else None,
-            **resumir(referencia[indice]),
+            **(resumir(referencia[indice]) if referencia[indice] is not None else dict.fromkeys(CAMPOS_RESUMEN)),
         })
     return lotes, referencia
 
@@ -131,13 +145,17 @@ def auditar(datos, *, fecha_referencia=FECHA_REFERENCIA, configuracion=None, rep
     rotas = [con_mojibake(e) for e in entregas]
     reparadas, paquetes_rotos = correr(rotas, fecha_referencia=fecha_referencia, configuracion=configuracion,
                                        repeticiones=1, hilos=hilos)
-    textos_originales = [[m["texto"] for m in p["completos"]["lotes"][0]["interacciones"]] for p in referencia[:len(rotas)]]
-    textos_reparados = [[m["texto"] for m in p["completos"]["lotes"][0]["interacciones"]] for p in paquetes_rotos]
+    def textos_de(paquetes):
+        return [[m["texto"] for m in p["completos"]["lotes"][0]["interacciones"]] if p is not None else None
+                for p in paquetes]
+
+    textos_originales = textos_de(referencia[:len(rotas)])
+    textos_reparados = textos_de(paquetes_rotos)
     fases = {"base": base, "volumen": ampliadas, "mojibake": reparadas}
     caidas = sum(l["caidas"] for fase in fases.values() for l in fase)
     distintas = sum(l["distintas_a_la_referencia"] for fase in fases.values() for l in fase)
     modificadas = sum(not l["entrada_intacta"] for fase in fases.values() for l in fase)
-    mojibake_reparado = textos_originales == textos_reparados
+    mojibake_reparado = None not in textos_originales and textos_originales == textos_reparados
     return {
         "version": "1.0",
         "fecha_referencia": fecha_referencia,

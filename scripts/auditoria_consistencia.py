@@ -404,10 +404,10 @@ def principal(argv=None):
         "filas": filas,
     }
     if args.salida_json:
-        Path(args.salida_json).write_text(json.dumps(reporte, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        Path(args.salida_json).write_text(json.dumps(reporte, ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
     if args.salida_md:
         Path(args.salida_md).write_text(a_markdown(reporte), encoding="utf-8")
-    print(json.dumps(reporte["resumen"], ensure_ascii=False, indent=2))
+    print(json.dumps(reporte["resumen"], ensure_ascii=False, indent=4))
     return 0
 
 

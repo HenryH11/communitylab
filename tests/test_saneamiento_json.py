@@ -1,4 +1,4 @@
-"""Saneamiento de la Semana 5: los JSON versionados están en UTF-8 limpio. Sin IA ni red."""
+"""Saneamiento de la Semana 5: los JSON versionados están en UTF-8 limpio y con 4 espacios. Sin IA ni red."""
 
 import json
 import re
@@ -13,6 +13,8 @@ CARPETAS = ("configuracion", "docs", "src", "tests")
 TILDE_PERDIDA = re.compile(r"[A-Za-z]\?[a-z]|¿?\?[A-Z][a-z]")
 # Pendiente de DS: el holdout congelado perdió las tildes al guardarse; se repara con una nueva versión y su SHA-256.
 PENDIENTES = {"tests/fixtures/holdout_final_analisis_semana3.json"}
+# Matriz 3 (cierre técnico): JSON con indentación homogénea de 4 espacios, también en lo que escribe src/datos.
+INDENTACION_DISTINTA_DE_4 = re.compile(r"indent\s*=\s*(?!4\b)\d+")
 
 
 def archivos_json():
@@ -49,6 +51,18 @@ class PruebasSaneamientoJson(unittest.TestCase):
                 cadenas = list(textos(json.loads(ruta.read_text(encoding="utf-8"))))
                 self.assertEqual([c for c in cadenas if detectar_mojibake(c)], [])
                 self.assertEqual([c for c in cadenas if TILDE_PERDIDA.search(c) and "://" not in c], [])
+
+    def test_indentacion_de_4_espacios(self):
+        for ruta in archivos_json():
+            with self.subTest(ruta=ruta.relative_to(RAIZ).as_posix()):
+                # Se normalizan los saltos para que la prueba no dependa de core.autocrlf en Windows.
+                texto = ruta.read_bytes().decode("utf-8").replace("\r\n", "\n")
+                self.assertEqual(texto, json.dumps(json.loads(texto), ensure_ascii=False, indent=4) + "\n")
+
+    def test_escritores_de_datos_usan_4_espacios(self):
+        for ruta in sorted((RAIZ / "src" / "datos").glob("*.py")):
+            with self.subTest(ruta=ruta.relative_to(RAIZ).as_posix()):
+                self.assertNotRegex(ruta.read_text(encoding="utf-8"), INDENTACION_DISTINTA_DE_4)
 
     def test_los_pendientes_siguen_detectandose(self):
         """Cuando DS repare el holdout, esta prueba avisa para sacarlo de PENDIENTES."""

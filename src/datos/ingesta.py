@@ -283,7 +283,7 @@ def cargar_json(ruta):
 
 def guardar_json(ruta, datos):
     ruta.parent.mkdir(parents=True, exist_ok=True)
-    ruta.write_text(json.dumps(datos, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    ruta.write_text(json.dumps(datos, ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
 
 
 def principal(argv=None):

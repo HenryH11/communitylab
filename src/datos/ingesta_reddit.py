@@ -251,7 +251,7 @@ def guardar_lote(ruta_salida, nuevo_lote):
     estructura["lotes"].append(nuevo_lote)
     ruta_salida.parent.mkdir(parents=True, exist_ok=True)
     with ruta_salida.open("w", encoding="utf-8") as archivo:
-        json.dump(estructura, archivo, ensure_ascii=False, indent=2)
+        json.dump(estructura, archivo, ensure_ascii=False, indent=4)
         archivo.write("\n")
     return estructura
 

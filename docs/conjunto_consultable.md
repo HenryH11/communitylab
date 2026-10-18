@@ -108,7 +108,7 @@ Aceptar ambos permite generar el índice hoy, con la entrega auditada (35 activo
 ### 6. Salida estable
 
 Los registros se ordenan por `id`. El JSON se escribe en UTF-8 sin escapar
-caracteres (`ensure_ascii=False`) y con `indent=2`, igual que las demás salidas
+caracteres (`ensure_ascii=False`) y con `indent=4`, igual que las demás salidas
 de `src/datos`. Una misma entrega produce siempre el mismo archivo.
 
 ## Verificación

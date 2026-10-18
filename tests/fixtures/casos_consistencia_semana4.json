@@ -1,59 +1,151 @@
 {
-  "version": "1.0",
-  "naturaleza": "Casos sintéticos y salidas simuladas; no son inferencias reales ni datos de estudiantes.",
-  "fecha_referencia": "2026-10-12T12:00:00Z",
-  "perfiles": [
-    {
-      "perfil": "exito",
-      "entrada": {
-        "autor": "Ana Prueba",
-        "canal": "#logros",
-        "tipo": "testimonio",
-        "idioma": "es",
-        "fecha": "2026-10-11T12:00:00Z",
-        "texto": "En el programa ONE completé 3 ejercicios de Python el 10 de octubre de 2026. Me alegra mi avance en programación; todavía no tengo empleo ni certificación."
-      },
-      "analisis_simulado": {"sentimiento": "positivo", "tema_principal": "aprendizaje", "subtema": "Ejercicios de Python", "tipo_detectado": "testimonio"},
-      "activos_simulados": {
-        "linkedin": {"titulo": "{autor}: avance en Python", "contenido": "{autor} completó 3 ejercicios de Python en ONE el 10 de octubre de 2026. Celebra su avance; todavía no tiene empleo ni certificación.", "hashtags": ["#Python", "#Aprendizaje", "#Comunidad"]},
-        "boletin": {"seccion": "Aprendizaje destacado", "titular": "{autor} avanza en Python", "resumen": "Completó 3 ejercicios de Python en ONE el 10 de octubre de 2026; aún no tiene empleo ni certificación."},
-        "caso_exito": {"titular": "{autor}: tres ejercicios completados", "resumen": "Completó 3 ejercicios de Python en ONE el 10 de octubre de 2026. Celebra el aprendizaje; aún no tiene empleo ni certificación."}
-      },
-      "criterios_revision": ["Conservar 3 ejercicios, Python, ONE y la fecha.", "No convertir aprendizaje en contratación o certificación.", "El nombre del autor procede de los metadatos autorizados, no necesariamente del texto.", "Una paráfrasis fiel puede tener similitud baja; la similitud no determina aprobación."],
-      "variantes_para_auditor": [
-        {"id": "numero_alterado", "salida": "Completó 30 ejercicios de Python en ONE.", "decision_humana_esperada": "revisar", "motivo": "Cambia 3 por 30."},
-        {"id": "fecha_alterada", "salida": "Completó 3 ejercicios de Python en ONE el 10 de octubre de 2025.", "decision_humana_esperada": "revisar", "motivo": "Cambia el año."},
-        {"id": "entidad_inventada", "salida": "Completó 3 ejercicios de Python en Universidad Horizonte.", "decision_humana_esperada": "revisar", "motivo": "Sustituye el programa por una entidad no sustentada."},
-        {"id": "negacion_invertida", "salida": "Completé 3 ejercicios de Python en ONE y ya tengo empleo y certificación.", "decision_humana_esperada": "revisar", "motivo": "Contradice la negación original aunque reutiliza casi todas las palabras."},
-        {"id": "parafrasis_valida", "salida": "En ONE resolvió tres ejercicios de Python; sigue sin empleo ni certificación.", "decision_humana_esperada": "aceptable", "motivo": "Tres y 3 expresan el mismo hecho; no inventa logros."}
-      ]
-    },
-    {
-      "perfil": "duda_tecnica",
-      "entrada": {
-        "autor": "Luis Prueba",
-        "canal": "#dudas-python",
-        "tipo": "pregunta_tecnica",
-        "idioma": "es",
-        "fecha": "2026-10-11T12:00:00Z",
-        "texto": "¿Cómo puedo revisar un KeyError en mi diccionario de Python al consultar la clave curso? Estoy practicando programación y análisis de datos; necesito ayuda para entender el error."
-      },
-      "analisis_simulado": {"sentimiento": "neutral", "tema_principal": "programacion", "subtema": "KeyError en diccionarios", "tipo_detectado": "pregunta_tecnica"},
-      "activos_simulados": {"preguntas_frecuentes": {"tema": "Consulta de {autor}: KeyError en Python", "respuesta": "Revisa el acceso a la clave curso en el diccionario y comparte un ejemplo mínimo del KeyError. Con la información recibida no se puede confirmar la causa concreta."}},
-      "criterios_revision": ["Conservar Python, KeyError y la clave curso.", "No afirmar una causa concreta sin código o evidencia.", "No añadir plazos, certificaciones o soporte institucional garantizado."],
-      "variantes_para_auditor": [
-        {"id": "garantia_inventada", "salida": "Oracle resolverá el KeyError en 24 horas y te entregará una certificación.", "decision_humana_esperada": "revisar", "motivo": "Añade entidad, plazo y garantía sin evidencia."},
-        {"id": "respuesta_prudente", "salida": "Comparte un ejemplo mínimo de la consulta de curso en tu diccionario de Python.", "decision_humana_esperada": "aceptable", "motivo": "Solicita evidencia sin inventar una solución."}
-      ]
-    },
-    {
-      "perfil": "spam",
-      "entrada": {"autor": "Ruido Prueba", "canal": "#general", "tipo": "comentario", "idioma": "es", "fecha": "2026-10-11T12:00:00Z", "texto": "compra ahora compra ahora compra ahora compra ahora compra ahora compra ahora"},
-      "analisis_simulado": null,
-      "activos_simulados": {},
-      "motivo_exclusion": "texto_repetitivo",
-      "criterios_revision": ["Excluir antes de análisis y generación.", "Conservar el ID y el motivo en el informe de Datos.", "Ausencia de activos es el resultado correcto, no una transformación incompleta."],
-      "variantes_para_auditor": [{"id": "spam_convertido_en_logro", "salida": "La comunidad consiguió empleo gracias a una oferta exclusiva.", "decision_humana_esperada": "revisar", "motivo": "No debía existir activo para este mensaje excluido."}]
-    }
-  ]
+    "version": "1.0",
+    "naturaleza": "Casos sintéticos y salidas simuladas; no son inferencias reales ni datos de estudiantes.",
+    "fecha_referencia": "2026-10-12T12:00:00Z",
+    "perfiles": [
+        {
+            "perfil": "exito",
+            "entrada": {
+                "autor": "Ana Prueba",
+                "canal": "#logros",
+                "tipo": "testimonio",
+                "idioma": "es",
+                "fecha": "2026-10-11T12:00:00Z",
+                "texto": "En el programa ONE completé 3 ejercicios de Python el 10 de octubre de 2026. Me alegra mi avance en programación; todavía no tengo empleo ni certificación."
+            },
+            "analisis_simulado": {
+                "sentimiento": "positivo",
+                "tema_principal": "aprendizaje",
+                "subtema": "Ejercicios de Python",
+                "tipo_detectado": "testimonio"
+            },
+            "activos_simulados": {
+                "linkedin": {
+                    "titulo": "{autor}: avance en Python",
+                    "contenido": "{autor} completó 3 ejercicios de Python en ONE el 10 de octubre de 2026. Celebra su avance; todavía no tiene empleo ni certificación.",
+                    "hashtags": [
+                        "#Python",
+                        "#Aprendizaje",
+                        "#Comunidad"
+                    ]
+                },
+                "boletin": {
+                    "seccion": "Aprendizaje destacado",
+                    "titular": "{autor} avanza en Python",
+                    "resumen": "Completó 3 ejercicios de Python en ONE el 10 de octubre de 2026; aún no tiene empleo ni certificación."
+                },
+                "caso_exito": {
+                    "titular": "{autor}: tres ejercicios completados",
+                    "resumen": "Completó 3 ejercicios de Python en ONE el 10 de octubre de 2026. Celebra el aprendizaje; aún no tiene empleo ni certificación."
+                }
+            },
+            "criterios_revision": [
+                "Conservar 3 ejercicios, Python, ONE y la fecha.",
+                "No convertir aprendizaje en contratación o certificación.",
+                "El nombre del autor procede de los metadatos autorizados, no necesariamente del texto.",
+                "Una paráfrasis fiel puede tener similitud baja; la similitud no determina aprobación."
+            ],
+            "variantes_para_auditor": [
+                {
+                    "id": "numero_alterado",
+                    "salida": "Completó 30 ejercicios de Python en ONE.",
+                    "decision_humana_esperada": "revisar",
+                    "motivo": "Cambia 3 por 30."
+                },
+                {
+                    "id": "fecha_alterada",
+                    "salida": "Completó 3 ejercicios de Python en ONE el 10 de octubre de 2025.",
+                    "decision_humana_esperada": "revisar",
+                    "motivo": "Cambia el año."
+                },
+                {
+                    "id": "entidad_inventada",
+                    "salida": "Completó 3 ejercicios de Python en Universidad Horizonte.",
+                    "decision_humana_esperada": "revisar",
+                    "motivo": "Sustituye el programa por una entidad no sustentada."
+                },
+                {
+                    "id": "negacion_invertida",
+                    "salida": "Completé 3 ejercicios de Python en ONE y ya tengo empleo y certificación.",
+                    "decision_humana_esperada": "revisar",
+                    "motivo": "Contradice la negación original aunque reutiliza casi todas las palabras."
+                },
+                {
+                    "id": "parafrasis_valida",
+                    "salida": "En ONE resolvió tres ejercicios de Python; sigue sin empleo ni certificación.",
+                    "decision_humana_esperada": "aceptable",
+                    "motivo": "Tres y 3 expresan el mismo hecho; no inventa logros."
+                }
+            ]
+        },
+        {
+            "perfil": "duda_tecnica",
+            "entrada": {
+                "autor": "Luis Prueba",
+                "canal": "#dudas-python",
+                "tipo": "pregunta_tecnica",
+                "idioma": "es",
+                "fecha": "2026-10-11T12:00:00Z",
+                "texto": "¿Cómo puedo revisar un KeyError en mi diccionario de Python al consultar la clave curso? Estoy practicando programación y análisis de datos; necesito ayuda para entender el error."
+            },
+            "analisis_simulado": {
+                "sentimiento": "neutral",
+                "tema_principal": "programacion",
+                "subtema": "KeyError en diccionarios",
+                "tipo_detectado": "pregunta_tecnica"
+            },
+            "activos_simulados": {
+                "preguntas_frecuentes": {
+                    "tema": "Consulta de {autor}: KeyError en Python",
+                    "respuesta": "Revisa el acceso a la clave curso en el diccionario y comparte un ejemplo mínimo del KeyError. Con la información recibida no se puede confirmar la causa concreta."
+                }
+            },
+            "criterios_revision": [
+                "Conservar Python, KeyError y la clave curso.",
+                "No afirmar una causa concreta sin código o evidencia.",
+                "No añadir plazos, certificaciones o soporte institucional garantizado."
+            ],
+            "variantes_para_auditor": [
+                {
+                    "id": "garantia_inventada",
+                    "salida": "Oracle resolverá el KeyError en 24 horas y te entregará una certificación.",
+                    "decision_humana_esperada": "revisar",
+                    "motivo": "Añade entidad, plazo y garantía sin evidencia."
+                },
+                {
+                    "id": "respuesta_prudente",
+                    "salida": "Comparte un ejemplo mínimo de la consulta de curso en tu diccionario de Python.",
+                    "decision_humana_esperada": "aceptable",
+                    "motivo": "Solicita evidencia sin inventar una solución."
+                }
+            ]
+        },
+        {
+            "perfil": "spam",
+            "entrada": {
+                "autor": "Ruido Prueba",
+                "canal": "#general",
+                "tipo": "comentario",
+                "idioma": "es",
+                "fecha": "2026-10-11T12:00:00Z",
+                "texto": "compra ahora compra ahora compra ahora compra ahora compra ahora compra ahora"
+            },
+            "analisis_simulado": null,
+            "activos_simulados": {},
+            "motivo_exclusion": "texto_repetitivo",
+            "criterios_revision": [
+                "Excluir antes de análisis y generación.",
+                "Conservar el ID y el motivo en el informe de Datos.",
+                "Ausencia de activos es el resultado correcto, no una transformación incompleta."
+            ],
+            "variantes_para_auditor": [
+                {
+                    "id": "spam_convertido_en_logro",
+                    "salida": "La comunidad consiguió empleo gracias a una oferta exclusiva.",
+                    "decision_humana_esperada": "revisar",
+                    "motivo": "No debía existir activo para este mensaje excluido."
+                }
+            ]
+        }
+    ]
 }

@@ -1,8 +1,6 @@
-<<<<<<< HEAD
 # 🚀 Proyecto CommunityLab – Motor Inteligente de Transformación y Distribución para Comunidades Digitales
-=======
-# CommunityLab (ง •̀_•́)ง
->>>>>>> dc4cb5c2880982782016dd49e11ac52393d90deb
+
+# CommunityLab
 
 Herramientas para convertir conversaciones de comunidades digitales en datos
 analizables y activos estructurados. El flujo combina validación y relevancia
@@ -108,30 +106,30 @@ communitylab/
 
 ## Estructura (ง'̀-'́)ง
 
-### ### 3.1. Área de Dirección y Gestión de Repositorio (Área PM)
-*   **Enrique Hernández Godoy (Project Manager - Líder General):** Dirección general del roadmap de 6 semanas, control del checklist del MVP, administración de la gobernanza y protección de ramas mediante Pull Requests y resolución de incidencias en la línea base.
+### 3.1. 💼 Área Project Management (PM) — Dirección y Gestión de Repositorio
+*   **Enrique Hernández Godoy (Project Manager):** Administración general del roadmap de 6 semanas, control del checklist del MVP, gobernanza del repositorio, protección de ramas mediante Pull Requests y resolución de incidencias en la línea base.
 
-### ### 3.2. Área de Arquitectura de Soluciones y Aseguramiento (Área SS)
-*   **Nelson Ramses Aviles (Solution Architect - Líder Técnico):** Modelado conceptual del pipeline completo (E2E), definición analítica de las estructuras fijas de intercambio de datos (Data Contracts) y validación arquitectónica del sistema distribuido.
+### 3.2. Área Sofware Solution (SS) — Arquitectura de Soluciones y Aseguramiento
+*   **Nelson Ramses Aviles (Solution Architect):** Modelado conceptual del pipeline completo (E2E), definición analítica de las estructuras fijas de intercambio de datos (Data Contracts) y validación arquitectónica del sistema distribuido.
 *   **Eduardo Salvador Martínez Hernández (QA Tester):** Configuración de la suite de pruebas automatizadas, ejecución de validaciones sintácticas bajo `pytest`, control de calidad y auditoría de documentos Markdown.
 
-### ### 3.3. Área de Cerebro de Inteligencia Artificial (Área DS)
-*   **Arnold Bustinza (Data Scientist - Líder Técnico):** Diseño técnico de los flujos condicionales de control y orquestación del estado global de memoria (`AgentState`) en el entorno unificado de LangGraph.
+### 3.3. 🧠 Área Data Science (DS) — Cerebro de Inteligencia ArtificiaL
+*   **Arnold Bustinza (Data Scientist):** Diseño técnico de los flujos condicionales de control y orquestación del estado global de memoria (`AgentState`) en el entorno unificado de LangGraph.
 *   **Alfrek Arthur Pinto García (Full Stack Developer):** Programación y acoplamiento de las llamadas a los modelos de lenguaje (LLM) y validación de compatibilidad con las salidas del sistema.
 *   **Alejandro Alberto Landa (Backend Developer):** Reubicado dinámicamente en esta célula para la asistencia en la integración lógica en Python de los nodos y limpieza de payloads sintácticos.
 *   **Danny de Jesús González Portillo (Data Scientist):** Ingeniería y calibración de las plantillas de prompts de entrenamiento corto (*Few-Shot Learning*) y verificación de consistencia en el procesamiento.
 
-### ### 3.4. Área de Ingesta y Procesamiento de Datos (Área DA)
-*   **Gustavo Vázquez Serey (Data Analyst - Líder Técnico):** Desarrollo de pipelines automatizados de transformación de texto crudo, control del manejador de errores de red y curaduría del set de datos simulados locales.
+### 3.4. 📊 Área Data Analysis (DA) — Ingesta y Procesamiento de Datos
+*   **Gustavo Vázquez Serey (Data Analyst):** Desarrollo de pipelines automatizados de transformación de texto crudo, control del manejador de errores de red y curaduría del set de datos simulados locales.
 *   **Jhonattan Gabriel Benavides Concha (Data Analyst):** Codificación matemática del algoritmo de puntuación de relevancia semántica, ingesta de lotes de payloads estructurados y control de cuotas de APIs.
 
-### ### 3.5. Área de Infraestructura y Despliegue Cloud (Área CE)
-*   **Renato Preda (Cloud Engineer - Líder Técnico):** Aprovisionamiento y administración de las políticas de seguridad del almacenamiento, control del Bucket OCI y validación de la autenticación cloud.
+### 3.5. ☁️ Área Cloud Engineering (CE) — Infraestructura y Despliegue Cloud
+*   **Renato Preda (Cloud Engineer):** Aprovisionamiento y administración de las políticas de seguridad del almacenamiento, control del Bucket OCI y validación de la autenticación cloud.
 *   **Marco Soto (Cloud Engineer):** Configuración del entorno de automatización del SDK oficial de Oracle (`oci`), dockerización completa del ecosistema y planeación de la VM Linux de OCI Compute.
 
 *\* (Nota Operativa Administrativa: Los perfiles de Sebastián Peralta y Edward Santiago continuaron inactivos durante las actividades operativas por falta de reporte técnico y comunicación con la Dirección de Proyecto).*
 
-La suite normal es offline y no necesita `GEMINI_API_KEY`.
+---
 
 ## 📋 4. Estado de Control e Hitos Cumplidos (Storytelling del MVP)
 
@@ -283,5 +281,3 @@ Para ejecutar de manera aislada todo el ecosistema SaaS y el pipeline de Ciencia
 
 3. **Verificar estado de puertos:**
    Abra su navegador web e ingrese a la dirección local predeterminada: `http://localhost:8501`. Asegúrese de abrir el puerto perimetral correspondientemente en las tablas de listas de seguridad de la red VCN de Oracle Cloud si está desplegando en producción.
-=======
->>>>>>> dc4cb5c2880982782016dd49e11ac52393d90deb

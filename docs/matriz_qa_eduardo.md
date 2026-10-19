@@ -14,7 +14,7 @@
 | 3 | Carga de archivo vacío | Funcional | ✅ Completada | `tests/test_archivo_vacio.py` + fixtures | 18/10/26 | 2 passed. Pipeline no rompe con `interacciones: []`; error claro si falta el campo |
 | 4 | Procesamiento con IA | Funcional | ✅ Completada | Capturas locales + E2E | 08/10 y 18/10/26 | Gemini forzado generó 19 activos de 23 mensajes |
 | 5 | Preservación de IDs | Integridad | ✅ Completada | Diagnóstico `resultados_por_id` | 17/10/26 | IDs de entrada coinciden con IDs de salida (23/23) |
-| 6 | Tiempo de respuesta | Rendimiento | ✅ Completada | `reports/latencia_semana51.json` | 18/10/26 | 282.98s total / 23 msgs = 12,303 ms/mensaje (Gemini) |
+| 6 | Tiempo de respuesta | Rendimiento | ✅ Completada | `reports/latencia_semana51.json` | 18/10/26 | 2 corridas: 282.98s y 391.79s. Ver detalle en QA-2 |
 | 7 | Manejo de errores de IA | Funcional | ✅ Completada | `tests/test_fallback_*.py` + incidente NVIDIA 410 | 17-18/10/26 | Fallback NVIDIA→Gemini probado en producción local |
 | 8 | Seguridad de API Key | Seguridad | ✅ Completada | `.gitignore` activo (`.env`, `.env.*`, `*.pem`, `*.key`) | 08/10/26 | `.env` no subido al repositorio |
 | 9 | Validación del contrato JSON | Integridad | ✅ Completada | `tests/test_contratos_arquitectura.py` (verde) | 18/10/26 | Contrato de 7 campos validado por suite automatizada |

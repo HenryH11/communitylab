@@ -109,7 +109,7 @@ communitylab/
 ### 3.1. 💼 Área Project Management (PM) — Dirección y Gestión de Repositorio
 *   **Enrique Hernández Godoy (Project Manager):** Administración general del roadmap de 6 semanas, control del checklist del MVP, gobernanza del repositorio, protección de ramas mediante Pull Requests y resolución de incidencias en la línea base.
 
-### 3.2. Área Sofware Solution (SS) — Arquitectura de Soluciones y Aseguramiento
+### 3.2. 📐 Área Sofware Solution (SS) — Arquitectura de Soluciones y Aseguramiento
 *   **Nelson Ramses Aviles (Solution Architect):** Modelado conceptual del pipeline completo (E2E), definición analítica de las estructuras fijas de intercambio de datos (Data Contracts) y validación arquitectónica del sistema distribuido.
 *   **Eduardo Salvador Martínez Hernández (QA Tester):** Configuración de la suite de pruebas automatizadas, ejecución de validaciones sintácticas bajo `pytest`, control de calidad y auditoría de documentos Markdown.
 
@@ -261,23 +261,3 @@ OCI_FINGERPRINT=aa:bb:cc:dd:ee:ff:11:22...        # Huella digital vinculada a l
 OCI_KEY_FILE_PATH=./.oci/oci_api_key.pem         # Ruta local hacia el archivo físico de llave privada de firma
 OCI_BUCKET_NAME=communitylab-activos-marketing    # Nombre exacto del bucket aprovisionado en Object Storage
 ```
-
----
-
-## 🐳 7. Despliegue Automatizado Mediante Contenedores (Docker)
-
-Para ejecutar de manera aislada todo el ecosistema SaaS y el pipeline de Ciencia de Datos en un servidor local o instancia de OCI Compute, ejecute la siguiente secuencia en su terminal:
-
-1. **Poblar las variables reales:**
-   ```bash
-   cp .env.example .env
-   nano .env # Proceda a rellenar las llaves OCI y tokens de IA requeridos
-   ```
-
-2. **Lanzar la construcción y ejecución en segundo plano:**
-   ```bash
-   docker-compose up --build -d
-   ```
-
-3. **Verificar estado de puertos:**
-   Abra su navegador web e ingrese a la dirección local predeterminada: `http://localhost:8501`. Asegúrese de abrir el puerto perimetral correspondientemente en las tablas de listas de seguridad de la red VCN de Oracle Cloud si está desplegando en producción.

@@ -1,0 +1,308 @@
+{
+    "fecha": "2026-10-18",
+    "rama": "feature/streamlit-agente-vivo-semana5.1",
+    "dataset": "src/datos/mensajes_comunidad_simulados.json",
+    "estructura_dataset": "dict -> lotes (4 lotes)",
+    "total_mensajes_dataset": 23,
+    "total_mensajes_procesados": 23,
+    "tiempo_total_seg": 391.79,
+    "promedio_ms": 17034.4,
+    "mediana_ms": null,
+    "minimo_ms": null,
+    "maximo_ms": null,
+    "por_mensaje": [
+        {
+            "id": "int-001",
+            "tiempo_ms": null,
+            "rutas": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "activos": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-002",
+            "tiempo_ms": null,
+            "rutas": [
+                "preguntas_frecuentes"
+            ],
+            "activos": [
+                "preguntas_frecuentes"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-003",
+            "tiempo_ms": null,
+            "rutas": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "activos": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-004",
+            "tiempo_ms": null,
+            "rutas": [
+                "preguntas_frecuentes"
+            ],
+            "activos": [
+                "preguntas_frecuentes"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-005",
+            "tiempo_ms": null,
+            "rutas": [],
+            "activos": [],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-006",
+            "tiempo_ms": null,
+            "rutas": [
+                "insight_mejora"
+            ],
+            "activos": [
+                "insight_mejora"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-007",
+            "tiempo_ms": null,
+            "rutas": [
+                "preguntas_frecuentes"
+            ],
+            "activos": [
+                "preguntas_frecuentes"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-008",
+            "tiempo_ms": null,
+            "rutas": [],
+            "activos": [],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-022",
+            "tiempo_ms": null,
+            "rutas": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "activos": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-023",
+            "tiempo_ms": null,
+            "rutas": [
+                "preguntas_frecuentes"
+            ],
+            "activos": [
+                "preguntas_frecuentes"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-009",
+            "tiempo_ms": null,
+            "rutas": [],
+            "activos": [],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-010",
+            "tiempo_ms": null,
+            "rutas": [
+                "preguntas_frecuentes"
+            ],
+            "activos": [
+                "preguntas_frecuentes"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-011",
+            "tiempo_ms": null,
+            "rutas": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "activos": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-012",
+            "tiempo_ms": null,
+            "rutas": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "activos": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-013",
+            "tiempo_ms": null,
+            "rutas": [
+                "preguntas_frecuentes"
+            ],
+            "activos": [
+                "preguntas_frecuentes"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-014",
+            "tiempo_ms": null,
+            "rutas": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "activos": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-015",
+            "tiempo_ms": null,
+            "rutas": [
+                "preguntas_frecuentes"
+            ],
+            "activos": [
+                "preguntas_frecuentes"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-016",
+            "tiempo_ms": null,
+            "rutas": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "activos": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-017",
+            "tiempo_ms": null,
+            "rutas": [
+                "preguntas_frecuentes"
+            ],
+            "activos": [
+                "preguntas_frecuentes"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-018",
+            "tiempo_ms": null,
+            "rutas": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "activos": [
+                "caso_exito",
+                "boletin",
+                "linkedin"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-019",
+            "tiempo_ms": null,
+            "rutas": [],
+            "activos": [],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-020",
+            "tiempo_ms": null,
+            "rutas": [
+                "insight_mejora"
+            ],
+            "activos": [
+                "insight_mejora"
+            ],
+            "errores": [],
+            "fallos": []
+        },
+        {
+            "id": "int-021",
+            "tiempo_ms": null,
+            "rutas": [
+                "preguntas_frecuentes"
+            ],
+            "activos": [
+                "preguntas_frecuentes"
+            ],
+            "errores": [],
+            "fallos": []
+        }
+    ],
+    "nota": "El pipeline no expone tiempo_ms por ID. Se registra el promedio calculado como tiempo_total / cantidad de mensajes procesados. Para medir por mensaje real, DS debe agregar el campo tiempo_ms al resultado."
+}

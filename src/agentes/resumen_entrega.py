@@ -55,8 +55,13 @@ def construir_resumen_comunidad(
     sentimientos = Counter(
         resultado["sentimiento"]
         for resultado in resultados
-        if isinstance(resultado.get("sentimiento"), str)
+        if resultado.get("es_spam_detectado") is not True
+        and isinstance(resultado.get("sentimiento"), str)
         and resultado["sentimiento"].strip()
+    )
+    total_spam_detectado = sum(
+        resultado.get("es_spam_detectado") is True
+        for resultado in resultados
     )
     temas = Counter(
         resultado["tema_principal"]
@@ -112,4 +117,5 @@ def construir_resumen_comunidad(
         "temas_principales": _obtener_temas_principales(temas),
         "distribucion_temas": _ordenar_distribucion(temas),
         "distribucion_tipos_detectados": _ordenar_distribucion(tipos_detectados),
+        "total_spam_detectado": total_spam_detectado,
     }

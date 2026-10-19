@@ -202,3 +202,78 @@ def test_tipo_no_reconocido_no_genera_rutas():
     resultado = determinar_rutas(estado)
 
     assert resultado["rutas"] == []
+
+
+def test_spam_bloquea_todas_las_rutas():
+    escenarios = [
+        {
+            "tipo_detectado": "testimonio",
+            "sentimiento": "muy_positivo",
+            "score_relevancia": 95,
+            "elegible_contenido": True,
+            "elegible_faq": False,
+        },
+        {
+            "tipo_detectado": "pregunta_tecnica",
+            "sentimiento": "neutral",
+            "score_relevancia": 85,
+            "elegible_contenido": True,
+            "elegible_faq": False,
+        },
+        {
+            "tipo_detectado": "pregunta_programa",
+            "sentimiento": "neutral",
+            "score_relevancia": 80,
+            "elegible_contenido": True,
+            "elegible_faq": True,
+        },
+    ]
+
+    for escenario in escenarios:
+        estado = {
+            **escenario,
+            "es_spam_detectado": True,
+            "motivo_spam": "Promoción no solicitada",
+        }
+
+        resultado = determinar_rutas(estado)
+
+        assert resultado["rutas"] == []
+        assert estado["score_relevancia"] == escenario["score_relevancia"]
+        assert estado["elegible_contenido"] == escenario["elegible_contenido"]
+        assert estado["elegible_faq"] == escenario["elegible_faq"]
+
+
+def test_spam_no_genera_activos_en_langgraph():
+    from src.agentes.grafo import (
+        comprobar_rutas,
+        grafo_desde_analisis,
+    )
+
+    estado = {
+        "id": "spam-grafo-001",
+        "texto": "Gana dinero rápido. Escríbeme por privado.",
+        "tipo_original": "comentario",
+        "tipo_detectado": "testimonio",
+        "sentimiento": "muy_positivo",
+        "es_spam_detectado": True,
+        "motivo_spam": "Captación mediante oferta dudosa",
+        "score_relevancia": 95,
+        "elegible_contenido": True,
+        "elegible_faq": True,
+        "rutas": [],
+        "activos_generados": {},
+        "errores": [],
+        "fallos": [],
+    }
+
+    resultado = grafo_desde_analisis.invoke(estado)
+
+    assert resultado["rutas"] == []
+    assert resultado["activos_generados"] == {}
+    assert comprobar_rutas(resultado) == "finalizar"
+
+    # Las decisiones originales de Data permanecen intactas.
+    assert resultado["score_relevancia"] == 95
+    assert resultado["elegible_contenido"] is True
+    assert resultado["elegible_faq"] is True

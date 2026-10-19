@@ -99,6 +99,8 @@ def salida_ds():
                 "tema_principal": "empleabilidad",
                 "subtema": "primer trabajo",
                 "tipo_detectado": "testimonio",
+                "es_spam_detectado": False,
+                "motivo_spam": None,
                 "rutas": [
                     "caso_exito",
                     "boletin",

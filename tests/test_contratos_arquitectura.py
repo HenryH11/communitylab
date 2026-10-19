@@ -77,7 +77,7 @@ def test_salida_real_con_error_y_sin_analisis():
 
 def test_salida_real_con_activo(paquete):
     estado = deepcopy(paquete["estados"][0])
-    estado.update(sentimiento="positivo", tema_principal="comunidad", subtema="colaboracion", tipo_detectado="testimonio", rutas=["linkedin"], activos_generados={"linkedin": {"titulo": "Colaboración", "contenido": "Texto de prueba", "hashtags": ["#ONE", "#Alura", "#Comunidad"]}}, errores=[])
+    estado.update(sentimiento="positivo", tema_principal="comunidad", subtema="colaboracion", tipo_detectado="testimonio", es_spam_detectado=False, motivo_spam=None, rutas=["linkedin"], activos_generados={"linkedin": {"titulo": "Colaboración", "contenido": "Texto de prueba", "hashtags": ["#ONE", "#Alura", "#Comunidad"]}}, errores=[])
     entrega = salida_real([estado])
     validador("salida").validate(entrega)
     assert entrega["resumen_comunidad"]["total_activos_generados"] == 1
@@ -88,6 +88,7 @@ def test_salida_real_con_activo(paquete):
 
 def test_salida_13_y_campos_obligatorios():
     entrega = salida_real()
+    entrega["resumen_comunidad"].pop("total_spam_detectado", None)
     entrega.update(version_contrato="1.3", id_ejecucion=None, ids_reintentables=[])
     entrega["resumen_comunidad"]["total_fallos_reintentables"] = 0
     validador("salida").validate(entrega)
@@ -103,6 +104,7 @@ def test_salida_13_y_campos_obligatorios():
 
 def test_salida_12_compatible_sin_campos_de_13():
     entrega = salida_real()
+    entrega["resumen_comunidad"].pop("total_spam_detectado", None)
     entrega["version_contrato"] = "1.2"
     entrega.pop("id_ejecucion", None)
     entrega.pop("ids_reintentables", None)
@@ -124,3 +126,34 @@ def test_salida_rechaza_estructura_rota(campo, valor):
     entrega[campo] = valor
     with pytest.raises(ValidationError):
         validador("salida").validate(entrega)
+
+
+def test_salida_14_incluye_deteccion_spam():
+    estado = {
+        "id": "spam-001",
+        "sentimiento": "neutral",
+        "tema_principal": "otros",
+        "subtema": "Oferta sospechosa",
+        "tipo_detectado": "comentario",
+        "es_spam_detectado": True,
+        "motivo_spam": "Captación mediante oferta dudosa",
+        "elegible_faq": False,
+        "rutas": [],
+        "activos_generados": {},
+        "errores": [],
+        "fallos": [],
+    }
+
+    entrega = salida_real([estado])
+
+    assert entrega["version_contrato"] == "1.4"
+    assert entrega["resumen_comunidad"]["total_spam_detectado"] == 1
+
+    interaccion = entrega["interacciones"][0]
+
+    assert interaccion["es_spam_detectado"] is True
+    assert interaccion["motivo_spam"] == (
+        "Captación mediante oferta dudosa"
+    )
+
+    validador("salida").validate(entrega)

@@ -53,6 +53,8 @@ def test_analisis_nvidia_falla_y_gemini_respalda(
         tema_principal="datos_ia",
         subtema="conexion de nodos",
         tipo_detectado="pregunta_tecnica",
+        es_spam_detectado=False,
+        motivo_spam=None,
     )
 
     def obtener_cadena(proveedor):
@@ -104,6 +106,8 @@ def test_analisis_nvidia_salida_invalida_y_gemini_respalda(
         tema_principal="datos_ia",
         subtema="conexion de nodos",
         tipo_detectado="pregunta_tecnica",
+        es_spam_detectado=False,
+        motivo_spam=None,
     )
 
     def obtener_cadena(proveedor):
@@ -217,6 +221,8 @@ def test_retry_interno_nvidia_conserva_id_analisis(
         tema_principal="datos_ia",
         subtema="conexion de nodos",
         tipo_detectado="pregunta_tecnica",
+        es_spam_detectado=False,
+        motivo_spam=None,
     )
 
     def obtener_cadena(proveedor):
@@ -297,6 +303,8 @@ def test_analisis_nvidia_error_400_degraded_activa_fallback_gemini(
         tema_principal="datos_ia",
         subtema="fallback degradado",
         tipo_detectado="pregunta_tecnica",
+        es_spam_detectado=False,
+        motivo_spam=None,
     )
 
     def obtener_cadena(proveedor):
@@ -354,6 +362,8 @@ def test_analisis_nvidia_error_410_activa_fallback_gemini(
         tema_principal="datos_ia",
         subtema="fallback modelo retirado",
         tipo_detectado="pregunta_tecnica",
+        es_spam_detectado=False,
+        motivo_spam=None,
     )
 
     def obtener_cadena(proveedor):

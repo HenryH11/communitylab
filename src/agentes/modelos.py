@@ -2,7 +2,7 @@ import re
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 Sentimiento = Literal[
@@ -59,6 +59,42 @@ class AnalisisMensaje(BaseModel):
     tipo_detectado: TipoInteraccion = Field(
         description="Clasificación semántica realizada por la IA."
     )
+
+    es_spam_detectado: bool = Field(
+        strict=True,
+        description=(
+            "Indica si existe intención semántica de spam, "
+            "promoción no solicitada, captación o engaño."
+        ),
+    )
+
+    motivo_spam: str | None = Field(
+        max_length=160,
+        description=(
+            "Justificación breve de la detección de spam. "
+            "Debe ser None cuando no se detecta spam."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def validar_coherencia_spam(self):
+        if self.es_spam_detectado:
+            if (
+                self.motivo_spam is None
+                or not self.motivo_spam.strip()
+            ):
+                raise ValueError(
+                    "Spam detectado requiere un motivo válido."
+                )
+
+            self.motivo_spam = self.motivo_spam.strip()
+
+        elif self.motivo_spam is not None:
+            raise ValueError(
+                "Si no existe spam, motivo_spam debe ser None."
+            )
+
+        return self
 
 
 class AnalisisMensajeConId(AnalisisMensaje):

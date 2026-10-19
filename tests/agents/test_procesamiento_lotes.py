@@ -46,6 +46,8 @@ def crear_analisis(
         tema_principal="datos_ia",
         subtema="prueba por lotes",
         tipo_detectado=tipo,
+        es_spam_detectado=False,
+        motivo_spam=None,
     )
 
 
@@ -132,6 +134,8 @@ def test_analizar_lote_reintenta_individualmente_solo_ids_omitidos():
         tema_principal="aprendizaje",
         subtema="progreso del curso",
         tipo_detectado="testimonio",
+        es_spam_detectado=False,
+        motivo_spam=None,
     )
 
     with patch(
@@ -164,6 +168,8 @@ def test_analizar_lote_reintenta_solo_el_id_duplicado():
         tema_principal="comunidad",
         subtema="soporte recibido",
         tipo_detectado="comentario",
+        es_spam_detectado=False,
+        motivo_spam=None,
     )
 
     with patch(

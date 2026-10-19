@@ -40,6 +40,8 @@ CAMPOS_INTERACCION = (
     "tema_principal",
     "subtema",
     "tipo_detectado",
+    "es_spam_detectado",
+    "motivo_spam",
 )
 
 

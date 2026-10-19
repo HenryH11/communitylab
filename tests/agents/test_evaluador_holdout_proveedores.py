@@ -486,6 +486,8 @@ def test_corrida_individual_conserva_ambos_hashes(
                     "tema_principal": "programacion",
                     "subtema": "Consulta de Python",
                     "tipo_detectado": "pregunta_tecnica",
+                    "es_spam_detectado": False,
+                    "motivo_spam": None,
                 }]
             }
 

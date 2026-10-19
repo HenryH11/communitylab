@@ -14,6 +14,7 @@ MODELO = next(iter(nim.MODELOS_FREE_ENDPOINT))
 ANALISIS = {
     "sentimiento": "neutral", "tema_principal": "datos_ia",
     "subtema": "Python", "tipo_detectado": "pregunta_tecnica",
+    "es_spam_detectado": False, "motivo_spam": None,
 }
 
 

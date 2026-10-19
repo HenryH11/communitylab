@@ -16,6 +16,7 @@ def salida():
         "id": "int-demo", "autor": "María", "canal": "discord",
         "sentimiento": "positivo", "tema_principal": "aprendizaje",
         "subtema": "Python", "tipo_detectado": "testimonio",
+        "es_spam_detectado": False, "motivo_spam": None,
         "rutas": ["linkedin", "boletin"], "errores": [], "fallos": [],
         "activos_generados": {
             "linkedin": {

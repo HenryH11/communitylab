@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 # 🚀 Proyecto CommunityLab – Motor Inteligente de Transformación y Distribución para Comunidades Digitales
+=======
+# CommunityLab (ง •̀_•́)ง
+>>>>>>> dc4cb5c2880982782016dd49e11ac52393d90deb
 
-¡Bienvenidos a **CommunityLab**! Este proyecto es el Producto Mínimo Viable (MVP) desarrollado por el equipo **EnhanceIA Studio (EIAS - Equipo 39)** para la fase práctica de simulación laboral del programa **Oracle Next Education (ONE) G10 - LATAM**, en conjunto con la plataforma **No Country**.
+Herramientas para convertir conversaciones de comunidades digitales en datos
+analizables y activos estructurados. El flujo combina validación y relevancia
+determinista con análisis de lenguaje y enrutamiento por reglas.
 
 Nuestra solución opera como una línea de ensamblaje inteligente: ingiere conversaciones desestructuradas, debates y testimonios orgánicos de canales digitales (ruido), los limpia mediante algoritmos matemáticos de relevancia semántica, y los procesa mediante **Modelos de Lenguaje de Gran Escala (LLMs)** y grafos de decisión dirigidos en **LangGraph** para empaquetarlos automáticamente en activos de marketing de alto impacto (MarTech) y entradas dinámicas de FAQ. La persistencia de los reportes se ejecuta de forma nativa e integral en la capa gratuita Always Free de **Oracle Cloud Infrastructure (OCI) Object Storage**.
 
@@ -100,7 +106,7 @@ communitylab/
 
 ## 👥 3. Estructura General del Equipo (Reconfiguración Estratégica)
 
-La organización interna del equipo fue optimizada equilibradamente por la Dirección de Proyecto para blindar el desarrollo, agrupando a los líderes técnicos en frentes críticos de código Python y reubicando los perfiles de soporte para maximizar el avance del MVP.
+## Estructura (ง'̀-'́)ง
 
 ### ### 3.1. Área de Dirección y Gestión de Repositorio (Área PM)
 *   **Enrique Hernández Godoy (Project Manager - Líder General):** Dirección general del roadmap de 6 semanas, control del checklist del MVP, administración de la gobernanza y protección de ramas mediante Pull Requests y resolución de incidencias en la línea base.
@@ -125,7 +131,7 @@ La organización interna del equipo fue optimizada equilibradamente por la Direc
 
 *\* (Nota Operativa Administrativa: Los perfiles de Sebastián Peralta y Edward Santiago continuaron inactivos durante las actividades operativas por falta de reporte técnico y comunicación con la Dirección de Proyecto).*
 
----
+La suite normal es offline y no necesita `GEMINI_API_KEY`.
 
 ## 📋 4. Estado de Control e Hitos Cumplidos (Storytelling del MVP)
 
@@ -145,7 +151,7 @@ La organización interna del equipo fue optimizada equilibradamente por la Direc
 *   **Hito de Abstracción de Conectores Cloud:** Desarrollo adelantado del script modular `src/config/oci_client.py` por parte de la célula de nube. El conector lee las credenciales del sistema de forma segura mediante `os.getenv`, dejando lista la pasarela asíncrona para que los agentes guarden archivos JSON en OCI.
 *   **Hito de Cascarón de UI:** Inicialización limpia del Frontend interactivo en `src/app/app.py` utilizando componentes nativos de Streamlit. El entorno se encuentra aislado de inyecciones inestables de HTML/CSS, preparado para iniciar el sprint de interconexión con los nodos de IA.
 
----
+Para medir el análisis actual con Gemini, de forma explícita:
 
 ## 🔄 Semana 3 y 4 – Enrutamiento Condicional, Curaduría Human-in-the-Loop y Contenedores
 *   **Hito de Enrutamiento Dinámico (Semana 3):** Ensamblaje de la función enrutadora `routing_conditional_edge` en LangGraph para automatizar la bifurcación del flujo analítico hacia el nodo especializado correspondiente basándose en la intención sintáctica del payload de entrada.
@@ -206,15 +212,11 @@ Para ejecutar de manera aislada todo el ecosistema SaaS y el pipeline de Ciencia
 
 ## 🌀 5. Flujo de Trabajo Operativo para el Equipo (Gobernanza Git Flow)
 
-La rama `main` (Producción final) y la rama `develop` (Integración de código) están protegidas. Está estrictamente prohibido realizar commits directos sobre ellas. Todo miembro del equipo debe trabajar bajo las siguientes directrices terminales:
+El modo en vivo requiere `GEMINI_API_KEY` en un `.env` local y consume cuota.
+Los snapshots actuales son referencias históricas, no etiquetas validadas por
+anotadores independientes.
 
-### Paso 1: Clonar y actualizar el entorno local
-```bash
-git clone https://github.com
-cd communitylab
-git checkout develop
-git pull origin develop
-```
+## Documentación (•̀ᴗ•́)و
 
 ### Paso 2: Crear una rama de tarea (Feature Branch) desde develop
 ```bash
@@ -236,6 +238,7 @@ git push origin feature/nombre_subequipo_tarea
 
 ### Paso 4: Cierre y Fusión (Pull Request)
 El desarrollador abrirá el Pull Request en la interfaz web de GitHub apuntando exclusivamente hacia la rama `develop`. Ningún PR se fusionará sin la revisión cruzada de otra célula técnica y la confirmación de que las pruebas unitarias locales corren en verde.
+<<<<<<< HEAD
 
 ---
 
@@ -280,3 +283,5 @@ Para ejecutar de manera aislada todo el ecosistema SaaS y el pipeline de Ciencia
 
 3. **Verificar estado de puertos:**
    Abra su navegador web e ingrese a la dirección local predeterminada: `http://localhost:8501`. Asegúrese de abrir el puerto perimetral correspondientemente en las tablas de listas de seguridad de la red VCN de Oracle Cloud si está desplegando en producción.
+=======
+>>>>>>> dc4cb5c2880982782016dd49e11ac52393d90deb

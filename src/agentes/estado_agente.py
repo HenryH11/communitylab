@@ -1,4 +1,4 @@
-from typing import Literal, TypedDict
+from typing import Literal, Required, TypedDict
 
 
 Ruta = Literal[
@@ -14,12 +14,12 @@ class EstadoAgente(TypedDict, total=False):
     # -----------------------------
     # Datos de entrada
     # -----------------------------
-    id: str
+    id: Required[str]
     autor: str
     canal: str
     origen: str
     idioma: str
-    texto: str
+    texto: Required[str]
 
     # Clasificación proveniente de Datos
     tipo_original: str
@@ -41,6 +41,7 @@ class EstadoAgente(TypedDict, total=False):
     # Resultado de LangGraph
     # -----------------------------
     rutas: list[Ruta]
+    tier_modelo: str
 
     # Semana 2: contenido generado
     activos_generados: dict

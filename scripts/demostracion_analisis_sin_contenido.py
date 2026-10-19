@@ -123,7 +123,7 @@ def principal():
     if resultado.get("errores"):
         raise AssertionError(
             "El grafo terminó con errores: "
-            f"{resultado['errores']}"
+            f"{resultado.get('errores')}"
         )
 
     if not resultado.get("sentimiento"):

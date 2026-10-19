@@ -52,7 +52,8 @@ communitylab/
 │   ├── demostracion_nodo_analizador.py
 │   ├── evaluar_casos_ambiguos.py
 │   ├── evaluar_conjunto_datos.py
-│   └── inspeccionar_estado_agente.py
+│   ├── inspeccionar_estado_agente.py
+│   └── probar_oci_storage.py # Prueba manual: consulta el bucket y sube un JSON real.
 ├── src/                    # Código fuente principal del sistema.
 │   ├── agentes/            # Grafos, lógica analítica y prompts de LangGraph (Cerebro IA).
 │   │   ├── nodos/          # Nodos enrutadores y generadores de activos MarTech.
@@ -216,6 +217,10 @@ anotadores independientes.
 
 ## Documentación (•̀ᴗ•́)و
 
+Los [contratos JSON de arquitectura](docs/arquitectura-solucion/README.md) definen
+la entrada pública, los lotes de ingesta DA → DS y la salida operativa DS 1.2/1.3,
+con soporte para `pregunta_programa` y validación reproducible sin llamadas a IA.
+
 ### Paso 2: Crear una rama de tarea (Feature Branch) desde develop
 ```bash
 git checkout -b feature/nombre_subequipo_tarea
@@ -236,9 +241,6 @@ git push origin feature/nombre_subequipo_tarea
 
 ### Paso 4: Cierre y Fusión (Pull Request)
 El desarrollador abrirá el Pull Request en la interfaz web de GitHub apuntando exclusivamente hacia la rama `develop`. Ningún PR se fusionará sin la revisión cruzada de otra célula técnica y la confirmación de que las pruebas unitarias locales corren en verde.
-<<<<<<< HEAD
-
----
 
 ## 🔐 6. Guía Maestra de Configuración y Variables de Entorno
 

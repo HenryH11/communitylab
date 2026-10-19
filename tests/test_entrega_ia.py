@@ -123,7 +123,7 @@ class EntregaTests(unittest.TestCase):
         datos = json.loads((RAIZ / "src/datos/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
         paquete = preparar_paquete_ia(datos, fecha_referencia=FECHA)
         self.assertEqual(len(paquete["estados"]), 23)
-        self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 14)
+        self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 19)
         informe = paquete["informe"]
         self.assertEqual(informe["version_criterio"], "1.0-propuesta")
         self.assertEqual(
@@ -137,12 +137,10 @@ class EntregaTests(unittest.TestCase):
         self.assertEqual(
             informe["modelo_ia"],
             {
-                "proveedor": "Google Gemini",
-                "identificador_modelo": "gemini-3.5-flash-lite",
-                "max_retries": 6,
-                "solicitudes_por_segundo": 0.2,
-                "intervalo_revision_limitador_segundos": 0.1,
-                "tamano_maximo_limitador": 1,
+                "proveedor": "NVIDIA NIM",
+                "identificador_modelo": "nvidia/nemotron-3.5-lightning-30b-a3b",
+                "base_url": "https://integrate.api.nvidia.com/v1",
+                "max_retries": 0,
             },
         )
         huellas_prompts = informe["prompts_ia"]
@@ -197,7 +195,7 @@ class EntregaTests(unittest.TestCase):
     def test_plan_rechaza_ids_y_tamanos_invalidos(self):
         for tamano in (9, 31, True, "20", 0):
             with self.assertRaises(ValueError):
-                construir_plan_procesamiento([], tamano)
+                construir_plan_procesamiento([], tamano)  # pyright: ignore[reportArgumentType]
         for estados in ([{}], [{"id": " x "}], [{"id": "x"}, {"id": "x"}]):
             with self.assertRaises(ValueError):
                 construir_plan_procesamiento(estados)

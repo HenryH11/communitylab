@@ -177,7 +177,7 @@ def guardar_ciclos(directorio_ciclos: Path | str, ciclos: list[dict]) -> Path:
     directorio_ciclos.mkdir(parents=True, exist_ok=True)
     for ciclo in ciclos:
         ruta = directorio_ciclos / ciclo["archivo"]
-        ruta.write_text(json.dumps(ciclo["contenido"], ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        ruta.write_text(json.dumps(ciclo["contenido"], ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
     ruta_manifiesto = directorio_ciclos / "manifiesto.json"
     manifiesto_data = {
         "ciclos": [
@@ -190,7 +190,7 @@ def guardar_ciclos(directorio_ciclos: Path | str, ciclos: list[dict]) -> Path:
             for c in ciclos
         ]
     }
-    ruta_manifiesto.write_text(json.dumps(manifiesto_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    ruta_manifiesto.write_text(json.dumps(manifiesto_data, ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
     for anterior in anteriores - nuevos:
         anterior.unlink(missing_ok=True)
     return ruta_manifiesto

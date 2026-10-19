@@ -8,7 +8,12 @@ from unittest.mock import patch
 
 import pytest
 
-from src.app.curaduria_oci import contexto_curaduria, guardar_curaduria
+from src.app.curaduria_oci import (
+    contexto_curaduria,
+    guardar_curaduria,
+    reparar_activo_curado,
+    validar_activo_curado,
+)
 
 
 def salida():
@@ -151,3 +156,48 @@ def test_ui_hashtags_invalidos_no_se_aprueban():
     aprobar(app)
     assert app.button(key="guardar_aprobados_oci").disabled
     assert len(app.error) == 1
+
+
+def test_rechaza_mojibake_en_texto_y_listas_antes_de_guardar():
+    activo_con_mojibake = {
+        "titulo": "Nuestra comunidad en acciÃ³n",
+        "contenido": "Primer párrafo del testimonio\nSegundo párrafo",
+        "hashtags": [
+            "#Comunidad",
+            "#ColaboraciÃ³n",
+            "#Aprendizaje",
+            "#ConexiÃ³n",
+        ],
+    }
+    with pytest.raises(ValueError, match="caracteres mal codificados"):
+        validar_activo_curado("linkedin", activo_con_mojibake)
+
+
+def test_reparar_activo_curado_corrige_mojibake_y_conserva_saltos_de_linea():
+    activo_sucio = {
+        "titulo": "Historias de participaciÃ³n y crecimiento compartido",
+        "contenido": "Primera lÃ­nea del relato\nSegunda lÃ­nea del relato",
+        "hashtags": [
+            "#Comunidad",
+            "#ParticipaciÃ³n",
+            "#ConexiÃ³n",
+            "#Aprendizaje",
+        ],
+    }
+    activo_limpio = reparar_activo_curado(activo_sucio)
+
+    assert (
+        activo_limpio["titulo"]
+        == "Historias de participación y crecimiento compartido"
+    )
+    assert (
+        activo_limpio["contenido"]
+        == "Primera línea del relato\nSegunda línea del relato"
+    )
+    assert activo_limpio["hashtags"] == [
+        "#Comunidad",
+        "#Participación",
+        "#Conexión",
+        "#Aprendizaje",
+    ]
+    validar_activo_curado("linkedin", activo_limpio)

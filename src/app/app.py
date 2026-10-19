@@ -256,11 +256,12 @@ if "resultado" in st.session_state:
                         if st.button(f"✅ Aprobar", key=f"btn_{key_activo}"):
                             try:
                                 validar_activo_curado(tipo, activo_editado)
-                            except (ValueError, TypeError):
+                            except ValueError as error_validacion:
+                                st.error(f"❌ {error_validacion}")
+                            except TypeError:
                                 st.error(
-                                    "Revisa los campos del activo antes de "
-                                    "aprobar: textos completos y hashtags "
-                                    "válidos (3 a 4, con #)."
+                                    "❌ Revisa los campos del activo antes de "
+                                    "aprobar: El formato no es válido."
                                 )
                             else:
                                 st.session_state[key_activo] = deepcopy(activo_editado)

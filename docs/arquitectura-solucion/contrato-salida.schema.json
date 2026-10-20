@@ -1,0 +1,421 @@
+{
+  "type": "object",
+  "properties": {
+    "version_contrato": {
+      "enum": [
+        "1.2",
+        "1.3"
+      ]
+    },
+    "resumen_comunidad": {
+      "$ref": "#/$defs/resumen"
+    },
+    "interacciones": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/interaccion"
+      }
+    },
+    "activos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id_interaccion": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\S(?:.*\\S)?$"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "contenido": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id_interaccion",
+          "tipo",
+          "contenido"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "fallos": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fallo"
+      }
+    },
+    "pendientes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Estado pendiente preservado por DS, sin análisis inventado."
+      }
+    },
+    "ids_pendientes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^\\S(?:.*\\S)?$"
+      },
+      "uniqueItems": true
+    },
+    "id_ejecucion": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ids_reintentables": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^\\S(?:.*\\S)?$"
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "version_contrato",
+    "resumen_comunidad",
+    "interacciones",
+    "activos",
+    "fallos",
+    "pendientes",
+    "ids_pendientes"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://communitylab.one-g10/schemas/contrato-salida.json",
+  "title": "CommunityLab — Entrega operativa de DS a UI y persistencia",
+  "description": "Salida de preparar_entrega_resultados: 1.3 en develop y compatibilidad histórica con 1.2. No representa el envoltorio final de publicación del brief. Permite resultados vacíos, errores y pendientes.",
+  "$defs": {
+    "resumen": {
+      "type": "object",
+      "properties": {
+        "total_interacciones_procesadas": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_pendientes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_elegibles_contenido": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_elegibles_faq": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_con_activos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_activos_generados": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_con_errores": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_fallos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fallos_por_etapa": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "sentimiento_predominante": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sentimientos_predominantes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "distribucion_sentimientos": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "temas_principales": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tema": {
+                "type": "string"
+              },
+              "cantidad": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "tema",
+              "cantidad"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "distribucion_temas": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "distribucion_tipos_detectados": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "total_fallos_reintentables": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "total_interacciones_procesadas",
+        "total_pendientes",
+        "total_elegibles_contenido",
+        "total_elegibles_faq",
+        "total_con_activos",
+        "total_activos_generados",
+        "total_con_errores",
+        "total_fallos",
+        "fallos_por_etapa",
+        "sentimiento_predominante",
+        "sentimientos_predominantes",
+        "distribucion_sentimientos",
+        "temas_principales",
+        "distribucion_temas",
+        "distribucion_tipos_detectados"
+      ],
+      "additionalProperties": false
+    },
+    "interaccion": {
+      "type": "object",
+      "properties": {
+        "autor": {
+          "type": "string"
+        },
+        "canal": {
+          "type": "string"
+        },
+        "origen": {
+          "type": "string"
+        },
+        "idioma": {
+          "type": "string"
+        },
+        "texto": {
+          "type": "string"
+        },
+        "sentimiento": {
+          "type": "string"
+        },
+        "tema_principal": {
+          "type": "string"
+        },
+        "subtema": {
+          "type": "string"
+        },
+        "tipo_detectado": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$"
+        },
+        "tipo_original": {
+          "enum": [
+            "testimonio",
+            "pregunta_tecnica",
+            "pregunta_programa",
+            "comentario",
+            "feedback"
+          ]
+        },
+        "score_relevancia": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "elegible_contenido": {
+          "type": "boolean"
+        },
+        "elegible_faq": {
+          "type": "boolean"
+        },
+        "rutas": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "preguntas_frecuentes",
+              "caso_exito",
+              "linkedin",
+              "boletin",
+              "insight_mejora"
+            ]
+          }
+        },
+        "activos_generados": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "errores": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fallos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fallo"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "elegible_faq",
+        "rutas",
+        "activos_generados",
+        "errores",
+        "fallos"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "errores": {
+                "maxItems": 0
+              }
+            },
+            "required": [
+              "errores"
+            ]
+          },
+          "then": {
+            "required": [
+              "sentimiento",
+              "tema_principal",
+              "subtema",
+              "tipo_detectado"
+            ],
+            "properties": {
+              "sentimiento": {
+                "type": "string",
+                "pattern": "\\S"
+              },
+              "tema_principal": {
+                "type": "string",
+                "pattern": "\\S"
+              },
+              "subtema": {
+                "type": "string",
+                "pattern": "\\S"
+              },
+              "tipo_detectado": {
+                "type": "string",
+                "pattern": "\\S"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "fallo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$"
+        },
+        "etapa": {
+          "type": "string"
+        },
+        "tipo_error": {
+          "type": "string"
+        },
+        "mensaje": {
+          "type": "string"
+        },
+        "reintentable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "etapa",
+        "tipo_error",
+        "mensaje"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "version_contrato": {
+            "const": "1.3"
+          }
+        },
+        "required": [
+          "version_contrato"
+        ]
+      },
+      "then": {
+        "required": [
+          "id_ejecucion",
+          "ids_reintentables"
+        ],
+        "properties": {
+          "resumen_comunidad": {
+            "required": [
+              "total_fallos_reintentables"
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "id_ejecucion": false,
+          "ids_reintentables": false,
+          "resumen_comunidad": {
+            "properties": {
+              "total_fallos_reintentables": false
+            }
+          }
+        }
+      }
+    }
+  ]
+}

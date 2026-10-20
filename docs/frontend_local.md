@@ -2,8 +2,9 @@
 
 Rama: `feature/frontend-streamlit-local`. Base consultada el 2026-10-14:
 `origin/develop`, commit `8cedef21f574ee7584c86e87052fcea255377f9d`.
-El checkout de DA en `communitylab` conserva su rama
-`feature/jhonattan-auditoria-semana4`. No se han copiado sus commits exclusivos.
+El frontend se trabaja en el checkout `communitylab_frontend`, separado del
+checkout de Datos en `communitylab`. No se han copiado commits exclusivos de
+las ramas de auditoría.
 
 ## Referencia visual
 
@@ -47,6 +48,48 @@ están en `../.runtime_frontend/server.pid` y `server.port`. Sus logs están en
 `design.stdout.log` y `design.stderr.log` dentro del mismo directorio.
 Para detenerlo, comprueba primero que ese PID sigue correspondiendo a este
 servidor y usa `Stop-Process -Id <PID>`. El cierre de Windows detiene la app.
+
+## Aplicación anterior para uso interno
+
+`src/app/ingesta_app.py` recupera sin modificar el código de la antigua
+`src/app/app.py` del commit `bfee004` (2026-10-08). La versión anterior queda
+disponible con otro nombre; el frontend de Excalidraw continúa en `src/app/app.py`.
+
+| Archivo | Uso | Arranque |
+| --- | --- | --- |
+| `src/app/app.py` | Frontend de Excalidraw y entrada del despliegue | `streamlit run src/app/app.py` |
+| `src/app/ingesta_app.py` | Herramienta interna recuperada | `streamlit run src/app/ingesta_app.py --server.address=127.0.0.1 --server.port=8502` |
+
+El Dockerfile conserva `src/app/app.py` como único comando de arranque. La
+aplicación interna no se inicia ni se publica como otra página del frontend;
+se ejecuta de forma independiente. El puerto 8502 permite usar ambas a la vez.
+
+La aplicación anterior carga JSON, prepara el paquete de datos, ofrece el
+procesamiento explícito con IA y presenta métricas, gráficas y resultados.
+Requiere las dependencias completas de `requirements.txt`; el entorno ligero
+del frontend no incluye LangGraph ni los SDK de los proveedores. Para no cambiar
+ese entorno, puede instalarse en uno separado, fuera del repositorio:
+
+```powershell
+python -m venv ../.runtime_ingesta
+../.runtime_ingesta/Scripts/python.exe -m pip install -r requirements.txt
+../.runtime_ingesta/Scripts/python.exe -m streamlit run src/app/ingesta_app.py --server.address=127.0.0.1 --server.port=8502 --server.headless=true --browser.gatherUsageStats=false
+```
+
+La instalación y las llamadas reales de IA no forman parte de la recuperación.
+El botón de procesamiento requiere configurar el proveedor y sus credenciales.
+Su etiqueta histórica menciona Gemini, pero el proveedor efectivo depende de
+la configuración del pipeline. Se conserva también la fecha de referencia fija
+`2026-09-17T12:00:00Z` del original; debe revisarse antes de analizar otros periodos.
+Esta recuperación no añade un flujo de aprobación o curaduría manual completo
+ni conecta la IA con el frontend de Excalidraw.
+
+La recuperación se verificó comparando el archivo con el original de Git y
+comprobando su sintaxis. Pasaron diez pruebas de configuración Docker, tolerancia
+e inicialización del frontend. Se comprobó además el arranque de ingesta con
+AppTest, sustituyendo los módulos de IA por dobles y bloqueando conexiones
+externas: aparece la carga de JSON y el arranque no ejecuta el pipeline.
+Esta comprobación aislada no valida llamadas reales a los proveedores.
 
 ## Recorrido comprobable
 

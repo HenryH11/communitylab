@@ -186,3 +186,12 @@ git push origin feature/nombre_subequipo_tarea
 
 ### Paso 4: Cierre y Fusión (Pull Request)
 El desarrollador abrirá el Pull Request en la interfaz web de GitHub apuntando exclusivamente hacia la rama `develop`. Ningún PR se fusionará sin la revisión cruzada de otra célula técnica y la confirmación de que las pruebas unitarias locales corren en verde.
+
+## Aplicaciones de Streamlit
+
+El frontend de Excalidraw se ejecuta con `streamlit run src/app/app.py` y conserva
+el punto de entrada del Dockerfile. La aplicación anterior está recuperada en
+`src/app/ingesta_app.py` para uso interno independiente; puede iniciarse en el
+puerto 8502 y requiere las dependencias completas de `requirements.txt`.
+Los comandos, dependencias y límites de ambas interfaces se describen en la
+[guía del frontend](docs/frontend_local.md#aplicación-anterior-para-uso-interno).

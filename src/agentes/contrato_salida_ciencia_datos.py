@@ -12,7 +12,7 @@ from typing import Required, TypedDict
 from src.agentes.estado_agente import Ruta
 
 
-VERSION_CONTRATO_SALIDA_DS = "1.3"
+VERSION_CONTRATO_SALIDA_DS = "1.4"
 
 
 class TemaPrincipalResumen(TypedDict):
@@ -30,6 +30,7 @@ class ResumenComunidad(TypedDict):
     total_con_errores: int
     total_fallos: int
     total_fallos_reintentables: int
+    total_spam_detectado: int
     fallos_por_etapa: dict[str, int]
     sentimiento_predominante: str | None
     sentimientos_predominantes: list[str]
@@ -59,6 +60,8 @@ class ResultadoInteraccion(TypedDict, total=False):
     tema_principal: str
     subtema: str
     tipo_detectado: str
+    es_spam_detectado: bool
+    motivo_spam: str | None
 
     # Resultado de LangGraph y generadores.
     rutas: Required[list[Ruta]]

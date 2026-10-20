@@ -81,7 +81,12 @@ def simular(monkeypatch, datos, referencias):
         mensajes = json.loads(argumentos["mensajes_json"])
         # Desorden deliberado: el resultado debe asociarse por ID, no por posición.
         return {"resultados": [
-            {"id": m["id"], **referencias[m["id"]]["analisis_simulado"]}
+            {
+                "id": m["id"],
+                "es_spam_detectado": False,
+                "motivo_spam": None,
+                **referencias[m["id"]]["analisis_simulado"],
+            }
             for m in reversed(mensajes)
         ]}
 

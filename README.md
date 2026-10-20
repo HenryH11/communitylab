@@ -217,9 +217,18 @@ anotadores independientes.
 
 ## Documentación (•̀ᴗ•́)و
 
+
 Los [contratos JSON de arquitectura](docs/arquitectura-solucion/README.md) definen
-la entrada pública, los lotes de ingesta DA → DS y la salida operativa DS 1.2/1.3,
-con soporte para `pregunta_programa` y validación reproducible sin llamadas a IA.
+la entrada pública, los lotes de ingesta DA → DS y la salida operativa de DS.
+La rama de Semana 4 incorpora el contrato v1.4, manteniendo compatibilidad
+con v1.2 y v1.3, pendiente de aprobación formal de SS/QA.
+
+La implementación de detección semántica de spam, sus reglas de enrutamiento
+y las pruebas realizadas se documentan en el
+[informe técnico de Semana 4](docs/avance_datascience_semana4_spam.md).
+Los comandos de validación están disponibles en la
+[guía de ejecución y pruebas](docs/guia_pruebas.md).
+
 
 ### Paso 2: Crear una rama de tarea (Feature Branch) desde develop
 ```bash

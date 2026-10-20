@@ -33,6 +33,13 @@ def determinar_rutas(state: EstadoAgente) -> ResultadoRutas:
 
     Puede devolver varias rutas para un mismo mensaje.
     """
+    # DS bloquea la transformación de spam antes de evaluar
+    # las rutas o elegibilidades provenientes de Data.
+    if state.get("es_spam_detectado") is True:
+        return {
+            "rutas": [],
+            "tier_modelo": TIER_RAPIDO,
+        }
 
     rutas: list[Ruta] = []
 

@@ -409,7 +409,7 @@ def test_contrato_expone_reintentables_e_id_ejecucion():
         }
     )
 
-    assert entrega["version_contrato"] == "1.3"
+    assert entrega["version_contrato"] == "1.4"
     assert entrega["id_ejecucion"] == "abc123"
     assert entrega["ids_reintentables"] == ["id-a"]
     assert entrega["resumen_comunidad"]["total_fallos"] == 2

@@ -40,11 +40,17 @@ def entrada(cantidad=10):
 
 def analisis(identificador=None):
     resultado = {
-        "sentimiento": "neutral", "tema_principal": "datos_ia",
-        "subtema": "Errores de programación", "tipo_detectado": "pregunta_tecnica",
+        "sentimiento": "neutral",
+        "tema_principal": "datos_ia",
+        "subtema": "Errores de programación",
+        "tipo_detectado": "pregunta_tecnica",
+        "es_spam_detectado": False,
+        "motivo_spam": None,
     }
+
     if identificador is not None:
         resultado["id"] = identificador
+
     return resultado
 
 

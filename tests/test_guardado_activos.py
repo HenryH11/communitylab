@@ -37,6 +37,8 @@ def salida_con_activos(activos=None, identificador="int-022"):
                 "tema_principal": "aprendizaje",
                 "subtema": "Python",
                 "tipo_detectado": "testimonio",
+                "es_spam_detectado": False,
+                "motivo_spam": None,
                 "rutas": list(activos),
                 "activos_generados": activos,
                 "errores": [],
@@ -283,6 +285,8 @@ def test_grafo_real_entrega_activos_y_solo_se_guarda_lo_aprobado(cliente):
             "tema_principal": "aprendizaje",
             "subtema": "Python",
             "tipo_detectado": tipo,
+            "es_spam_detectado": False,
+            "motivo_spam": None,
         }
         for tipo in ("testimonio", "pregunta_tecnica", "comentario")
     ]

@@ -214,6 +214,8 @@ def test_adaptador_nvidia_devuelve_cadena_y_valida_salida(
         "tema_principal": "datos_ia",
         "subtema": "conexion de nodos",
         "tipo_detectado": "pregunta_tecnica",
+        "es_spam_detectado": False,
+        "motivo_spam": None,
     }
 
     cliente = MagicMock()

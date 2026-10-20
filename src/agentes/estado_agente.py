@@ -36,6 +36,8 @@ class EstadoAgente(TypedDict, total=False):
     tema_principal: str
     subtema: str
     tipo_detectado: str
+    es_spam_detectado: bool
+    motivo_spam: str | None
 
     # -----------------------------
     # Resultado de LangGraph

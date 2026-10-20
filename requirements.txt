@@ -16,3 +16,4 @@ streamlit
 pandas
 altair
 jsonschema[format-nongpl]>=4.18,<5
+oracledb

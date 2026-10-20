@@ -63,3 +63,20 @@ def test_analisis_fallido_no_requiere_campos_spam():
     resultado["errores"] = ["Error del proveedor"]
 
     validar_resultados([resultado])
+
+
+@pytest.mark.parametrize(
+    "version_contrato",
+    ["1.2", "1.3"],
+)
+def test_permite_validar_resultados_historicos(
+    version_contrato,
+):
+    resultado = resultado_valido()
+    del resultado["es_spam_detectado"]
+    del resultado["motivo_spam"]
+
+    validar_resultados(
+        [resultado],
+        version_contrato=version_contrato,
+    )

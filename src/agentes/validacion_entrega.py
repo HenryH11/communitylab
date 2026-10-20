@@ -1,8 +1,16 @@
-
 """Validaciones de la salida interna antes de crear la entrega pública."""
 
 
-def validar_resultados(resultados: list[dict]) -> None:
+def validar_resultados(
+    resultados: list[dict],
+    *,
+    version_contrato: str = "1.4",
+) -> None:
+    if version_contrato not in {"1.2", "1.3", "1.4"}:
+        raise ValueError(
+            f"Versión de contrato no soportada: {version_contrato}"
+        )
+
     ids = []
 
     for resultado in resultados:
@@ -66,34 +74,45 @@ def validar_resultados(resultados: list[dict]) -> None:
                         f"{identificador}: falta el campo de análisis {campo}"
                     )
 
-            es_spam = resultado.get("es_spam_detectado")
+            # Los campos de spam son obligatorios desde v1.4.
+            if version_contrato == "1.4":
+                es_spam = resultado.get("es_spam_detectado")
 
-            if type(es_spam) is not bool:
-                raise ValueError(
-                    f"{identificador}: es_spam_detectado debe ser booleano"
-                )
-
-            if "motivo_spam" not in resultado:
-                raise ValueError(
-                    f"{identificador}: falta el campo motivo_spam"
-                )
-
-            motivo = resultado["motivo_spam"]
-
-            if es_spam:
-                if (
-                    not isinstance(motivo, str)
-                    or not motivo.strip()
-                    or len(motivo) > 160
-                ):
+                if type(es_spam) is not bool:
                     raise ValueError(
-                        f"{identificador}: spam detectado requiere "
-                        "un motivo válido de máximo 160 caracteres"
+                        f"{identificador}: es_spam_detectado debe ser booleano"
                     )
-            elif motivo is not None:
+
+                if "motivo_spam" not in resultado:
+                    raise ValueError(
+                        f"{identificador}: falta el campo motivo_spam"
+                    )
+
+                motivo = resultado["motivo_spam"]
+
+                if es_spam:
+                    if (
+                        not isinstance(motivo, str)
+                        or not motivo.strip()
+                        or len(motivo) > 160
+                    ):
+                        raise ValueError(
+                            f"{identificador}: spam detectado requiere "
+                            "un motivo válido de máximo 160 caracteres"
+                        )
+                elif motivo is not None:
+                    raise ValueError(
+                        f"{identificador}: un mensaje sin spam "
+                        "debe tener motivo_spam=None"
+                    )
+
+            elif (
+                "es_spam_detectado" in resultado
+                or "motivo_spam" in resultado
+            ):
                 raise ValueError(
-                    f"{identificador}: un mensaje sin spam "
-                    "debe tener motivo_spam=None"
+                    f"{identificador}: los campos de spam no pertenecen "
+                    f"al contrato v{version_contrato}"
                 )
 
     if len(ids) != len(set(ids)):

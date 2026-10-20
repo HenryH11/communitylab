@@ -548,14 +548,20 @@ def construir_paquete_auditoria(
             )
 
             registro["analisis"] = {
-                campo: deepcopy(
-                    resultado.get(campo)
-                )
+                campo: deepcopy(resultado.get(campo))
                 for campo in campos_analisis
             }
-            registro["analisis"][
-                "trazabilidad"
-            ] = deepcopy(traza_analisis)
+
+            # Conservar la señal de spam en la auditoría.
+            for campo in ("es_spam_detectado", "motivo_spam"):
+                if campo in resultado:
+                    registro["analisis"][campo] = deepcopy(
+                        resultado[campo]
+                    )
+
+            registro["analisis"]["trazabilidad"] = deepcopy(
+                traza_analisis
+            )
 
             if traza_analisis is None:
                 inconsistencias.append(

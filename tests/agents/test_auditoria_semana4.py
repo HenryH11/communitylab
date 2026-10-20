@@ -389,3 +389,20 @@ def test_serializacion_preserva_unicode():
 
     assert "¡Felicitaciones, Ana! 🎉" in texto
     assert "\\ud83c" not in texto
+
+
+def test_auditoria_conserva_campos_spam():
+    auditoria = construir()
+
+    interaccion = next(
+        item
+        for item in auditoria["interacciones"]
+        if item["id"] == "int-001"
+    )
+
+    analisis = interaccion["analisis"]
+
+    assert "es_spam_detectado" in analisis
+    assert "motivo_spam" in analisis
+    assert analisis["es_spam_detectado"] is False
+    assert analisis["motivo_spam"] is None

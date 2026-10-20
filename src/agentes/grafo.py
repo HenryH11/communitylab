@@ -1,10 +1,16 @@
 """Grafo de LangGraph y ejecución por lotes; el paquete se procesa en procesamiento.py."""
 
+import logging
+import os
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 from typing import Literal, cast
 
 from langgraph.graph import END, START, StateGraph
 
 from src.agentes.estado_agente import EstadoAgente
+from src.agentes.observabilidad import registrar_evento
+from src.agentes.reintentos import construir_fallo, describir_error
 from src.agentes.nodos.nodo_analizador import analizar_lote, analizar_mensaje
 from src.agentes.nodos.nodo_enrutador import determinar_rutas
 from src.agentes.nodos.nodos_generadores import generar_activos
@@ -138,10 +144,131 @@ def procesar_estados_por_lotes(
     if len(set(ids)) != len(ids):
         raise ValueError("El análisis por lotes requiere IDs únicos")
 
+    concurrencia = int(
+        os.getenv("COMMUNITYLAB_CONCURRENCIA_MENSAJES", "1")
+    )
+    if concurrencia not in (1, 2):
+        raise ValueError(
+            "La concurrencia experimental debe ser 1 o 2"
+        )
+
+    valor_concurrencia_lotes = os.getenv(
+        "COMMUNITYLAB_CONCURRENCIA_LOTES_ANALISIS", "1"
+    ).strip()
+
+    try:
+        trabajadores_lotes = int(valor_concurrencia_lotes)
+    except ValueError as error:
+        raise ValueError(
+            "COMMUNITYLAB_CONCURRENCIA_LOTES_ANALISIS debe ser 1 o 2"
+        ) from error
+
+    if trabajadores_lotes not in (1, 2):
+        raise ValueError(
+            "COMMUNITYLAB_CONCURRENCIA_LOTES_ANALISIS debe ser 1 o 2"
+        )
+
+    def lotes_secuenciales():
+        for inicio in range(0, len(estados), tamano_lote):
+            grupo = estados[inicio : inicio + tamano_lote]
+            yield grupo, analizar_lote_protegido(grupo)
+
+    def analizar_lote_protegido(grupo):
+        try:
+            return analizar_lote(grupo)
+        except Exception as error:
+            registrar_evento(
+                "analisis_lote_excepcion_inesperada",
+                nivel=logging.ERROR,
+                exc_info=error,
+                etapa="analizar_lote",
+                ids_interaccion=[estado["id"] for estado in grupo],
+                tipo_error=type(error).__name__,
+            )
+            return [
+                {
+                    "errores": [
+                        describir_error("analizar_lote", error)
+                    ],
+                    "fallos": [
+                        construir_fallo(
+                            "analizar_lote",
+                            error,
+                            id_interaccion=estado["id"],
+                        )
+                    ],
+                }
+                for estado in grupo
+            ]
+
+    if trabajadores_lotes == 1 or len(estados) <= tamano_lote:
+        lotes_analizados = lotes_secuenciales()
+    else:
+        grupos = [
+            estados[inicio : inicio + tamano_lote]
+            for inicio in range(0, len(estados), tamano_lote)
+        ]
+
+        with ThreadPoolExecutor(
+            max_workers=trabajadores_lotes
+        ) as ejecutor:
+            futuros = [
+                ejecutor.submit(
+                    copy_context().run,
+                    analizar_lote_protegido,
+                    grupo,
+                )
+                for grupo in grupos
+            ]
+
+            lotes_analizados = [
+                (grupo, futuro.result())
+                for grupo, futuro in zip(grupos, futuros)
+            ]
+
     resultados = []
-    for inicio in range(0, len(estados), tamano_lote):
-        grupo = estados[inicio : inicio + tamano_lote]
-        analisis = analizar_lote(grupo)
+    for grupo, analisis in lotes_analizados:
+        pendientes = []
+
+        # Evitar que zip descarte mensajes silenciosamente.
+        # Si el lote no cumple el contrato, no es seguro asociar
+        # resultados parciales a los IDs por posición.
+        if not isinstance(analisis, list) or len(analisis) != len(grupo):
+            recibidos = (
+                len(analisis)
+                if isinstance(analisis, list)
+                else "formato_invalido"
+            )
+
+            error = ValueError(
+                f"analizar_lote devolvio {recibidos} resultados "
+                f"para {len(grupo)} mensajes"
+            )
+
+            registrar_evento(
+                "analisis_lote_cantidad_invalida",
+                nivel=logging.ERROR,
+                etapa="analizar_lote",
+                ids_interaccion=[estado["id"] for estado in grupo],
+                cantidad_esperada=len(grupo),
+                cantidad_recibida=recibidos,
+            )
+
+            analisis = [
+                {
+                    "errores": [
+                        describir_error("analizar_lote", error)
+                    ],
+                    "fallos": [
+                        construir_fallo(
+                            "analizar_lote",
+                            error,
+                            id_interaccion=estado["id"],
+                        )
+                    ],
+                }
+                for estado in grupo
+            ]
 
         for estado, campos_analisis in zip(grupo, analisis):
             errores = [
@@ -167,14 +294,87 @@ def procesar_estados_por_lotes(
                 estado_actualizado["fallos"] = fallos
                 estado_actualizado["rutas"] = []
                 estado_actualizado["activos_generados"] = {}
-                resultados.append(estado_actualizado)
+                if concurrencia == 1:
+                    resultados.append(estado_actualizado)
+                else:
+                    pendientes.append((False, estado_actualizado))
                 continue
 
             estado_actualizado.setdefault("rutas", [])
             estado_actualizado.setdefault("activos_generados", {})
-            resultados.append(
-                grafo_desde_analisis.invoke(estado_actualizado)
-            )
+
+            if concurrencia == 1:
+                resultados.append(
+                    grafo_desde_analisis.invoke(estado_actualizado)
+                )
+            else:
+                pendientes.append((True, estado_actualizado))
+
+        if concurrencia == 2:
+            with ThreadPoolExecutor(max_workers=2) as ejecutor:
+                trabajos = [
+                    (
+                        procesar,
+                        ejecutor.submit(
+                            copy_context().run,
+                            grafo_desde_analisis.invoke,
+                            estado_pendiente,
+                        ) if procesar else estado_pendiente,
+                    )
+                    for procesar, estado_pendiente in pendientes
+                ]
+
+                for (procesar, trabajo), (_, estado_pendiente) in zip(
+                    trabajos, pendientes
+                ):
+                    if not procesar:
+                        resultados.append(trabajo)
+                        continue
+
+                    try:
+                        resultados.append(trabajo.result())
+                    except Exception as error:
+                        identificador = estado_pendiente.get("id")
+
+                        registrar_evento(
+                            "procesamiento_grafo_fallido",
+                            nivel=logging.ERROR,
+                            exc_info=error,
+                            etapa="procesar_grafo",
+                            id_interaccion=identificador,
+                            tipo_error=type(error).__name__,
+                        )
+
+                        fallo = construir_fallo(
+                            "procesar_grafo",
+                            error,
+                            id_interaccion=identificador,
+                        )
+
+                        # Sin conocer el nodo que fallo, no es seguro
+                        # aplicar recuperacion automatica por ruta.
+                        fallo["reintentable"] = False
+
+                        resultados.append(
+                            cast(
+                                EstadoAgente,
+                                {
+                                    **estado_pendiente,
+                                    "rutas": [],
+                                    "activos_generados": {},
+                                    "errores": [
+                                        *estado_pendiente.get("errores", []),
+                                        describir_error(
+                                            "procesar_grafo", error
+                                        ),
+                                    ],
+                                    "fallos": [
+                                        *estado_pendiente.get("fallos", []),
+                                        fallo,
+                                    ],
+                                },
+                            )
+                        )
 
     return resultados
 

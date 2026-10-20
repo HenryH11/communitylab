@@ -11,6 +11,7 @@ import re
 from functools import lru_cache
 import base64
 import os
+from datetime import datetime
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -18,10 +19,9 @@ from oci.secrets import SecretsClient
 from oci.auth.signers import InstancePrincipalsSecurityTokenSigner
 import oracledb
 
-
 USUARIO_PREDETERMINADO = "agent_communitylab"
 TABLA_PREDETERMINADA = "conjunto_consultable"
-VERSION_CONJUNTO = "1.0"
+VERSION_CONJUNTO = "1.1"
 CAMPOS_CONJUNTO = (
     "id",
     "canal",
@@ -46,7 +46,10 @@ USING (
         :contenido_corto AS contenido_corto,
         CASE
             WHEN :fecha IS NOT NULL THEN
-                TO_TIMESTAMP_TZ(:fecha, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                TO_TIMESTAMP_TZ(
+                    REPLACE(:fecha, 'Z', '+00:00'),
+                    'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM'
+                )
             ELSE NULL
         END AS fecha
     FROM dual
@@ -75,21 +78,31 @@ WHEN NOT MATCHED THEN
     )
 """
 
+_SQL_META = """
+MERGE INTO conjunto_consultable_meta destino
+USING (SELECT 1 AS id, :version AS version, :total AS total,
+              :total_spam_excluido AS total_spam_excluido FROM dual) origen
+ON (destino.id = origen.id)
+WHEN MATCHED THEN UPDATE SET
+    destino.version = origen.version, destino.total = origen.total,
+    destino.total_spam_excluido = origen.total_spam_excluido
+WHEN NOT MATCHED THEN INSERT (id, version, total, total_spam_excluido)
+VALUES (origen.id, origen.version, origen.total, origen.total_spam_excluido)
+"""
+
 _SQL_SELECT_TODOS = """
 SELECT
-    id,
-    canal,
-    sentimiento,
-    tema,
-    tipo,
-    contenido_corto,
+    m.version, m.total, m.total_spam_excluido,
+    d.id, d.canal, d.sentimiento, d.tema, d.tipo, d.contenido_corto,
     CASE
-        WHEN fecha IS NOT NULL THEN
-            TO_CHAR(fecha AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+        WHEN d.fecha IS NOT NULL THEN
+            TO_CHAR(d.fecha AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
         ELSE NULL
     END AS fecha
-FROM conjunto_consultable
-ORDER BY id ASC
+FROM conjunto_consultable_meta m
+LEFT JOIN conjunto_consultable d ON 1 = 1
+WHERE m.id = 1
+ORDER BY d.id ASC
 """
 
 
@@ -109,7 +122,10 @@ def _descargar_secreto(cliente: SecretsClient, ocid_secreto: str) -> str:
     """Extrae y decodifica el contenido Base64 de un secreto en OCI Vault."""
     respuesta = cliente.get_secret_bundle(secret_id=ocid_secreto)
     contenido_b64 = respuesta.data.secret_bundle_content.content
-    return base64.b64decode(contenido_b64).decode("utf-8").strip()
+    secreto = base64.b64decode(contenido_b64, validate=True).decode("utf-8")
+    if not secreto:
+        raise ValueError("el secreto está vacío")
+    return secreto
 
 
 @lru_cache(maxsize=4)
@@ -148,16 +164,11 @@ def obtener_conexion(
     cliente_secretos: SecretsClient | None = None,
 ) -> oracledb.Connection:
     """Establece una conexión TLS Thin hacia la base de datos."""
-    usuario_efectivo = (
-        usuario
-        or os.getenv("DB_USER", USUARIO_PREDETERMINADO)
-    )
+    usuario_efectivo = usuario or os.getenv("DB_USER", USUARIO_PREDETERMINADO)
     if not isinstance(usuario_efectivo, str) or not _SEGMENTO.fullmatch(
         usuario_efectivo.strip()
     ):
-        raise ValueError(
-            "usuario debe contener solo letras, números, _ o -"
-        )
+        raise ValueError("usuario debe contener solo letras, números, _ o -")
 
     dsn_efectivo = dsn or os.getenv("DB_DSN")
     if not isinstance(dsn_efectivo, str) or not dsn_efectivo.strip():
@@ -178,17 +189,52 @@ def validar_registro(registro: Mapping[str, Any]) -> dict[str, Any]:
     """Valida los 7 campos y sanitiza el identificador de un registro."""
     if not isinstance(registro, Mapping):
         raise TypeError("cada registro debe ser un diccionario JSON")
-    if not _CAMPOS_REQUERIDOS.issubset(registro.keys()):
+    if set(registro) != _CAMPOS_REQUERIDOS:
         raise ValueError("el registro no contiene los 7 campos requeridos")
 
     identificador = registro.get("id")
     if not isinstance(identificador, str) or not _SEGMENTO.fullmatch(
         identificador
     ):
+        raise ValueError("id debe contener solo letras, números, _ o -")
+    for campo in CAMPOS_CONJUNTO[1:-1]:
+        valor = registro[campo]
+        if valor is not None and not isinstance(valor, str):
+            raise ValueError(f"{campo} debe ser texto o null")
+    contenido = registro["contenido_corto"]
+    if not isinstance(contenido, str) or len(contenido) > 160:
         raise ValueError(
-            "id debe contener solo letras, números, _ o -"
+            "contenido_corto debe ser texto de hasta 160 caracteres"
         )
+    for valor in registro.values():
+        if isinstance(valor, str):
+            valor.encode("utf-8")
+    fecha = registro["fecha"]
+    if fecha is not None:
+        if not isinstance(fecha, str) or not re.fullmatch(
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", fecha
+        ):
+            raise ValueError(
+                "fecha debe ser UTC con formato YYYY-MM-DDTHH:MM:SSZ o null"
+            )
+        datetime.strptime(fecha, "%Y-%m-%dT%H:%M:%SZ")
     return {campo: registro[campo] for campo in CAMPOS_CONJUNTO}
+
+
+def obtener_conexion_lectura() -> oracledb.Connection:
+    """Exige credenciales separadas; los permisos SELECT se configuran en OCI."""
+    usuario = os.getenv("DB_READ_USER", "").strip()
+    secreto = os.getenv("DB_READ_PASSWORD_SECRET_OCID", "").strip()
+    escritor = os.getenv("DB_USER", USUARIO_PREDETERMINADO).strip()
+    if not usuario or not secreto or usuario.upper() == escritor.upper():
+        raise ValueError(
+            "configura un DB_READ_USER distinto y su DB_READ_PASSWORD_SECRET_OCID"
+        )
+    return obtener_conexion(
+        usuario=usuario,
+        dsn=os.getenv("DB_READ_DSN") or os.getenv("DB_DSN"),
+        ocid_secreto=secreto,
+    )
 
 
 def _preparar_lote(
@@ -198,6 +244,11 @@ def _preparar_lote(
     if not isinstance(documento, Mapping):
         raise TypeError("documento debe ser un diccionario JSON")
 
+    if documento.get("version") not in ("1.0", VERSION_CONJUNTO):
+        raise ValueError("versión del Conjunto Consultable no admitida")
+    if documento.get("campos") != list(CAMPOS_CONJUNTO):
+        raise ValueError("campos no coincide con el contrato de DA")
+
     registros = documento.get("registros")
     if not isinstance(registros, Sequence) or isinstance(
         registros, (str, bytes)
@@ -205,6 +256,20 @@ def _preparar_lote(
         raise ValueError("documento debe contener una lista en 'registros'")
 
     lote = [validar_registro(item) for item in registros]
+    total = documento.get("total")
+    if type(total) is not int or total != len(lote):
+        raise ValueError("total no coincide con la cantidad de registros")
+    spam = documento.get("total_spam_excluido", 0)
+    if (
+        type(spam) is not int
+        or spam < 0
+        or (
+            documento["version"] == VERSION_CONJUNTO
+            and "total_spam_excluido" not in documento
+        )
+        or (documento["version"] == "1.0" and spam != 0)
+    ):
+        raise ValueError("total_spam_excluido no es válido para esta versión")
     ids = [item["id"] for item in lote]
     if len(ids) != len(set(ids)):
         raise ValueError("se detectaron identificadores duplicados")
@@ -215,56 +280,117 @@ def sincronizar_conjunto(
     documento: Mapping[str, Any],
     *,
     conexion: oracledb.Connection | None = None,
+    instantanea_completa: bool = False,
 ) -> dict[str, str | int]:
-    """Ejecuta un upsert (MERGE) del Conjunto Consultable en la BD.
+    """Publica una instantánea completa; no admite cargas incrementales.
 
     Permite inyectar ``conexion`` para pruebas unitarias. Si no se
     provee, gestiona el ciclo de vida de una conexión obtenida mediante
-    ``obtener_conexion()``.
+    ``obtener_conexion()``. La conexión debe ser exclusiva, sin trabajo
+    pendiente y con autocommit desactivado. Requiere la tabla de metadatos.
+    Se retiran los IDs ausentes SOLO con instantanea_completa=True, incluso
+    si la instantánea está vacía. No usar con tablas compartidas entre datasets.
     """
     lote = _preparar_lote(documento)
-    if not lote:
-        return {"tabla": TABLA_PREDETERMINADA, "sincronizados": 0}
+    if instantanea_completa is not True:
+        raise ValueError(
+            "confirma instantanea_completa=True; no se admiten lotes parciales"
+        )
 
     if conexion is not None:
+        retirados = _publicar_instantanea(conexion, documento, lote)
+    else:
+        with obtener_conexion() as conexion_activa:
+            retirados = _publicar_instantanea(conexion_activa, documento, lote)
+
+    return {
+        "tabla": TABLA_PREDETERMINADA,
+        "sincronizados": len(lote),
+        "retirados": retirados,
+    }
+
+
+def _publicar_instantanea(conexion, documento, lote):
+    if conexion.autocommit or conexion.transaction_in_progress:
+        raise ValueError(
+            "usa una conexión exclusiva sin transacción activa y sin autocommit"
+        )
+    try:
         with conexion.cursor() as cursor:
-            cursor.executemany(_SQL_UPSERT, lote)
+            # Serializa cargadores sin bloquear lecturas; evita espera indefinida.
+            cursor.execute(
+                "LOCK TABLE conjunto_consultable, conjunto_consultable_meta "
+                "IN EXCLUSIVE MODE NOWAIT"
+            )
+            cursor.execute("SELECT id FROM conjunto_consultable")
+            ids_actuales = {fila[0] for fila in cursor.fetchall()}
+            ids_nuevos = {fila["id"] for fila in lote}
+            retirados = sorted(ids_actuales - ids_nuevos)
+            if lote:
+                cursor.executemany(_SQL_UPSERT, lote)
+            if retirados:
+                cursor.executemany(
+                    "DELETE FROM conjunto_consultable WHERE id = :id",
+                    [{"id": identificador} for identificador in retirados],
+                )
+            cursor.execute(
+                _SQL_META,
+                {
+                    "version": documento["version"],
+                    "total": len(lote),
+                    "total_spam_excluido": documento.get(
+                        "total_spam_excluido", 0
+                    ),
+                },
+            )
         conexion.commit()
-        return {"tabla": TABLA_PREDETERMINADA, "sincronizados": len(lote)}
-
-    with (
-        obtener_conexion() as conexion_activa,
-        conexion_activa.cursor() as cursor,
-    ):
-        cursor.executemany(_SQL_UPSERT, lote)
-        conexion_activa.commit()
-
-    return {"tabla": TABLA_PREDETERMINADA, "sincronizados": len(lote)}
+        return len(retirados)
+    except Exception:
+        conexion.rollback()
+        raise
 
 
 def leer_conjunto(
     *,
     conexion: oracledb.Connection | None = None,
 ) -> dict[str, Any]:
-    """Reconstruye el diccionario del Conjunto Consultable desde la BD."""
+    """Lee filas y metadatos en una sola consulta consistente y sin commit.
+
+    Para el agente, inyectar una conexión de solo SELECT, con acceso a ambas
+    tablas. No conectar el agente público con el usuario cargador por defecto.
+    """
     if conexion is not None:
         with conexion.cursor() as cursor:
             cursor.execute(_SQL_SELECT_TODOS)
-            columnas = [col[0].lower() for col in cursor.description]
             filas = cursor.fetchall()
     else:
         with (
-            obtener_conexion() as conexion_activa,
+            obtener_conexion_lectura() as conexion_activa,
             conexion_activa.cursor() as cursor,
         ):
             cursor.execute(_SQL_SELECT_TODOS)
-            columnas = [col[0].lower() for col in cursor.description]
             filas = cursor.fetchall()
 
-    registros = [dict(zip(columnas, fila)) for fila in filas]
+    if not filas:
+        raise ValueError("no hay una instantánea publicada con metadatos")
+    version, total, spam = filas[0][:3]
+    registros = [
+        dict(zip(CAMPOS_CONJUNTO, fila[3:]))
+        for fila in filas
+        if fila[3] is not None
+    ]
+    if total != len(registros):
+        raise ValueError(
+            "la tabla no coincide con el total de la instantánea publicada"
+        )
     return {
-        "version": VERSION_CONJUNTO,
+        "version": version,
         "campos": list(CAMPOS_CONJUNTO),
-        "total": len(registros),
+        "total": total,
+        **(
+            {"total_spam_excluido": spam}
+            if version == VERSION_CONJUNTO
+            else {}
+        ),
         "registros": registros,
     }

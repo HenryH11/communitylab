@@ -5,19 +5,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 import streamlit as st
 import json
-import asyncio
-from copy import deepcopy
-from datetime import datetime, timezone
 import pandas as pd
 import altair as alt
 
 from src.datos.entrega_ia import preparar_paquete_ia
 from src.agentes.grafo import procesar_paquete_entrega
-from src.app.curaduria_oci import (
-    contexto_curaduria,
-    guardar_curaduria,
-    validar_activo_curado,
-)
+from src.app import vista_plantillas
+from src.app.curaduria_oci import contexto_curaduria
 
 st.set_page_config(page_title="CommunityLab", layout="wide")
 
@@ -183,152 +177,8 @@ if "resultado" in st.session_state:
 
     st.markdown("---")
 
-    # ============ DETALLES CON CURADURÍA ============
-    st.markdown('<div class="section-title">📝 Detalle por mensaje y curaduría</div>', unsafe_allow_html=True)
-
-    for id_msg, data in resultados.items():
-        autor = data.get("autor", "Anónimo")
-        tema = data.get("tema_principal", "sin tema")
-        sentimiento = data.get("sentimiento", "N/A")
-        tiene_activos = bool(data.get("activos_generados"))
-        icono = "📝" if tiene_activos else "💬"
-
-        with st.expander(f"{icono} {autor} — {tema} · {sentimiento}"):
-            c1, c2 = st.columns(2)
-            with c1:
-                st.write(f"**Canal:** {data.get('canal', 'N/A')}")
-                st.write(f"**Tipo detectado:** {data.get('tipo_detectado', 'N/A')}")
-                st.write(f"**Score relevancia:** {data.get('score_relevancia', 'N/A')}")
-            with c2:
-                st.write(f"**Sentimiento:** {sentimiento}")
-                st.write(f"**Subtema:** {data.get('subtema', 'N/A')}")
-                elegible = data.get("elegible_contenido", False)
-                st.write(f"**Elegible para contenido:** {'Sí' if elegible else 'No'}")
-                if "elegible_faq" in data:
-                    st.write(f"**Elegible para FAQ:** {'Sí' if data['elegible_faq'] else 'No'}")
-
-            st.markdown(f"*Texto original:* {data.get('texto', '')}")
-
-            if tiene_activos:
-                st.markdown("### 🎯 Activos generados")
-
-                for tipo, activo in data["activos_generados"].items():
-                    st.markdown(f"#### **{tipo.replace('_', ' ').title()}**")
-
-                    clave = (id_msg, tipo)
-                    key_activo = f"{curaduria['lote']}_{id_msg}_{tipo}"
-                    if key_activo not in st.session_state:
-                        st.session_state[key_activo] = activo.copy()
-
-                    activo_editado = {}
-                    for k, v in st.session_state[key_activo].items():
-                        if isinstance(v, str):
-                            nuevo_valor = st.text_area(
-                                f"✏️ {k}",
-                                value=v,
-                                key=f"edit_{key_activo}_{k}",
-                                height=100
-                            )
-                            activo_editado[k] = nuevo_valor
-                        elif isinstance(v, list):
-                            nuevo_valor = st.text_area(
-                                f"✏️ {k} (uno por línea)",
-                                value="\n".join(str(x) for x in v),
-                                key=f"edit_{key_activo}_{k}",
-                                height=80
-                            )
-                            activo_editado[k] = [line for line in nuevo_valor.split("\n") if line.strip()]
-                        else:
-                            activo_editado[k] = v
-
-                    # Una aprobación corresponde a una versión exacta del texto.
-                    if (
-                        clave in curaduria["aprobados"]
-                        and curaduria["aprobados"][clave] != activo_editado
-                    ):
-                        curaduria["aprobados"].pop(clave)
-                        curaduria["guardados"].pop(clave, None)
-                        curaduria["informe"] = None
-                        st.session_state[f"aprobado_{key_activo}"] = False
-
-                    col_btn1, col_btn2 = st.columns([1, 3])
-                    with col_btn1:
-                        if st.button(f"✅ Aprobar", key=f"btn_{key_activo}"):
-                            try:
-                                validar_activo_curado(tipo, activo_editado)
-                            except ValueError as error_validacion:
-                                st.error(f"❌ {error_validacion}")
-                            except TypeError:
-                                st.error(
-                                    "❌ Revisa los campos del activo antes de "
-                                    "aprobar: El formato no es válido."
-                                )
-                            else:
-                                st.session_state[key_activo] = deepcopy(activo_editado)
-                                curaduria["aprobados"][clave] = deepcopy(activo_editado)
-                                st.session_state[f"aprobado_{key_activo}"] = True
-                                st.success(f"✅ {tipo} aprobado correctamente.")
-
-                    if st.session_state.get(f"aprobado_{key_activo}"):
-                        st.info("🟢 Este activo ya fue aprobado para guardar en OCI.")
-
-                    st.markdown("---")
-
-    # ============ RESUMEN DE APROBADOS ============
-    st.markdown('<div class="section-title">📦 Activos aprobados listos para OCI</div>', unsafe_allow_html=True)
-    aprobados = curaduria["aprobados"]
-
-    if aprobados:
-        st.success(f"✅ {len(aprobados)} activo(s) aprobado(s).")
-        for identificador, tipo in aprobados:
-            st.write(f"- {identificador}: {tipo}")
-    else:
-        st.info("Aún no has aprobado ningún activo. Edita y aprueba arriba para preparar el guardado en OCI.")
-
-    bucket = os.getenv("OCI_BUCKET_NAME", "bkt-communitylab-marketing")
-    periodo = st.text_input(
-        "Período de almacenamiento",
-        value=datetime.now(timezone.utc).strftime("%Y-%m"),
-        key=f"periodo_oci_{curaduria['lote']}",
-        help="Usa letras, números, guiones o guiones bajos.",
-    )
-    # El recibo corresponde también al destino, no solo al contenido.
-    destino = (bucket, periodo)
-    pendientes = {
-        clave: contenido for clave, contenido in aprobados.items()
-        if curaduria["guardados"].get(clave) != (destino, contenido)
-    }
-    st.caption(f"Destino: {bucket} · período {periodo}")
-    if st.button(
-        "Guardar aprobados en OCI",
-        key="guardar_aprobados_oci",
-        disabled=not pendientes,
-    ):
-        with st.spinner("Guardando los activos aprobados..."):
-            try:
-                informe = asyncio.run(guardar_curaduria(
-                    resultado, pendientes, periodo=periodo, bucket=bucket
-                ))
-            except Exception:
-                curaduria["informe"] = None
-                st.error(
-                    "No se pudo confirmar el guardado. Revisa el período, "
-                    "la configuración y los permisos de OCI. Puedes reintentar."
-                )
-            else:
-                curaduria["informe"] = informe
-                for guardado in informe["guardados"]:
-                    clave = (guardado["id_interaccion"], guardado["tipo"])
-                    curaduria["guardados"][clave] = (
-                        destino, deepcopy(pendientes[clave])
-                    )
-
-    informe = curaduria["informe"]
-    if informe:
-        if informe["guardados"]:
-            st.success(f"OCI confirmó {len(informe['guardados'])} activo(s) guardado(s).")
-        for fallo in informe["fallidos"]:
-            st.error(
-                f"Sin confirmación de guardado: {fallo['id_interaccion']} "
-                f"({fallo['tipo']}). Puedes reintentar."
-            )
+# ============ PLANTILLAS (curaduría y guardado en OCI) ============
+if "resultado" in st.session_state:
+    vista_plantillas.render(resultado, curaduria)
+else:
+    vista_plantillas.render()

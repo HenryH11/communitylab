@@ -19,6 +19,19 @@ def entrega_v13():
     ]}
 
 
+def entrega_v14():
+    """Contrato v1.4: DS marca el spam con es_spam_detectado y motivo_spam."""
+    entrega = entrega_v13()
+    entrega["version_contrato"] = "1.4"
+    for interaccion in entrega["interacciones"]:
+        interaccion.update(es_spam_detectado=False, motivo_spam=None)
+    entrega["interacciones"].append(
+        {"id": "int-050", "canal": "#general", "texto": "Gana dinero desde casa, escríbeme al privado.",
+         "sentimiento": "positivo", "tema_principal": "otros", "tipo_detectado": "comentario",
+         "es_spam_detectado": True, "motivo_spam": "Captación no solicitada"})
+    return entrega
+
+
 def entrega_v12():
     """Forma del paquete de auditoría: entrada, datos y analisis anidados."""
     return {"version_auditoria": "1.2", "interacciones": [
@@ -51,6 +64,19 @@ class PruebasConjuntoConsultable(unittest.TestCase):
         self.assertEqual(conjunto["total"], 1)
         self.assertEqual(conjunto["registros"][0]["fecha"], "2026-09-10T14:32:00Z")
         self.assertEqual(conjunto["registros"][0]["sentimiento"], "positivo")
+
+    def test_v14_excluye_el_spam_de_ds_y_lo_cuenta(self):
+        conjunto = construir_conjunto_consultable(entrega_v14())
+        self.assertEqual([r["id"] for r in conjunto["registros"]], ["int-001", "int-002"])
+        self.assertEqual(conjunto["total"], 2)
+        self.assertEqual(conjunto["total_spam_excluido"], 1)
+        for registro in conjunto["registros"]:
+            self.assertEqual(tuple(registro), CAMPOS)
+
+    def test_v13_sin_marca_de_spam_no_cambia(self):
+        conjunto = construir_conjunto_consultable(entrega_v13())
+        self.assertEqual(conjunto["total"], 2)
+        self.assertEqual(conjunto["total_spam_excluido"], 0)
 
     def test_rechaza_ids_duplicados(self):
         entrega = entrega_v13()

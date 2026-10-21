@@ -1,13 +1,16 @@
 """Grafo de LangGraph y ejecución por lotes; el paquete se procesa en procesamiento.py."""
 
 import logging
-import os
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import copy_context
 from typing import Literal, cast
 
 from langgraph.graph import END, START, StateGraph
 
+from src.agentes.configuracion_ia import (
+    obtener_concurrencia_lotes_analisis,
+    obtener_concurrencia_mensajes,
+)
 from src.agentes.estado_agente import EstadoAgente
 from src.agentes.observabilidad import registrar_evento
 from src.agentes.reintentos import construir_fallo, describir_error
@@ -144,29 +147,8 @@ def procesar_estados_por_lotes(
     if len(set(ids)) != len(ids):
         raise ValueError("El análisis por lotes requiere IDs únicos")
 
-    concurrencia = int(
-        os.getenv("COMMUNITYLAB_CONCURRENCIA_MENSAJES", "1")
-    )
-    if concurrencia not in (1, 2):
-        raise ValueError(
-            "La concurrencia experimental debe ser 1 o 2"
-        )
-
-    valor_concurrencia_lotes = os.getenv(
-        "COMMUNITYLAB_CONCURRENCIA_LOTES_ANALISIS", "1"
-    ).strip()
-
-    try:
-        trabajadores_lotes = int(valor_concurrencia_lotes)
-    except ValueError as error:
-        raise ValueError(
-            "COMMUNITYLAB_CONCURRENCIA_LOTES_ANALISIS debe ser 1 o 2"
-        ) from error
-
-    if trabajadores_lotes not in (1, 2):
-        raise ValueError(
-            "COMMUNITYLAB_CONCURRENCIA_LOTES_ANALISIS debe ser 1 o 2"
-        )
+    concurrencia = obtener_concurrencia_mensajes()
+    trabajadores_lotes = obtener_concurrencia_lotes_analisis()
 
     def lotes_secuenciales():
         for inicio in range(0, len(estados), tamano_lote):

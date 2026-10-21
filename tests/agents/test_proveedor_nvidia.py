@@ -25,8 +25,11 @@ from src.agentes.errores_ia import (
 from src.agentes.proveedores import nvidia_nim
 
 
-def test_configuracion_nvidia():
-    configuracion = nvidia_nim.obtener_configuracion_nvidia()
+def test_configuracion_nvidia(monkeypatch):
+    monkeypatch.delenv("COMMUNITYLAB_MODELO_NVIDIA", raising=False)
+
+    with patch("src.agentes.configuracion_ia.load_dotenv"):
+        configuracion = nvidia_nim.obtener_configuracion_nvidia()
 
     assert configuracion == {
         "proveedor": "NVIDIA NIM",
@@ -78,6 +81,9 @@ def test_construye_cliente_nvidia_sin_realizar_llamada(monkeypatch):
     with patch.object(
         nvidia_nim,
         "load_dotenv",
+        return_value=None,
+    ), patch(
+        "src.agentes.configuracion_ia.load_dotenv",
         return_value=None,
     ), patch.object(
         nvidia_nim,

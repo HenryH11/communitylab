@@ -18,7 +18,7 @@ VARIABLE_PROVEEDOR_ANALISIS = "COMMUNITYLAB_PROVEEDOR_ANALISIS"
 VARIABLE_PROVEEDOR_GENERACION = ("COMMUNITYLAB_PROVEEDOR_GENERACION")
 
 VARIABLE_MODELO_GEMINI = "COMMUNITYLAB_MODELO_GEMINI"
-MODELO_GEMINI_POR_DEFECTO = "gemini-3.5-flash-lite"
+
 
 VARIABLE_MODELO_NVIDIA = "COMMUNITYLAB_MODELO_NVIDIA"
 
@@ -33,10 +33,32 @@ PROVEEDOR_ANALISIS_POR_DEFECTO = PROVEEDOR_NVIDIA_NIM
 
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
-# Modelo NVIDIA NIM configurado por defecto para el tier estándar.
+# =============================================================
+# CATALOGO DE MODELOS DE IA : VALORES PREDETERMINADOS
+# =============================================================
+# Las variables de entorno tienen prioridad sobre estos valores.
+
+# Gemini: proveedor principal o respaldo.
+MODELO_GEMINI_POR_DEFECTO = "gemini-3.5-flash-lite"
+
+# NVIDIA global: utilizado sin enrutamiento adaptativo.
 MODELO_NVIDIA_POR_DEFECTO = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
+# Generacion rapida: FAQ y boletines.
+MODELO_NVIDIA_RAPIDO_POR_DEFECTO = MODELO_NVIDIA_POR_DEFECTO
+
+# Analisis de mensajes: individual y por lotes.
+MODELO_NVIDIA_ESTANDAR_POR_DEFECTO = "nvidia/nemotron-3.5-super-vl-120b-a12b"
+
+# Generacion elaborada: LinkedIn, casos de exito e insights.
+MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO = "nvidia/nemotron-3.5-super-vl-120b-a12b"
+
+# Alias historico conservado por compatibilidad.
 MODELO_NVIDIA_NEMOTRON = MODELO_NVIDIA_POR_DEFECTO
+
+
+# Modelo NVIDIA NIM configurado por defecto para el tier estándar.
+
 
 # Los reintentos los controla la capa de aplicación.
 # Evitamos sumar retries ocultos del cliente NVIDIA.
@@ -60,9 +82,7 @@ VARIABLE_MODELO_NVIDIA_RAPIDO = "COMMUNITYLAB_MODELO_NVIDIA_RAPIDO"
 VARIABLE_MODELO_NVIDIA_ESTANDAR = "COMMUNITYLAB_MODELO_NVIDIA_ESTANDAR"
 VARIABLE_MODELO_NVIDIA_RAZONAMIENTO = "COMMUNITYLAB_MODELO_NVIDIA_RAZONAMIENTO"
 
-MODELO_NVIDIA_RAPIDO_POR_DEFECTO = MODELO_NVIDIA_POR_DEFECTO
-MODELO_NVIDIA_ESTANDAR_POR_DEFECTO = MODELO_NVIDIA_POR_DEFECTO
-MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO = "nvidia/nemotron-3-super-120b-a12b"
+
 
 # Mapeo de rutas de generación y etapas a sus correspondientes tiers
 MAPEO_RUTAS_A_TIERS: dict[str, str] = {
@@ -117,9 +137,9 @@ def obtener_modelo_nvidia_por_tier(tier: str) -> str:
     return (
         os.getenv(
             VARIABLE_MODELO_NVIDIA_ESTANDAR,
-            obtener_modelo_nvidia_id(),
+            MODELO_NVIDIA_ESTANDAR_POR_DEFECTO,
         ).strip()
-        or obtener_modelo_nvidia_id()
+        or MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
     )
 
 
@@ -148,7 +168,6 @@ def obtener_configuracion_enrutamiento() -> dict[str, object]:
             },
         },
     }
-
 
 
 def obtener_modelo_gemini_id() -> str:

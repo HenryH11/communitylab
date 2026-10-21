@@ -15,6 +15,7 @@ from src.datos.entrega_ia import construir_plan_procesamiento, preparar_entrega,
 from src.datos.ingesta import construir_estados_agente, construir_ciclos, guardar_ciclos, principal
 from src.datos.ingesta_reddit import parsear_entradas_atom, transformar_entrada, comentario_fue_eliminado, construir_lote
 from src.datos.relevancia import ConfiguracionRelevancia
+from src.agentes.configuracion_ia import obtener_modelo_nvidia_id
 from test_ingesta_reddit import EJEMPLO_COMENTARIOS
 from test_procesamiento_datos import FECHA, lote, mensaje
 
@@ -138,7 +139,7 @@ class EntregaTests(unittest.TestCase):
             informe["modelo_ia"],
             {
                 "proveedor": "NVIDIA NIM",
-                "identificador_modelo": "nvidia/nemotron-3.5-lightning-30b-a3b",
+                "identificador_modelo": obtener_modelo_nvidia_id(),
                 "base_url": "https://integrate.api.nvidia.com/v1",
                 "max_retries": 0,
             },

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.agentes.configuracion_ia import (
-    MODELO_NVIDIA_POR_DEFECTO,
+    MODELO_NVIDIA_ESTANDAR_POR_DEFECTO,
     MODELO_NVIDIA_RAPIDO_POR_DEFECTO,
     MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO,
     PROVEEDOR_NVIDIA_NIM,
@@ -45,20 +45,31 @@ def test_asociacion_de_rutas_a_tiers():
     assert obtener_tier_por_ruta(None) == TIER_ESTANDAR
 
 
-def test_modelos_por_defecto_segun_tier():
-    """Verifica los modelos predeterminados de NVIDIA NIM para cada tier."""
-    assert (
-        obtener_modelo_nvidia_por_tier(TIER_RAPIDO)
-        == MODELO_NVIDIA_RAPIDO_POR_DEFECTO
+def test_modelos_por_defecto_segun_tier(monkeypatch):
+    """Verifica los modelos predeterminados sin depender del .env."""
+    variables = (
+        "COMMUNITYLAB_ENRUTAMIENTO_ADAPTATIVO",
+        "COMMUNITYLAB_MODELO_NVIDIA_RAPIDO",
+        "COMMUNITYLAB_MODELO_NVIDIA_ESTANDAR",
+        "COMMUNITYLAB_MODELO_NVIDIA_RAZONAMIENTO",
     )
-    assert (
-        obtener_modelo_nvidia_por_tier(TIER_ESTANDAR)
-        == MODELO_NVIDIA_POR_DEFECTO
-    )
-    assert (
-        obtener_modelo_nvidia_por_tier(TIER_RAZONAMIENTO)
-        == MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO
-    )
+
+    for variable in variables:
+        monkeypatch.delenv(variable, raising=False)
+
+    with patch("src.agentes.configuracion_ia.load_dotenv"):
+        assert (
+            obtener_modelo_nvidia_por_tier(TIER_RAPIDO)
+            == MODELO_NVIDIA_RAPIDO_POR_DEFECTO
+        )
+        assert (
+            obtener_modelo_nvidia_por_tier(TIER_ESTANDAR)
+            == MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
+        )
+        assert (
+            obtener_modelo_nvidia_por_tier(TIER_RAZONAMIENTO)
+            == MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO
+        )
 
 
 def test_modelos_por_ruta_segun_tier():

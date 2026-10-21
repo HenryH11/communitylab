@@ -14,7 +14,16 @@ parser.add_argument(
 )
 parser.add_argument("--corrida", type=int, default=1)
 parser.add_argument("--tamano-lote", type=int, default=10)
+parser.add_argument("--timeout-segundos", type=int, default=30)
 parser.add_argument("--solo-validar", action="store_true")
+parser.add_argument(
+    "--modelo",
+    choices=(
+        "nvidia/nemotron-3-super-120b-a12b",
+        "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    ),
+    default="nvidia/nemotron-3-super-120b-a12b",
+)
 args = parser.parse_args()
 
 if args.corrida < 1:
@@ -22,14 +31,19 @@ if args.corrida < 1:
 if not 1 <= args.tamano_lote <= 10:
     parser.error("--tamano-lote debe estar entre 1 y 10")
 
+if args.timeout_segundos <= 0:
+    parser.error("--timeout-segundos debe ser mayor que cero")
+
 raiz = Path(__file__).resolve().parents[1]
 directorio = raiz / "salida" / "experimentos" / "concurrencia_doble"
+if args.modelo == "nvidia/nemotron-3.5-super-vl-120b-a12b":
+    directorio = directorio / "nemotron_35_super_vl"
 destino = directorio / f"{args.modo}_lote{args.tamano_lote}_{args.corrida:02d}.json"
 
 if destino.exists() and not args.solo_validar:
     raise SystemExit(f"Ya existe {destino}. No se sobrescribirá.")
 
-modelo = "nvidia/nemotron-3-super-120b-a12b"
+modelo = args.modelo
 modos = {
     "base": (1, 1),
     "analisis": (2, 1),
@@ -41,7 +55,7 @@ trabajadores_analisis, trabajadores_generacion = modos[args.modo]
 os.environ.update({
     "COMMUNITYLAB_CONCURRENCIA_MENSAJES": str(trabajadores_generacion),
     "COMMUNITYLAB_CONCURRENCIA_LOTES_ANALISIS": str(trabajadores_analisis),
-    "COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS": "30",
+    "COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS": str(args.timeout_segundos),
     "COMMUNITYLAB_PROVEEDOR_ANALISIS": "nvidia_nim",
     "COMMUNITYLAB_PROVEEDOR_GENERACION": "nvidia_nim",
     "COMMUNITYLAB_ENRUTAMIENTO_ADAPTATIVO": "true",
@@ -63,7 +77,10 @@ if args.solo_validar:
     print("Tamano de lote:", args.tamano_lote)
     print("Mensajes del dataset:", total)
     print("SHA256:", hashlib.sha256(contenido).hexdigest())
+    print("Modelo:", modelo)
+    print("Timeout NVIDIA:", args.timeout_segundos, "s")
     print("Destino previsto:", destino)
+    print("Destino existente:", destino.exists())
     print("Validacion sin llamadas LLM: OK")
     raise SystemExit(0)
 
@@ -104,7 +121,7 @@ captura = {
     "trabajadores_analisis": trabajadores_analisis,
     "trabajadores_generacion": trabajadores_generacion,
     "modelo": modelo,
-    "timeout_segundos": 30,
+    "timeout_segundos": args.timeout_segundos,
     "fecha_referencia": "2026-09-17T12:00:00Z",
     "tamano_ciclo": 20,
     "tamano_lote": args.tamano_lote,

@@ -7,7 +7,7 @@ Evaluar si la ejecución concurrente reduce la latencia del procesamiento de men
 Rama: `feature/DS-Semana5-Concurrencia-Experimental`.
 
 Proveedor experimental: NVIDIA NIM.
-Modelo: `nvidia/nemotron-3-super-120b-a12b`.
+Modelo de experimentos iniciales: `nvidia/nemotron-3-super-120b-a12b`.
 
 La implementación estable con Gemini no se reemplaza.
 
@@ -88,7 +88,89 @@ El modo de análisis concurrente fue un 13.7 % más lento en esta comparación c
 
 Los lotes desbalanceados y la variabilidad del proveedor son posibles factores. No se ha demostrado causalidad.
 
-No se dispone aún de comparaciones completas de los cuatro modos utilizando lotes de 6.
+Las comparaciones completas con lotes de 6 se presentan en la sección 3.4.
+
+### 3.4. Flujo completo con Nemotron 3.5
+
+Modelo: `nvidia/nemotron-3.5-super-vl-120b-a12b`.
+
+Dataset: 23 mensajes simulados, lote de 6 y 35 activos.
+Se mantuvo el mismo SHA256 indicado en la sección 2.
+
+| Modo | Corrida | Timeout | Tiempo (s) | Errores LLM | Reintentos | Fallbacks |
+|---|---:|---:|---:|---:|---:|---:|
+| base (1+1) | 1 | 30 s | 158.12 | 1 | 1 | 0 |
+| base (1+1) | 2 | 30 s | 90.07 | 3 | 2 | 1 |
+| analisis (2+1) | 1 | 30 s | 159.90 | 4 | 4 | 0 |
+| generacion (1+2) | 1 | 30 s | 99.93 | 7 | 6 | 1 |
+| generacion (1+2) | 2 | 30 s | 106.54 | 3 | 3 | 0 |
+| ambas (2+2) | 1 | 30 s | 74.36 | 0 | 0 | 0 |
+| ambas (2+2) | 2 | 30 s | 208.19 | 7 | 7 | 0 |
+| ambas (2+2) | 3 | 20 s | 41.35 | 0 | 0 | 0 |
+| ambas (2+2) | 4 | 30 s | 74.85 | 2 | 2 | 0 |
+| ambas (2+2) | 5 | 20 s | 77.83 | 7 | 6 | 1 |
+
+Todas las corridas completaron 23 mensajes y 35 activos,
+sin errores finales, conservando IDs, orden e integridad.
+Los contratos de entrega fueron válidos.
+
+Las corridas con fallback son ejecuciones multproveedor:
+no representan rendimiento exclusivo de NVIDIA NIM.
+
+#### Hallazgos de concurrencia
+
+- El mejor tiempo observado fue 41.35 s con 2+2 y timeout de 20 s.
+- La configuración 2+2 también registró 208.19 s.
+- Existe variabilidad considerable entre ejecuciones.
+- No se demuestra una configuración óptima con estas muestras.
+
+#### Timeout de 20 y 30 segundos
+
+Con timeout de 30 segundos se observaron solicitudes
+que finalizaron mediante `OpenAITimeoutError` cerca de los 30 s.
+
+Con timeout de 20 segundos se observaron dos solicitudes
+que finalizaron por timeout cerca de los 20 s.
+
+El nuevo límite funciona, pero no se ha demostrado
+que reduzca sistemáticamente el tiempo total.
+
+Los errores HTTP 500 son independientes del límite
+de timeout y pueden producirse en menos de un segundo.
+
+#### Retry, fallback y recuperación
+
+- Retry: reintento con el proveedor primario NVIDIA.
+- Fallback: uso de Gemini cuando NVIDIA no completa la operación.
+- Recuperación posterior: mecanismo diferente, no equivalente
+  a los dos anteriores.
+
+Las ejecuciones demuestran continuidad de la entrega,
+pero no garantizan disponibilidad constante de NVIDIA.
+
+#### Compatibilidad de Nemotron 3.5
+
+Se probaron individualmente las cinco rutas:
+`preguntas_frecuentes`, `linkedin`, `boletin`,
+`caso_exito` e `insight_mejora`.
+
+Se validó también la generación multiruta
+de tres activos con NVIDIA, sin fallback.
+
+El adaptador aplica selectivamente `max_tokens=512`
+para las FAQ del modelo Nemotron 3.5 Super VL.
+
+El ajuste permite obtener FAQ válidas,
+pero no elimina todos los HTTP 500.
+
+La pregunta `int-021` falló tres veces con HTTP 500
+durante una corrida base. En dos pruebas aisladas
+posteriores funcionó en 1.30 s y 1.03 s.
+
+No se determinó la causa exacta de esos fallos.
+
+Las salidas históricas son evidencia para regresión
+y estabilidad, no ground truth humano.
 
 ## 4. Validación funcional
 
@@ -114,6 +196,14 @@ Prueba integral simulada del benchmark combinado:
 
 Las pruebas simuladas no realizan llamadas LLM.
 
+### 4.1. Regresión posterior con Nemotron 3.5
+
+- Configuración 1+1: 327 pruebas aprobadas.
+- Configuración 2+2: 327 pruebas aprobadas.
+- Proveedor y adaptador NVIDIA: 25 pruebas aprobadas.
+
+La implementación estable de Gemini no se modificó.
+
 ## 5. Alcance y limitaciones
 
 Los resultados respaldan la viabilidad funcional de la concurrencia experimental.
@@ -126,8 +216,7 @@ Data conserva la autoridad sobre score_relevancia, tipo_original, elegible_conte
 
 ## 6. Pendientes
 
-- Comparar los cuatro modos extremo a extremo con el mismo tamaño de lote.
-- Ampliar el número de repeticiones y controlar el orden de ejecución.
+- Repetir los cuatro modos con un mayor número de corridas y orden de ejecución balanceado.
 - Evaluar calidad editorial con criterios independientes.
 - Revisar comportamiento bajo límites de tasa y fallos del proveedor.
 - Considerar integración estable solamente después de nuevas pruebas.
@@ -139,3 +228,17 @@ La concurrencia experimental supera las regresiones funcionales disponibles.
 El análisis aislado muestra una reducción preliminar de latencia del 36.5 %, mientras que la primera medición completa no confirma esa mejora.
 
 Decisión: mantener la implementación en su rama experimental y no habilitarla por defecto.
+
+### 7.1. Decisión posterior a las nuevas corridas
+
+Nemotron 3.5 muestra potencial de aceleración
+con concurrencia de generación y configuración 2+2.
+
+Sin embargo, la variabilidad de latencia, los timeouts
+y los errores HTTP 500 impiden confirmar una mejora estable.
+
+El timeout de 20 segundos se mantiene como alternativa
+experimental. El predeterminado de 30 segundos no se reemplaza.
+
+Se conserva la rama experimental y no se promueve
+automáticamente ninguna configuración a producción.

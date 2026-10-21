@@ -16,6 +16,10 @@ informe = sincronizar_conjunto(documento, instantanea_completa=True)
 
 Valida primero versión, siete campos, total, contador de spam, duplicados,
 tipos, UTF-8, contenido de hasta 160 caracteres y fecha UTC de segundos o null.
+`canal`, `sentimiento`, `tema` y `tipo` deben ser textos no vacíos, nunca null,
+para coincidir con las columnas NOT NULL comunicadas por Marco y DA. Se validan
+todos los registros antes de abrir una conexión o escribir, sin recortar ni
+modificar los textos recibidos. `fecha` conserva la posibilidad de ser null.
 Conserva versión 1.0 histórica; en 1.1 exige total_spam_excluido.
 
 Dentro de una transacción, bloquea ambos objetos con NOWAIT, hace MERGE,
@@ -59,10 +63,10 @@ grants ni Vault en INSUMOS; eso requiere revisión de Marco y una prueba control
 
 Pruebas offline: `python -m pytest tests/test_db_client.py -q`.
 
-Verificación del 20 oct 2026 (sin red ni credenciales): 46 pruebas nuevas y
-suite completa **658 passed, 208 subtests passed**. Se importó oracledb 26.0.1;
+Verificación del 20 oct 2026 (sin red ni credenciales): 67 pruebas del cliente y
+suite completa **679 passed, 208 subtests passed**. Se importó oracledb 26.0.1;
 las conexiones, Vault y las operaciones de DB se simularon. Sin oracledb, las
-46 pruebas nuevas se omiten sin romper pytest. El formato y git diff --check
+67 pruebas del cliente se omiten sin romper pytest. El formato y git diff --check
 también se verificaron. La suite verde no reemplaza la prueba SQL en INSUMOS.
 
 Referencias primarias usadas para transacciones y bloqueo:

@@ -265,6 +265,38 @@ def test_rechaza_campo_faltante():
         cargar(doc, Conexion())
 
 
+@pytest.mark.parametrize("campo", ["canal", "sentimiento", "tema", "tipo"])
+@pytest.mark.parametrize("valor", [None, "", " \t\n", 7, []])
+def test_columnas_not_null_se_validan_en_todo_el_lote(campo, valor):
+    doc = documento("int-001", "int-002")
+    doc["registros"][1][campo] = valor
+    original, con = deepcopy(doc), Conexion()
+    with pytest.raises(ValueError, match=campo):
+        cargar(doc, con)
+    assert doc == original
+    assert con.operaciones == []
+    assert con.commits == con.rollbacks == 0
+    with patch.object(db, "obtener_conexion") as abrir:
+        with pytest.raises(ValueError, match=campo):
+            db.sincronizar_conjunto(doc, instantanea_completa=True)
+        abrir.assert_not_called()
+
+
+def test_columnas_requeridas_conservan_texto_y_fecha_null():
+    doc, con = documento("int-001"), Conexion()
+    doc["registros"][0].update(
+        canal="  comunidad 🚀  ",
+        sentimiento="positivo",
+        tema="acción y formación",
+        tipo="testimonio",
+        fecha=None,
+    )
+    original = deepcopy(doc)
+    cargar(doc, con)
+    assert db.leer_conjunto(conexion=con) == original
+    assert doc == original
+
+
 @pytest.mark.parametrize(
     "etapa",
     [

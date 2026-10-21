@@ -197,10 +197,12 @@ def validar_registro(registro: Mapping[str, Any]) -> dict[str, Any]:
         identificador
     ):
         raise ValueError("id debe contener solo letras, números, _ o -")
-    for campo in CAMPOS_CONJUNTO[1:-1]:
+    # La tabla de INSUMOS exige NOT NULL para estas cuatro columnas.
+    # Solo comprobar strip(): no modificar el texto que entrega DA.
+    for campo in ("canal", "sentimiento", "tema", "tipo"):
         valor = registro[campo]
-        if valor is not None and not isinstance(valor, str):
-            raise ValueError(f"{campo} debe ser texto o null")
+        if not isinstance(valor, str) or not valor.strip():
+            raise ValueError(f"{campo} debe ser texto no vacío, no null")
     contenido = registro["contenido_corto"]
     if not isinstance(contenido, str) or len(contenido) > 160:
         raise ValueError(

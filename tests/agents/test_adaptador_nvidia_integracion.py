@@ -19,10 +19,13 @@ except ModuleNotFoundError as error:
 pytestmark = pytest.mark.skipif(nvidia_nim is None, reason="El adaptador NIM de DS no está integrado en esta rama")
 
 ANALISIS = {
-    "sentimiento": "neutral", "tema_principal": "datos_ia",
-    "subtema": "Conexión de nodos", "tipo_detectado": "pregunta_tecnica",
+    "sentimiento": "neutral",
+    "tema_principal": "datos_ia",
+    "subtema": "Conexión de nodos",
+    "tipo_detectado": "pregunta_tecnica",
+    "es_spam_detectado": False,
+    "motivo_spam": None,
 }
-
 
 def transporte(monkeypatch, contenido):
     llamadas = []

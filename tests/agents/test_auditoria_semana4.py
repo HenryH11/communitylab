@@ -99,6 +99,8 @@ def salida_ds():
                 "tema_principal": "empleabilidad",
                 "subtema": "primer trabajo",
                 "tipo_detectado": "testimonio",
+                "es_spam_detectado": False,
+                "motivo_spam": None,
                 "rutas": [
                     "caso_exito",
                     "boletin",
@@ -387,3 +389,20 @@ def test_serializacion_preserva_unicode():
 
     assert "¡Felicitaciones, Ana! 🎉" in texto
     assert "\\ud83c" not in texto
+
+
+def test_auditoria_conserva_campos_spam():
+    auditoria = construir()
+
+    interaccion = next(
+        item
+        for item in auditoria["interacciones"]
+        if item["id"] == "int-001"
+    )
+
+    analisis = interaccion["analisis"]
+
+    assert "es_spam_detectado" in analisis
+    assert "motivo_spam" in analisis
+    assert analisis["es_spam_detectado"] is False
+    assert analisis["motivo_spam"] is None

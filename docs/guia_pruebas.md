@@ -11,9 +11,10 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Las pruebas automáticas y la evaluación offline no necesitan clave de Gemini.
-Para los comandos en vivo, configura `GEMINI_API_KEY` en un archivo `.env`
-local. No publiques ese archivo ni compartas la clave.
+Las pruebas automáticas offline no necesitan credenciales de proveedores LLM.
+Para las ejecuciones reales, configura `NVIDIA_API_KEY` para NVIDIA NIM y
+`GEMINI_API_KEY` cuando se utilice Gemini como respaldo, en un archivo `.env`
+local. No publiques ese archivo ni compartas las claves.
 
 ## Validación sin Gemini
 
@@ -39,6 +40,30 @@ Evalúa sentimiento, tema, tipo y rutas, muestra discrepancias por ID y termina
 con estado distinto de cero si una métrica cae bajo su umbral. Los snapshots son
 resultados históricos; sirven para regresión, no son una verdad de referencia
 revisada por anotadores independientes.
+
+## Detección de spam — Semana 4
+
+El análisis incorpora `es_spam_detectado` y `motivo_spam` para identificar
+promociones no solicitadas, captación y ofertas engañosas mediante el LLM.
+
+Los mensajes clasificados como spam no generan rutas ni activos. Además,
+se excluyen de la distribución de sentimientos y se contabilizan mediante
+`total_spam_detectado`.
+
+Para validar los modelos, reglas de enrutamiento, resumen y contrato v1.4:
+
+```powershell
+python -B -m pytest tests/agents/test_modelo_spam.py tests/agents/test_spam_aceptacion.py tests/agents/test_resumen_spam.py tests/agents/test_validacion_entrega_spam.py tests/test_contratos_arquitectura.py -q -p no:cacheprovider
+```
+
+La regresión de Semana 4 registró 302 pruebas DS y 19 pruebas de contratos
+aprobadas. El contrato v1.4 conserva la compatibilidad con v1.2 y v1.3.
+
+Las pruebas de aceptación utilizan clasificaciones simuladas: validan
+el comportamiento del sistema, pero no miden la precisión semántica del LLM.
+
+El detalle técnico se encuentra en
+[`avance_datascience_semana4_spam.md`](avance_datascience_semana4_spam.md).
 
 ## Pruebas de Cloud (OCI)
 

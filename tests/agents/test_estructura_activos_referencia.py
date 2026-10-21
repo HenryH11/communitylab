@@ -20,6 +20,7 @@ from src.agentes.entrega_resultados import (
     preparar_entrega_resultados,
 )
 from src.agentes.nodos import nodos_generadores
+from tests.agents.test_tolerancia_estados_manuales import estado
 
 try:  # DS-Semana3 movió los modelos de salida a src/agentes/modelos.py.
     from src.agentes.modelos import PublicacionLinkedIn, SugerenciaPreguntasFrecuentes
@@ -65,6 +66,8 @@ def ejecutar(caso, generadores):
     estado = {k: v for k, v in caso.items() if k != "justificacion"}
     # El fixture no trae subtema; el contrato de DS lo exige como campo de análisis.
     estado.setdefault("subtema", f"subtema de {caso['tema_principal']}")
+    estado.setdefault("es_spam_detectado", False)
+    estado.setdefault("motivo_spam", None)
     with patch.object(nodos_generadores, "_obtener_generadores", return_value=generadores):
         estado.update(nodos_generadores.generar_activos(estado))
     entrega = preparar_entrega_resultados(

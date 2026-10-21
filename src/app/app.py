@@ -132,8 +132,12 @@ if "resultado" in st.session_state:
             "sentimiento": data.get("sentimiento", "N/A"),
             "tema": data.get("tema_principal", "N/A"),
             "elegible": "Sí" if data.get("elegible_contenido") else "No",
+            "spam": data.get("es_spam_detectado") is True,
         })
     df = pd.DataFrame(data_graficas)
+    # Como DS en resumen_entrega: el spam no cuenta para el sentimiento.
+    df_sentimiento = df[~df["spam"]] if not df.empty else df
+    total_spam = total - len(df_sentimiento)
 
     col_g1, col_g2 = st.columns(2)
     with col_g1:
@@ -148,12 +152,17 @@ if "resultado" in st.session_state:
 
     with col_g2:
         st.markdown("**Distribución por sentimiento**")
-        chart_sent = alt.Chart(df).mark_arc(innerRadius=50).encode(
-            theta=alt.Theta('count():Q'),
-            color=alt.Color('sentimiento:N', legend=alt.Legend(title="Sentimiento")),
-            tooltip=['sentimiento:N', 'count():Q']
-        ).properties(height=300)
-        st.altair_chart(chart_sent, use_container_width=True)
+        if df_sentimiento.empty:
+            st.info("No hay mensajes legítimos para calcular el sentimiento.")
+        else:
+            chart_sent = alt.Chart(df_sentimiento).mark_arc(innerRadius=50).encode(
+                theta=alt.Theta('count():Q'),
+                color=alt.Color('sentimiento:N', legend=alt.Legend(title="Sentimiento")),
+                tooltip=['sentimiento:N', 'count():Q']
+            ).properties(height=300)
+            st.altair_chart(chart_sent, use_container_width=True)
+        if total_spam:
+            st.caption(f"Se excluyen {total_spam} mensaje(s) marcados como spam.")
 
     col_g3, col_g4 = st.columns(2)
     with col_g3:
@@ -174,6 +183,44 @@ if "resultado" in st.session_state:
             tooltip=['elegible:N', 'count():Q']
         ).properties(height=300)
         st.altair_chart(chart_eleg, use_container_width=True)
+
+    st.markdown("---")
+
+    # ============ DETALLE POR MENSAJE ============
+    # Solo lectura: incluye los mensajes sin activos para revisar por qué no
+    # generaron contenido. La edición y aprobación viven en Plantillas.
+    st.markdown('<div class="section-title">📝 Detalle por mensaje</div>', unsafe_allow_html=True)
+
+    for id_msg, data in resultados.items():
+        autor = data.get("autor", "Anónimo")
+        tema = data.get("tema_principal", "sin tema")
+        sentimiento = data.get("sentimiento", "N/A")
+        activos = list(data.get("activos_generados") or {})
+        icono = "🚫" if data.get("es_spam_detectado") is True else ("📝" if activos else "💬")
+
+        with st.expander(f"{icono} {autor} — {tema} · {sentimiento}"):
+            c1, c2 = st.columns(2)
+            with c1:
+                st.write(f"**Canal:** {data.get('canal', 'N/A')}")
+                st.write(f"**Tipo detectado:** {data.get('tipo_detectado', 'N/A')}")
+                st.write(f"**Score relevancia:** {data.get('score_relevancia', 'N/A')}")
+                st.write(f"**Rutas:** {', '.join(data.get('rutas') or []) or 'ninguna'}")
+            with c2:
+                st.write(f"**Sentimiento:** {sentimiento}")
+                st.write(f"**Subtema:** {data.get('subtema', 'N/A')}")
+                st.write(f"**Elegible para contenido:** {'Sí' if data.get('elegible_contenido') else 'No'}")
+                if "elegible_faq" in data:
+                    st.write(f"**Elegible para FAQ:** {'Sí' if data['elegible_faq'] else 'No'}")
+            if data.get("es_spam_detectado") is True:
+                st.write(f"**Spam:** {data.get('motivo_spam') or 'sin motivo indicado'}")
+
+            st.markdown(f"*Texto original:* {data.get('texto', '')}")
+            if activos:
+                st.caption("Activos generados: " + ", ".join(activos) + " · edítalos y apruébalos en Plantillas.")
+            else:
+                st.caption("Este mensaje no generó activos.")
+            if data.get("errores"):
+                st.caption(f"El pipeline registró {len(data['errores'])} error(es) en este mensaje.")
 
     st.markdown("---")
 

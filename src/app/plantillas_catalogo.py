@@ -49,7 +49,7 @@ PLANTILLAS = (
         "id": "sentimiento", "nombre": "Sentimiento de comunidad", "icono": "%",
         "categoria": "Analíticas", "etiqueta": "ANALÍTICA",
         "descripcion": "Distribución y explicación", "detalle": "Gráfico + resumen",
-        "fuente": "analisis", "campo": "sentimiento",
+        "fuente": "analisis", "campo": "sentimiento", "excluir_spam": True,
     },
     {
         "id": "temas", "nombre": "Temas y tendencias", "icono": "#",
@@ -97,12 +97,24 @@ def borradores(plantilla, resultados):
     ]
 
 
-def distribucion(plantilla, resultados):
-    """Conteo del campo de análisis de una plantilla analítica, de mayor a menor."""
+def es_spam(data):
+    return data.get("es_spam_detectado") is True
+
+
+def mensajes_analizados(plantilla, resultados):
+    """Mensajes que cuentan para una plantilla analítica.
+
+    Como DS en `resumen_entrega`, el sentimiento excluye el spam; los temas no.
+    """
     if plantilla.get("fuente") != "analisis":
         return []
+    return [d for d in resultados.values() if not (plantilla.get("excluir_spam") and es_spam(d))]
+
+
+def distribucion(plantilla, resultados):
+    """Conteo del campo de análisis de una plantilla analítica, de mayor a menor."""
     return Counter(
-        data.get(plantilla["campo"]) or "sin dato" for data in resultados.values()
+        data.get(plantilla["campo"]) or "sin dato" for data in mensajes_analizados(plantilla, resultados)
     ).most_common()
 
 
@@ -110,9 +122,7 @@ def contar(plantilla, resultados):
     """Número que muestra la tarjeta: borradores o mensajes analizados."""
     if plantilla.get("fuente") == "activo":
         return len(borradores(plantilla, resultados))
-    if plantilla.get("fuente") == "analisis":
-        return len(resultados)
-    return 0
+    return len(mensajes_analizados(plantilla, resultados))
 
 
 def tipos_sin_plantilla(resultados):

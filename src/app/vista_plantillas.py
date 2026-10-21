@@ -187,6 +187,9 @@ def _resultado_activo(plantilla, resultados, curaduria):
 
 def _resultado_analisis(plantilla, resultados):
     conteos = distribucion(plantilla, resultados)
+    excluidos = len(resultados) - sum(n for _, n in conteos)
+    if excluidos:
+        st.caption(f"Se excluyen {excluidos} mensaje(s) marcados como spam, igual que en el resumen de DS.")
     if not conteos:
         st.info("No hay mensajes analizados en este lote.")
         return

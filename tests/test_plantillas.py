@@ -55,6 +55,33 @@ def test_distribucion_ordena_de_mayor_a_menor():
     assert distribucion(POR_ID["temas"], resultados())[0] == ("aprendizaje", 2)
 
 
+def lote_con_spam():
+    """Caso de Jhonattan: 2 legítimos positivos y 3 spam negativos."""
+    datos = {f"ok{i}": {"sentimiento": "positivo", "tema_principal": "aprendizaje", "es_spam_detectado": False,
+                        "activos_generados": {}} for i in range(2)}
+    datos.update({f"spam{i}": {"sentimiento": "negativo", "tema_principal": "otros", "es_spam_detectado": True,
+                               "motivo_spam": "publicidad", "activos_generados": {}} for i in range(3)})
+    return datos
+
+
+def test_sentimiento_excluye_spam_como_ds():
+    from src.agentes.resumen_entrega import construir_resumen_comunidad
+
+    datos = lote_con_spam()
+    assert distribucion(POR_ID["sentimiento"], datos) == [("positivo", 2)]
+    assert contar(POR_ID["sentimiento"], datos) == 2
+    resumen = construir_resumen_comunidad(list(datos.values()), [], [], 0)
+    assert dict(distribucion(POR_ID["sentimiento"], datos)) == resumen["distribucion_sentimientos"]
+
+
+def test_temas_cuentan_todos_los_mensajes_como_ds():
+    from src.agentes.resumen_entrega import construir_resumen_comunidad
+
+    datos = lote_con_spam()
+    resumen = construir_resumen_comunidad(list(datos.values()), [], [], 0)
+    assert dict(distribucion(POR_ID["temas"], datos)) == resumen["distribucion_temas"] == {"otros": 3, "aprendizaje": 2}
+
+
 def test_filtros_por_categoria_y_busqueda():
     assert {p["id"] for p in filtrar(categoria="Preguntas frecuentes")} == {"preguntas_frecuentes"}
     assert [p["id"] for p in filtrar("  LINKEDIN ")] == ["linkedin"]
@@ -100,3 +127,20 @@ def test_ui_con_lote_pinta_cada_activo_una_vez_y_proximamente():
     assert any("Próximamente" in i.value for i in app.info)
     app.text_input(key="plantillas_busqueda").set_value("linkedin").run()
     assert not app.exception
+
+
+@con_entorno_ui
+def test_ui_detalle_incluye_mensajes_sin_activos_y_spam():
+    from streamlit.testing.v1 import AppTest
+
+    datos = resultados()
+    datos.update(lote_con_spam())
+    app = AppTest.from_file(APP, default_timeout=30)
+    app.session_state["resultado"] = {"resultados_por_id": datos}
+    app.run()
+    assert not app.exception
+    detalle = [e for e in app.expander if e.label.startswith(("📝", "💬", "🚫"))]
+    assert len(detalle) == len(datos)
+    assert sum(e.label.startswith("🚫") for e in detalle) == 3
+    assert any("no generó activos" in c.value for c in app.caption)
+    assert any("Se excluyen 3 mensaje(s)" in c.value for c in app.caption)

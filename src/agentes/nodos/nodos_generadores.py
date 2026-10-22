@@ -26,8 +26,8 @@ from src.agentes.observabilidad import (
 from src.agentes.modelos import (
     CasoDeExito,
     DestaqueBoletin,
-    InsightMejora,
-    PublicacionLinkedIn,
+    InsightMejoraIA,
+    PublicacionLinkedInIA,
     SugerenciaPreguntasFrecuentes,
 )
 from src.agentes.prompts.boletin import prompt_boletin
@@ -50,7 +50,7 @@ def _obtener_generadores(
         "linkedin": (
             prompt_linkedin
             | obtener_modelo_generacion_estructurado(
-                PublicacionLinkedIn,
+                PublicacionLinkedInIA,
                 proveedor=proveedor,
                 ruta="linkedin",
             )
@@ -82,7 +82,7 @@ def _obtener_generadores(
         "insight_mejora": (
             prompt_insight_mejora
             | obtener_modelo_generacion_estructurado(
-                InsightMejora,
+                InsightMejoraIA,
                 proveedor=proveedor,
                 ruta="insight_mejora",
             )

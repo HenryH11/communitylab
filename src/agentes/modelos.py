@@ -2,7 +2,13 @@ import re
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+    model_validator,
+    model_serializer,
+)
 
 
 Sentimiento = Literal[
@@ -114,7 +120,7 @@ class AnalisisLote(BaseModel):
 # Activos generados
 # --------------------------------------------------
 
-class PublicacionLinkedIn(BaseModel):
+class PublicacionLinkedInIA(BaseModel):
     titulo: str = Field(
         description=(
             "Título institucional, natural y fiel al hecho principal "
@@ -206,7 +212,7 @@ class CasoDeExito(BaseModel):
     )
 
 
-class InsightMejora(BaseModel):
+class InsightMejoraIA(BaseModel):
     hallazgo: str = Field(
         description=(
             "Hallazgo breve y objetivo identificado a partir del feedback."
@@ -220,3 +226,42 @@ class InsightMejora(BaseModel):
             "Debe ser None si el mensaje no propone una mejora concreta."
         ),
     )
+
+
+class PublicacionLinkedIn(PublicacionLinkedInIA):
+    """Activo final de LinkedIn, incluyendo metadatos de DS."""
+
+    canal_recomendado: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Canal asignado por Data Science.",
+    )
+
+    @model_serializer(mode="wrap")
+    def serializar(self, handler):
+        datos = handler(self)
+
+        # Compatibilidad con activos históricos sin este campo.
+        if datos.get("canal_recomendado") is None:
+            datos.pop("canal_recomendado", None)
+
+        return datos
+
+
+class InsightMejora(InsightMejoraIA):
+    """Insight final con su área temática."""
+
+    area: TemaPrincipal | None = Field(
+        default=None,
+        description="Área temática obtenida del análisis previo.",
+    )
+
+    @model_serializer(mode="wrap")
+    def serializar(self, handler):
+        datos = handler(self)
+
+        # Compatibilidad con activos históricos sin este campo.
+        if datos.get("area") is None:
+            datos.pop("area", None)
+
+        return datos

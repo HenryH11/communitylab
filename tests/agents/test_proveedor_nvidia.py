@@ -25,8 +25,11 @@ from src.agentes.errores_ia import (
 from src.agentes.proveedores import nvidia_nim
 
 
-def test_configuracion_nvidia():
-    configuracion = nvidia_nim.obtener_configuracion_nvidia()
+def test_configuracion_nvidia(monkeypatch):
+    monkeypatch.delenv("COMMUNITYLAB_MODELO_NVIDIA", raising=False)
+
+    with patch("src.agentes.configuracion_ia.load_dotenv"):
+        configuracion = nvidia_nim.obtener_configuracion_nvidia()
 
     assert configuracion == {
         "proveedor": "NVIDIA NIM",
@@ -78,6 +81,9 @@ def test_construye_cliente_nvidia_sin_realizar_llamada(monkeypatch):
     with patch.object(
         nvidia_nim,
         "load_dotenv",
+        return_value=None,
+    ), patch(
+        "src.agentes.configuracion_ia.load_dotenv",
         return_value=None,
     ), patch.object(
         nvidia_nim,
@@ -298,3 +304,51 @@ def test_adaptador_nvidia_rechaza_salida_invalida(
                 )
             ]
         )
+
+@pytest.mark.parametrize(
+    "modelo, esquema, limite_esperado",
+    [
+        ("nvidia/nemotron-3.5-super-vl-120b-a12b", "faq", 512),
+        ("nvidia/nemotron-3.5-super-vl-120b-a12b", "analisis", None),
+        ("openai/gpt-oss-20b", "faq", None),
+        (None, "faq", 512),
+    ],
+)
+def test_limite_tokens_selectivo_nemotron35(
+    monkeypatch, modelo, esquema, limite_esperado
+):
+    from unittest.mock import MagicMock
+    from src.agentes.modelos import (
+        AnalisisMensaje,
+        SugerenciaPreguntasFrecuentes,
+    )
+
+    cliente = MagicMock()
+    cliente.model_name = modelo or (
+        "nvidia/nemotron-3.5-super-vl-120b-a12b"
+    )
+
+    monkeypatch.setattr(
+        nvidia_nim,
+        "obtener_modelo_nvidia",
+        lambda modelo=None: cliente,
+    )
+
+    esquema_pydantic = (
+        SugerenciaPreguntasFrecuentes
+        if esquema == "faq"
+        else AnalisisMensaje
+    )
+
+    nvidia_nim.obtener_modelo_nvidia_estructurado(
+        esquema_pydantic,
+        modelo=modelo,
+    )
+
+    cliente.bind.assert_called_once()
+    argumentos = cliente.bind.call_args.kwargs
+
+    assert argumentos["response_format"] == {
+        "type": "json_object"
+    }
+    assert argumentos.get("max_tokens") == limite_esperado

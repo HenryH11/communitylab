@@ -8,7 +8,12 @@ from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel
 
-MODELO_GEMINI = "gemini-3.5-flash-lite"
+from src.agentes.configuracion_ia import (
+    MODELO_GEMINI_POR_DEFECTO,
+    obtener_modelo_gemini_id,
+)
+
+MODELO_GEMINI = MODELO_GEMINI_POR_DEFECTO
 
 # Bajo a propósito: los reintentos de la aplicación
 # (reintentos.py) se suman a estos.
@@ -28,7 +33,7 @@ def obtener_configuracion_modelo() -> dict[str, str | int | float]:
     """Devuelve los parámetros no secretos usados en las llamadas a Gemini."""
     return {
         "proveedor": "Google Gemini",
-        "identificador_modelo": MODELO_GEMINI,
+        "identificador_modelo": obtener_modelo_gemini_id(),
         "max_retries": MAX_RETRIES_GEMINI,
         "solicitudes_por_segundo": SOLICITUDES_POR_SEGUNDO,
         "intervalo_revision_limitador_segundos": (
@@ -66,7 +71,7 @@ def obtener_modelo_gemini(
             "Verifica que exista en el archivo .env."
         )
 
-    modelo_id = modelo or MODELO_GEMINI
+    modelo_id = modelo or obtener_modelo_gemini_id()
 
     return ChatGoogleGenerativeAI(
         api_key=api_key,

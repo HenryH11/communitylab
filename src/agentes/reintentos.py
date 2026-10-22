@@ -15,13 +15,21 @@ from src.agentes.errores_ia import (
     ErrorSalidaProveedor,
 )
 
+from src.agentes.configuracion_ia import (
+    ESPERA_BASE_IA_POR_DEFECTO,
+    ESPERA_MAXIMA_IA_POR_DEFECTO,
+    MAX_INTENTOS_IA_POR_DEFECTO,
+    obtener_esperas_reintentos_ia,
+    obtener_max_intentos_ia,
+)
+
 from src.agentes.observabilidad import registrar_evento
 
 
 # Se suma a los reintentos internos del cliente (MAX_RETRIES_GEMINI en modelo_ia.py).
-MAX_INTENTOS = 3
-ESPERA_BASE_SEGUNDOS = 2.0
-ESPERA_MAXIMA_SEGUNDOS = 30.0
+MAX_INTENTOS = MAX_INTENTOS_IA_POR_DEFECTO
+ESPERA_BASE_SEGUNDOS = ESPERA_BASE_IA_POR_DEFECTO
+ESPERA_MAXIMA_SEGUNDOS = ESPERA_MAXIMA_IA_POR_DEFECTO
 
 _TIPOS_TRANSITORIOS = {
     "TimeoutError",
@@ -77,7 +85,8 @@ def es_error_transitorio(error: BaseException) -> bool:
 
 def calcular_espera(intento: int) -> float:
     """Backoff exponencial con jitter para no sincronizar reintentos."""
-    tope = min(ESPERA_MAXIMA_SEGUNDOS, ESPERA_BASE_SEGUNDOS * 2 ** (intento - 1))
+    base, maxima = obtener_esperas_reintentos_ia()
+    tope = min(maxima, base * 2 ** (intento - 1))
     return random.uniform(tope / 2, tope)
 
 
@@ -92,7 +101,7 @@ def ejecutar_con_reintentos(
     max_intentos: int | None = None,
 ) -> T:
     """Ejecuta `operacion(intento)` y reintenta solo errores transitorios."""
-    limite = max_intentos or MAX_INTENTOS
+    limite = max_intentos or obtener_max_intentos_ia()
 
     for intento in range(1, limite + 1):
         try:

@@ -2,6 +2,10 @@
 
 import time
 
+from src.agentes.configuracion_ia import (
+    PASADAS_RECUPERACION_POR_DEFECTO,
+    obtener_pasadas_recuperacion,
+)
 from src.agentes.grafo import MAX_INTERACCIONES_POR_SOLICITUD, procesar_estados_por_lotes
 from src.agentes.observabilidad import (
     configurar_logging,
@@ -11,7 +15,7 @@ from src.agentes.observabilidad import (
 from src.agentes.recuperacion import ids_reintentables, reprocesar_resultados
 
 
-PASADAS_RECUPERACION = 1
+PASADAS_RECUPERACION = PASADAS_RECUPERACION_POR_DEFECTO
 
 
 def _validar_paquete(paquete: dict) -> tuple[dict, set[str], list[str]]:
@@ -88,9 +92,11 @@ def procesar_paquete_entrega(
     paquete: dict,
     *,
     tamano_lote: int = MAX_INTERACCIONES_POR_SOLICITUD,
-    pasadas_recuperacion: int = PASADAS_RECUPERACION,
+    pasadas_recuperacion: int | None = None,
 ) -> dict:
     """Procesa el paquete, registra la ejecución y recupera fallos transitorios."""
+    if pasadas_recuperacion is None:
+        pasadas_recuperacion = obtener_pasadas_recuperacion()
     configurar_logging()
     with contexto_ejecucion() as id_ejecucion:
         inicio = time.perf_counter()

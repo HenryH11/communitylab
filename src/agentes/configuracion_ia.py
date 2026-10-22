@@ -17,6 +17,9 @@ VARIABLE_PROVEEDOR_ANALISIS = "COMMUNITYLAB_PROVEEDOR_ANALISIS"
 
 VARIABLE_PROVEEDOR_GENERACION = ("COMMUNITYLAB_PROVEEDOR_GENERACION")
 
+VARIABLE_MODELO_GEMINI = "COMMUNITYLAB_MODELO_GEMINI"
+
+
 VARIABLE_MODELO_NVIDIA = "COMMUNITYLAB_MODELO_NVIDIA"
 
 VARIABLE_TIMEOUT_NVIDIA = "COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS"
@@ -30,12 +33,32 @@ PROVEEDOR_ANALISIS_POR_DEFECTO = PROVEEDOR_NVIDIA_NIM
 
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
-# Modelo NVIDIA NIM configurado por defecto para el tier estándar.
+# =============================================================
+# CATALOGO DE MODELOS DE IA : VALORES PREDETERMINADOS
+# =============================================================
+# Las variables de entorno tienen prioridad sobre estos valores.
+
+# Gemini: proveedor principal o respaldo.
+MODELO_GEMINI_POR_DEFECTO = "gemini-3.5-flash-lite"
+
+# NVIDIA global: utilizado sin enrutamiento adaptativo.
 MODELO_NVIDIA_POR_DEFECTO = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
-MODELO_NVIDIA_NEMOTRON = (
-    "nvidia/nemotron-3.5-lightning-30b-a3b"
-)
+# Generacion rapida: FAQ y boletines.
+MODELO_NVIDIA_RAPIDO_POR_DEFECTO = MODELO_NVIDIA_POR_DEFECTO
+
+# Analisis de mensajes: individual y por lotes.
+MODELO_NVIDIA_ESTANDAR_POR_DEFECTO = "nvidia/nemotron-3.5-super-vl-120b-a12b"
+
+# Generacion elaborada: LinkedIn, casos de exito e insights.
+MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO = "nvidia/nemotron-3.5-super-vl-120b-a12b"
+
+# Alias historico conservado por compatibilidad.
+MODELO_NVIDIA_NEMOTRON = MODELO_NVIDIA_POR_DEFECTO
+
+
+# Modelo NVIDIA NIM configurado por defecto para el tier estándar.
+
 
 # Los reintentos los controla la capa de aplicación.
 # Evitamos sumar retries ocultos del cliente NVIDIA.
@@ -59,9 +82,7 @@ VARIABLE_MODELO_NVIDIA_RAPIDO = "COMMUNITYLAB_MODELO_NVIDIA_RAPIDO"
 VARIABLE_MODELO_NVIDIA_ESTANDAR = "COMMUNITYLAB_MODELO_NVIDIA_ESTANDAR"
 VARIABLE_MODELO_NVIDIA_RAZONAMIENTO = "COMMUNITYLAB_MODELO_NVIDIA_RAZONAMIENTO"
 
-MODELO_NVIDIA_RAPIDO_POR_DEFECTO = "nvidia/nemotron-3.5-lightning-30b-a3b"
-MODELO_NVIDIA_ESTANDAR_POR_DEFECTO = MODELO_NVIDIA_POR_DEFECTO
-MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO = "nvidia/nemotron-3-super-120b-a12b"
+
 
 # Mapeo de rutas de generación y etapas a sus correspondientes tiers
 MAPEO_RUTAS_A_TIERS: dict[str, str] = {
@@ -116,9 +137,9 @@ def obtener_modelo_nvidia_por_tier(tier: str) -> str:
     return (
         os.getenv(
             VARIABLE_MODELO_NVIDIA_ESTANDAR,
-            obtener_modelo_nvidia_id(),
+            MODELO_NVIDIA_ESTANDAR_POR_DEFECTO,
         ).strip()
-        or obtener_modelo_nvidia_id()
+        or MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
     )
 
 
@@ -147,6 +168,15 @@ def obtener_configuracion_enrutamiento() -> dict[str, object]:
             },
         },
     }
+
+
+def obtener_modelo_gemini_id() -> str:
+    """Obtiene el modelo Gemini configurado."""
+    load_dotenv()
+    return (
+        os.getenv(VARIABLE_MODELO_GEMINI, MODELO_GEMINI_POR_DEFECTO).strip()
+        or MODELO_GEMINI_POR_DEFECTO
+    )
 
 
 def obtener_modelo_nvidia_id() -> str:
@@ -204,6 +234,133 @@ def obtener_proveedor_generacion() -> str:
         )
 
     return proveedor
+
+
+# Reintentos de la capa de aplicacion (no del cliente LLM).
+VARIABLE_MAX_INTENTOS_IA = "COMMUNITYLAB_MAX_INTENTOS_IA"
+MAX_INTENTOS_IA_POR_DEFECTO = 3
+
+
+def obtener_max_intentos_ia() -> int:
+    load_dotenv()
+    valor = os.getenv(
+        VARIABLE_MAX_INTENTOS_IA,
+        str(MAX_INTENTOS_IA_POR_DEFECTO),
+    ).strip()
+
+    try:
+        intentos = int(valor)
+    except ValueError as error:
+        raise ErrorConfiguracionProveedor(
+            f"{VARIABLE_MAX_INTENTOS_IA} debe ser un entero."
+        ) from error
+
+    if intentos < 1:
+        raise ErrorConfiguracionProveedor(
+            f"{VARIABLE_MAX_INTENTOS_IA} debe ser mayor que cero."
+        )
+
+    return intentos
+
+
+# Esperas entre reintentos de la capa de aplicacion.
+VARIABLE_ESPERA_BASE_IA = "COMMUNITYLAB_ESPERA_BASE_IA_SEGUNDOS"
+VARIABLE_ESPERA_MAXIMA_IA = "COMMUNITYLAB_ESPERA_MAXIMA_IA_SEGUNDOS"
+
+ESPERA_BASE_IA_POR_DEFECTO = 2.0
+ESPERA_MAXIMA_IA_POR_DEFECTO = 30.0
+
+
+def obtener_esperas_reintentos_ia() -> tuple[float, float]:
+    """Obtiene y valida las esperas base y maxima."""
+    load_dotenv()
+
+    try:
+        base = float(os.getenv(
+            VARIABLE_ESPERA_BASE_IA,
+            str(ESPERA_BASE_IA_POR_DEFECTO),
+        ))
+        maxima = float(os.getenv(
+            VARIABLE_ESPERA_MAXIMA_IA,
+            str(ESPERA_MAXIMA_IA_POR_DEFECTO),
+        ))
+    except ValueError as error:
+        raise ErrorConfiguracionProveedor(
+            "Las esperas de IA deben ser numeros."
+        ) from error
+
+    if not (
+        0 < base < float("inf")
+        and base <= maxima < float("inf")
+    ):
+        raise ErrorConfiguracionProveedor(
+            "Las esperas deben ser positivas y la maxima "
+            "no puede ser menor que la base."
+        )
+
+    return base, maxima
+
+
+# Recuperacion posterior al procesamiento.
+VARIABLE_PASADAS_RECUPERACION = "COMMUNITYLAB_PASADAS_RECUPERACION"
+PASADAS_RECUPERACION_POR_DEFECTO = 1
+
+
+def obtener_pasadas_recuperacion() -> int:
+    # Numero de pasadas adicionales sobre resultados fallidos.
+    load_dotenv()
+    valor = os.getenv(
+        VARIABLE_PASADAS_RECUPERACION,
+        str(PASADAS_RECUPERACION_POR_DEFECTO),
+    ).strip()
+
+    try:
+        pasadas = int(valor)
+    except ValueError as error:
+        raise ErrorConfiguracionProveedor(
+            "Las pasadas de recuperacion deben ser un entero."
+        ) from error
+
+    if not 0 <= pasadas <= 3:
+        raise ErrorConfiguracionProveedor(
+            "Las pasadas de recuperacion deben estar entre 0 y 3."
+        )
+
+    return pasadas
+
+
+# Concurrencia experimental de Data Science.
+VARIABLE_CONCURRENCIA_MENSAJES = "COMMUNITYLAB_CONCURRENCIA_MENSAJES"
+VARIABLE_CONCURRENCIA_LOTES_ANALISIS = "COMMUNITYLAB_CONCURRENCIA_LOTES_ANALISIS"
+
+CONCURRENCIA_POR_DEFECTO = 1
+CONCURRENCIA_MAXIMA_EXPERIMENTAL = 2
+
+
+def _obtener_concurrencia_experimental(variable: str) -> int:
+    valor = os.getenv(variable, str(CONCURRENCIA_POR_DEFECTO)).strip()
+
+    try:
+        concurrencia = int(valor)
+    except ValueError as error:
+        raise ValueError(f"{variable} debe ser 1 o 2") from error
+
+    if not 1 <= concurrencia <= CONCURRENCIA_MAXIMA_EXPERIMENTAL:
+        raise ValueError(f"{variable} debe ser 1 o 2")
+
+    return concurrencia
+
+
+def obtener_concurrencia_mensajes() -> int:
+    return _obtener_concurrencia_experimental(
+        VARIABLE_CONCURRENCIA_MENSAJES
+    )
+
+
+def obtener_concurrencia_lotes_analisis() -> int:
+    return _obtener_concurrencia_experimental(
+        VARIABLE_CONCURRENCIA_LOTES_ANALISIS
+    )
 
 
 def obtener_timeout_nvidia() -> float:

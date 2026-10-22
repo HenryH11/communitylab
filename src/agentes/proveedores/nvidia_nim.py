@@ -148,11 +148,25 @@ def obtener_modelo_nvidia_estructurado(
     except TypeError:
         cliente_base = obtener_modelo_nvidia()
 
-    modelo_json = cliente_base.bind(
-        response_format={
+    parametros = {
+        "response_format": {
             "type": "json_object",
         }
+    }
+
+    modelo_efectivo = modelo or getattr(
+        cliente_base,
+        "model_name",
+        None,
     )
+
+    if (
+        modelo_efectivo == "nvidia/nemotron-3.5-super-vl-120b-a12b"
+        and esquema.__name__ == "SugerenciaPreguntasFrecuentes"
+    ):
+        parametros["max_tokens"] = 512
+
+    modelo_json = cliente_base.bind(**parametros)
 
     def preparar_entrada(entrada):
         return _agregar_instruccion_esquema(

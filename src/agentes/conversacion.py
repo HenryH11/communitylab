@@ -23,6 +23,7 @@ from src.agentes.modelo_ia import (
 )
 from src.agentes.observabilidad import config_ejecucion
 from src.agentes.prompts.conversacion import prompt_conversacion
+from src.agentes.prompts.verificacion import prompt_verificacion
 
 
 MAX_MENSAJES = 50_000
@@ -32,6 +33,8 @@ MAX_COINCIDENCIAS = 8
 MAX_HISTORIAL = 6
 MAX_CARACTERES_CONSULTA = 1_000
 MAX_CARACTERES_MENSAJE = 1_200
+
+ModoVerificacion = Literal["prompt_estricto", "verificacion_automatica"]
 
 _PALABRAS_VACIAS = frozenset(
     """
@@ -131,6 +134,17 @@ class SalidaConversacional(BaseModel):
     respuesta: str = Field(min_length=1, max_length=4_000)
     citas: list[str] = Field(min_length=1, max_length=MAX_COINCIDENCIAS)
     borrador: BorradorMarketing | None = None
+
+
+class AfirmacionVerificada(BaseModel):
+    afirmacion: str = Field(min_length=1, max_length=500)
+    respaldada: bool
+    citas: list[str] = Field(max_length=MAX_COINCIDENCIAS)
+
+
+class SalidaVerificacion(BaseModel):
+    afirmaciones: list[AfirmacionVerificada] = Field(max_length=30)
+    resumen: str = Field(min_length=1, max_length=1_000)
 
 
 @dataclass(frozen=True)
@@ -357,9 +371,11 @@ class AgenteConversacional:
         datos_procesados: object,
         *,
         generador: Callable[..., SalidaConversacional | dict] | None = None,
+        verificador: Callable[..., SalidaVerificacion | dict] | None = None,
     ):
         self._mensajes = _extraer_mensajes(datos_procesados)
         self._generador = generador
+        self._verificador = verificador
         self._historial: list[dict[str, str]] = []
         self._indice_invertido: dict[str, set[int]] = defaultdict(set)
         for indice, mensaje in enumerate(self._mensajes):
@@ -385,9 +401,20 @@ class AgenteConversacional:
         """Devuelve el historial de esta instancia, nunca persistido en disco."""
         return [dict(turno) for turno in self._historial]
 
-    def consultar(self, consulta: str, *, hoy: date | None = None) -> dict:
+    def consultar(
+        self,
+        consulta: str,
+        *,
+        hoy: date | None = None,
+        modo_verificacion: ModoVerificacion = "prompt_estricto",
+    ) -> dict:
         if not isinstance(consulta, str) or not consulta.strip():
             raise ValueError("Escribe una consulta para el agente.")
+        if modo_verificacion not in {
+            "prompt_estricto",
+            "verificacion_automatica",
+        }:
+            raise ValueError("El modo de verificación seleccionado no es válido.")
         consulta = consulta.strip()
         if len(consulta) > MAX_CARACTERES_CONSULTA:
             raise ValueError(
@@ -408,6 +435,12 @@ class AgenteConversacional:
                 "resumen": {},
                 "filtros": _filtros_a_dict(FiltrosConsulta()),
                 "modo": "fuera_de_alcance",
+                "verificacion": {
+                    "modo": modo_verificacion,
+                    "estado": "no_aplica",
+                    "resumen": "La solicitud está fuera del alcance del agente.",
+                    "afirmaciones": [],
+                },
             }
             self._guardar_turno(consulta, respuesta)
             return salida
@@ -452,6 +485,12 @@ class AgenteConversacional:
                 "resumen": {},
                 "filtros": _filtros_a_dict(filtros),
                 "modo": filtros.intencion,
+                "verificacion": {
+                    "modo": modo_verificacion,
+                    "estado": "sin_evidencia",
+                    "resumen": "No se generó contenido porque no hubo coincidencias.",
+                    "afirmaciones": [],
+                },
             }
             self._guardar_turno(consulta, respuesta)
             return salida
@@ -474,18 +513,42 @@ class AgenteConversacional:
             raise ValueError("El agente devolvió un borrador sin que se solicitara.")
 
         respuesta = salida_modelo.respuesta
+        borrador = (
+            salida_modelo.borrador.model_dump()
+            if salida_modelo.borrador is not None
+            else None
+        )
+        verificacion = {
+            "modo": modo_verificacion,
+            "estado": "no_aplica" if borrador is None else "no_verificado",
+            "resumen": (
+                "No se solicitó un borrador."
+                if borrador is None
+                else "Se usó un prompt estricto; las afirmaciones no se contrastaron por separado."
+            ),
+            "afirmaciones": [],
+        }
+        if (
+            borrador is not None
+            and modo_verificacion == "verificacion_automatica"
+        ):
+            resultado_verificacion = self._verificar(
+                borrador=borrador,
+                evidencia=_evidencia_acotada(evidencia),
+            )
+            verificacion = _preparar_verificacion(
+                resultado_verificacion,
+                {mensaje["id"] for mensaje in evidencia},
+            )
         salida = {
             "respuesta": respuesta,
             "citas": salida_modelo.citas,
-            "borrador": (
-                salida_modelo.borrador.model_dump()
-                if salida_modelo.borrador is not None
-                else None
-            ),
+            "borrador": borrador,
             "total_coincidencias": len(encontrados),
             "resumen": resumen,
             "filtros": _filtros_a_dict(filtros),
             "modo": filtros.intencion,
+            "verificacion": verificacion,
         }
         self._guardar_turno(consulta, respuesta)
         return salida
@@ -582,6 +645,52 @@ class AgenteConversacional:
             resultado = cadena.invoke(entrada, config=config)
         return SalidaConversacional.model_validate(resultado)
 
+    def _verificar(
+        self,
+        *,
+        borrador: dict,
+        evidencia: list[dict],
+    ) -> SalidaVerificacion:
+        if self._verificador is not None:
+            resultado = self._verificador(
+                borrador=borrador,
+                evidencia=evidencia,
+            )
+            return (
+                resultado
+                if isinstance(resultado, SalidaVerificacion)
+                else SalidaVerificacion.model_validate(resultado)
+            )
+
+        entrada = {
+            "borrador": json.dumps(borrador, ensure_ascii=False),
+            "evidencia": json.dumps(evidencia, ensure_ascii=False),
+        }
+        proveedor = obtener_proveedor_generacion()
+        cadena = _obtener_cadena_verificacion(proveedor)
+        config = config_ejecucion(
+            "verificar_borrador",
+            intento=1,
+            ruta="conversacion",
+        )
+        if proveedor == PROVEEDOR_NVIDIA_NIM:
+            primario = lambda valor: _obtener_cadena_verificacion(
+                PROVEEDOR_NVIDIA_NIM
+            ).invoke(valor, config=config)
+            respaldo = lambda valor: _obtener_cadena_verificacion(
+                PROVEEDOR_GEMINI
+            ).invoke(valor, config=config)
+            primario.__name__ = PROVEEDOR_NVIDIA_NIM
+            respaldo.__name__ = PROVEEDOR_GEMINI
+            resultado = invocar_modelo_con_fallback(
+                entrada,
+                primario=primario,
+                respaldo=respaldo,
+            )["resultado"]
+        else:
+            resultado = cadena.invoke(entrada, config=config)
+        return SalidaVerificacion.model_validate(resultado)
+
     def _guardar_turno(self, consulta: str, respuesta: str) -> None:
         self._historial.extend(
             [
@@ -624,6 +733,34 @@ def _evidencia_acotada(mensajes: list[dict]) -> list[dict]:
         }
         for mensaje in mensajes
     ]
+
+
+def _preparar_verificacion(
+    verificacion: SalidaVerificacion,
+    ids_evidencia: set[str],
+) -> dict:
+    afirmaciones = []
+    for afirmacion in verificacion.afirmaciones:
+        citas_validas = [
+            cita for cita in afirmacion.citas if cita in ids_evidencia
+        ]
+        respaldada = afirmacion.respaldada and bool(citas_validas)
+        afirmaciones.append(
+            {
+                "afirmacion": afirmacion.afirmacion,
+                "respaldada": respaldada,
+                "citas": citas_validas,
+            }
+        )
+    todas_respaldadas = bool(afirmaciones) and all(
+        afirmacion["respaldada"] for afirmacion in afirmaciones
+    )
+    return {
+        "modo": "verificacion_automatica",
+        "estado": "verificado" if todas_respaldadas else "requiere_revision",
+        "resumen": verificacion.resumen,
+        "afirmaciones": afirmaciones,
+    }
 
 
 def _resumir(mensajes: list[dict], filtros: FiltrosConsulta) -> dict:
@@ -669,3 +806,13 @@ def _obtener_cadena(proveedor: str):
         ruta="conversacion",
     )
     return prompt_conversacion | modelo
+
+
+@lru_cache(maxsize=4)
+def _obtener_cadena_verificacion(proveedor: str):
+    modelo = obtener_modelo_generacion_estructurado(
+        SalidaVerificacion,
+        proveedor=proveedor,
+        ruta="conversacion",
+    )
+    return prompt_verificacion | modelo

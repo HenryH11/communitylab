@@ -166,6 +166,136 @@ def test_borrador_solo_usa_mensajes_elegibles_y_respeta_plataforma():
     assert recibido["ids"] == ["msg-1"]
 
 
+def test_prompt_estricto_es_una_opcion_y_no_invoca_verificador():
+    verificaciones = []
+
+    def generar(*, evidencia, **_kwargs):
+        return SalidaConversacional(
+            respuesta="Borrador listo para revisión.",
+            citas=["msg-1"],
+            borrador=BorradorMarketing(
+                plataforma="linkedin",
+                titulo="Aprender Python",
+                contenido="Una persona compartió su experiencia aprendiendo Python.",
+                hashtags=["#Python", "#Aprendizaje", "#Comunidad"],
+            ),
+        )
+
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=generar,
+        verificador=lambda **kwargs: verificaciones.append(kwargs),
+    )
+
+    salida = agente.consultar(
+        "Crea un post para LinkedIn sobre Python",
+        modo_verificacion="prompt_estricto",
+    )
+
+    assert salida["verificacion"]["modo"] == "prompt_estricto"
+    assert salida["verificacion"]["estado"] == "no_verificado"
+    assert verificaciones == []
+
+
+def test_verificacion_automatica_devuelve_afirmaciones_y_citas_para_ui():
+    def generar(*, evidencia, **_kwargs):
+        return SalidaConversacional(
+            respuesta="Borrador basado en la experiencia.",
+            citas=["msg-1"],
+            borrador=BorradorMarketing(
+                plataforma="linkedin",
+                titulo="Aprender Python",
+                contenido="Una persona compartió su experiencia aprendiendo Python.",
+                hashtags=["#Python", "#Aprendizaje", "#Comunidad"],
+            ),
+        )
+
+    def verificar(*, borrador, evidencia):
+        assert borrador["plataforma"] == "linkedin"
+        assert evidencia[0]["id"] == "msg-1"
+        return {
+            "resumen": "Las afirmaciones comprobadas tienen respaldo en el mensaje.",
+            "afirmaciones": [
+                {
+                    "afirmacion": "Una persona aprendió Python.",
+                    "respaldada": True,
+                    "citas": ["msg-1"],
+                }
+            ],
+        }
+
+    salida = AgenteConversacional(
+        crear_mensajes(),
+        generador=generar,
+        verificador=verificar,
+    ).consultar(
+        "Crea un post para LinkedIn sobre Python",
+        modo_verificacion="verificacion_automatica",
+    )
+
+    assert salida["verificacion"] == {
+        "modo": "verificacion_automatica",
+        "estado": "verificado",
+        "resumen": "Las afirmaciones comprobadas tienen respaldo en el mensaje.",
+        "afirmaciones": [
+            {
+                "afirmacion": "Una persona aprendió Python.",
+                "respaldada": True,
+                "citas": ["msg-1"],
+            }
+        ],
+    }
+
+
+def test_afirmaciones_no_respaldadas_o_ids_ajenos_exigen_revision():
+    def generar(*, evidencia, **_kwargs):
+        return SalidaConversacional(
+            respuesta="El borrador requiere revisión.",
+            citas=["msg-1"],
+            borrador=BorradorMarketing(
+                plataforma="linkedin",
+                titulo="Aprender Python",
+                contenido="Una persona se convirtió en experta.",
+                hashtags=["#Python", "#Aprendizaje", "#Comunidad"],
+            ),
+        )
+
+    salida = AgenteConversacional(
+        crear_mensajes(),
+        generador=generar,
+        verificador=lambda **_kwargs: {
+            "resumen": "La afirmación excede lo dicho por la fuente.",
+            "afirmaciones": [
+                {
+                    "afirmacion": "La persona se convirtió en experta.",
+                    "respaldada": True,
+                    "citas": ["id-inexistente"],
+                }
+            ],
+        },
+    ).consultar(
+        "Crea un post para LinkedIn sobre Python",
+        modo_verificacion="verificacion_automatica",
+    )
+
+    assert salida["verificacion"]["estado"] == "requiere_revision"
+    assert salida["verificacion"]["afirmaciones"][0]["respaldada"] is False
+    assert salida["verificacion"]["afirmaciones"][0]["citas"] == []
+
+
+def test_modo_verificacion_invalido_se_rechaza_antes_de_generar():
+    llamadas = []
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=lambda **kwargs: llamadas.append(kwargs),
+    )
+
+    with pytest.raises(ValueError, match="modo de verificación"):
+        agente.consultar("Python", modo_verificacion="cadena_de_pensamiento")
+
+    assert llamadas == []
+
+
 def test_borrador_rechaza_citas_fuera_de_la_evidencia():
     def generador(**_kwargs):
         return SalidaConversacional(

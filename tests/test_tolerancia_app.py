@@ -59,6 +59,25 @@ def test_errores_se_muestran_en_pantalla(arbol):
     assert llamadas(arbol, "st", "error")
 
 
+def test_agente_tiene_chat_conectado_al_backend_y_verificacion(arbol):
+    assert llamadas(arbol, "st", "chat_message")
+    assert llamadas(arbol, "st", "chat_input")
+    assert llamadas(arbol, "st", "toggle")
+
+    consultas = [
+        nodo
+        for nodo in ast.walk(arbol)
+        if isinstance(nodo, ast.Call)
+        and isinstance(nodo.func, ast.Attribute)
+        and nodo.func.attr == "consultar"
+    ]
+    assert len(consultas) == 1
+    assert any(
+        argumento.arg == "modo_verificacion"
+        for argumento in consultas[0].keywords
+    )
+
+
 # Regresión: SS movió json.load dentro del try (PR #19).
 def test_lectura_del_archivo_subido_esta_protegida(arbol):
     cargas = llamadas(arbol, "json", "load") + llamadas(arbol, "json", "loads")

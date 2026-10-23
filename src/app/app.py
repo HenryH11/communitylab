@@ -9,6 +9,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
+from src.agentes.conversacion import AgenteConversacional
 from src.agentes.grafo import procesar_paquete_entrega
 from src.app import vista_plantillas
 from src.app.navegacion import CLAVE_NAVEGACION, PESTANAS, navegar_a
@@ -205,6 +206,8 @@ def _render_datos():
                                 )
                                 resultado = procesar_paquete_entrega(paquete)
                                 st.session_state["resultado"] = resultado
+                                st.session_state.pop("agente_conversacional", None)
+                                st.session_state.pop("historial_agente", None)
                                 st.success("Procesamiento completado.")
                             except Exception as error:
                                 st.error(
@@ -472,21 +475,118 @@ def _render_inicio(resultado):
 def _render_agente(resultado):
     st.header("Agente CommunityLab")
     st.write(
-        "El agente actual analiza lotes y crea activos a partir de las "
-        "conversaciones. La interfaz todavía no ofrece un chat de preguntas libres."
+        "Explora los datos procesados de la comunidad y consulta sus "
+        "conversaciones en lenguaje natural."
     )
 
-    instrucciones, estado = st.columns([2, 1])
-    with instrucciones:
+    chat, estado_columna = st.columns([2, 1])
+    with chat:
         with st.container(border=True):
-            st.markdown("#### Flujo de procesamiento")
-            st.markdown(
-                ":material/description: **1. Entrada** · Conversaciones del lote\n\n"
-                ":material/psychology: **2. Análisis** · Tema, sentimiento y rutas\n\n"
-                ":material/auto_awesome: **3. Generación** · Activos según las rutas\n\n"
-                ":material/fact_check: **4. Revisión humana** · Edición y aprobación"
+            st.markdown("#### Conversación")
+            modo_verificacion = st.toggle(
+                "Modo de verificación automática",
+                help=(
+                    "Verifica automáticamente las afirmaciones de los borradores "
+                    "de marketing y muestra las fuentes citadas."
+                ),
+                key="modo_verificacion",
             )
-    with estado:
+            resultados = (
+                resultado.get("resultados_por_id", {})
+                if resultado is not None
+                else {}
+            )
+            if resultados:
+                if "agente_conversacional" not in st.session_state:
+                    st.session_state["agente_conversacional"] = (
+                        AgenteConversacional(resultado)
+                    )
+
+                consulta = st.chat_input(
+                    "Pregunta sobre las conversaciones procesadas..."
+                )
+                if consulta:
+                    mensajes = st.session_state.setdefault("historial_agente", [])
+                    mensajes.append({"role": "user", "content": consulta})
+                    agente = st.session_state["agente_conversacional"]
+                    modo = (
+                        "verificacion_automatica"
+                        if modo_verificacion
+                        else "prompt_estricto"
+                    )
+                    try:
+                        with st.spinner("Consultando al agente..."):
+                            salida = agente.consultar(
+                                consulta,
+                                modo_verificacion=modo,
+                            )
+                        mensajes.append(
+                            {
+                                "role": "assistant",
+                                "content": salida["respuesta"],
+                                "salida": salida,
+                                "modo_verificacion": modo,
+                            }
+                        )
+                    except Exception as error:
+                        mensajes.append(
+                            {
+                                "role": "assistant",
+                                "error": str(error),
+                            }
+                        )
+
+                for mensaje in st.session_state.get("historial_agente", []):
+                    with st.chat_message(mensaje["role"]):
+                        if "error" in mensaje:
+                            st.error(f"No se pudo consultar al agente: {mensaje['error']}")
+                            continue
+                        st.markdown(mensaje["content"])
+                        if mensaje.get("modo_verificacion") == "verificacion_automatica":
+                            salida = mensaje["salida"]
+                            verificacion = salida.get("verificacion", {})
+                            with st.expander("Verificación y fuentes", expanded=True):
+                                st.caption(
+                                    f"Estado: {verificacion.get('estado', 'no_disponible')}"
+                                )
+                                st.write(
+                                    verificacion.get(
+                                        "resumen",
+                                        "El agente no devolvió un resumen de verificación.",
+                                    )
+                                )
+                                for afirmacion in verificacion.get("afirmaciones", []):
+                                    estado_afirmacion = (
+                                        "Respaldada"
+                                        if afirmacion.get("respaldada")
+                                        else "Requiere revisión"
+                                    )
+                                    st.markdown(
+                                        f"- **{estado_afirmacion}:** "
+                                        f"{afirmacion['afirmacion']}"
+                                    )
+                                    if afirmacion.get("citas"):
+                                        st.caption(
+                                            "Fuentes: "
+                                            + ", ".join(afirmacion["citas"])
+                                        )
+
+                                citas = salida.get("citas", [])
+                                if citas:
+                                    st.markdown("**Fuentes citadas**")
+                                    for cita in citas:
+                                        fuente = resultados.get(cita, {})
+                                        st.markdown(
+                                            f"**{cita}** · "
+                                            f"{fuente.get('autor', 'Autor desconocido')} · "
+                                            f"{fuente.get('canal', 'Canal desconocido')}"
+                                        )
+                                        st.write(fuente.get("texto", ""))
+                                else:
+                                    st.caption("La respuesta no incluye fuentes citadas.")
+            else:
+                st.info("Importa y procesa un lote desde Datos para iniciar el chat.")
+    with estado_columna:
         with st.container(border=True):
             st.markdown("#### Estado del lote")
             if resultado is None:
@@ -501,11 +601,6 @@ def _render_agente(resultado):
                 st.badge("Procesado", color="green")
                 st.metric("Mensajes analizados", total)
                 st.metric("Mensajes con activos", con_activos)
-
-    st.info(
-        "No se simulan respuestas de chat: las acciones disponibles corresponden "
-        "al pipeline real de procesamiento por lotes."
-    )
 
 
 def _render_ayuda():

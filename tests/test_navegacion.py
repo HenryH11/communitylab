@@ -50,7 +50,7 @@ def ir_a(app, pestana):
 
 
 def test_las_siete_pestanas_en_el_orden_pedido():
-    assert PESTANAS == ("Inicio", "Plantillas", "Resultado", "Agente en vivo", "Analíticas", "Ayuda", "Datos")
+    assert PESTANAS == ("Inicio", "Datos", "Plantillas", "Resultado", "Agente en vivo", "Analíticas", "Ayuda")
 
 
 def test_cambiar_de_pestana_conserva_lote_y_aprobaciones():

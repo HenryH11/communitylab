@@ -644,13 +644,18 @@ def _render_ayuda():
 
 
 # Todas las pestañas se pintan en cada ejecución, así que cambiar de pestaña no
-# pierde nada de st.session_state. Datos se llena primero para que un lote recién
-# procesado aparezca en las demás pestañas en esta misma ejecución.
+# pierde nada de st.session_state.
 pestanas = dict(zip(PESTANAS, st.tabs(PESTANAS, key=CLAVE_NAVEGACION, on_change="rerun")))
 
+resultado = st.session_state.get("resultado")
+
+with pestanas["Inicio"]:
+    _render_inicio(resultado)
 with pestanas["Datos"]:
     _render_datos()
 
+# Datos puede actualizar el lote durante esta ejecución; las pestañas siguientes
+# usan el resultado actualizado.
 resultado = st.session_state.get("resultado")
 curaduria = (
     contexto_curaduria(st.session_state, resultado)
@@ -658,8 +663,6 @@ curaduria = (
     else None
 )
 
-with pestanas["Inicio"]:
-    _render_inicio(resultado)
 with pestanas["Plantillas"]:
     vista_plantillas.render_plantillas(resultado)
 with pestanas["Resultado"]:

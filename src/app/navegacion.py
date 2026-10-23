@@ -7,7 +7,7 @@ desde un botón escribiendo su nombre en st.session_state antes de dibujarlas.
 
 import streamlit as st
 
-PESTANAS = ("Inicio", "Plantillas", "Resultado", "Agente en vivo", "Analíticas", "Ayuda", "Datos")
+PESTANAS = ("Inicio", "Datos", "Plantillas", "Resultado", "Agente en vivo", "Analíticas", "Ayuda")
 CLAVE_NAVEGACION = "navegacion_principal"
 CLAVE_PLANTILLA = "plantilla_activa"
 

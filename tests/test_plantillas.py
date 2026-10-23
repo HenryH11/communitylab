@@ -107,6 +107,7 @@ def test_ui_sin_lote_muestra_catalogo_sin_editores():
     from streamlit.testing.v1 import AppTest
 
     app = AppTest.from_file(APP, default_timeout=30)
+    app.session_state["navegacion_principal"] = "Plantillas"
     app.run()
     assert not app.exception
     assert not app.text_area
@@ -119,6 +120,7 @@ def test_ui_con_lote_pinta_cada_activo_una_vez_y_proximamente():
 
     app = AppTest.from_file(APP, default_timeout=30)
     app.session_state["resultado"] = {"resultados_por_id": resultados()}
+    app.session_state["navegacion_principal"] = "Plantillas"
     app.run()
     assert not app.exception
     aprobar = [b.key for b in app.button if b.key and b.key.startswith("btn_")]
@@ -137,6 +139,7 @@ def test_ui_detalle_incluye_mensajes_sin_activos_y_spam():
     datos.update(lote_con_spam())
     app = AppTest.from_file(APP, default_timeout=30)
     app.session_state["resultado"] = {"resultados_por_id": datos}
+    app.session_state["navegacion_principal"] = "Análisis"
     app.run()
     assert not app.exception
     detalle = [e for e in app.expander if e.label.startswith(("📝", "💬", "🚫"))]

@@ -96,8 +96,21 @@ tests/test_plantillas.py        # catálogo, contadores, filtros y render con Ap
 - Los tipos de activo que el catálogo no conozca aparecen en una pestaña "Otros activos", para no perderlos.
 - Suite completa: 620 pruebas aprobadas (sin `tests/integracion`, que llama a proveedores reales).
 
-Pendiente: estilos completos del boceto (barra de navegación y paleta global) y las vistas
-Inicio, Agente y Ayuda.
+## Actualización de interfaz (22 de octubre de 2026)
+
+La app integra una navegación superior con las vistas **Inicio**, **Datos**,
+**Agente**, **Análisis**, **Plantillas** y **Ayuda**. La carga JSON conserva
+el procesamiento existente y ahora muestra una vista previa de hasta 20
+interacciones antes de procesar. Análisis mantiene las métricas, gráficas y el
+detalle de solo lectura. Plantillas conserva las claves de edición, aprobación
+y guardado en OCI, con configuración, editor y previsualización organizados en
+tres paneles. La paleta global vive en `.streamlit/config.toml`.
+
+La pestaña **Agente** explica el flujo real, pero no simula un chat: el proyecto
+no tiene una función de respuesta a preguntas libres. Instagram y X continúan
+como próximas plantillas hasta que exista un generador. La validación final del
+diseño debe hacerse en el navegador con lotes representativos y el entorno OCI
+configurado si se prueba el guardado.
 
 ## Para Eduardo (QA-3 de Plantillas)
 

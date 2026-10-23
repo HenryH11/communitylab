@@ -28,6 +28,7 @@ from src.app.plantillas_catalogo import (
 
 ESTILOS = """
 <style>
+    .section-title { color: #17213c; font-size: 1.35rem; font-weight: 700; margin: 1.1rem 0 .6rem; }
     .pl-card { background: white; border: 1px solid #e4e9f1; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
     .pl-card.off { opacity: .55; }
     .pl-top { display: flex; align-items: center; gap: 12px; }
@@ -127,7 +128,7 @@ def _editor_activo(id_msg, tipo, activo, curaduria):
         curaduria["informe"] = None
         st.session_state[f"aprobado_{key_activo}"] = False
 
-    if st.button("✅ Aprobar", key=f"btn_{key_activo}"):
+    if st.button("✅ Aprobar", key=f"btn_{key_activo}", type="primary"):
         try:
             validar_activo_curado(tipo, activo_editado)
         except ValueError as error_validacion:
@@ -163,26 +164,46 @@ def _vista_previa(plantilla, activo_editado):
 
 def _resultado_activo(plantilla, resultados, curaduria):
     lista = borradores(plantilla, resultados)
-    st.caption(
-        f"**Configuración** · Lote: {len(resultados)} mensajes · Formato: {plantilla['nombre']} · "
-        f"Objetivo: {plantilla['objetivo']} · Tono: {plantilla['tono']} · "
-        "La plantilla define la tarea. No muestra prompts al usuario."
-    )
     if not lista:
         st.info("Este lote no generó borradores para esta plantilla.")
         return
-    st.markdown(f"**Resultado estructurado** · {len(lista)} borrador(es) · revisión humana antes de guardar")
+
+    st.caption(
+        f"{len(resultados)} mensajes en el lote · {len(lista)} borrador(es) · "
+        "revisión humana antes de guardar"
+    )
     for numero, (id_msg, data, activo) in enumerate(lista, start=1):
         titulo = (f"{numero} de {len(lista)} · {data.get('autor', 'Anónimo')} — "
                   f"{data.get('tema_principal', 'sin tema')} · {data.get('sentimiento', 'N/A')}")
         with st.expander(titulo, expanded=numero == 1):
-            st.caption(f"Fuente: {data.get('canal', 'N/A')} · {id_msg}")
-            st.markdown(f"*Texto original:* {data.get('texto', '')}")
-            editor, previa = st.columns([3, 2])
+            configuracion, editor, previa = st.columns([1, 2, 1.35])
+            with configuracion:
+                with st.container(border=True):
+                    st.markdown("#### Configuración")
+                    st.write(f"**Lote:** {len(resultados)} mensajes")
+                    st.write(f"**Formato:** {plantilla['nombre']}")
+                    st.write(f"**Objetivo:** {plantilla.get('objetivo', 'Sin definir')}")
+                    st.write(f"**Tono:** {plantilla.get('tono', 'Sin definir')}")
+                    st.caption(
+                        "La plantilla define la tarea. "
+                        "No muestra prompts al usuario."
+                    )
+
             with editor:
-                activo_editado = _editor_activo(id_msg, plantilla["tipo"], activo, curaduria)
+                with st.container(border=True):
+                    st.markdown("#### Resultado estructurado")
+                    st.caption(f"Fuente: {data.get('canal', 'N/A')} · {id_msg}")
+                    st.markdown(f"*Texto original:* {data.get('texto', '')}")
+                    activo_editado = _editor_activo(
+                        id_msg,
+                        plantilla["tipo"],
+                        activo,
+                        curaduria,
+                    )
+
             with previa:
-                _vista_previa(plantilla, activo_editado)
+                with st.container(border=True):
+                    _vista_previa(plantilla, activo_editado)
 
 
 def _resultado_analisis(plantilla, resultados):
@@ -242,7 +263,13 @@ def _guardado_oci(resultado, curaduria):
         if curaduria["guardados"].get(clave) != (destino, contenido)
     }
     st.caption(f"Destino: {bucket} · período {periodo}")
-    if st.button("Guardar aprobados en OCI", key="guardar_aprobados_oci", disabled=not pendientes):
+    if st.button(
+        "Guardar aprobados en OCI",
+        key="guardar_aprobados_oci",
+        disabled=not pendientes,
+        type="primary",
+        use_container_width=True,
+    ):
         with st.spinner("Guardando los activos aprobados..."):
             try:
                 informe = asyncio.run(guardar_curaduria(resultado, pendientes, periodo=periodo, bucket=bucket))

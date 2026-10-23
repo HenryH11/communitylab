@@ -498,9 +498,13 @@ def _render_agente(resultado):
             )
             if resultados:
                 if "agente_conversacional" not in st.session_state:
-                    st.session_state["agente_conversacional"] = (
-                        AgenteConversacional(resultado)
-                    )
+                    try:
+                        st.session_state["agente_conversacional"] = (
+                            AgenteConversacional(resultado)
+                        )
+                    except ValueError as error:
+                        st.warning(f"El agente no puede usar este lote: {error}")
+                        return
 
                 consulta = st.chat_input(
                     "Pregunta sobre las conversaciones procesadas..."

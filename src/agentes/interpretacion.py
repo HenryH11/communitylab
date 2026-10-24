@@ -125,31 +125,56 @@ def interpretar_consulta(
         "historial": json.dumps(historial, ensure_ascii=False),
         "consulta_anterior": json.dumps(consulta_anterior, ensure_ascii=False),
         "vocabulario": json.dumps(vocabulario, ensure_ascii=False),
+        "revision": "",
     }
     proveedor = obtener_proveedor_generacion()
     config = config_ejecucion("interpretar_consulta", intento=1, ruta="conversacion")
     try:
-        if proveedor == PROVEEDOR_NVIDIA_NIM:
-            def primario(valor):
-                return _obtener_cadena_interpretacion(PROVEEDOR_NVIDIA_NIM).invoke(
-                    valor, config=config
-                )
+        for intento in range(2):
+            if proveedor == PROVEEDOR_NVIDIA_NIM:
+                def primario(valor):
+                    return _obtener_cadena_interpretacion(PROVEEDOR_NVIDIA_NIM).invoke(
+                        valor, config=config
+                    )
 
-            def respaldo(valor):
-                return _obtener_cadena_interpretacion(PROVEEDOR_GEMINI).invoke(
-                    valor, config=config
-                )
+                def respaldo(valor):
+                    return _obtener_cadena_interpretacion(PROVEEDOR_GEMINI).invoke(
+                        valor, config=config
+                    )
 
-            primario.__name__ = PROVEEDOR_NVIDIA_NIM
-            respaldo.__name__ = PROVEEDOR_GEMINI
-            resultado = invocar_modelo_con_fallback(
-                entrada, primario=primario, respaldo=respaldo
-            )["resultado"]
-        else:
-            resultado = _obtener_cadena_interpretacion(proveedor).invoke(
-                entrada, config=config
-            )
-        return PlanConsulta.model_validate(resultado)
+                primario.__name__ = PROVEEDOR_NVIDIA_NIM
+                respaldo.__name__ = PROVEEDOR_GEMINI
+                resultado = invocar_modelo_con_fallback(
+                    entrada, primario=primario, respaldo=respaldo
+                )["resultado"]
+            else:
+                resultado = _obtener_cadena_interpretacion(proveedor).invoke(
+                    entrada, config=config
+                )
+            plan = PlanConsulta.model_validate(resultado)
+            anteriores = {
+                " ".join(turno["contenido"].casefold().split())
+                for turno in historial if turno["rol"] == "asistente"
+            }
+            if (
+                plan.intencion != "aclaracion"
+                or " ".join(plan.respuesta.casefold().split()) not in anteriores
+            ):
+                return plan
+            if intento == 0:
+                entrada = {
+                    **entrada,
+                    "revision": (
+                        "La aclaración propuesta repite una respuesta anterior. "
+                        "Revisa si el historial permite continuar la tarea. Si falta "
+                        "un referente, explica cómo aportarlo sin repetir la pregunta "
+                        "ni inventar una intención."
+                    ),
+                }
+        raise ErrorInterpretacion(
+            "No pude resolver la ambigüedad sin repetir la misma aclaración. "
+            "Incluye el texto o el tema al que te refieres."
+        )
     except (ValidationError, OutputParserException) as error:
         raise ErrorInterpretacion(
             "No pude interpretar la solicitud de forma fiable. Intenta reformularla."

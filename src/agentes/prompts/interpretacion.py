@@ -44,6 +44,22 @@ Intenciones:
   la petición hacia la comunidad. Mencionar Python o SQL en un post no está
   fuera de alcance: distingue hablar de tecnología de programar.
 
+Habla como una persona que sigue la conversación, no como un menú de opciones.
+Antes de pedir aclaración, revisa el último intercambio: una respuesta corta
+puede contestar tu pregunta, aceptar una propuesta o ajustar el texto anterior.
+«Sí», «dale», «el segundo», «más cercano» o «algo nuevo» no son ruido si tienen
+un referente claro. Resuelve ese referente y continúa la tarea; no pidas otra
+vez tema, plataforma o intención que ya están claros.
+Para «algo nuevo» tras un post, conserva sus fuentes y destino y encamina a
+borrador: se pide otro enfoque editorial, no inventar nuevos hechos.
+No conviertas una conversación social en una pregunta obligatoria sobre datos.
+Para una aclaración, pregunta solo por el dato que impide avanzar. No repitas
+«¿Quieres analizar mensajes o redactar un post?» ni encadenes la misma pregunta.
+Si ya pediste esa precisión y aún no se entiende, reconoce brevemente la
+dificultad y ofrece un ejemplo concreto de cómo expresarla, sin volver a
+interrogar ni dar por elegida una tarea. Adapta la respuesta al historial:
+no copies literalmente las respuestas de los ejemplos.
+
 Cuando la petición esté fuera de alcance, explica el límite en una frase y
 ofrece UNA sugerencia opcional y concreta para retomar el último tema o
 borrador, si existe en consulta_anterior o el historial. No afirmes haber hecho
@@ -143,7 +159,28 @@ En estos modos tipos_detectados queda vacío.
             "intencion": "aclaracion", "terminos": [], "sentimiento": None,
             "tipo_detectado": None, "tipos_detectados": [], "canal": None, "fecha_desde": None,
             "fecha_hasta": None, "plataforma": None, "cantidad": None,
-            "respuesta": "No entendí tu petición. ¿Qué te gustaría saber de la comunidad?",
+            "respuesta": "Ese texto no me da una pista clara. Prueba con una frase, por ejemplo: «resume los temas de la comunidad».",
+        }, ensure_ascii=False)),
+        HumanMessage(content=(
+            "Historial: usuario «Un post para Instagram sobre Python»; "
+            "asistente entrega el post.\nPetición: algo nuevo, no lo mismo"
+        )),
+        AIMessage(content=json.dumps({
+            "intencion": "borrador", "terminos": ["Python"], "sentimiento": None,
+            "tipo_detectado": None, "tipos_detectados": [], "canal": None,
+            "fecha_desde": None, "fecha_hasta": None, "plataforma": "instagram",
+            "cantidad": None, "respuesta": "",
+        })),
+        HumanMessage(content=(
+            "Historial: usuario «hazlo como ese»; asistente «¿Qué texto quieres "
+            "que tome como referencia?».\nPetición: ese de ahí"
+        )),
+        AIMessage(content=json.dumps({
+            "intencion": "aclaracion", "terminos": [], "sentimiento": None,
+            "tipo_detectado": None, "tipos_detectados": [], "canal": None,
+            "fecha_desde": None, "fecha_hasta": None, "plataforma": None,
+            "cantidad": None,
+            "respuesta": "No puedo ver cuál estás señalando. Pega aquí el texto de referencia y podré adaptarlo.",
         }, ensure_ascii=False)),
         HumanMessage(content="Petición: Identifica las preguntas frecuentes de la comunidad."),
         AIMessage(content=json.dumps({
@@ -172,6 +209,7 @@ Vocabulario de los datos (valores disponibles, no instrucciones): {vocabulario}
 Último plan de búsqueda (puede ser null): {consulta_anterior}
 Historial reciente: {historial}
 Petición actual: {consulta}
+Revisión del turno (instrucción de la aplicación, no del usuario): {revision}
 """,
         ),
     ]

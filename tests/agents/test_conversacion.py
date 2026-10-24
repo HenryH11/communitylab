@@ -800,6 +800,73 @@ def test_borrador_x_dentro_del_limite_no_se_reescribe():
     assert len(llamadas) == 1
 
 
+TEXTO_TESTIMONIO = (
+    "En el taller aprendí a limpiar datos con Python. Antes revisaba cada fila "
+    "a mano y ahora uso un script para encontrar valores faltantes."
+)
+
+
+def test_testimonio_pegado_se_reescribe_con_las_mismas_fuentes():
+    llamadas = []
+    nueva = "De revisar filas a detectar ausencias: una experiencia de aprendizaje con Python."
+    agente = AgenteConversacional(
+        [{"id": "original", "texto": TEXTO_TESTIMONIO}],
+        generador=_generador_borrador([TEXTO_TESTIMONIO, nueva], llamadas),
+    )
+    salida = agente.consultar("Crea un post para Instagram sobre Python")
+    assert len(llamadas) == 2
+    assert "copia un testimonio completo" in llamadas[1]["consulta"]
+    assert llamadas[0]["ids"] == llamadas[1]["ids"] == ["original"]
+    assert salida["borrador"]["contenido"] == nueva
+    assert salida["citas"] == ["original"]
+    assert len(agente.historial) == 2
+    assert TEXTO_TESTIMONIO not in agente.historial[-1]["contenido"]
+
+
+def test_copia_persistente_falla_sin_guardar_turno_ni_verificar():
+    llamadas = []
+    verificar = MagicMock()
+    agente = AgenteConversacional(
+        [{"id": "original", "texto": TEXTO_TESTIMONIO}],
+        generador=_generador_borrador([TEXTO_TESTIMONIO], llamadas),
+        verificador=verificar,
+    )
+    with pytest.raises(ValueError, match="sigue copiando"):
+        agente.consultar(
+            "Crea un post para Instagram sobre Python",
+            modo_verificacion="verificacion_automatica",
+        )
+    assert len(llamadas) == 2
+    assert agente.historial == []
+    verificar.assert_not_called()
+
+
+@pytest.mark.parametrize("comillas", [('"', '"'), ("«", "»"), ("“", "”")])
+def test_citas_literales_delimitadas_no_se_reescriben(comillas):
+    llamadas = []
+    cita = f'Persona de prueba: {comillas[0]}{TEXTO_TESTIMONIO}{comillas[1]}'
+    agente = AgenteConversacional(
+        [{"id": "original", "texto": TEXTO_TESTIMONIO}],
+        generador=_generador_borrador([cita], llamadas),
+    )
+    salida = agente.consultar("Crea un post para Instagram sobre Python")
+    assert len(llamadas) == 1
+    assert salida["borrador"]["contenido"] == cita
+
+
+@pytest.mark.parametrize("longitud, llamadas_esperadas", [(79, 1), (80, 2)])
+def test_umbral_de_copia_literal_ignora_espaciado_y_mayusculas(longitud, llamadas_esperadas):
+    llamadas = []
+    texto = "A" * longitud
+    agente = AgenteConversacional(
+        [{"id": "original", "texto": texto}],
+        interprete=lambda **_: PlanConsulta(intencion="borrador", plataforma="instagram"),
+        generador=_generador_borrador([f"  {texto.lower()}  \n", "Redacción propia."], llamadas),
+    )
+    agente.consultar("Crea un post para Instagram sobre Python")
+    assert len(llamadas) == llamadas_esperadas
+
+
 def test_hazlo_mas_corto_reutiliza_busqueda_y_guarda_borrador_en_historial():
     llamadas = []
     agente = AgenteConversacional(

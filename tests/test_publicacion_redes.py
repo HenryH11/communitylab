@@ -65,10 +65,13 @@ def test_ui_prepara_publicaciones_actuales_y_del_historial(plataforma):
     assert not app.exception
     assert len(app.code) == 2
     assert all(c.value == texto_publicacion(datos) for c in app.code)
+    assert all(e.proto.icon == ":material/content_copy:" for e in app.expander
+               if e.label.startswith("Copiar"))
     enlaces = app.get("link_button")
     assert len(enlaces) == (0 if plataforma == "mastodon" else 2)
     if plataforma != "mastodon":
         assert all(e.proto.url == enlace_publicacion(datos) for e in enlaces)
+        assert all(e.proto.icon == ":material/open_in_new:" for e in enlaces)
     if plataforma in {"facebook", "telegram", "mastodon"}:
         assert len(app.text_input) == 2
         assert len({campo.key for campo in app.text_input}) == 2

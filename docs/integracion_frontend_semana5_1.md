@@ -379,6 +379,22 @@ el comando de arranque sin arrancar Streamlit. No es un servicio en bucle.
   `borrador_no_generado` y explica que no se generó; no afirma que no se solicitó.
 - El generador institucional de LinkedIn conserva su tono sobrio, sin
   cierres editoriales añadidos. Las restricciones factuales siguen aplicando.
+- El intérprete resuelve aceptaciones y cambios editoriales («dale», «más
+  cercano», «algo nuevo») con el historial, sin volver al menú de analizar o
+  redactar. Una aclaración idéntica a otra respuesta reciente, ignorando
+  mayúsculas y espacios, provoca una sola reinterpretación con contexto.
+  Si persiste, se muestra un error explícito, sin guardar otro turno repetido.
+- Las publicaciones deben sintetizar y reelaborar la evidencia. Si el cuerpo
+  pega un mensaje completo de al menos 80 caracteres sin delimitarlo como cita,
+  se pide una sola reescritura; si sigue copiándolo, falla sin guardar el turno.
+  Se conserva la posibilidad de citar y no se alteran hechos breves.
+  Esta comprobación detecta copia literal, no certifica originalidad semántica
+  ni sustituye la verificación factual. «Nuevo» significa otro enfoque editorial,
+  no nuevos hechos ni novedades temporales inventadas.
+- Las acciones de publicación tienen su propia superficie y borde, con colores
+  claros u oscuros según la vista. El texto del recuadro, el icono de copia, el
+  desplegable y el enlace con icono de apertura mantienen contraste al abrirse
+  y al pasar el cursor; no se cambia la paleta global de Inicio.
 - La generación de X y la interfaz comparten `texto_publicacion`: se cuenta
   contenido, hashtags y separadores, sin título. Si se exceden 280 caracteres,
   se pide una reescritura; si aún se exceden, la generación falla explícitamente,

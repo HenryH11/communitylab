@@ -464,11 +464,39 @@ def test_documento_real_generado_por_da():
         ]
     }
     doc = construir_conjunto_consultable(entrega)
-    # La rama de Data de esta base aún emite contenido_corto. El adaptador
-    # explícito no recupera textos ya recortados; la carga final usa la fuente.
-    doc["campos"] = list(db.CAMPOS_CONJUNTO)
-    for registro in doc["registros"]:
-        registro["contenido_textual"] = registro.pop("contenido_corto")
     con = Conexion()
     cargar(doc, con)
     assert lector.leer_conjunto(conexion=con) == doc
+
+
+@pytest.mark.parametrize("binario", [False, True])
+def test_lector_materializa_clob_antes_de_cerrar_cursor(binario):
+    texto = "Texto completo ñ\n" * 1000
+    lob = Mock(spec=lector.oracledb.LOB)
+    lob.read.return_value = texto.encode() if binario else texto
+    cursor = Mock()
+    cursor.fetchall.return_value = [
+        ("1.1", 1, 0, "id-1", "discord", "positivo", "tema", "testimonio", lob, None),
+    ]
+    con = Mock()
+    con.cursor.return_value.__enter__ = Mock(return_value=cursor)
+    con.cursor.return_value.__exit__ = Mock(return_value=False)
+    if binario:
+        with pytest.raises(ValueError, match="no binario"):
+            lector.leer_conjunto(conexion=con)
+    else:
+        assert lector.leer_conjunto(conexion=con)["registros"][0]["contenido_textual"] == texto
+    lob.read.assert_called_once_with()
+    con.commit.assert_not_called()
+
+
+def test_lector_exige_respuesta_de_vault():
+    cliente = Mock()
+    cliente.get_secret_bundle.return_value = None
+    with pytest.raises(RuntimeError, match="Vault no devolvió"):
+        lector.obtener_secreto_vault("secreto-ficticio", cliente=cliente)
+
+
+def test_lector_consulta_el_esquema_del_escritor():
+    assert "FROM rw_ingest_communitylab.conjunto_consultable_meta" in lector._SQL_SELECT_TODOS
+    assert "JOIN rw_ingest_communitylab.conjunto_consultable" in lector._SQL_SELECT_TODOS

@@ -58,7 +58,7 @@ def test_nvidia_nim_devuelve_analisis_estructurado():
     print("=" * 80)
     print(
         analisis.model_dump_json(
-            indent=2
+            indent=4
         )
     )
 

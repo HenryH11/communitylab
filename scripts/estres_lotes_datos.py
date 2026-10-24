@@ -22,6 +22,7 @@ import json
 from pathlib import Path
 import sys
 import time
+from typing import Any
 
 RAIZ = Path(__file__).resolve().parents[1]
 if str(RAIZ) not in sys.path:
@@ -120,6 +121,10 @@ def correr(entregas, *, fecha_referencia, configuracion, repeticiones, hilos):
         propios = [r for r in resultados if r[0] == indice]
         tiempos = sorted(r[3] for r in propios)
         error_referencia = errores_referencia[indice]
+        paquete_referencia = referencia[indice]
+        resumen: dict[str, Any] = (
+            resumir(paquete_referencia) if paquete_referencia is not None else dict.fromkeys(CAMPOS_RESUMEN)
+        )
         lotes.append({
             "origen_comunidad": " + ".join(lote["origen_comunidad"] for lote in entrega["lotes"]),
             "corridas": len(propios),
@@ -129,7 +134,7 @@ def correr(entregas, *, fecha_referencia, configuracion, repeticiones, hilos):
             "entrada_intacta": entrega == copias[indice],
             "segundos_mediana": round(tiempos[len(tiempos) // 2], 6) if tiempos else None,
             "segundos_max": round(tiempos[-1], 6) if tiempos else None,
-            **(resumir(referencia[indice]) if referencia[indice] is not None else dict.fromkeys(CAMPOS_RESUMEN)),
+            **resumen,
         })
     return lotes, referencia
 
@@ -194,7 +199,7 @@ def a_markdown(reporte):
 
 
 def principal(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").strip().split("\n")[0])
     parser.add_argument("--entrada", type=Path, default=FIXTURE)
     parser.add_argument("--fecha-referencia", default=FECHA_REFERENCIA)
     parser.add_argument("--configuracion", type=Path, default=CONFIGURACION, help="JSON con parámetros de relevancia")

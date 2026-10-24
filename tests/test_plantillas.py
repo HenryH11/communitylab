@@ -99,11 +99,11 @@ con_entorno_ui = pytest.mark.skipif(
     any(importlib.util.find_spec(n) is None for n in ("streamlit", "oci", "pandas", "altair")),
     reason="Prueba de UI requiere dependencias de producción",
 )
-APP = str(Path(__file__).resolve().parents[1] / "src/app/app.py")
+APP = str(Path(__file__).resolve().parents[1] / "src/app/app_interna.py")
 
 
 @con_entorno_ui
-def test_ui_sin_lote_muestra_catalogo_sin_editores():
+def test_ui_sin_lote_muestra_catalogo_sin_editores(monkeypatch):
     from streamlit.testing.v1 import AppTest
 
     app = AppTest.from_file(APP, default_timeout=30)
@@ -111,11 +111,11 @@ def test_ui_sin_lote_muestra_catalogo_sin_editores():
     app.run()
     assert not app.exception
     assert not app.text_area
-    assert any("Procesa un lote" in i.value for i in app.info)
+    assert any("Todavía no hay un lote procesado" in i.value for i in app.info)
 
 
 @con_entorno_ui
-def test_ui_con_lote_pinta_cada_activo_una_vez_y_proximamente():
+def test_ui_con_lote_pinta_cada_activo_una_vez_y_proximamente(monkeypatch):
     from streamlit.testing.v1 import AppTest
 
     app = AppTest.from_file(APP, default_timeout=30)
@@ -139,7 +139,7 @@ def test_ui_detalle_incluye_mensajes_sin_activos_y_spam():
     datos.update(lote_con_spam())
     app = AppTest.from_file(APP, default_timeout=30)
     app.session_state["resultado"] = {"resultados_por_id": datos}
-    app.session_state["navegacion_principal"] = "Analíticas"
+    app.session_state["navegacion_principal"] = "Análisis"
     app.run()
     assert not app.exception
     detalle = [e for e in app.expander if e.label.startswith(("📝", "💬", "🚫"))]

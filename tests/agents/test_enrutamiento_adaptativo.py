@@ -19,17 +19,29 @@ from src.agentes.configuracion_ia import (
     obtener_tier_por_ruta,
 )
 from src.agentes.estado_agente import EstadoAgente
-from src.agentes.modelo_ia import (
-    obtener_modelo_analisis_estructurado,
-    obtener_modelo_generacion_estructurado,
-)
+from src.agentes.modelo_ia import obtener_modelo_generacion_estructurado
 from src.agentes.modelos import (
-    CasoDeExito,
-    DestaqueBoletin,
     PublicacionLinkedIn,
     SugerenciaPreguntasFrecuentes,
 )
 from src.agentes.nodos.nodo_enrutador import clasificar_tier_rutas, determinar_rutas
+
+VARIABLES_ENRUTAMIENTO = (
+    "COMMUNITYLAB_ENRUTAMIENTO_ADAPTATIVO",
+    "COMMUNITYLAB_MODELO_NVIDIA",
+    "COMMUNITYLAB_MODELO_NVIDIA_RAPIDO",
+    "COMMUNITYLAB_MODELO_NVIDIA_ESTANDAR",
+    "COMMUNITYLAB_MODELO_NVIDIA_RAZONAMIENTO",
+)
+
+
+@pytest.fixture
+def sin_env(monkeypatch):
+    """Aísla las pruebas de los modelos configurados en el .env local."""
+    for variable in VARIABLES_ENRUTAMIENTO:
+        monkeypatch.delenv(variable, raising=False)
+    with patch("src.agentes.configuracion_ia.load_dotenv"):
+        yield
 
 
 def test_asociacion_de_rutas_a_tiers():
@@ -45,34 +57,23 @@ def test_asociacion_de_rutas_a_tiers():
     assert obtener_tier_por_ruta(None) == TIER_ESTANDAR
 
 
-def test_modelos_por_defecto_segun_tier(monkeypatch):
+def test_modelos_por_defecto_segun_tier(sin_env):
     """Verifica los modelos predeterminados sin depender del .env."""
-    variables = (
-        "COMMUNITYLAB_ENRUTAMIENTO_ADAPTATIVO",
-        "COMMUNITYLAB_MODELO_NVIDIA_RAPIDO",
-        "COMMUNITYLAB_MODELO_NVIDIA_ESTANDAR",
-        "COMMUNITYLAB_MODELO_NVIDIA_RAZONAMIENTO",
+    assert (
+        obtener_modelo_nvidia_por_tier(TIER_RAPIDO)
+        == MODELO_NVIDIA_RAPIDO_POR_DEFECTO
+    )
+    assert (
+        obtener_modelo_nvidia_por_tier(TIER_ESTANDAR)
+        == MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
+    )
+    assert (
+        obtener_modelo_nvidia_por_tier(TIER_RAZONAMIENTO)
+        == MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO
     )
 
-    for variable in variables:
-        monkeypatch.delenv(variable, raising=False)
 
-    with patch("src.agentes.configuracion_ia.load_dotenv"):
-        assert (
-            obtener_modelo_nvidia_por_tier(TIER_RAPIDO)
-            == MODELO_NVIDIA_RAPIDO_POR_DEFECTO
-        )
-        assert (
-            obtener_modelo_nvidia_por_tier(TIER_ESTANDAR)
-            == MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
-        )
-        assert (
-            obtener_modelo_nvidia_por_tier(TIER_RAZONAMIENTO)
-            == MODELO_NVIDIA_RAZONAMIENTO_POR_DEFECTO
-        )
-
-
-def test_modelos_por_ruta_segun_tier():
+def test_modelos_por_ruta_segun_tier(sin_env):
     """Verifica la resolución directa de modelo a partir del nombre de ruta."""
     assert (
         obtener_modelo_nvidia_por_ruta("preguntas_frecuentes")
@@ -180,7 +181,7 @@ def test_determinar_rutas_asigna_tier_al_estado():
     assert resultado_faq["rutas"] == ["preguntas_frecuentes"]
 
 
-def test_fachada_generacion_resuelve_modelo_adaptativo_segun_ruta():
+def test_fachada_generacion_resuelve_modelo_adaptativo_segun_ruta(sin_env):
     """La fachada selecciona automáticamente el modelo del tier adecuado para cada ruta."""
     modelo_mock = MagicMock()
 
@@ -213,7 +214,7 @@ def test_fachada_generacion_resuelve_modelo_adaptativo_segun_ruta():
         )
 
 
-def test_obtener_configuracion_enrutamiento():
+def test_obtener_configuracion_enrutamiento(sin_env):
     """Valida el reporte estructurado de configuración no secreta de tiers."""
     config = obtener_configuracion_enrutamiento()
     assert config["enrutamiento_adaptativo_activo"] is True

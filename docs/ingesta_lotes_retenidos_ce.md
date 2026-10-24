@@ -80,9 +80,9 @@ contador de spam, reversión, recibos y ausencia de escritura en el lector.
 Queda pendiente probar SQL, CLOB, privilegios y flujo completo contra un esquema
 de prueba autorizado. No usar estos resultados como evidencia de carga real.
 
-La preparación de DA de esta rama todavía emite `contenido_corto`. No se cambia
-su ownership: la carga final debe coordinarse con la versión de texto completo
-de Genio/DA y la fuente original. Renombrar un texto ya recortado no lo recupera.
+La preparación de DA integrada emite `contenido_textual` y la prueba de contrato
+lo carga sin renombrar campos. La carga final debe partir de la fuente original:
+renombrar un texto previamente recortado no recupera su contenido.
 
 Referencia del driver para tipos y enlaces:
 https://python-oracledb.readthedocs.io/en/latest/user_guide/bind.html

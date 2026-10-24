@@ -14,7 +14,8 @@ RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 
 from src.datos.entrega_ia import preparar_paquete_ia
-from src.datos.ingesta import limpiar_texto, principal, procesar_datos
+from src.datos.limpieza import limpiar_texto
+from src.datos.ingesta import principal, procesar_datos
 from src.datos.relevancia import ConfiguracionRelevancia
 
 FECHA = "2026-09-17T12:00:00Z"

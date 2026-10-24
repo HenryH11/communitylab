@@ -1,12 +1,19 @@
-# Tema del boceto de CommunityLab: claro, violeta y Helvetica.
 [theme]
 base = "light"
-primaryColor = "#6557E8"
-backgroundColor = "#F7F9FC"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#161C32"
-font = "sans-serif"
+primaryColor = "#b07d22"
+backgroundColor = "#f5efe1"
+secondaryBackgroundColor = "#ede2c7"
+textColor = "#2b2216"
+borderColor = "#e3d5b3"
+linkColor = "#8c6214"
+headingFont = "serif"
+chartCategoricalColors = ["#b07d22", "#5b6a42", "#8a4b2a", "#d6ab50", "#6e604a", "#3e4a52"]
+blueColor = "#8c6214"
+blueBackgroundColor = "#f1e4c3"
+blueTextColor = "#6b4a10"
+greenColor = "#5b6a42"
+greenBackgroundColor = "#e4e6cf"
+greenTextColor = "#424d2f"
 
 [client]
-# Sin el botón "Deploy" ni el menú de desarrollo sobre la barra de la app.
 toolbarMode = "viewer"

@@ -2,6 +2,7 @@ import logging
 
 from unittest.mock import MagicMock, patch
 
+from src.agentes.estado_agente import EstadoAgente
 from src.agentes.recuperacion import ids_reintentables
 
 from src.agentes.errores_ia import ErrorSalidaProveedor
@@ -15,7 +16,7 @@ from src.agentes import reintentos
 from src.agentes.nodos.nodo_analizador import analizar_mensaje
 
 
-def _estado():
+def _estado() -> EstadoAgente:
     return {
         "id": "fallback-001",
         "autor": "Ana",

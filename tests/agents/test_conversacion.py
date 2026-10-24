@@ -1,14 +1,105 @@
 from datetime import date
+from typing import Callable, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.agentes.conversacion import (
+    ESTILOS_REDACCION,
+    TEMPERATURA_MAXIMA,
+    TEMPERATURA_MINIMA,
+    TOP_P_MAXIMO,
+    TOP_P_MINIMO,
     AgenteConversacional,
     BorradorMarketing,
+    ModoVerificacion,
     SalidaConversacional,
-    _parsear_filtros,
+    SalidaVerificacion,
 )
+from src.agentes.interpretacion import PlanConsulta
+
+
+@pytest.fixture(autouse=True)
+def interprete_simulado(monkeypatch):
+    """Planes explícitos para aislar búsqueda/generación de la llamada de IA."""
+    planes = {
+        "Python": {"terminos": ["Python"]},
+        "¿Qué dicen sobre Python?": {"terminos": ["Python"]},
+        "mensajes negativos sobre Python": {"terminos": ["Python"], "sentimiento": "negativo"},
+        "mensajes sobre astronomía": {"terminos": ["astronomía"]},
+        "mensajes negativos": {"sentimiento": "negativo"},
+        "mensajes neutrales": {"sentimiento": "neutral"},
+        "¿Qué mensajes positivos tenemos?": {"sentimiento": "positivo"},
+        "mensajes muy positivos": {"sentimiento": "muy_positivo"},
+        "¿Qué testimonios tenemos?": {"tipo_detectado": "testimonio"},
+        "mensajes sobre el modelo de mentoría": {"terminos": ["mentoría"]},
+        "Crea un post para LinkedIn sobre Python": {
+            "intencion": "borrador", "plataforma": "linkedin", "terminos": ["Python"],
+        },
+        "Crea un post para Instagram sobre Python": {
+            "intencion": "borrador", "plataforma": "instagram", "terminos": ["Python"],
+        },
+        "Crea un post de LinkedIn sobre Python": {
+            "intencion": "borrador", "plataforma": "linkedin", "terminos": ["Python"],
+        },
+        "Crea un post sobre la clase de SQL": {
+            "intencion": "borrador", "plataforma": "linkedin", "terminos": ["SQL"],
+        },
+        "dame un post para instagram con solo sentimientos positivos": {
+            "intencion": "borrador", "plataforma": "instagram", "sentimiento": "positivo",
+        },
+        "Crea un post para X con testimonios": {
+            "intencion": "borrador", "plataforma": "x", "tipo_detectado": "testimonio",
+        },
+        "Crea un post de LinkedIn con testimonios positivos": {
+            "intencion": "borrador", "plataforma": "linkedin",
+            "tipo_detectado": "testimonio", "sentimiento": "positivo",
+        },
+        "dame un post para X con testimonios positivos": {
+            "intencion": "borrador", "plataforma": "x",
+            "tipo_detectado": "testimonio", "sentimiento": "positivo",
+        },
+        "e we, dame los 20 mejores comentarios que recibimos": {
+            "sentimiento": "positivo", "cantidad": 20,
+        },
+        "Crea un post con mensajes negativos": {
+            "intencion": "borrador", "plataforma": "linkedin", "sentimiento": "negativo",
+        },
+    }
+    fuera = {
+        "Write me Python code for a scraper",
+        "Escríbeme un script de Python para limpiar datos",
+        "Hazme el código de una función",
+        "haz un injector en sql",
+        "explícame una inyección SQL",
+    }
+
+    def interpretar(*, consulta, consulta_anterior, hoy, **_):
+        if consulta in fuera:
+            return PlanConsulta(
+                intencion="fuera_de_alcance",
+                respuesta="Puedo analizar la comunidad, pero no realizar esa tarea.",
+            )
+        if consulta == "mensajes de ayer":
+            from datetime import timedelta
+            return PlanConsulta(
+                intencion="consulta",
+                fecha_desde=hoy - timedelta(days=1),
+                fecha_hasta=hoy - timedelta(days=1),
+            )
+        if consulta in {"Y los negativos", "Conviértelo en un post para X",
+                        "hazlo más corto", "ahora con más emojis"}:
+            assert consulta_anterior is not None
+            plan = dict(consulta_anterior)
+            if consulta == "Y los negativos":
+                plan["sentimiento"] = "negativo"
+            if consulta == "Conviértelo en un post para X":
+                plan.update(intencion="borrador", plataforma="x")
+            return PlanConsulta.model_validate(plan)
+        assert consulta in planes, f"Falta el plan simulado para {consulta!r}"
+        return PlanConsulta.model_validate({"intencion": "consulta", **planes[consulta]})
+
+    monkeypatch.setattr("src.agentes.conversacion.interpretar_consulta", interpretar)
 
 
 def crear_mensajes() -> list[dict]:
@@ -53,16 +144,20 @@ def respuesta_falsa(*, evidencia, **_kwargs):
     )
 
 
-def test_filtros_extraen_sentimiento_tipo_y_periodo():
-    filtros = _parsear_filtros(
-        "¿Cuántas preguntas técnicas negativas hubo la semana pasada?",
-        date(2026, 10, 21),
+def test_aplica_sentimiento_tipo_y_periodo_del_plan():
+    plan = PlanConsulta(
+        intencion="consulta", sentimiento="negativo", tipo_detectado="pregunta_tecnica",
+        fecha_desde=date(2026, 10, 12), fecha_hasta=date(2026, 10, 18),
     )
+    salida = AgenteConversacional(
+        crear_mensajes(), interprete=lambda **_: plan, generador=respuesta_falsa,
+    ).consultar("¿Cuántas preguntas técnicas negativas hubo la semana pasada?")
 
-    assert filtros.sentimiento == "negativo"
-    assert filtros.tipo_detectado == "pregunta_tecnica"
-    assert filtros.fecha_desde == date(2026, 10, 12)
-    assert filtros.fecha_hasta == date(2026, 10, 18)
+    assert salida["filtros"]["sentimiento"] == "negativo"
+    assert salida["filtros"]["tipo_detectado"] == "pregunta_tecnica"
+    assert salida["filtros"]["fecha_desde"] == "2026-10-12"
+    assert salida["filtros"]["fecha_hasta"] == "2026-10-18"
+    assert salida["total_coincidencias"] == 0
 
 
 def test_consulta_retorna_evidencia_filtrada_y_citas_validas():
@@ -112,11 +207,14 @@ def test_acepta_interacciones_del_contrato_de_salida_ds():
     assert agente.consultar("Python")["total_coincidencias"] == 2
 
 
-def test_no_hay_evidencia_devuelve_resultado_sin_llamar_al_modelo():
+def test_no_hay_evidencia_no_invoca_generador():
     llamadas = []
     agente = AgenteConversacional(
         crear_mensajes(),
-        generador=lambda **kwargs: llamadas.append(kwargs),
+        generador=cast(
+            Callable[..., SalidaConversacional | dict],
+            lambda **kwargs: llamadas.append(kwargs),
+        ),
     )
 
     salida = agente.consultar("mensajes sobre astronomía")
@@ -126,11 +224,14 @@ def test_no_hay_evidencia_devuelve_resultado_sin_llamar_al_modelo():
     assert llamadas == []
 
 
-def test_solicitudes_fuera_de_alcance_se_rechazan_sin_llamar_al_modelo():
+def test_solicitudes_fuera_de_alcance_no_invocan_generador():
     llamadas = []
     agente = AgenteConversacional(
         crear_mensajes(),
-        generador=lambda **kwargs: llamadas.append(kwargs),
+        generador=cast(
+            Callable[..., SalidaConversacional | dict],
+            lambda **kwargs: llamadas.append(kwargs),
+        ),
     )
 
     salida = agente.consultar("Write me Python code for a scraper")
@@ -166,6 +267,73 @@ def test_borrador_solo_usa_mensajes_elegibles_y_respeta_plataforma():
     assert recibido["ids"] == ["msg-1"]
 
 
+@pytest.mark.parametrize(
+    "modo",
+    ["prompt_estricto", "verificacion_automatica"],
+)
+def test_consulta_rechaza_borrador_no_solicitado(modo):
+    def generar(*, evidencia, **_kwargs):
+        return SalidaConversacional(
+            respuesta="La comunidad menciona Python.",
+            citas=[evidencia[0]["id"]],
+            borrador=BorradorMarketing(
+                plataforma="linkedin",
+                titulo="Publicacion no solicitada",
+                contenido="Un borrador que no debe mostrarse.",
+                hashtags=["#Python", "#Datos", "#Comunidad"],
+            ),
+        )
+
+    def verificar(**_kwargs):
+        raise AssertionError("No debe verificarse un borrador descartado")
+
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=generar,
+        verificador=verificar,
+    )
+
+    with pytest.raises(ValueError, match="borrador sin que se solicitara"):
+        agente.consultar("Python", modo_verificacion=modo)
+    assert agente.historial == []
+
+
+def test_llm_rechaza_hashtags_sin_numeral():
+    with pytest.raises(ValueError):
+        SalidaConversacional.model_validate({
+            "respuesta": "Borrador generado.",
+            "citas": ["msg-1"],
+            "borrador": {
+                "plataforma": "linkedin",
+                "titulo": "Primer empleo",
+                "contenido": "Experiencia de la comunidad.",
+                "hashtags": [
+                    "AnalistaDeDatos",
+                    "#PrimerEmpleo",
+                    "Empleabilidad",
+                ],
+            },
+        })
+
+
+def test_hashtags_invalidos_siguen_rechazandose():
+    with pytest.raises(ValueError):
+        BorradorMarketing(
+            plataforma="linkedin",
+            titulo="Primer empleo",
+            contenido="Experiencia de la comunidad.",
+            hashtags=["", "Python", "Comunidad"],
+        )
+
+    with pytest.raises(ValueError):
+        BorradorMarketing(
+            plataforma="linkedin",
+            titulo="Primer empleo",
+            contenido="Experiencia de la comunidad.",
+            hashtags=["Python", "Comunidad"],
+        )
+
+
 def test_prompt_estricto_es_una_opcion_y_no_invoca_verificador():
     verificaciones = []
 
@@ -184,7 +352,10 @@ def test_prompt_estricto_es_una_opcion_y_no_invoca_verificador():
     agente = AgenteConversacional(
         crear_mensajes(),
         generador=generar,
-        verificador=lambda **kwargs: verificaciones.append(kwargs),
+        verificador=cast(
+            Callable[..., SalidaVerificacion | dict],
+            lambda **kwargs: verificaciones.append(kwargs),
+        ),
     )
 
     salida = agente.consultar(
@@ -287,13 +458,91 @@ def test_modo_verificacion_invalido_se_rechaza_antes_de_generar():
     llamadas = []
     agente = AgenteConversacional(
         crear_mensajes(),
-        generador=lambda **kwargs: llamadas.append(kwargs),
+        generador=cast(
+            Callable[..., SalidaConversacional | dict],
+            lambda **kwargs: llamadas.append(kwargs),
+        ),
     )
 
     with pytest.raises(ValueError, match="modo de verificación"):
-        agente.consultar("Python", modo_verificacion="cadena_de_pensamiento")
+        agente.consultar("Python", modo_verificacion=cast(ModoVerificacion, "cadena_de_pensamiento"))
 
     assert llamadas == []
+
+
+def _salida_borrador() -> SalidaConversacional:
+    return SalidaConversacional(
+        respuesta="Borrador basado en el testimonio.",
+        citas=["msg-1"],
+        borrador=BorradorMarketing(
+            plataforma="linkedin",
+            titulo="Un proyecto hecho realidad",
+            contenido="La comunidad comparte su aprendizaje de Python.",
+            hashtags=["#Python", "#Aprendizaje", "#Comunidad"],
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    ("consulta", "esperado"),
+    [
+        ("Crea un post para LinkedIn sobre Python", ("gemini", 0.8, 0.95)),
+        ("¿Qué dicen sobre Python?", ("gemini", None, None)),
+    ],
+)
+def test_creatividad_solo_se_aplica_a_borradores(consulta, esperado):
+    llamadas = []
+
+    def cadena_falsa(proveedor, temperatura=None, top_p=None):
+        llamadas.append((proveedor, temperatura, top_p))
+        cadena = MagicMock()
+        cadena.invoke.return_value = (
+            _salida_borrador()
+            if temperatura is not None
+            else SalidaConversacional(respuesta="Hablan de Python.", citas=["msg-1"])
+        )
+        return cadena
+
+    with (
+        patch("src.agentes.conversacion.obtener_proveedor_generacion", return_value="gemini"),
+        patch("src.agentes.conversacion._obtener_cadena", side_effect=cadena_falsa),
+    ):
+        AgenteConversacional(crear_mensajes()).consultar(
+            consulta, temperatura=0.8, top_p=0.95
+        )
+
+    assert llamadas == [esperado]
+
+
+@pytest.mark.parametrize(
+    ("parametros", "mensaje"),
+    [
+        ({"temperatura": 1.5}, "temperatura"),
+        ({"temperatura": -0.1}, "temperatura"),
+        ({"top_p": 0.0}, "top_p"),
+        ({"top_p": 1.2}, "top_p"),
+    ],
+)
+def test_creatividad_fuera_de_rango_se_rechaza_antes_de_generar(parametros, mensaje):
+    llamadas = []
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=cast(
+            Callable[..., SalidaConversacional | dict],
+            lambda **kwargs: llamadas.append(kwargs),
+        ),
+    )
+
+    with pytest.raises(ValueError, match=mensaje):
+        agente.consultar("Crea un post para LinkedIn sobre Python", **parametros)
+
+    assert llamadas == []
+
+
+def test_estilos_de_redaccion_respetan_los_rangos_permitidos():
+    for temperatura, top_p in ESTILOS_REDACCION.values():
+        assert TEMPERATURA_MINIMA <= temperatura <= TEMPERATURA_MAXIMA
+        assert TOP_P_MINIMO <= top_p <= TOP_P_MAXIMO
 
 
 def test_borrador_rechaza_citas_fuera_de_la_evidencia():
@@ -323,6 +572,7 @@ def test_borrador_puede_declarar_evidencia_insuficiente():
 
     assert salida["borrador"] is None
     assert "no basta" in salida["respuesta"]
+    assert salida["verificacion"]["estado"] == "borrador_no_generado"
 
 
 def test_seguimiento_reutiliza_contexto_y_historial_es_de_la_instancia():
@@ -344,6 +594,45 @@ def test_seguimiento_reutiliza_contexto_y_historial_es_de_la_instancia():
     assert salida["total_coincidencias"] == 1
     assert len(agente.historial) == 4
 
+
+def test_seguimiento_con_pronombre_convierte_resultados_previos_en_borrador():
+    recibidos = []
+
+    def generador(*, filtros, evidencia, **_kwargs):
+        recibidos.append((filtros, [m["id"] for m in evidencia]))
+        borrador = None
+        if filtros.intencion == "borrador":
+            borrador = BorradorMarketing(
+                plataforma=filtros.plataforma,
+                titulo="Título",
+                contenido="Contenido",
+                hashtags=["#a", "#b", "#c"],
+            )
+        return SalidaConversacional(
+            respuesta="Listo.",
+            citas=[evidencia[0]["id"]],
+            borrador=borrador,
+        )
+
+    agente = AgenteConversacional(crear_mensajes(), generador=generador)
+    agente.consultar("¿Qué testimonios tenemos?")
+    salida = agente.consultar("Conviértelo en un post para X")
+
+    filtros, ids = recibidos[1]
+    assert filtros.intencion == "borrador"
+    assert filtros.plataforma == "x"
+    assert filtros.tipo_detectado == "testimonio"
+    assert sorted(ids) == ["msg-1", "msg-3"]
+    assert salida["borrador"]["plataforma"] == "x"
+
+
+def test_palabras_terminadas_en_lo_no_se_toman_como_seguimiento():
+    agente = AgenteConversacional(crear_mensajes(), generador=respuesta_falsa)
+    agente.consultar("mensajes negativos")
+
+    salida = agente.consultar("mensajes sobre el modelo de mentoría")
+
+    assert salida["filtros"]["sentimiento"] is None
 
 def test_historial_no_se_comparte_entre_sesiones():
     primero = AgenteConversacional(crear_mensajes(), generador=respuesta_falsa)
@@ -389,10 +678,209 @@ def test_rechaza_mensajes_con_identidad_o_texto_invalidos(datos):
         AgenteConversacional(datos, generador=respuesta_falsa)
 
 
-def test_x_como_plataforma_no_se_detecta_dentro_de_otras_palabras():
-    assert _parsear_filtros("Analiza la experiencia de Python", date.today()).plataforma is None
-    assert _parsear_filtros("Crea un post para X", date.today()).plataforma == "x"
+def test_positivo_incluye_muy_positivo_y_muy_positivo_es_exacto():
+    agente = AgenteConversacional(crear_mensajes(), generador=respuesta_falsa)
+
+    assert agente.consultar("¿Qué mensajes positivos tenemos?")["total_coincidencias"] == 2
+    assert agente.consultar("mensajes muy positivos")["total_coincidencias"] == 1
 
 
-def test_borrador_sin_plataforma_solicitada_usa_linkedin():
-    assert _parsear_filtros("Crea un post", date.today()).plataforma == "linkedin"
+def test_consulta_positiva_rechaza_borrador_no_solicitado():
+    def generador(*, evidencia, **_kwargs):
+        return SalidaConversacional(
+            respuesta="Hay testimonios positivos.",
+            citas=[evidencia[0]["id"]],
+            borrador=BorradorMarketing(
+                plataforma="linkedin",
+                titulo="Título",
+                contenido="Contenido",
+                hashtags=["#a", "#b", "#c"],
+            ),
+        )
+
+    with pytest.raises(ValueError, match="borrador sin que se solicitara"):
+        AgenteConversacional(crear_mensajes(), generador=generador).consultar(
+            "¿Qué mensajes positivos tenemos?"
+        )
+
+
+def test_fuera_de_alcance_interpretado_no_genera_contenido():
+    llamadas = []
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=cast(
+            Callable[..., SalidaConversacional | dict],
+            lambda **kwargs: llamadas.append(kwargs),
+        ),
+    )
+    for consulta in (
+        "Escríbeme un script de Python para limpiar datos",
+        "Hazme el código de una función",
+        "haz un injector en sql",
+        "explícame una inyección SQL",
+    ):
+        assert agente.consultar(consulta)["modo"] == "fuera_de_alcance"
+    assert llamadas == []
+
+
+def test_marketing_sobre_temas_tecnicos_sigue_permitido():
+    for consulta in (
+        "Crea un post sobre la clase de SQL",
+        "Crea un post de LinkedIn sobre Python",
+    ):
+        assert AgenteConversacional(
+            crear_mensajes(), generador=respuesta_falsa
+        ).consultar(consulta)["modo"] != "fuera_de_alcance"
+
+
+def test_pedir_post_sin_verbo_de_redaccion_es_borrador_filtrado():
+    recibido = {}
+
+    def generador(*, filtros, evidencia, **_kwargs):
+        recibido["ids"] = sorted(m["id"] for m in evidencia)
+        return SalidaConversacional(
+            respuesta="Listo.",
+            citas=[evidencia[0]["id"]],
+            borrador=BorradorMarketing(
+                plataforma=filtros.plataforma,
+                titulo="Título",
+                contenido="Contenido",
+                hashtags=["#a", "#b", "#c"],
+            ),
+        )
+
+    salida = AgenteConversacional(crear_mensajes(), generador=generador).consultar(
+        "dame un post para instagram con solo sentimientos positivos"
+    )
+
+    assert recibido["ids"] == ["msg-1", "msg-3"]
+    assert salida["borrador"]["plataforma"] == "instagram"
+
+
+def _generador_borrador(contenidos: list[str], llamadas: list):
+    def generador(*, consulta, filtros, evidencia, **_kwargs):
+        llamadas.append({"consulta": consulta, "ids": [m["id"] for m in evidencia]})
+        return SalidaConversacional(
+            respuesta="Borrador listo.",
+            citas=[evidencia[0]["id"]],
+            borrador=BorradorMarketing(
+                plataforma=filtros.plataforma,
+                titulo="Título",
+                contenido=contenidos[min(len(llamadas), len(contenidos)) - 1],
+                hashtags=["#a", "#b", "#c"],
+            ),
+        )
+
+    return generador
+
+
+def test_borrador_x_largo_se_reescribe_una_vez():
+    llamadas = []
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=_generador_borrador(["x" * 400, "corto"], llamadas),
+    )
+
+    salida = agente.consultar("Crea un post para X con testimonios")
+
+    assert len(llamadas) == 2
+    assert "máximo 280" in llamadas[1]["consulta"]
+    assert salida["borrador"]["contenido"] == "corto"
+
+
+def test_borrador_x_dentro_del_limite_no_se_reescribe():
+    llamadas = []
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=_generador_borrador(["corto"], llamadas),
+    )
+
+    agente.consultar("Crea un post para X con testimonios")
+
+    assert len(llamadas) == 1
+
+
+def test_hazlo_mas_corto_reutiliza_busqueda_y_guarda_borrador_en_historial():
+    llamadas = []
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=_generador_borrador(["Contenido original"], llamadas),
+    )
+    agente.consultar("Crea un post de LinkedIn con testimonios positivos")
+
+    salida = agente.consultar("hazlo más corto")
+
+    assert salida["total_coincidencias"] == 2
+    assert salida["borrador"]["plataforma"] == "linkedin"
+    assert "Contenido original" in agente.historial[1]["contenido"]
+
+
+def test_cadena_de_ediciones_conserva_la_plataforma_x():
+    llamadas = []
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=_generador_borrador(["corto"], llamadas),
+    )
+    agente.consultar("dame un post para X con testimonios positivos")
+
+    primera = agente.consultar("hazlo más corto")
+    segunda = agente.consultar("ahora con más emojis")
+
+    assert primera["borrador"]["plataforma"] == "x"
+    assert segunda["borrador"]["plataforma"] == "x"
+    assert segunda["total_coincidencias"] == 2
+
+
+def test_mejores_comentarios_son_positivos_ordenados_y_con_cantidad():
+    recibido = {}
+
+    def generador(*, evidencia, resumen, **_kwargs):
+        recibido["ids"] = [m["id"] for m in evidencia]
+        recibido["resumen"] = resumen
+        return SalidaConversacional(respuesta="ok", citas=[evidencia[0]["id"]])
+
+    salida = AgenteConversacional(crear_mensajes(), generador=generador).consultar(
+        "e we, dame los 20 mejores comentarios que recibimos"
+    )
+
+    assert salida["filtros"]["sentimiento"] == "positivo"
+    assert salida["filtros"]["tipo_detectado"] is None
+    assert recibido["ids"] == ["msg-3", "msg-1"]
+    assert recibido["resumen"]["cantidad_solicitada"] == 20
+    assert recibido["resumen"]["total_coincidencias"] == 2
+
+
+def test_sin_resultados_explica_el_motivo_sin_llamar_al_modelo():
+    llamadas = []
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=cast(
+            Callable[..., SalidaConversacional | dict],
+            lambda **kwargs: llamadas.append(kwargs),
+        ),
+    )
+
+    tema = agente.consultar("mensajes sobre astronomía")["respuesta"]
+    neutral = agente.consultar("mensajes neutrales")["respuesta"]
+
+    assert "«astronomia»" in tema
+    assert "Sentimientos:" in tema and "Tipos:" in tema
+    assert "no hay mensajes con sentimiento neutral" in neutral
+    assert llamadas == []
+
+
+def test_sin_resultados_explica_mensajes_no_aptos_para_borrador():
+    agente = AgenteConversacional(crear_mensajes(), generador=respuesta_falsa)
+
+    salida = agente.consultar("Crea un post con mensajes negativos")
+
+    assert "no aptos para contenido" in salida["respuesta"]
+
+
+def test_sin_resultados_explica_que_no_hay_fechas():
+    mensajes = [{**m, "fecha": None} for m in crear_mensajes()]
+    agente = AgenteConversacional(mensajes, generador=respuesta_falsa)
+
+    salida = agente.consultar("mensajes de ayer")
+
+    assert "no tienen fechas" in salida["respuesta"]

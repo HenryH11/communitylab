@@ -1,3 +1,5 @@
+from typing import cast
+
 import pytest
 from pydantic import ValidationError
 
@@ -107,17 +109,17 @@ def test_spam_se_conserva_en_entrega_ds():
         for item in entrega["interacciones"]
     }
 
-    assert interacciones["spam-001"]["es_spam_detectado"] is True
-    assert interacciones["spam-001"]["motivo_spam"] == (
+    assert cast(dict, interacciones["spam-001"])["es_spam_detectado"] is True
+    assert cast(dict, interacciones["spam-001"])["motivo_spam"] == (
         "Captación mediante oferta dudosa"
     )
 
-    assert interacciones["normal-001"]["es_spam_detectado"] is False
-    assert interacciones["normal-001"]["motivo_spam"] is None
+    assert cast(dict, interacciones["normal-001"])["es_spam_detectado"] is False
+    assert cast(dict, interacciones["normal-001"])["motivo_spam"] is None
 
     assert all(
-        item["tipo_original"] == "comentario"
-        and item["score_relevancia"] == 80
-        and item["elegible_contenido"] is True
+        cast(dict, item)["tipo_original"] == "comentario"
+        and cast(dict, item)["score_relevancia"] == 80
+        and cast(dict, item)["elegible_contenido"] is True
         for item in interacciones.values()
     )

@@ -7,6 +7,8 @@ IMPORTANTE:
 - no forma parte de la suite pytest normal.
 """
 
+from src.agentes.estado_agente import EstadoAgente
+
 from src.agentes.configuracion_ia import (
     PROVEEDOR_NVIDIA_NIM,
     VARIABLE_PROVEEDOR_GENERACION,
@@ -24,7 +26,7 @@ def test_nvidia_genera_faq_estructurada(
         PROVEEDOR_NVIDIA_NIM,
     )
 
-    estado = {
+    estado: EstadoAgente = {
         "id": "nvidia-faq-001",
         "autor": "Ana",
         "canal": "#dudas-langgraph",

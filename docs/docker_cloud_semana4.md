@@ -6,12 +6,52 @@ Este ajuste no cambia modelos, contratos JSON ni el guardado de activos.
 ## Ejecución
 
 Desde la raíz: `docker compose up --build -d`.
-La app escucha en el puerto 8501. Las claves se proporcionan en `.env` local
-(nunca en la imagen o Git). No publicar la app en Internet sin acordar los
+El frontend se construye con `Dockerfile.frontend` y
+`requirements.frontend.txt`; el backend usa `Dockerfile.backend` y
+`requirements.backend.txt`. Para desarrollo local se conserva
+`pip install -r requirements.txt`, que incluye ambos manifiestos.
+La aplicación de Marketing escucha en el puerto 8501. Compose lee `.env`
+para interpolar solo las variables enumeradas en el servicio; no inyecta el
+archivo entero. Las claves nunca se incluyen en la imagen o Git.
+No publicar la app en Internet sin acordar los
 controles de acceso; publicar un puerto no configura las reglas de OCI.
 
+### Separación de Marketing y equipo técnico
+
+- **Marketing:** `streamlit run src/app/app.py`. No incluye Datos ni la curaduría
+  interna, ignora `COMMUNITYLAB_MODO_INTERNO` y no usa lotes internos de sesión.
+- **Equipo técnico:** `streamlit run src/app/app_interna.py`. Conserva Datos,
+  procesamiento y curaduría. Es otro proceso con sesiones independientes.
+- `src/app/interfaz.py` comparte la interfaz, pero cada entrada fija explícitamente
+  su modo. No hay selector de modo en el navegador ni una página de Streamlit
+  que permita cambiar de aplicación.
+- Para iniciar solo el servicio interno con Compose:
+  `docker compose --profile interno up --build -d communitylab-interno`.
+  Crear antes `.env.interno` fuera de Git, con la configuración propia del equipo
+  técnico. No copiar secretos internos al entorno de Marketing.
+- El servicio interno está desactivado por defecto, usa su propio volumen
+  `communitylab-interno-salida` y escucha solo en `127.0.0.1:8502` del host.
+  Acceder mediante túnel autorizado; no publicar ese puerto ni enrutarlo desde
+  el dominio de Marketing. El servicio público conserva su volumen existente.
+- Marketing recibe únicamente `DB_READ_USER`, `DB_READ_DSN` y
+  `DB_READ_PASSWORD_SECRET_OCID`. Definir `DB_READ_DSN` explícitamente: el servicio
+  no recibe `DB_DSN`, `DB_USER` ni `DB_PASSWORD_SECRET_OCID`.
+  Al retirar la inyección completa de `.env`, cualquier ajuste adicional autorizado
+  debe enumerarse expresamente en el servicio, no volver a montar el entorno interno.
+
+**Límite importante:** separar contenedores en una misma VM no separa las
+identidades OCI de Instance Principals. Cloud debe desplegar Marketing con una
+identidad que solo pueda leer el secreto `ro_query`, consultar ambas tablas y
+leer el catálogo. La identidad interna y la del ejecutor diario deben conservar
+sus permisos de escritura por separado. Si la VM compartida accede a ambos
+secretos, el aislamiento IAM todavía no está completo: usar recursos con
+identidades distintas y restringir el acceso interno mediante red y autenticación
+del equipo. Esta separación de código no implementa login ni crea recursos OCI.
+El programador diario no se ejecuta dentro del frontend de Marketing.
+
 La imagen tiene dos etapas y ejecuta como `appuser` (UID/GID 1000).
-Solo copia `src/` y `configuracion/`. El entorno de dependencias y el código
+Solo copia los módulos necesarios de `src/`, `configuracion/`, `.streamlit/`
+y el generador diario. El entorno de dependencias y el código
 no son escribibles por el usuario de ejecución. El chequeo de salud usa Python.
 
 Compose conserva las salidas en el volumen `communitylab-salida`, no en la
@@ -19,6 +59,34 @@ carpeta local `./salida` que usaba la propuesta inicial. Esto evita problemas
 de permisos al ejecutar sin root. No se migran ni borran archivos existentes.
 No usar `docker compose down -v` si se quieren conservar las salidas.
 La configuración queda dentro de la imagen: reconstruir tras modificarla.
+
+### Integración del ingestor (PR #56)
+
+El backend acumulativo queda disponible como perfil optativo:
+`docker compose --profile ingesta up --build -d communitylab-ingestor`.
+No publica el puerto 8000 en el host y expone `/health` y `/sincronizar`
+en la red puente de Compose. Marketing arranca independientemente de él:
+no tiene `depends_on`, variables de escritura ni `INGESTOR_URL`.
+La vista interna conserva su perfil y su puerto local; todavía no llama
+al endpoint de carga. No se añade carga de Oracle a Marketing.
+
+El lector usa `DB_READ_*` y consulta las tablas de
+`rw_ingest_communitylab`, que requiere los permisos SELECT acordados por Cloud.
+Materializa los CLOB antes de cerrar la conexión y no incluye API de escritura.
+El frontend excluye el servicio de ingesta de todas sus capas de imagen y
+conserva el script de generación diaria, sin ejecutarlo automáticamente.
+
+La ingesta retiene lotes anteriores, rechaza conflictos de ID y usa recibos
+para no duplicar spam en reintentos. Antes de una carga autorizada, revisar
+el SQL de recibos documentado en `ingesta_lotes_retenidos_ce.md`.
+Este merge no ejecuta SQL, no cambia IAM y no confirma cargas reales.
+
+Este Compose es una base sencilla de pruebas, NO una certificación de
+aislamiento en producción. El endpoint no autentica al llamador y una red
+puente no distingue identidades de Instance Principals. No conectar la UI
+pública ni exponer el endpoint. Para producción, Cloud debe acordar recursos
+con identidades separadas y control de acceso entre procesos; dos contenedores
+en una VM no bastan para afirmar ese aislamiento.
 
 `.dockerignore` excluye `.env*`, llaves `.pem`/`.key`, `.oci/`, `.ssh/` y salidas,
 incluso cuando las credenciales están en subcarpetas. No reemplaza una revisión
@@ -40,7 +108,7 @@ Con Podman, construir así para conservar el HEALTHCHECK (el formato de imagen
 OCI predeterminado de Podman no lo conserva):
 
 ```sh
-podman build --format docker --ignorefile .dockerignore -t localhost/communitylab:ce-semana4 .
+podman build --format docker --ignorefile .dockerignore -f Dockerfile.frontend -t localhost/communitylab:ce-semana4 .
 ```
 
 Verificar usuario, escritura en `/app/salida`, inicio de Streamlit y healthcheck.

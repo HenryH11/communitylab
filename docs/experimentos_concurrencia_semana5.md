@@ -1,4 +1,4 @@
-﻿# CommunityLab — Evaluación experimental de concurrencia
+# CommunityLab — Evaluación experimental de concurrencia
 
 ## 1. Objetivo
 

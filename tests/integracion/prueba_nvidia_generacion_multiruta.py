@@ -7,6 +7,8 @@ IMPORTANTE:
 - no forma parte de la suite pytest normal.
 """
 
+from src.agentes.estado_agente import EstadoAgente
+
 from src.agentes.configuracion_ia import (
     PROVEEDOR_NVIDIA_NIM,
     VARIABLE_PROVEEDOR_GENERACION,
@@ -22,7 +24,7 @@ def test_nvidia_genera_multiples_activos_independientes(
         PROVEEDOR_NVIDIA_NIM,
     )
 
-    estado = {
+    estado: EstadoAgente = {
         "id": "nvidia-multiruta-001",
         "autor": "Carla",
         "canal": "#logros-y-empleos",

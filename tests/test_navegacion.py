@@ -6,14 +6,15 @@ from unittest.mock import patch
 
 import pytest
 
-from src.app.navegacion import CLAVE_NAVEGACION, CLAVE_PLANTILLA, PESTANAS
+CLAVE_NAVEGACION = "navegacion_principal"
+PESTANAS_INTERNAS = ("Inicio", "Datos", "Agente", "Análisis", "Plantillas", "Ayuda")
 
 pytestmark = pytest.mark.skipif(
     any(importlib.util.find_spec(n) is None for n in ("streamlit", "oci", "pandas", "altair")),
     reason="Prueba de UI requiere dependencias de producción",
 )
 
-APP = str(Path(__file__).resolve().parents[1] / "src/app/app.py")
+APP = str(Path(__file__).resolve().parents[1] / "src/app/app_interna.py")
 
 
 def salida():
@@ -38,6 +39,7 @@ def crear_app(resultado=None):
     app = AppTest.from_file(APP, default_timeout=60)
     if resultado is not None:
         app.session_state["resultado"] = resultado
+    app.session_state[CLAVE_NAVEGACION] = "Plantillas"
     app.run()
     assert not app.exception
     return app
@@ -49,8 +51,9 @@ def ir_a(app, pestana):
     assert not app.exception
 
 
-def test_las_siete_pestanas_en_el_orden_pedido():
-    assert PESTANAS == ("Inicio", "Datos", "Plantillas", "Resultado", "Agente en vivo", "Analíticas", "Ayuda")
+def test_navegacion_interna_conserva_datos_sin_resultado_separado():
+    app = crear_app()
+    assert tuple(app.radio(key=CLAVE_NAVEGACION).options) == PESTANAS_INTERNAS
 
 
 def test_cambiar_de_pestana_conserva_lote_y_aprobaciones():
@@ -58,15 +61,14 @@ def test_cambiar_de_pestana_conserva_lote_y_aprobaciones():
     original = app.session_state["resultado"]
     next(b for b in app.button if b.key.endswith("int-demo_linkedin")).click().run()
     assert not app.button(key="guardar_aprobados_oci").disabled
-    for pestana in PESTANAS:
+    for pestana in ("Inicio", "Datos", "Análisis", "Ayuda", "Plantillas"):
         ir_a(app, pestana)
         assert app.session_state["resultado"] is original
-        assert not app.button(key="guardar_aprobados_oci").disabled
+    assert not app.button(key="guardar_aprobados_oci").disabled
 
 
 def test_boton_oci_visible_y_conectado_a_curaduria():
     app = crear_app(salida())
-    ir_a(app, "Resultado")
     assert app.button(key="guardar_aprobados_oci").disabled
     next(b for b in app.button if b.key.endswith("int-demo_linkedin")).click().run()
     with patch("src.config.oci_client.subir_json") as subir:
@@ -77,30 +79,30 @@ def test_boton_oci_visible_y_conectado_a_curaduria():
         assert subir.call_args.args[0]["tipo"] == "linkedin"
 
 
-def test_tarjeta_del_catalogo_abre_su_plantilla_en_resultado():
+def test_resultados_se_muestran_dentro_de_plantillas():
     app = crear_app(salida())
-    app.button(key="pl_abrir_linkedin").click().run()
     assert not app.exception
-    assert app.session_state[CLAVE_NAVEGACION] == "Resultado"
-    assert app.session_state[CLAVE_PLANTILLA] == "Publicación para LinkedIn"
-    assert app.button(key="pl_abrir_x").disabled
+    assert app.session_state[CLAVE_NAVEGACION] == "Plantillas"
+    assert any(t.label == "Publicación para LinkedIn" for t in app.tabs)
+    assert any("Próximamente" in i.value for i in app.info)
 
 
 @pytest.mark.parametrize("boton, destino", [
-    ("inicio_explorar_plantillas", "Plantillas"),
-    ("inicio_hablar_agente", "Agente en vivo"),
-    ("inicio_nav_ayuda", "Ayuda"),
-    ("inicio_ir_datos", "Datos"),
+    ("inicio_nav_plantillas", "Plantillas"),
+    ("inicio_nav_análisis", "Análisis"),
+    ("inicio_nav_datos", "Datos"),
 ])
 def test_botones_de_inicio_navegan(boton, destino):
     app = crear_app()
+    ir_a(app, "Inicio")
     app.button(key=boton).click().run()
     assert not app.exception
     assert app.session_state[CLAVE_NAVEGACION] == destino
 
 
-def test_sin_lote_resultado_invita_a_cargar_datos():
+def test_sin_lote_plantillas_explica_que_no_hay_resultados():
     app = crear_app()
-    assert any("Todavía no hay resultados" in i.value for i in app.info)
-    app.button(key="resultado_ir_datos").click().run()
+    assert any("Todavía no hay un lote procesado" in i.value for i in app.info)
+    ir_a(app, "Inicio")
+    app.button(key="inicio_nav_datos").click().run()
     assert app.session_state[CLAVE_NAVEGACION] == "Datos"

@@ -1,5 +1,7 @@
 """Pruebas del conector OCI sin tocar el bucket real."""
 
+from typing import Any, Mapping, cast
+
 import json
 import unittest
 from typing import get_args
@@ -70,7 +72,7 @@ class PruebasPersistenciaOCI(unittest.TestCase):
         cliente = Mock()
         for documento in ([], {"valor": float("nan")}, {"valor": object()}):
             with self.subTest(documento=documento), self.assertRaises((TypeError, ValueError)):
-                subir_json(documento, "activos/prueba.json", cliente=cliente, namespace="prueba")
+                subir_json(cast(Mapping[str, Any], documento), "activos/prueba.json", cliente=cliente, namespace="prueba")
         cliente.put_object.assert_not_called()
 
     def test_ruta_no_admite_separadores_en_id(self):

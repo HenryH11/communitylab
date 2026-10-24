@@ -16,9 +16,6 @@ from oci.auth.signers import InstancePrincipalsSecurityTokenSigner
 from oci.secrets import SecretsClient
 import oracledb
 
-# Forzar al driver a devolver CLOBs como str y BLOBs como bytes
-oracledb.defaults.fetch_lobs = False
-
 USUARIO_PREDETERMINADO = "ro_query_communitylab"
 VERSION_CONJUNTO = "1.1"
 CAMPOS_CONJUNTO = (
@@ -63,6 +60,8 @@ def obtener_cliente_secretos() -> SecretsClient:
 def _descargar_secreto(cliente: SecretsClient, ocid_secreto: str) -> str:
     """Extrae y decodifica el contenido Base64 de un secreto en OCI Vault."""
     respuesta = cliente.get_secret_bundle(secret_id=ocid_secreto)
+    if respuesta is None:
+        raise RuntimeError("OCI Vault no devolvió el secreto solicitado")
     contenido_b64 = respuesta.data.secret_bundle_content.content
     secreto = base64.b64decode(contenido_b64, validate=True).decode("utf-8")
     if not secreto:
@@ -152,6 +151,21 @@ def obtener_conexion_lectura() -> oracledb.Connection:
     )
 
 
+def _leer_filas_con_texto(cursor) -> list[tuple]:
+    cursor.execute(_SQL_SELECT_TODOS)
+    filas = []
+    for fila in cursor.fetchall():
+        valores = list(fila)
+        contenido = valores[8]
+        if isinstance(contenido, oracledb.LOB):
+            contenido = contenido.read()
+            if not isinstance(contenido, str):
+                raise ValueError("contenido_textual debe ser un CLOB de texto, no binario")
+            valores[8] = contenido
+        filas.append(tuple(valores))
+    return filas
+
+
 def leer_conjunto(
     *,
     conexion: oracledb.Connection | None = None,
@@ -163,15 +177,13 @@ def leer_conjunto(
     """
     if conexion is not None:
         with conexion.cursor() as cursor:
-            cursor.execute(_SQL_SELECT_TODOS)
-            filas = cursor.fetchall()
+            filas = _leer_filas_con_texto(cursor)
     else:
         with (
             obtener_conexion_lectura() as conexion_activa,
             conexion_activa.cursor() as cursor,
         ):
-            cursor.execute(_SQL_SELECT_TODOS)
-            filas = cursor.fetchall()
+            filas = _leer_filas_con_texto(cursor)
 
     if not filas:
         raise ValueError("no hay una instantánea publicada con metadatos")

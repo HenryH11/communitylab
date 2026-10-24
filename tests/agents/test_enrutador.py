@@ -1,10 +1,10 @@
 from typing import cast
 
 from src.agentes.estado_agente import EstadoAgente
-from src.agentes.nodos.nodo_enrutador import determinar_rutas as _determinar_rutas
+from src.agentes.nodos.nodo_enrutador import ResultadoRutas, determinar_rutas as _determinar_rutas
 
 
-def determinar_rutas(estado: dict) -> dict:
+def determinar_rutas(estado: dict) -> ResultadoRutas:
     # El enrutador solo lee clasificación y elegibilidad; estos casos omiten id/texto.
     return _determinar_rutas(cast(EstadoAgente, estado))
 
@@ -250,7 +250,7 @@ def test_spam_no_genera_activos_en_langgraph():
         grafo_desde_analisis,
     )
 
-    estado = {
+    estado: EstadoAgente = {
         "id": "spam-grafo-001",
         "texto": "Gana dinero rápido. Escríbeme por privado.",
         "tipo_original": "comentario",
@@ -271,7 +271,7 @@ def test_spam_no_genera_activos_en_langgraph():
 
     assert resultado["rutas"] == []
     assert resultado["activos_generados"] == {}
-    assert comprobar_rutas(resultado) == "finalizar"
+    assert comprobar_rutas(cast(EstadoAgente, resultado)) == "finalizar"
 
     # Las decisiones originales de Data permanecen intactas.
     assert resultado["score_relevancia"] == 95

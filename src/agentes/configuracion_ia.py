@@ -1,6 +1,7 @@
 """Configuración no secreta de proveedores y modelos de IA."""
 
 import os
+from typing import TypedDict
 
 from dotenv import load_dotenv
 from src.agentes.errores_ia import ErrorConfiguracionProveedor
@@ -21,6 +22,7 @@ VARIABLE_MODELO_GEMINI = "COMMUNITYLAB_MODELO_GEMINI"
 
 
 VARIABLE_MODELO_NVIDIA = "COMMUNITYLAB_MODELO_NVIDIA"
+VARIABLE_MODELO_NVIDIA_INTERPRETACION = "COMMUNITYLAB_MODELO_NVIDIA_INTERPRETACION"
 
 VARIABLE_TIMEOUT_NVIDIA = "COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS"
 
@@ -149,7 +151,28 @@ def obtener_modelo_nvidia_por_ruta(ruta: str | None) -> str:
     return obtener_modelo_nvidia_por_tier(tier)
 
 
-def obtener_configuracion_enrutamiento() -> dict[str, object]:
+def obtener_modelo_nvidia_interpretacion() -> str:
+    """El intérprete usa Super por defecto, independiente del modelo redactor."""
+    load_dotenv()
+    return (
+        os.getenv(
+            VARIABLE_MODELO_NVIDIA_INTERPRETACION, MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
+        ).strip()
+        or MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
+    )
+
+
+class ConfiguracionTier(TypedDict):
+    modelo_nvidia: str
+    rutas: list[str]
+
+
+class ConfiguracionEnrutamiento(TypedDict):
+    enrutamiento_adaptativo_activo: bool
+    tiers: dict[str, ConfiguracionTier]
+
+
+def obtener_configuracion_enrutamiento() -> ConfiguracionEnrutamiento:
     """Devuelve la configuración no secreta del enrutamiento adaptativo."""
     return {
         "enrutamiento_adaptativo_activo": enrutamiento_adaptativo_activo(),

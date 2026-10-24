@@ -21,6 +21,7 @@ import json
 from pathlib import Path
 import re
 import sys
+from typing import Any
 import unicodedata
 
 NEGADORES = {"no", "ni", "sin", "nunca", "jamas", "tampoco", "ningun", "ninguna", "ninguno", "nada"}
@@ -320,7 +321,7 @@ def auditar_entrega(entrega, informe, opciones):
 
 
 def resumen(filas):
-    datos = {"activos": len(filas), "con_alertas": sum(1 for f in filas if f["alertas"])}
+    datos: dict[str, Any] = {"activos": len(filas), "con_alertas": sum(1 for f in filas if f["alertas"])}
     por_tipo = {}
     for f in filas:
         for a in f["alertas"]:
@@ -374,7 +375,7 @@ def cargar_json(ruta):
 
 
 def principal(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").strip().split("\n")[0])
     modo = parser.add_mutually_exclusive_group(required=True)
     modo.add_argument("--casos", help="fixture de casos de consistencia (validación)")
     modo.add_argument("--entrega", help="JSON del contrato de salida de DS")

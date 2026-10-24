@@ -115,7 +115,7 @@ captura = {
 
 carpeta.mkdir(parents=True, exist_ok=True)
 destino.write_text(
-    json.dumps(captura, ensure_ascii=False, indent=2),
+    json.dumps(captura, ensure_ascii=False, indent=4),
     encoding="utf-8",
 )
 

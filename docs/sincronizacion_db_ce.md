@@ -15,7 +15,7 @@ informe = sincronizar_conjunto(documento, instantanea_completa=True)
 ```
 
 Valida primero versión, siete campos, total, contador de spam, duplicados,
-tipos, UTF-8, contenido de hasta 160 caracteres y fecha UTC de segundos o null.
+tipos, UTF-8, contenido completo no vacío y fecha UTC de segundos o null.
 `canal`, `sentimiento`, `tema` y `tipo` deben ser textos no vacíos, nunca null,
 para coincidir con las columnas NOT NULL comunicadas por Marco y DA. Se validan
 todos los registros antes de abrir una conexión o escribir, sin recortar ni
@@ -29,6 +29,21 @@ opción con cargas parciales. Un error revierte toda la operación. No usa TRUNC
 La conexión inyectada debe ser exclusiva, sin transacción abierta y sin autocommit.
 
 ## Migración pendiente, no automática
+
+Actualización de texto completo: Marco confirmó `contenido_textual` como nombre
+definitivo al actualizar la tabla para CLOB. El contrato JSON y el SQL usan ese
+campo; regenerar los documentos antiguos que usaban `contenido_corto`.
+El cargador usa
+un bind explícito `DB_TYPE_CLOB`, incluso cuando el lote mezcla textos cortos
+y textos que exceden los límites de VARCHAR2. La lectura materializa los LOB
+mediante `read()` dentro del cursor/conexión y devuelve cadenas Python, sin
+cambiar opciones globales del driver. También sigue aceptando filas devueltas
+directamente como cadenas.
+
+No se aplica DDL desde la aplicación. La prueba real de
+MERGE/lectura CLOB con TLS y permisos queda pendiente de Cloud. Reconstruir
+y recargar los registros desde la fuente original: los datos ya truncados no
+se recuperan por cambiar el tipo de columna.
 
 Marco/DBA debe revisar `docs/sql/conjunto_consultable_meta.sql` y aplicarlo en el
 esquema propietario antes de cargar. Después, publicar una instantánea completa

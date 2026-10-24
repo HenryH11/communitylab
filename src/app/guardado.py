@@ -6,7 +6,7 @@ Importar este módulo o pasar una selección vacía no requiere el SDK de OCI.
 
 import asyncio
 import json
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from typing import Any
 
 from src.agentes.entrega_resultados import preparar_entrega_resultados
@@ -14,7 +14,7 @@ from src.agentes.entrega_resultados import preparar_entrega_resultados
 ClaveActivo = tuple[str, str]
 
 
-def _identidad(activo: dict) -> dict[str, str]:
+def _identidad(activo: Mapping[str, Any]) -> dict[str, str]:
     return {
         "id_interaccion": activo["id_interaccion"],
         "tipo": activo["tipo"],

@@ -121,6 +121,8 @@ def obtener_cliente_secretos() -> SecretsClient:
 def _descargar_secreto(cliente: SecretsClient, ocid_secreto: str) -> str:
     """Extrae y decodifica el contenido Base64 de un secreto en OCI Vault."""
     respuesta = cliente.get_secret_bundle(secret_id=ocid_secreto)
+    if respuesta is None:
+        raise RuntimeError("OCI Vault no devolvió el secreto solicitado")
     contenido_b64 = respuesta.data.secret_bundle_content.content
     secreto = base64.b64decode(contenido_b64, validate=True).decode("utf-8")
     if not secreto:

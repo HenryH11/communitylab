@@ -3,12 +3,13 @@
 import os
 import json
 from functools import lru_cache
+from typing import Any
 
 from langchain_core.messages import SystemMessage
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnableLambda
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from src.agentes.errores_ia import (
     ErrorConfiguracionProveedor,
@@ -17,8 +18,6 @@ from src.agentes.errores_ia import (
 
 from src.agentes.configuracion_ia import (
     MAX_RETRIES_CLIENTE_NVIDIA,
-    MODELO_NVIDIA_NEMOTRON,
-    MODELO_NVIDIA_POR_DEFECTO,
     NVIDIA_BASE_URL,
     obtener_modelo_nvidia_id,
     obtener_timeout_nvidia,
@@ -60,7 +59,7 @@ def obtener_modelo_nvidia(
         }
 
     return ChatOpenAI(
-        api_key=api_key,
+        api_key=SecretStr(api_key),
         base_url=NVIDIA_BASE_URL,
         model=modelo_id,
         temperature=0,
@@ -148,7 +147,7 @@ def obtener_modelo_nvidia_estructurado(
     except TypeError:
         cliente_base = obtener_modelo_nvidia()
 
-    parametros = {
+    parametros: dict[str, Any] = {
         "response_format": {
             "type": "json_object",
         }

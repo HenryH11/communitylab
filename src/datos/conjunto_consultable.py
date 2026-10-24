@@ -80,7 +80,7 @@ def construir_conjunto_consultable(entrega, mensajes=None):
 
 
 def principal(argumentos=None):
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").strip().split("\n")[0])
     parser.add_argument("--entrega", required=True, help="JSON de DS (contrato v1.3/v1.4 o paquete de auditoría v1.2)")
     parser.add_argument("--mensajes", help="dataset de entrada, para tomar la fecha por id")
     parser.add_argument("--salida", required=True)

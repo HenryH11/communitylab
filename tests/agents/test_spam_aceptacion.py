@@ -1,5 +1,8 @@
+from typing import cast
+
 import pytest
 
+from src.agentes.estado_agente import EstadoAgente
 from src.agentes.modelos import AnalisisMensaje
 from src.agentes.nodos.nodo_enrutador import determinar_rutas
 from src.agentes.entrega_resultados import preparar_entrega_resultados
@@ -52,14 +55,14 @@ def test_casos_aceptacion_estructurales(
         "motivo_spam": motivo,
     })
 
-    estado = {
+    estado: EstadoAgente = cast(EstadoAgente, {
         "id": "caso-prueba",
         "texto": texto,
         **prediccion.model_dump(),
         "score_relevancia": 90,
         "elegible_contenido": True,
         "elegible_faq": False,
-    }
+    })
 
     assert prediccion.es_spam_detectado is es_spam
     assert determinar_rutas(estado)["rutas"] == rutas_esperadas

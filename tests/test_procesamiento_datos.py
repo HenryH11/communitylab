@@ -8,24 +8,16 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from typing import cast
 import unittest
 from unittest import mock
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 
-from src.datos.ingesta import (
-    construir_ciclos,
-    construir_estado_agente,
-    construir_estados_agente,
-    contar_caracteres_no_ascii,
-    detectar_mojibake,
-    estimar_tokens,
-    guardar_ciclos,
-    limpiar_texto,
-    procesar_datos,
-    reparar_mojibake,
-)
+from src.datos.ciclos_transporte import construir_ciclos, guardar_ciclos
+from src.datos.ingesta import construir_estado_agente, construir_estados_agente, procesar_datos
+from src.datos.limpieza import contar_caracteres_no_ascii, detectar_mojibake, estimar_tokens, limpiar_texto, reparar_mojibake
 from src.datos.relevancia import (
     ConfiguracionRelevancia,
     es_pregunta_completa,
@@ -237,7 +229,7 @@ class PruebasCiclos(unittest.TestCase):
         salida, _ = procesar(lote(mensaje()))
         for tamano in (0, -1, 1, 9, 31, "10", 1.5, True):
             with self.subTest(tamano=tamano), self.assertRaises(ValueError):
-                construir_ciclos(salida, tamano)
+                construir_ciclos(salida, cast(int, tamano))
 
     def test_construir_ciclos_respeta_envoltorio_de_lotes(self):
         entrada = {"metadata": {}, "lotes": [lote(mensaje("uno"), mensaje("dos", autor="Otro"))]}

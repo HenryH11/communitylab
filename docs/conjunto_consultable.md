@@ -25,7 +25,7 @@ escribe en OCI: solo transforma una entrega de DS en el índice.
 ```json
 {
   "version": "1.1",
-  "campos": ["id", "canal", "sentimiento", "tema", "tipo", "contenido_corto", "fecha"],
+  "campos": ["id", "canal", "sentimiento", "tema", "tipo", "contenido_textual", "fecha"],
   "total": 23,
   "total_spam_excluido": 0,
   "registros": [
@@ -35,7 +35,7 @@ escribe en OCI: solo transforma una entrega de DS en el índice.
       "sentimiento": "muy_positivo",
       "tema": "empleabilidad",
       "tipo": "testimonio",
-      "contenido_corto": "Comunidad, gracias a este programa conseguí mi primer trabajo…",
+      "contenido_textual": "Comunidad, gracias a este programa conseguí mi primer trabajo…",
       "fecha": "2026-09-10T14:32:00Z"
     }
   ]
@@ -53,28 +53,38 @@ python -m src.datos.conjunto_consultable `
 
 ## Decisiones
 
-### 1. Siete campos, con los nombres de la Matriz
+### 1. Siete campos, con el nombre de texto actualizado por Cloud
 
 Son los campos estrictos que pide la Matriz: `id, canal, sentimiento, tema,
-tipo, contenido_corto, fecha`. `tema` sale de `tema_principal` y `tipo` de
-`tipo_detectado`. Se usan los nombres cortos de la Matriz para que las
+tipo, contenido_textual, fecha`. `tema` sale de `tema_principal` y `tipo` de
+`tipo_detectado`. Cloud confirmó `contenido_textual` en lugar de
+`contenido_corto`. Se mantienen los demás nombres de la Matriz para que las
 herramientas de DS y la documentación hablen el mismo idioma. No se agregan
 `subtema` ni `rutas` hasta que DS los pida: cada campo extra es contrato que hay
 que mantener.
 
-### 2. `contenido_corto` = texto original recortado a 160 caracteres
+### 2. `contenido_textual` = texto completo (nombre confirmado)
 
 - **Por qué el texto original y no un activo generado:** todas las
   interacciones tienen texto, pero no todas tienen activo (un comentario no
   genera LinkedIn). Además, el original es la fuente verificable: la auditoría
   semántica de DA compara contra él.
-- **Por qué 160 caracteres:** alcanza para reconocer el mensaje en una
-  respuesta del agente sin cargar el texto completo en cada consulta. En la
-  entrega final de DS, 4 de 23 textos superan ese largo; los demás quedan
-  completos.
-- **Cómo se recorta:** el texto queda en una sola línea, se corta en el último
-  espacio antes del límite y termina en «…». No se parten palabras y se
-  conservan tildes y emojis (UTF-8).
+- **Cambio de alcance:** se elimina el recorte a 160 caracteres para conservar
+  la evidencia completa. Se preservan saltos de línea, espacios, tildes y emojis;
+  un texto ausente, vacío o de tipo incorrecto se rechaza explícitamente.
+- **Almacenamiento:** Marco confirmó el nombre `contenido_textual` al actualizar
+  la tabla para CLOB. El JSON, el SQL y el adaptador usan ese nombre.
+  No se aplica ninguna migración de tabla aquí; falta la prueba real de integración.
+- **Compatibilidad:** se mantienen los siete campos y la versión 1.1. Los
+  consumidores no deben asumir que el texto tiene un máximo de 160 caracteres.
+  El campo anterior no se acepta en cargas DB: regenerar los documentos antiguos
+  y desplegar productores y consumidores coordinadamente con la columna CLOB.
+  Solo el importador de archivos propios conserva `contenido_corto` como alias
+  de entrada por compatibilidad; no forma parte del contrato DB vigente.
+- **Recarga:** los documentos o registros ya recortados no recuperan su contenido;
+  hay que reconstruirlos desde la entrega/fuente original y volver a cargarlos.
+- Los límites de volumen y de evidencia enviada al modelo del agente permanecen
+  independientes: almacenar texto completo no implica enviarlo todo al modelo.
 
 ### 3. La `fecha` se une desde el dataset de entrada
 
@@ -122,7 +132,7 @@ de `src/datos`. Una misma entrega produce siempre el mismo archivo.
 
 ## Verificación
 
-- `tests/test_conjunto_consultable.py`, 8 pruebas:
+- `tests/test_conjunto_consultable.py`:
   - campos y orden;
   - spam de la v1.4 excluido y contado; v1.3 sin cambios;
   - fecha desde el dataset;

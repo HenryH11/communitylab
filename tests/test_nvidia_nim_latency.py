@@ -1,6 +1,7 @@
 """Ensayo NVIDIA con transporte simulado: nunca consume cuota del proveedor."""
 
 from io import BytesIO
+from email.message import Message
 import json
 from unittest.mock import MagicMock
 from urllib.error import HTTPError
@@ -129,7 +130,7 @@ def test_fallos_no_interrumpen_otros_casos_ni_exponen_clave(archivo, monkeypatch
 
     def proveedor(modelo, caso, *args):
         if caso["id"] == "nim-0":
-            raise HTTPError(nim.ENDPOINT, 429, secreto, {}, BytesIO(secreto.encode()))
+            raise HTTPError(nim.ENDPOINT, 429, secreto, Message(), BytesIO(secreto.encode()))
         if caso["id"] == "nim-1":
             raise TimeoutError(secreto)
         return respuesta()

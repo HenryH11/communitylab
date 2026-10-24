@@ -51,7 +51,10 @@ def obtener_cliente() -> tuple[ObjectStorageClient, str]:
     """
     signer = InstancePrincipalsSecurityTokenSigner()
     cliente = ObjectStorageClient(config={}, signer=signer)
-    namespace = cliente.get_namespace().data
+    respuesta = cliente.get_namespace()
+    if respuesta is None:
+        raise RuntimeError("OCI no devolvió el namespace de Object Storage")
+    namespace = respuesta.data
     return cliente, namespace
 
 
@@ -103,9 +106,10 @@ def subir_json(
         put_object_body=cuerpo,
         content_type="application/json; charset=utf-8",
     )
+    encabezados = respuesta.headers if respuesta is not None else None
     return {
         "bucket": bucket_efectivo,
         "namespace": namespace,
         "object_name": nombre_objeto,
-        "etag": respuesta.headers.get("etag") if respuesta.headers else None,
+        "etag": encabezados.get("etag") if encabezados else None,
     }

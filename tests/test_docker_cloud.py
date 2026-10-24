@@ -23,6 +23,7 @@ def test_imagen_copia_solo_directorios_de_ejecucion():
         "COPY src/ ./src/",
         "COPY configuracion/ ./configuracion/",
         "COPY .streamlit/ ./.streamlit/",
+        "COPY scripts/generar_plantillas_diarias.py ./scripts/generar_plantillas_diarias.py",
     ]
 
 
@@ -48,3 +49,17 @@ def test_salud_no_requiere_apis_de_ia_ni_oci():
     dockerfile = (RAIZ / "Dockerfile").read_text()
     assert "http://127.0.0.1:8501/_stcore/health" in dockerfile
     assert 'CMD ["streamlit", "run", "src/app/app.py"]' in dockerfile
+
+
+def test_compose_separa_entorno_puerto_y_volumen_interno():
+    compose = (RAIZ / "docker-compose.yml").read_text()
+    marketing, interno = compose.split("  communitylab-interno:", 1)
+    assert "env_file:" not in marketing
+    assert "DB_USER=" not in marketing
+    assert "DB_PASSWORD_SECRET_OCID=" not in marketing
+    assert "DB_READ_PASSWORD_SECRET_OCID=" in marketing
+    assert 'profiles: ["interno"]' in interno
+    assert '["streamlit", "run", "src/app/app_interna.py"]' in interno
+    assert '"127.0.0.1:8502:8501"' in interno
+    assert "path: .env.interno" in interno
+    assert "communitylab-interno-salida:/app/salida" in interno

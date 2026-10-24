@@ -27,6 +27,7 @@ COPY --from=dependencias /opt/venv /opt/venv
 COPY src/ ./src/
 COPY configuracion/ ./configuracion/
 COPY .streamlit/ ./.streamlit/
+COPY scripts/generar_plantillas_diarias.py ./scripts/generar_plantillas_diarias.py
 USER appuser
 
 # Puerto estándar de Streamlit

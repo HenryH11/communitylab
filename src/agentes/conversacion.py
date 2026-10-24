@@ -2,15 +2,15 @@
 
 from collections import Counter, defaultdict
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
-from datetime import date, datetime, timedelta, timezone
+from dataclasses import asdict, dataclass, field, replace
+from datetime import date, datetime, timezone
 from functools import lru_cache
 import json
 import re
-from typing import Literal
+from typing import Annotated, Any, Literal
 import unicodedata
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationError
 
 from src.agentes.configuracion_ia import (
     PROVEEDOR_GEMINI,
@@ -21,7 +21,9 @@ from src.agentes.modelo_ia import (
     invocar_modelo_con_fallback,
     obtener_modelo_generacion_estructurado,
 )
+from src.agentes.interpretacion import ErrorInterpretacion, PlanConsulta, interpretar_consulta
 from src.agentes.observabilidad import config_ejecucion
+from src.agentes.plataformas import PlataformaPublicacion, texto_publicacion
 from src.agentes.prompts.conversacion import prompt_conversacion
 from src.agentes.prompts.verificacion import prompt_verificacion
 
@@ -30,130 +32,68 @@ MAX_MENSAJES = 50_000
 MAX_CARACTERES_DATASET = 5_000_000
 MAX_CARACTERES_METADATO = 250
 MAX_COINCIDENCIAS = 8
+MAX_EVIDENCIA_LISTADO = 20
+MAX_EVIDENCIA_X = 3
+LIMITE_CARACTERES_X = 280
 MAX_HISTORIAL = 6
 MAX_CARACTERES_CONSULTA = 1_000
 MAX_CARACTERES_MENSAJE = 1_200
+TEMPERATURA_MINIMA = 0.0
+TEMPERATURA_MAXIMA = 1.0
+TOP_P_MINIMO = 0.1
+TOP_P_MAXIMO = 1.0
+
+# Estilos de redacción para borradores: (temperatura, top_p).
+ESTILOS_REDACCION: dict[str, tuple[float, float]] = {
+    "preciso": (0.0, 1.0),
+    "equilibrado": (0.4, 0.9),
+    "creativo": (0.8, 0.95),
+}
+MODELOS_RESPUESTA = {
+    "super": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "lightning": "nvidia/nemotron-3.5-lightning-30b-a3b",
+}
 
 ModoVerificacion = Literal["prompt_estricto", "verificacion_automatica"]
 
-_PALABRAS_VACIAS = frozenset(
-    """
-    a al algo ante aqui asi con como cual cuales cuando cuanto de del desde
-    donde dos e el ella en entre era es esa ese eso esta este esto fue ha hay
-    la las le les lo los mas me mi muy no nos o para pero por porque que quien
-    se si sin sobre su sus te tiene un una uno y ya the a an and are as at be
-    by for from how i in is it of on or that the this to was were what when
-    where which with about show find tell me please
-    los las una unos unas del al eso esa este esta post posts publicacion
-    publicaciones mensaje mensajes comunidad datos dato mensajes
-    opiniones opinion cuantos cuantas hubo resumen sentimiento sentimientos
-    escribe escribir crea crear genera generar redacta redactar prepara preparar
-    hazme haz write create draft positive positives negative negatives neutral
-    neutrals sentiment yesterday today last week days past very highly
-    ultimo ultimos ultima ultimas ayer hoy semana dias
-    analytics analysis distribution count counts many happened topic topics
-    frequent frecuencia distribución analitica analiticas cuantos cuantas
-    which were top most common comunes principales dominante predominante
-    theme themes topics tema temas qué cuál cuales cual
-    """.split()
-)
+_SENTIMIENTOS_INCLUIDOS = {
+    "positivo": frozenset({"positivo", "muy_positivo"}),
+    "negativo": frozenset({"negativo", "muy_negativo"}),
+}
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
 
-_SINONIMOS_SENTIMIENTO = {
-    "muy_positivo": (
-        "muy positivo", "muy positiva", "muy positivos", "muy positivas",
-        "very positive", "highly positive",
-    ),
-    "positivo": ("positivo", "positiva", "positivos", "positivas", "positive", "positives"),
-    "neutral": ("neutral", "neutro", "neutra", "neutrales", "neutrals"),
-    "negativo": ("negativo", "negativa", "negativos", "negativas", "negative", "negatives"),
-    "muy_negativo": (
-        "muy negativo", "muy negativa", "muy negativos", "muy negativas",
-        "very negative", "highly negative",
-    ),
-}
-_SINONIMOS_TIPO = {
-    "testimonio": ("testimonio", "testimonios", "experiencia", "experiencias", "testimonial", "testimonials"),
-    "pregunta_tecnica": (
-        "pregunta técnica", "preguntas técnicas", "duda técnica", "dudas técnicas",
-        "technical question", "technical questions",
-    ),
-    "pregunta_programa": (
-        "pregunta del programa", "preguntas del programa", "program question",
-        "program questions",
-    ),
-    "feedback": ("feedback", "retroalimentación", "sugerencia", "sugerencias"),
-    "comentario": ("comentario", "comentarios"),
-}
-_PLATAFORMAS = {
-    "linkedin": ("linkedin",),
-    "instagram": ("instagram",),
-    "x": ("twitter", "x"),
-}
-_SOLICITUD_BORRADOR = re.compile(
-    r"\b(?:hazme|haz|crea|crear|genera|generar|redacta|redactar|"
-    r"escribe|escribir|prepara|preparar|draft me|write me|create me)\b",
-    re.IGNORECASE,
-)
-_SEGUIMIENTO = re.compile(
-    r"^\s*(?:y|también|tambien|ahora|solo|sólo|qué tal|que tal|"
-    r"¿?y\s+(?:los|las|el|la)|and|also|what about|only)\b",
-    re.IGNORECASE,
-)
-_SOLICITUD_CODIGO = re.compile(
-    r"\b(?:write|create|build|debug|fix|program|escribe|crea|construye|"
-    r"depura|corrige|programa)\b.{0,50}\b(?:code|codigo|script|function|"
-    r"funcion|app|application|api)\b|"
-    r"\b(?:code|codigo|script|function|funcion|app|application|api)\b"
-    r".{0,50}\b(?:write|create|build|debug|fix|escribe|crea|construye|"
-    r"depura|corrige|programa)\b",
-    re.IGNORECASE,
-)
-_SOLICITUD_ACTUALIDAD_EXTERNA = re.compile(
-    r"\b(?:who is|current|latest|quien es|actual|actualmente|hoy|ahora)\b"
-    r".{0,50}\b(?:president|presidente|election|eleccion|politic|politica)\b",
-    re.IGNORECASE,
-)
-
-
 class BorradorMarketing(BaseModel):
-    plataforma: Literal["linkedin", "instagram", "x"]
+    plataforma: PlataformaPublicacion
     titulo: str = Field(min_length=1, max_length=180)
     contenido: str = Field(min_length=1, max_length=5_000)
-    hashtags: list[str] = Field(min_length=3, max_length=8)
+    hashtags: list[Annotated[str, Field(pattern=r"^#[^\s#]+$")]] = Field(
+        min_length=3, max_length=8,
+        description="De 3 a 8 etiquetas con # inicial, sin espacios: #Comunidad.",
+    )
 
-    @field_validator("hashtags", mode="before")
-    @classmethod
-    def normalizar_hashtags(cls, valores):
-        if not isinstance(valores, list):
-            return valores
-
-        normalizados = []
-        for valor in valores:
-            if not isinstance(valor, str):
-                normalizados.append(valor)
-                continue
-
-            valor = valor.strip()
-            if valor and not valor.startswith("#"):
-                valor = f"#{valor}"
-            normalizados.append(valor)
-
-        return normalizados
-
-
-    @field_validator("hashtags")
-    @classmethod
-    def validar_hashtags(cls, valores: list[str]) -> list[str]:
-        if any(not valor.startswith("#") or len(valor) < 2 for valor in valores):
-            raise ValueError("Cada hashtag debe comenzar con # y tener contenido.")
-        return valores
+class GrupoPregunta(BaseModel):
+    duda: str = Field(min_length=1, max_length=500)
+    citas: list[str] = Field(min_length=1, max_length=MAX_EVIDENCIA_LISTADO)
 
 
 class SalidaConversacional(BaseModel):
     respuesta: str = Field(min_length=1, max_length=4_000)
-    citas: list[str] = Field(min_length=1, max_length=MAX_COINCIDENCIAS)
+    citas: list[str] = Field(
+        min_length=1, max_length=MAX_EVIDENCIA_LISTADO,
+        description=(
+            "Solo IDs exactos de la evidencia, por ejemplo msg-1. "
+            "Nunca textos citados, autores ni explicaciones."
+        ),
+    )
     borrador: BorradorMarketing | None = None
+    grupos_preguntas: list[GrupoPregunta] = Field(
+        default_factory=list, max_length=MAX_EVIDENCIA_LISTADO,
+        description=(
+            "Si filtros.agrupar_preguntas es true, agrupa TODAS las preguntas de la "
+            "evidencia. Cada grupo contiene una duda y los IDs únicos que la expresan. "
+            "No incluyas conteos ni respuestas en duda. En otras tareas deja []."
+        ),
+    )
 
 
 class AfirmacionVerificada(BaseModel):
@@ -171,10 +111,14 @@ class SalidaVerificacion(BaseModel):
 class FiltrosConsulta:
     sentimiento: str | None = None
     tipo_detectado: str | None = None
+    tipos_detectados: list[str] = field(default_factory=list)
+    agrupar_preguntas: bool = False
     fecha_desde: date | None = None
     fecha_hasta: date | None = None
     plataforma: str | None = None
     intencion: Literal["consulta", "borrador"] = "consulta"
+    cantidad: int | None = None
+    canal: str | None = None
 
 
 def _normalizar(texto: str) -> str:
@@ -185,102 +129,8 @@ def _normalizar(texto: str) -> str:
     ).replace("_", " ")
 
 
-def _coincide_frase(texto: str, frases: tuple[str, ...]) -> bool:
-    normalizado = _normalizar(texto)
-    return any(_normalizar(frase) in normalizado for frase in frases)
-
-
-def _parsear_filtros(consulta: str, hoy: date) -> FiltrosConsulta:
-    normalizada = _normalizar(consulta)
-    sentimiento = next(
-        (
-            clave
-            for clave, sinonimos in _SINONIMOS_SENTIMIENTO.items()
-            if _coincide_frase(normalizada, sinonimos)
-        ),
-        None,
-    )
-    tipo = next(
-        (
-            clave
-            for clave, sinonimos in _SINONIMOS_TIPO.items()
-            if _coincide_frase(normalizada, sinonimos)
-        ),
-        None,
-    )
-    plataforma = next(
-        (
-            clave
-            for clave, sinonimos in _PLATAFORMAS.items()
-            if any(
-                re.search(r"\bx\b", normalizada)
-                if sinonimo == "x"
-                else _coincide_frase(normalizada, (sinonimo,))
-                for sinonimo in sinonimos
-            )
-        ),
-        None,
-    )
-
-    desde = hasta = None
-    if re.search(r"\bayer\b", normalizada):
-        desde = hasta = hoy - timedelta(days=1)
-    elif re.search(r"\b(?:hoy|today)\b", normalizada):
-        desde = hasta = hoy
-    elif re.search(r"\b(?:semana pasada|la semana anterior|last week)\b", normalizada):
-        inicio_semana = hoy - timedelta(days=hoy.weekday())
-        desde = inicio_semana - timedelta(days=7)
-        hasta = inicio_semana - timedelta(days=1)
-    elif re.search(r"\b(?:ultimos? 7 dias|ultima semana|last 7 days|past week)\b", normalizada):
-        desde = hoy - timedelta(days=6)
-        hasta = hoy
-    else:
-        dias = re.search(r"\b(?:ultimos?|last)\s+(\d{1,3})\s+dias?\b", normalizada)
-        if dias:
-            cantidad = int(dias.group(1))
-            if 1 <= cantidad <= 365:
-                desde = hoy - timedelta(days=cantidad - 1)
-                hasta = hoy
-
-    return FiltrosConsulta(
-        sentimiento=sentimiento,
-        tipo_detectado=tipo,
-        fecha_desde=desde,
-        fecha_hasta=hasta,
-        plataforma=(
-            plataforma
-            or ("linkedin" if _SOLICITUD_BORRADOR.search(consulta) else None)
-        ),
-        intencion="borrador" if _SOLICITUD_BORRADOR.search(consulta) else "consulta",
-    )
-
-
 def _tokens(texto: str) -> set[str]:
-    return {
-        token
-        for token in _TOKEN.findall(_normalizar(texto))
-        if token not in _PALABRAS_VACIAS and len(token) > 1
-    }
-
-
-_TERMINOS_FILTRO = frozenset(
-    token
-    for grupo in (
-        *_SINONIMOS_SENTIMIENTO.values(),
-        *_SINONIMOS_TIPO.values(),
-        *_PLATAFORMAS.values(),
-    )
-    for frase in grupo
-    for token in _TOKEN.findall(_normalizar(frase))
-) | frozenset(
-    """
-    ayer hoy today yesterday semana pasada anterior last week ultimos dias
-    pregunta preguntas tecnica tecnicas duda dudas testimonio testimonios
-    experiencia experiencias feedback retroalimentacion sugerencia sugerencias
-    comentario comentarios
-    """
-    .split()
-)
+    return set(_TOKEN.findall(_normalizar(texto)))
 
 
 def _fecha_mensaje(valor: object) -> date | None:
@@ -392,11 +242,29 @@ class AgenteConversacional:
         *,
         generador: Callable[..., SalidaConversacional | dict] | None = None,
         verificador: Callable[..., SalidaVerificacion | dict] | None = None,
+        interprete: Callable[..., PlanConsulta | dict] | None = None,
     ):
         self._mensajes = _extraer_mensajes(datos_procesados)
         self._generador = generador
         self._verificador = verificador
+        self._interprete = interprete
         self._historial: list[dict[str, str]] = []
+        self._ultimo_plan: PlanConsulta | None = None
+        self._indexar()
+
+    def actualizar_datos(self, datos_procesados: object) -> None:
+        """Cambia los mensajes consultables sin perder la conversación en curso."""
+        self._mensajes = _extraer_mensajes(datos_procesados)
+        self._indexar()
+
+    def _indexar(self) -> None:
+        self._vocabulario = {
+            campo: sorted({
+                mensaje[campo][:MAX_CARACTERES_METADATO]
+                for mensaje in self._mensajes if mensaje[campo]
+            })[:32]
+            for campo in ("sentimiento", "tipo_detectado", "canal")
+        }
         self._indice_invertido: dict[str, set[int]] = defaultdict(set)
         for indice, mensaje in enumerate(self._mensajes):
             documento = _tokens(
@@ -427,26 +295,46 @@ class AgenteConversacional:
         *,
         hoy: date | None = None,
         modo_verificacion: ModoVerificacion = "prompt_estricto",
+        temperatura: float | None = None,
+        top_p: float | None = None,
+        modelo_respuesta: str | None = None,
     ) -> dict:
+        """Responde una consulta sobre los datos procesados.
+
+        `temperatura` y `top_p` ajustan la creatividad de la redacción y solo se
+        aplican a borradores; los análisis y conteos siempre son deterministas.
+        """
         if not isinstance(consulta, str) or not consulta.strip():
             raise ValueError("Escribe una consulta para el agente.")
+        if modelo_respuesta is not None and modelo_respuesta not in MODELOS_RESPUESTA:
+            raise ValueError("El modelo de respuesta seleccionado no es válido.")
         if modo_verificacion not in {
             "prompt_estricto",
             "verificacion_automatica",
         }:
             raise ValueError("El modo de verificación seleccionado no es válido.")
+        if temperatura is not None and not (
+            TEMPERATURA_MINIMA <= temperatura <= TEMPERATURA_MAXIMA
+        ):
+            raise ValueError(
+                f"La temperatura debe estar entre {TEMPERATURA_MINIMA} y "
+                f"{TEMPERATURA_MAXIMA}."
+            )
+        if top_p is not None and not (TOP_P_MINIMO <= top_p <= TOP_P_MAXIMO):
+            raise ValueError(
+                f"El top_p debe estar entre {TOP_P_MINIMO} y {TOP_P_MAXIMO}."
+            )
         consulta = consulta.strip()
         if len(consulta) > MAX_CARACTERES_CONSULTA:
             raise ValueError(
                 f"La consulta no puede superar {MAX_CARACTERES_CONSULTA} caracteres."
             )
 
-        if _SOLICITUD_CODIGO.search(consulta) or _SOLICITUD_ACTUALIDAD_EXTERNA.search(consulta):
-            respuesta = (
-                "Este agente se limita a explorar los datos de la comunidad y "
-                "preparar borradores de marketing basados en esos datos. "
-                "Reformula la solicitud dentro de ese alcance."
-            )
+        hoy = hoy or datetime.now(timezone.utc).date()
+        plan = self._interpretar(consulta, hoy)
+        intencion = plan.intencion
+        if intencion != "consulta" and intencion != "borrador":
+            respuesta = plan.respuesta
             salida = {
                 "respuesta": respuesta,
                 "citas": [],
@@ -454,48 +342,48 @@ class AgenteConversacional:
                 "total_coincidencias": 0,
                 "resumen": {},
                 "filtros": _filtros_a_dict(FiltrosConsulta()),
-                "modo": "fuera_de_alcance",
+                "modo": plan.intencion,
                 "verificacion": {
                     "modo": modo_verificacion,
                     "estado": "no_aplica",
-                    "resumen": "La solicitud está fuera del alcance del agente.",
+                    "resumen": "Esta interacción no requiere consultar los mensajes.",
                     "afirmaciones": [],
                 },
             }
             self._guardar_turno(consulta, respuesta)
             return salida
 
-        hoy = hoy or datetime.now(timezone.utc).date()
-        filtros = _parsear_filtros(consulta, hoy)
-        es_seguimiento = bool(self._historial) and bool(_SEGUIMIENTO.search(consulta))
-        consulta_busqueda = consulta
-        if es_seguimiento:
-            anterior = next(
-                (
-                    turno["contenido"]
-                    for turno in reversed(self._historial)
-                    if turno["rol"] == "usuario"
-                ),
-                "",
-            )
-            consulta_busqueda = f"{anterior} {consulta}"
-            filtros = _heredar_filtros(
-                filtros,
-                _parsear_filtros(anterior, hoy),
-            )
+        filtros = FiltrosConsulta(
+            sentimiento=plan.sentimiento,
+            tipo_detectado=plan.tipo_detectado,
+            tipos_detectados=plan.tipos_detectados,
+            agrupar_preguntas=plan.agrupar_preguntas,
+            canal=plan.canal,
+            fecha_desde=plan.fecha_desde,
+            fecha_hasta=plan.fecha_hasta,
+            plataforma=plan.plataforma,
+            intencion=intencion,
+            cantidad=plan.cantidad,
+        )
+        consulta_busqueda = " ".join(plan.terminos)
+        self._ultimo_plan = plan
 
         encontrados = self._buscar(consulta_busqueda, filtros)
+        hubo_no_elegibles = False
         if filtros.intencion == "borrador":
-            encontrados = [
+            elegibles = [
                 mensaje
                 for mensaje in encontrados
                 if mensaje["elegible_contenido"] is not False
             ]
+            hubo_no_elegibles = bool(encontrados) and not elegibles
+            encontrados = elegibles
 
         if not encontrados:
-            respuesta = (
-                "No encontré mensajes que coincidan con esos filtros en los datos "
-                "procesados de esta sesión. Prueba con otro período, tema o filtro."
+            respuesta = self._explicar_sin_resultados(
+                consulta_busqueda,
+                filtros,
+                hubo_no_elegibles,
             )
             salida = {
                 "respuesta": respuesta,
@@ -516,13 +404,49 @@ class AgenteConversacional:
             return salida
 
         resumen = _resumir(encontrados, filtros)
-        evidencia = encontrados[:MAX_COINCIDENCIAS]
+        resumen["universo_total"] = len(self._mensajes)
+        evidencia = encontrados[:_limite_evidencia(filtros)]
+        muestreo: dict[str, Any] = (
+            {"temperatura": temperatura, "top_p": top_p}
+            if filtros.intencion == "borrador"
+            else {}
+        )
+        if modelo_respuesta is not None:
+            muestreo["modelo"] = MODELOS_RESPUESTA[modelo_respuesta]
         salida_modelo = self._generar(
             consulta=consulta,
             filtros=filtros,
             resumen=resumen,
             evidencia=_evidencia_acotada(evidencia),
+            **muestreo,
         )
+        borrador_modelo = salida_modelo.borrador
+        if (
+            filtros.intencion == "borrador"
+            and borrador_modelo is not None
+            and borrador_modelo.plataforma == "x"
+            and len(texto_publicacion(borrador_modelo.model_dump())) > LIMITE_CARACTERES_X
+        ):
+            # Los modelos pequeños suelen ignorar el límite; se pide una reescritura.
+            salida_modelo = self._generar(
+                consulta=(
+                    f"{consulta}\n\nReescribe este borrador para X en máximo "
+                    f"{LIMITE_CARACTERES_X} caracteres EN TOTAL: contenido + dos saltos "
+                    "de línea + hashtags separados por espacios. Usa 3 hashtags breves. "
+                    "No incluyas el título en el cuerpo. Texto anterior:\n"
+                    f"{texto_publicacion(borrador_modelo.model_dump())}"
+                ),
+                filtros=filtros,
+                resumen=resumen,
+                evidencia=_evidencia_acotada(evidencia),
+                **muestreo,
+            )
+        if (
+            salida_modelo.borrador is not None
+            and salida_modelo.borrador.plataforma == "x"
+            and len(texto_publicacion(salida_modelo.borrador.model_dump())) > LIMITE_CARACTERES_X
+        ):
+            raise ValueError("La publicación para X sigue superando 280 caracteres con hashtags.")
         ids_evidencia = {mensaje["id"] for mensaje in evidencia}
         if any(cita not in ids_evidencia for cita in salida_modelo.citas):
             raise ValueError("El agente citó un mensaje que no estaba en la evidencia.")
@@ -530,12 +454,13 @@ class AgenteConversacional:
             if salida_modelo.borrador.plataforma != filtros.plataforma:
                 raise ValueError("La plataforma del borrador no coincide con la solicitud.")
         elif salida_modelo.borrador is not None:
-            # No exponer borradores que el usuario no solicito.
-            salida_modelo = salida_modelo.model_copy(
-                update={"borrador": None}
-            )
+            raise ValueError("El agente devolvió un borrador sin que se solicitara.")
 
         respuesta = salida_modelo.respuesta
+        if filtros.agrupar_preguntas:
+            if set(salida_modelo.citas) != ids_evidencia:
+                raise ValueError("Las citas no cubren todas las preguntas recuperadas.")
+            respuesta = _presentar_preguntas(salida_modelo.grupos_preguntas, ids_evidencia)
         borrador = (
             salida_modelo.borrador.model_dump()
             if salida_modelo.borrador is not None
@@ -546,9 +471,7 @@ class AgenteConversacional:
             "estado": (
                 "borrador_no_generado"
                 if borrador is None and filtros.intencion == "borrador"
-                else "no_aplica"
-                if borrador is None
-                else "no_verificado"
+                else "no_aplica" if borrador is None else "no_verificado"
             ),
             "resumen": (
                 (
@@ -583,16 +506,37 @@ class AgenteConversacional:
             "modo": filtros.intencion,
             "verificacion": verificacion,
         }
-        self._guardar_turno(consulta, respuesta)
+        if filtros.agrupar_preguntas:
+            salida["grupos_preguntas"] = [
+                grupo.model_dump() for grupo in salida_modelo.grupos_preguntas
+            ]
+        self._guardar_turno(consulta, respuesta, borrador)
         return salida
+
+    def _interpretar(self, consulta: str, hoy: date) -> PlanConsulta:
+        resultado = (self._interprete or interpretar_consulta)(
+            consulta=consulta,
+            hoy=hoy,
+            historial=self.historial[-MAX_HISTORIAL:],
+            consulta_anterior=(
+                self._ultimo_plan.model_dump(mode="json")
+                if self._ultimo_plan is not None else None
+            ),
+            vocabulario=self._vocabulario,
+        )
+        try:
+            return PlanConsulta.model_validate(resultado)
+        except ValidationError as error:
+            raise ErrorInterpretacion(
+                "No pude interpretar la solicitud de forma fiable. Intenta reformularla."
+            ) from error
 
     def _buscar(
         self,
         consulta: str,
         filtros: FiltrosConsulta,
     ) -> list[dict]:
-        terminos = _tokens(consulta) - _TERMINOS_FILTRO
-        terminos = {termino for termino in terminos if not termino.isdecimal()}
+        terminos = _tokens(consulta)
         puntajes: Counter[int] = Counter()
         for termino in terminos:
             for indice in self._indice_invertido.get(termino, ()):
@@ -602,12 +546,25 @@ class AgenteConversacional:
         if not terminos:
             indices = set(range(len(self._mensajes)))
 
+        sentimientos_validos = {
+            _normalizar(valor)
+            for valor in _SENTIMIENTOS_INCLUIDOS.get(
+                filtros.sentimiento or "",
+                frozenset({filtros.sentimiento or ""}),
+            )
+        }
+        tipos = filtros.tipos_detectados or (
+            [filtros.tipo_detectado] if filtros.tipo_detectado else []
+        )
+        tipos_validos = {_normalizar(tipo) for tipo in tipos}
         resultados = []
         for indice in indices:
             mensaje = self._mensajes[indice]
-            if filtros.sentimiento and _normalizar(mensaje["sentimiento"]) != filtros.sentimiento:
+            if filtros.sentimiento and _normalizar(mensaje["sentimiento"]) not in sentimientos_validos:
                 continue
-            if filtros.tipo_detectado and _normalizar(mensaje["tipo_detectado"]) != _normalizar(filtros.tipo_detectado):
+            if tipos_validos and _normalizar(mensaje["tipo_detectado"]) not in tipos_validos:
+                continue
+            if filtros.canal and _normalizar(mensaje["canal"]) != _normalizar(filtros.canal):
                 continue
             fecha = _fecha_mensaje(mensaje["fecha"])
             if filtros.fecha_desde and (fecha is None or fecha < filtros.fecha_desde):
@@ -616,8 +573,74 @@ class AgenteConversacional:
                 continue
             resultados.append((puntajes.get(indice, 0), indice, mensaje))
 
-        resultados.sort(key=lambda item: (-item[0], item[1]))
+        resultados.sort(
+            key=lambda item: (
+                -item[0],
+                # Con «positivo», los muy positivos aparecen primero («los mejores»).
+                0 if _normalizar(item[2]["sentimiento"]) == "muy positivo" else 1,
+                item[1],
+            )
+        )
         return [mensaje for _, _, mensaje in resultados]
+
+    def _explicar_sin_resultados(
+        self,
+        consulta_busqueda: str,
+        filtros: FiltrosConsulta,
+        hubo_no_elegibles: bool,
+    ) -> str:
+        motivos = []
+        terminos = _tokens(consulta_busqueda)
+        sin_aparicion = sorted(t for t in terminos if t not in self._indice_invertido)
+        if terminos and len(sin_aparicion) == len(terminos):
+            motivos.append(
+                "ningún mensaje menciona " + ", ".join(f"«{t}»" for t in sin_aparicion)
+            )
+
+        sin_filtros_texto = FiltrosConsulta()
+        if filtros.sentimiento:
+            total = len(self._buscar("", replace(sin_filtros_texto, sentimiento=filtros.sentimiento)))
+            if total == 0:
+                motivos.append(f"no hay mensajes con sentimiento {filtros.sentimiento}")
+        if filtros.tipo_detectado or filtros.tipos_detectados:
+            total = len(self._buscar("", replace(
+                sin_filtros_texto, tipo_detectado=filtros.tipo_detectado,
+                tipos_detectados=filtros.tipos_detectados,
+            )))
+            if total == 0:
+                motivos.append(
+                    f"no hay mensajes de tipo {filtros.tipo_detectado or ', '.join(filtros.tipos_detectados)}"
+                )
+        if filtros.canal:
+            total = len(self._buscar("", replace(sin_filtros_texto, canal=filtros.canal)))
+            if total == 0:
+                motivos.append(f"no hay mensajes del canal {filtros.canal}")
+        if filtros.fecha_desde or filtros.fecha_hasta:
+            if not any(_fecha_mensaje(m["fecha"]) for m in self._mensajes):
+                motivos.append("estos datos no tienen fechas, así que no puedo filtrar por período")
+            else:
+                motivos.append("no hay mensajes en el período indicado")
+        if hubo_no_elegibles:
+            motivos.append(
+                "los mensajes que coinciden están marcados como no aptos para "
+                "contenido de marketing"
+            )
+        if not motivos:
+            motivos.append("la combinación de filtros y términos no coincide con ningún mensaje")
+
+        sentimientos = Counter(m["sentimiento"] or "sin_clasificar" for m in self._mensajes)
+        tipos = Counter(m["tipo_detectado"] or "sin_clasificar" for m in self._mensajes)
+
+        def listar(conteos: Counter) -> str:
+            return ", ".join(f"{clave} ({cantidad})" for clave, cantidad in conteos.most_common())
+
+        return (
+            "No encontré mensajes para esa solicitud porque "
+            + "; ".join(motivos)
+            + f".\n\nEn esta sesión hay {len(self._mensajes)} mensajes. "
+            f"Sentimientos: {listar(sentimientos)}. Tipos: {listar(tipos)}. "
+            "Prueba pidiendo por alguno de esos valores o por un tema que aparezca en los mensajes."
+        )
 
     def _generar(
         self,
@@ -626,6 +649,9 @@ class AgenteConversacional:
         filtros: FiltrosConsulta,
         resumen: dict,
         evidencia: list[dict],
+        temperatura: float | None = None,
+        top_p: float | None = None,
+        modelo: str | None = None,
     ) -> SalidaConversacional:
         if self._generador is not None:
             resultado = self._generador(
@@ -653,20 +679,20 @@ class AgenteConversacional:
                 ensure_ascii=False,
             ),
         }
-        proveedor = obtener_proveedor_generacion()
-        cadena = _obtener_cadena(proveedor)
+        proveedor = PROVEEDOR_NVIDIA_NIM if modelo else obtener_proveedor_generacion()
+        seleccion = {"modelo_id": modelo} if modelo else {}
         config = config_ejecucion(
             "agente_conversacional",
             intento=1,
             ruta="conversacion",
         )
         if proveedor == PROVEEDOR_NVIDIA_NIM:
-            primario = lambda valor: _obtener_cadena(PROVEEDOR_NVIDIA_NIM).invoke(
-                valor, config=config
-            )
-            respaldo = lambda valor: _obtener_cadena(PROVEEDOR_GEMINI).invoke(
-                valor, config=config
-            )
+            primario = lambda valor: _obtener_cadena(
+                PROVEEDOR_NVIDIA_NIM, temperatura, top_p, **seleccion
+            ).invoke(valor, config=config)
+            respaldo = lambda valor: _obtener_cadena(
+                PROVEEDOR_GEMINI, temperatura, top_p
+            ).invoke(valor, config=config)
             primario.__name__ = PROVEEDOR_NVIDIA_NIM
             respaldo.__name__ = PROVEEDOR_GEMINI
             resultado = invocar_modelo_con_fallback(
@@ -675,7 +701,9 @@ class AgenteConversacional:
                 respaldo=respaldo,
             )["resultado"]
         else:
-            resultado = cadena.invoke(entrada, config=config)
+            resultado = _obtener_cadena(proveedor, temperatura, top_p).invoke(
+                entrada, config=config
+            )
         return SalidaConversacional.model_validate(resultado)
 
     def _verificar(
@@ -724,7 +752,19 @@ class AgenteConversacional:
             resultado = cadena.invoke(entrada, config=config)
         return SalidaVerificacion.model_validate(resultado)
 
-    def _guardar_turno(self, consulta: str, respuesta: str) -> None:
+    def _guardar_turno(
+        self,
+        consulta: str,
+        respuesta: str,
+        borrador: dict | None = None,
+    ) -> None:
+        if borrador is not None:
+            # Permite seguimientos como «hazlo más corto» sobre el último borrador.
+            respuesta = (
+                f"{respuesta}\n[Borrador para {borrador['plataforma']}] "
+                f"{borrador['titulo']}\n{borrador['contenido']}\n"
+                f"{' '.join(borrador['hashtags'])}"
+            )
         self._historial.extend(
             [
                 {"rol": "usuario", "contenido": consulta[:MAX_CARACTERES_CONSULTA]},
@@ -734,27 +774,35 @@ class AgenteConversacional:
         del self._historial[:-MAX_HISTORIAL * 2]
 
 
-def _heredar_filtros(actual: FiltrosConsulta, anterior: FiltrosConsulta) -> FiltrosConsulta:
-    return FiltrosConsulta(
-        sentimiento=actual.sentimiento or anterior.sentimiento,
-        tipo_detectado=actual.tipo_detectado or anterior.tipo_detectado,
-        fecha_desde=actual.fecha_desde or anterior.fecha_desde,
-        fecha_hasta=actual.fecha_hasta or anterior.fecha_hasta,
-        plataforma=actual.plataforma or anterior.plataforma,
-        intencion=(
-            actual.intencion
-            if actual.intencion == "borrador"
-            else anterior.intencion
-        ),
-    )
-
-
 def _filtros_a_dict(filtros: FiltrosConsulta) -> dict:
     valores = asdict(filtros)
     for campo in ("fecha_desde", "fecha_hasta"):
         if valores[campo] is not None:
             valores[campo] = valores[campo].isoformat()
     return valores
+
+
+def _presentar_preguntas(grupos: list[GrupoPregunta], ids_evidencia: set[str]) -> str:
+    vistos: set[str] = set()
+    lineas = []
+    for grupo in grupos:
+        citas = set(grupo.citas)
+        if len(citas) != len(grupo.citas) or vistos & citas or not citas <= ids_evidencia:
+            raise ValueError("Los grupos de preguntas contienen fuentes repetidas o ajenas.")
+        vistos.update(citas)
+        frecuencia = f"{len(citas)} mensajes" if len(citas) > 1 else "1 mensaje"
+        lineas.append(f"- {grupo.duda} — {frecuencia}. Fuentes: {', '.join(grupo.citas)}.")
+    if vistos != ids_evidencia:
+        raise ValueError("Los grupos no cubren todas las preguntas recuperadas.")
+    repetidos = sum(len(grupo.citas) > 1 for grupo in grupos)
+    return (
+        f"## Dudas de la comunidad\n\n"
+        f"En la muestra recuperada hay {len(vistos)} mensajes, agrupados en "
+        f"{len(grupos)} dudas. Grupos con más de un mensaje: {repetidos}.\n\n"
+        + "\n".join(lineas)
+        + "\n\nEste resumen identifica preguntas; no propone respuestas sin contrastarlas "
+        "por separado con fuentes."
+    )
 
 
 def _evidencia_acotada(mensajes: list[dict]) -> list[dict]:
@@ -828,15 +876,43 @@ def _resumir(mensajes: list[dict], filtros: FiltrosConsulta) -> dict:
         "porcentaje_temas": porcentajes(temas),
         "filtros": _filtros_a_dict(filtros),
     }
+    if filtros.cantidad:
+        resumen["cantidad_solicitada"] = filtros.cantidad
+        resumen["mensajes_enviados_al_modelo"] = min(
+            len(mensajes), _limite_evidencia(filtros)
+        )
     return resumen
 
 
-@lru_cache(maxsize=4)
-def _obtener_cadena(proveedor: str):
+def _limite_evidencia(filtros: FiltrosConsulta) -> int:
+    limite = min(filtros.cantidad, MAX_EVIDENCIA_LISTADO) if filtros.cantidad else (
+        MAX_EVIDENCIA_LISTADO if filtros.tipos_detectados or filtros.agrupar_preguntas
+        else MAX_COINCIDENCIAS
+    )
+    if filtros.intencion == "borrador" and filtros.plataforma == "x":
+        return min(limite, MAX_EVIDENCIA_X)
+    return limite
+
+
+@lru_cache(maxsize=32)
+def _obtener_cadena(
+    proveedor: str,
+    temperatura: float | None = None,
+    top_p: float | None = None,
+    modelo_id: str | None = None,
+):
+    muestreo: dict[str, Any] = {
+        clave: valor
+        for clave, valor in (("temperatura", temperatura), ("top_p", top_p))
+        if valor is not None
+    }
+    if modelo_id is not None:
+        muestreo["modelo"] = modelo_id
     modelo = obtener_modelo_generacion_estructurado(
         SalidaConversacional,
         proveedor=proveedor,
         ruta="conversacion",
+        **muestreo,
     )
     return prompt_conversacion | modelo
 
@@ -847,5 +923,6 @@ def _obtener_cadena_verificacion(proveedor: str):
         SalidaVerificacion,
         proveedor=proveedor,
         ruta="conversacion",
+        modelo=MODELOS_RESPUESTA["super"] if proveedor == PROVEEDOR_NVIDIA_NIM else None,
     )
     return prompt_verificacion | modelo

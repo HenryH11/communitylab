@@ -6,6 +6,9 @@ documentaban (src/agentes/, de Data Science) se corrigieron en el PR #22;
 las pruebas quedan como regresión.
 """
 
+from src.agentes.estado_agente import EstadoAgente
+from typing import cast
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -43,7 +46,7 @@ def sin_modelos(monkeypatch):
 def test_analisis_individual_sin_texto_queda_como_fallo_trazable():
     sin_texto = estado()
     del sin_texto["texto"]
-    resultado = nodo_analizador.analizar_mensaje(sin_texto)
+    resultado = nodo_analizador.analizar_mensaje(cast(EstadoAgente, sin_texto))
     assert resultado["fallos"][0]["etapa"] == "analizar_mensaje"
     assert resultado["fallos"][0]["id"] == "m-1"
     assert resultado["fallos"][0]["tipo_error"] == "KeyError"
@@ -51,19 +54,19 @@ def test_analisis_individual_sin_texto_queda_como_fallo_trazable():
 
 @pytest.mark.parametrize("texto", [None, "", 123, "\ud800"])
 def test_analisis_individual_con_texto_anomalo_no_colapsa(texto):
-    resultado = nodo_analizador.analizar_mensaje(estado(texto=texto))
+    resultado = nodo_analizador.analizar_mensaje(cast(EstadoAgente, estado(texto=texto)))
     assert resultado["fallos"][0]["id"] == "m-1"
     assert resultado["errores"]
 
 
 def test_enrutador_tolera_estado_sin_campos():
-    assert determinar_rutas({})["rutas"] == []
+    assert determinar_rutas(cast(EstadoAgente, {}))["rutas"] == []
 
 
 def test_generacion_sin_rutas_no_toca_texto_ni_modelos():
     sin_texto = estado(rutas=[])
     del sin_texto["texto"]
-    resultado = nodos_generadores.generar_activos(sin_texto)
+    resultado = nodos_generadores.generar_activos(cast(EstadoAgente, sin_texto))
     assert resultado["activos_generados"] == {}
     assert resultado["fallos"] == []
 
@@ -72,7 +75,7 @@ def test_generacion_sin_rutas_no_toca_texto_ni_modelos():
 def test_lote_con_un_estado_sin_texto_no_aborta_a_los_demas():
     estados = [estado("m-1"), estado("m-2")]
     del estados[1]["texto"]
-    resultados = nodo_analizador.analizar_lote(estados)
+    resultados = nodo_analizador.analizar_lote(cast(list[EstadoAgente], estados))
     assert len(resultados) == 2
     assert all(r["fallos"] for r in resultados)
 
@@ -81,23 +84,23 @@ def test_lote_con_un_estado_sin_texto_no_aborta_a_los_demas():
 def test_generacion_con_rutas_y_sin_texto_registra_fallo_por_ruta():
     sin_texto = estado(rutas=["preguntas_frecuentes"])
     del sin_texto["texto"]
-    resultado = nodos_generadores.generar_activos(sin_texto)
+    resultado = nodos_generadores.generar_activos(cast(EstadoAgente, sin_texto))
     assert resultado["activos_generados"] == {}
     assert resultado["fallos"][0]["ruta"] == "preguntas_frecuentes"
 
 
 # Regresión: corregido por DS en DS-Semana3 (PR #22).
 def test_enrutador_con_score_no_numerico_no_colapsa():
-    resultado = determinar_rutas(estado(
+    resultado = determinar_rutas(cast(EstadoAgente, estado(
         tipo_detectado="pregunta_tecnica", elegible_contenido=None,
         score_relevancia="80",
-    ))
+    )))
     assert isinstance(resultado["rutas"], list)
 
 
 # Regresión: corregido por DS en DS-Semana3 (PR #22).
 def test_enrutador_con_sentimiento_no_hashable_no_colapsa():
-    resultado = determinar_rutas(estado(
+    resultado = determinar_rutas(cast(EstadoAgente, estado(
         tipo_detectado="testimonio", sentimiento=["positivo"],
-    ))
+    )))
     assert isinstance(resultado["rutas"], list)

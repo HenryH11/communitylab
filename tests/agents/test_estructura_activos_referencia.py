@@ -8,6 +8,9 @@ de salida de DS, y que un JSON roto queda como fallo trazable en vez de un
 activo alterado. Sin red, sin claves y sin cuota.
 """
 
+from src.agentes.estado_agente import EstadoAgente
+from typing import cast
+
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -22,13 +25,7 @@ from src.agentes.entrega_resultados import (
 from src.agentes.nodos import nodos_generadores
 from tests.agents.test_tolerancia_estados_manuales import estado
 
-try:  # DS-Semana3 movió los modelos de salida a src/agentes/modelos.py.
-    from src.agentes.modelos import PublicacionLinkedIn, SugerenciaPreguntasFrecuentes
-except ImportError:
-    from src.agentes.nodos.nodos_generadores import (
-        PublicacionLinkedIn,
-        SugerenciaPreguntasFrecuentes,
-    )
+from src.agentes.modelos import PublicacionLinkedIn, SugerenciaPreguntasFrecuentes
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "casos_referencia_ia_candidatos.json"
@@ -69,7 +66,7 @@ def ejecutar(caso, generadores):
     estado.setdefault("es_spam_detectado", False)
     estado.setdefault("motivo_spam", None)
     with patch.object(nodos_generadores, "_obtener_generadores", return_value=generadores):
-        estado.update(nodos_generadores.generar_activos(estado))
+        estado.update(nodos_generadores.generar_activos(cast(EstadoAgente, estado)))
     entrega = preparar_entrega_resultados(
         {"resultados": [estado], "pendientes": [], "ids_pendientes": []}
     )

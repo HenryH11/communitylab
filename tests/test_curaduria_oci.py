@@ -74,10 +74,11 @@ def crear_app():
     from streamlit.testing.v1 import AppTest
 
     app = AppTest.from_file(
-        str(Path(__file__).resolve().parents[1] / "src/app/app.py"),
+        str(Path(__file__).resolve().parents[1] / "src/app/app_interna.py"),
         default_timeout=30,
     )
     app.session_state["resultado"] = salida()
+    app.session_state["navegacion_principal"] = "Plantillas"
     app.run()
     assert not app.exception
     return app

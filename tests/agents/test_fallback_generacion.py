@@ -1,6 +1,7 @@
 import logging
 from unittest.mock import MagicMock, patch
 
+from src.agentes.estado_agente import EstadoAgente
 from src.agentes.recuperacion import ids_reintentables
 from src.agentes.errores_ia import ErrorConfiguracionProveedor
 from src.agentes import reintentos
@@ -22,7 +23,7 @@ from src.agentes.modelos import (
     SugerenciaPreguntasFrecuentes,
 )
 
-def _estado_faq():
+def _estado_faq() -> EstadoAgente:
     return {
         "id": "fallback-gen-001",
         "autor": "Ana",
@@ -166,7 +167,7 @@ def test_generacion_multiruta_fallback_independiente(
 
         raise AssertionError(proveedor)
 
-    estado = {
+    estado: EstadoAgente = {
         "id": "fallback-multiruta-001",
         "autor": "Ana",
         "canal": "#logros-y-empleos",
@@ -299,7 +300,7 @@ def test_fallo_de_ambos_proveedores_no_afecta_otras_rutas(
 
         raise AssertionError(proveedor)
 
-    estado = {
+    estado: EstadoAgente = {
         "id": "fallback-doble-fallo-001",
         "autor": "Ana",
         "canal": "#logros-y-empleos",

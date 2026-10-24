@@ -6,6 +6,13 @@ Herramientas para convertir conversaciones de comunidades digitales en datos
 analizables y activos estructurados. El flujo combina validación y relevancia
 determinista con análisis de lenguaje y enrutamiento por reglas.
 
+Las aplicaciones se ejecutan por separado: Marketing usa
+`streamlit run src/app/app.py`; el equipo técnico usa
+`streamlit run src/app/app_interna.py` en un proceso con acceso restringido.
+`COMMUNITYLAB_MODO_INTERNO` ya no activa Datos en Marketing.
+Consultar [despliegue y aislamiento de credenciales](docs/docker_cloud_semana4.md)
+antes de publicar cualquiera de las dos entradas.
+
 Nuestra solución opera como una línea de ensamblaje inteligente: ingiere conversaciones desestructuradas, debates y testimonios orgánicos de canales digitales (ruido), los limpia mediante algoritmos matemáticos de relevancia semántica, y los procesa mediante **Modelos de Lenguaje de Gran Escala (LLMs)** y grafos de decisión dirigidos en **LangGraph** para empaquetarlos automáticamente en activos de marketing de alto impacto (MarTech) y entradas dinámicas de FAQ. La persistencia de los reportes se ejecuta de forma nativa e integral en la capa gratuita Always Free de **Oracle Cloud Infrastructure (OCI) Object Storage**.
 
 ---
@@ -137,7 +144,7 @@ communitylab/
 ### 🏛️ Semana 0 – Fase de Cimientos, Datos y Arquitectura de Sistemas
 *   **Hito de Gobernanza:** Inicialización del repositorio remoto con bloqueo y protección de la rama `main`. Creación y publicación de la rama de integración `develop` como el estándar operativo para evitar conflictos de código (*Merge Conflicts*).
 *   **Hito de Arquitectura:** Integración del primer Pull Request formal del proyecto elaborado por el arquitecto Nelson Ramses, estableciendo el contrato de datos JSON fijo para la comunicación limpia entre módulos.
-*   **Hito de Infraestructura Cloud:** Aprovisionamiento del Bucket Always Free `communitylab-activos-marketing` en la consola de Oracle Cloud (Región São Paulo). Despliegue seguro de `src/config/test_oci_connection.py` para validar la persistencia asíncrona sin exponer llaves privadas.
+*   **Hito de Infraestructura Cloud:** Aprovisionamiento inicial del bucket de Marketing en la consola de Oracle Cloud (Región São Paulo). El nombre vigente confirmado por Cloud es `bkt-communitylab-marketing`. Despliegue seguro de `src/config/test_oci_connection.py` para validar la persistencia asíncrona sin exponer llaves privadas.
 
 ### 🧠 Semana 1 – Procesamiento, Filtrado Temático y Estructura IA Core
 *   **Hito de Pipeline de Datos (100% Completado):** Sincronización e integración de las ramas de la célula de analistas. Ya residen en `develop` los códigos de limpieza analítica, el calculador matemático de relevancia basado en configuraciones JSON y el set maestro con los 23 casos de prueba del MVP (`mensajes_comunidad_simulados.json`).
@@ -186,7 +193,7 @@ OCI_TENANCY_OCID=ocid1.tenancy.oc1..aaaaaaayyy... # OCID de la raíz de la organ
 OCI_REGION=sa-saopaulo-1                          # Código geográfico de la región del centro de datos destino
 OCI_FINGERPRINT=aa:bb:cc:dd:ee:ff:11:22...        # Huella digital vinculada a la clave pública de API registrada
 OCI_KEY_FILE_PATH=./.oci/oci_api_key.pem         # Ruta local hacia el archivo físico de llave privada de firma
-OCI_BUCKET_NAME=communitylab-activos-marketing    # Nombre exacto del bucket aprovisionado en Object Storage
+OCI_BUCKET_NAME=bkt-communitylab-marketing        # Nombre exacto del bucket confirmado por Cloud
 ```
 
 ---
@@ -270,5 +277,5 @@ OCI_TENANCY_OCID=ocid1.tenancy.oc1..aaaaaaayyy... # OCID de la raíz de la organ
 OCI_REGION=sa-saopaulo-1                          # Código geográfico de la región del centro de datos destino
 OCI_FINGERPRINT=aa:bb:cc:dd:ee:ff:11:22...        # Huella digital vinculada a la clave pública de API registrada
 OCI_KEY_FILE_PATH=./.oci/oci_api_key.pem         # Ruta local hacia el archivo físico de llave privada de firma
-OCI_BUCKET_NAME=communitylab-activos-marketing    # Nombre exacto del bucket aprovisionado en Object Storage
+OCI_BUCKET_NAME=bkt-communitylab-marketing        # Nombre exacto del bucket confirmado por Cloud
 ```

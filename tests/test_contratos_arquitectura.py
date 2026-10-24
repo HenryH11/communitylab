@@ -1,4 +1,6 @@
 """Contratos contra productores reales, sin ejecutar LLM ni Streamlit."""
+from typing import cast
+
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -81,7 +83,7 @@ def test_salida_real_con_activo(paquete):
     entrega = salida_real([estado])
     validador("salida").validate(entrega)
     assert entrega["resumen_comunidad"]["total_activos_generados"] == 1
-    entrega["interacciones"][0]["elegible_faq"] = "false"
+    cast(dict, entrega["interacciones"][0])["elegible_faq"] = "false"
     with pytest.raises(ValidationError):
         validador("salida").validate(entrega)
 
@@ -97,7 +99,7 @@ def test_salida_13_y_campos_obligatorios():
         del rota[campo]
         with pytest.raises(ValidationError):
             validador("salida").validate(rota)
-    del entrega["resumen_comunidad"]["total_fallos_reintentables"]
+    del cast(dict, entrega["resumen_comunidad"])["total_fallos_reintentables"]
     with pytest.raises(ValidationError):
         validador("salida").validate(entrega)
 
@@ -151,8 +153,8 @@ def test_salida_14_incluye_deteccion_spam():
 
     interaccion = entrega["interacciones"][0]
 
-    assert interaccion["es_spam_detectado"] is True
-    assert interaccion["motivo_spam"] == (
+    assert cast(dict, interaccion)["es_spam_detectado"] is True
+    assert cast(dict, interaccion)["motivo_spam"] == (
         "Captación mediante oferta dudosa"
     )
 

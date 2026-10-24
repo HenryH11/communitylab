@@ -122,6 +122,26 @@ class BorradorMarketing(BaseModel):
     contenido: str = Field(min_length=1, max_length=5_000)
     hashtags: list[str] = Field(min_length=3, max_length=8)
 
+    @field_validator("hashtags", mode="before")
+    @classmethod
+    def normalizar_hashtags(cls, valores):
+        if not isinstance(valores, list):
+            return valores
+
+        normalizados = []
+        for valor in valores:
+            if not isinstance(valor, str):
+                normalizados.append(valor)
+                continue
+
+            valor = valor.strip()
+            if valor and not valor.startswith("#"):
+                valor = f"#{valor}"
+            normalizados.append(valor)
+
+        return normalizados
+
+
     @field_validator("hashtags")
     @classmethod
     def validar_hashtags(cls, valores: list[str]) -> list[str]:
@@ -510,7 +530,10 @@ class AgenteConversacional:
             if salida_modelo.borrador.plataforma != filtros.plataforma:
                 raise ValueError("La plataforma del borrador no coincide con la solicitud.")
         elif salida_modelo.borrador is not None:
-            raise ValueError("El agente devolvió un borrador sin que se solicitara.")
+            # No exponer borradores que el usuario no solicito.
+            salida_modelo = salida_modelo.model_copy(
+                update={"borrador": None}
+            )
 
         respuesta = salida_modelo.respuesta
         borrador = (
@@ -520,9 +543,19 @@ class AgenteConversacional:
         )
         verificacion = {
             "modo": modo_verificacion,
-            "estado": "no_aplica" if borrador is None else "no_verificado",
+            "estado": (
+                "borrador_no_generado"
+                if borrador is None and filtros.intencion == "borrador"
+                else "no_aplica"
+                if borrador is None
+                else "no_verificado"
+            ),
             "resumen": (
-                "No se solicitó un borrador."
+                (
+                    "Se solicitó un borrador, pero el modelo no lo generó."
+                    if filtros.intencion == "borrador"
+                    else "No se solicitó un borrador."
+                )
                 if borrador is None
                 else "Se usó un prompt estricto; las afirmaciones no se contrastaron por separado."
             ),

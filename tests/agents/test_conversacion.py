@@ -166,6 +166,82 @@ def test_borrador_solo_usa_mensajes_elegibles_y_respeta_plataforma():
     assert recibido["ids"] == ["msg-1"]
 
 
+@pytest.mark.parametrize(
+    "modo",
+    ["prompt_estricto", "verificacion_automatica"],
+)
+def test_consulta_descarta_borrador_no_solicitado(modo):
+    def generar(*, evidencia, **_kwargs):
+        return SalidaConversacional(
+            respuesta="La comunidad menciona Python.",
+            citas=[evidencia[0]["id"]],
+            borrador=BorradorMarketing(
+                plataforma="linkedin",
+                titulo="Publicacion no solicitada",
+                contenido="Un borrador que no debe mostrarse.",
+                hashtags=["#Python", "#Datos", "#Comunidad"],
+            ),
+        )
+
+    def verificar(**_kwargs):
+        raise AssertionError("No debe verificarse un borrador descartado")
+
+    agente = AgenteConversacional(
+        crear_mensajes(),
+        generador=generar,
+        verificador=verificar,
+    )
+
+    salida = agente.consultar("Python", modo_verificacion=modo)
+
+    assert salida["modo"] == "consulta"
+    assert salida["respuesta"] == "La comunidad menciona Python."
+    assert salida["citas"] == ["msg-1"]
+    assert salida["borrador"] is None
+    assert salida["verificacion"]["estado"] == "no_aplica"
+
+
+def test_llm_normaliza_hashtags_sin_numeral():
+    salida = SalidaConversacional.model_validate({
+        "respuesta": "Borrador generado.",
+        "citas": ["msg-1"],
+        "borrador": {
+            "plataforma": "linkedin",
+            "titulo": "Primer empleo",
+            "contenido": "Experiencia de la comunidad.",
+            "hashtags": [
+                "AnalistaDeDatos",
+                "#PrimerEmpleo",
+                "Empleabilidad",
+            ],
+        },
+    })
+
+    assert salida.borrador.hashtags == [
+        "#AnalistaDeDatos",
+        "#PrimerEmpleo",
+        "#Empleabilidad",
+    ]
+
+
+def test_hashtags_invalidos_siguen_rechazandose():
+    with pytest.raises(ValueError):
+        BorradorMarketing(
+            plataforma="linkedin",
+            titulo="Primer empleo",
+            contenido="Experiencia de la comunidad.",
+            hashtags=["", "Python", "Comunidad"],
+        )
+
+    with pytest.raises(ValueError):
+        BorradorMarketing(
+            plataforma="linkedin",
+            titulo="Primer empleo",
+            contenido="Experiencia de la comunidad.",
+            hashtags=["Python", "Comunidad"],
+        )
+
+
 def test_prompt_estricto_es_una_opcion_y_no_invoca_verificador():
     verificaciones = []
 
@@ -323,6 +399,7 @@ def test_borrador_puede_declarar_evidencia_insuficiente():
 
     assert salida["borrador"] is None
     assert "no basta" in salida["respuesta"]
+    assert salida["verificacion"]["estado"] == "borrador_no_generado"
 
 
 def test_seguimiento_reutiliza_contexto_y_historial_es_de_la_instancia():

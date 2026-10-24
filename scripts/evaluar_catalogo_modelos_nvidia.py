@@ -257,7 +257,7 @@ def main():
                 },
                 f,
                 ensure_ascii=False,
-                indent=2,
+                indent=4,
             )
 
         resumen_global.append(
@@ -285,7 +285,7 @@ def main():
 
     ruta_comparativa = DIR_SALIDA / "comparativa_modelos_nvidia.json"
     with open(ruta_comparativa, "w", encoding="utf-8") as f:
-        json.dump(resumen_global, f, ensure_ascii=False, indent=2)
+        json.dump(resumen_global, f, ensure_ascii=False, indent=4)
 
     print("\n" + "=" * 80, flush=True)
     print("TABLA COMPARATIVA FINAL:", flush=True)

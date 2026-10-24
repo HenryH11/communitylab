@@ -33,6 +33,10 @@ Ejemplos del criterio:
 - "Todos dominarán Python en seis semanas" promete un resultado general que
   un testimonio individual no respalda.
 - Unir logros de dos personas como si fueran de una sola es un error factual.
+- Título "De cero a analista" con una fuente que solo dice "conseguí mi primer
+  trabajo" NO está respaldado: no demuestra ausencia de conocimientos previos.
+  Evalúa por separado el punto de partida y el logro, incluso en titulares.
+  No uses el inicio de otro testimonio para respaldar esa misma historia.
 
 No uses conocimiento externo. Nunca inventes IDs. Si el borrador contiene una
 afirmación factual no sustentada, debe aparecer como no respaldada, aunque el

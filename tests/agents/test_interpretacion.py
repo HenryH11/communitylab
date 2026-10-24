@@ -17,6 +17,25 @@ EJEMPLO = (
 )
 
 
+@pytest.mark.parametrize("valores", [
+    {"tipo_detectado": "testimonio", "tipos_detectados": ["pregunta_tecnica"]},
+    {"tipos_detectados": ["  "]},
+    {"tipos_detectados": ["a" * 251]},
+    {"intencion": "conversacion", "respuesta": "Hola", "tipos_detectados": ["testimonio"]},
+])
+def test_filtros_alternativos_rechazan_planes_ambiguos_o_invalidos(valores):
+    with pytest.raises(ValidationError):
+        PlanConsulta.model_validate({"intencion": "consulta", **valores})
+
+
+def test_filtros_alternativos_limpian_espacios_y_duplicados():
+    plan = PlanConsulta(
+        intencion="consulta",
+        tipos_detectados=[" pregunta_tecnica ", "pregunta_tecnica", "pregunta_programa"],
+    )
+    assert plan.tipos_detectados == ["pregunta_tecnica", "pregunta_programa"]
+
+
 def mensajes():
     return [
         {

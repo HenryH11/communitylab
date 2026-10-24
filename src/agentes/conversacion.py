@@ -2,15 +2,15 @@
 
 from collections import Counter, defaultdict
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 from datetime import date, datetime, timezone
 from functools import lru_cache
 import json
 import re
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 import unicodedata
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, ValidationError
 
 from src.agentes.configuracion_ia import (
     PROVEEDOR_GEMINI,
@@ -23,7 +23,7 @@ from src.agentes.modelo_ia import (
 )
 from src.agentes.interpretacion import ErrorInterpretacion, PlanConsulta, interpretar_consulta
 from src.agentes.observabilidad import config_ejecucion
-from src.agentes.plataformas import PlataformaPublicacion
+from src.agentes.plataformas import PlataformaPublicacion, texto_publicacion
 from src.agentes.prompts.conversacion import prompt_conversacion
 from src.agentes.prompts.verificacion import prompt_verificacion
 
@@ -66,14 +66,14 @@ class BorradorMarketing(BaseModel):
     plataforma: PlataformaPublicacion
     titulo: str = Field(min_length=1, max_length=180)
     contenido: str = Field(min_length=1, max_length=5_000)
-    hashtags: list[str] = Field(min_length=3, max_length=8)
+    hashtags: list[Annotated[str, Field(pattern=r"^#[^\s#]+$")]] = Field(
+        min_length=3, max_length=8,
+        description="De 3 a 8 etiquetas con # inicial, sin espacios: #Comunidad.",
+    )
 
-    @field_validator("hashtags")
-    @classmethod
-    def validar_hashtags(cls, valores: list[str]) -> list[str]:
-        if any(not valor.startswith("#") or len(valor) < 2 for valor in valores):
-            raise ValueError("Cada hashtag debe comenzar con # y tener contenido.")
-        return valores
+class GrupoPregunta(BaseModel):
+    duda: str = Field(min_length=1, max_length=500)
+    citas: list[str] = Field(min_length=1, max_length=MAX_EVIDENCIA_LISTADO)
 
 
 class SalidaConversacional(BaseModel):
@@ -86,6 +86,14 @@ class SalidaConversacional(BaseModel):
         ),
     )
     borrador: BorradorMarketing | None = None
+    grupos_preguntas: list[GrupoPregunta] = Field(
+        default_factory=list, max_length=MAX_EVIDENCIA_LISTADO,
+        description=(
+            "Si filtros.agrupar_preguntas es true, agrupa TODAS las preguntas de la "
+            "evidencia. Cada grupo contiene una duda y los IDs únicos que la expresan. "
+            "No incluyas conteos ni respuestas en duda. En otras tareas deja []."
+        ),
+    )
 
 
 class AfirmacionVerificada(BaseModel):
@@ -103,6 +111,8 @@ class SalidaVerificacion(BaseModel):
 class FiltrosConsulta:
     sentimiento: str | None = None
     tipo_detectado: str | None = None
+    tipos_detectados: list[str] = field(default_factory=list)
+    agrupar_preguntas: bool = False
     fecha_desde: date | None = None
     fecha_hasta: date | None = None
     plataforma: str | None = None
@@ -346,6 +356,8 @@ class AgenteConversacional:
         filtros = FiltrosConsulta(
             sentimiento=plan.sentimiento,
             tipo_detectado=plan.tipo_detectado,
+            tipos_detectados=plan.tipos_detectados,
+            agrupar_preguntas=plan.agrupar_preguntas,
             canal=plan.canal,
             fecha_desde=plan.fecha_desde,
             fecha_hasta=plan.fecha_hasta,
@@ -392,6 +404,7 @@ class AgenteConversacional:
             return salida
 
         resumen = _resumir(encontrados, filtros)
+        resumen["universo_total"] = len(self._mensajes)
         evidencia = encontrados[:_limite_evidencia(filtros)]
         muestreo: dict[str, Any] = (
             {"temperatura": temperatura, "top_p": top_p}
@@ -412,21 +425,28 @@ class AgenteConversacional:
             filtros.intencion == "borrador"
             and borrador_modelo is not None
             and borrador_modelo.plataforma == "x"
-            and len(borrador_modelo.contenido) > LIMITE_CARACTERES_X
+            and len(texto_publicacion(borrador_modelo.model_dump())) > LIMITE_CARACTERES_X
         ):
             # Los modelos pequeños suelen ignorar el límite; se pide una reescritura.
             salida_modelo = self._generar(
                 consulta=(
                     f"{consulta}\n\nReescribe este borrador para X en máximo "
-                    f"{LIMITE_CARACTERES_X} caracteres en `contenido` (tenía "
-                    f"{len(borrador_modelo.contenido)}), con uno o dos testimonios:\n"
-                    f"{borrador_modelo.contenido}"
+                    f"{LIMITE_CARACTERES_X} caracteres EN TOTAL: contenido + dos saltos "
+                    "de línea + hashtags separados por espacios. Usa 3 hashtags breves. "
+                    "No incluyas el título en el cuerpo. Texto anterior:\n"
+                    f"{texto_publicacion(borrador_modelo.model_dump())}"
                 ),
                 filtros=filtros,
                 resumen=resumen,
                 evidencia=_evidencia_acotada(evidencia),
                 **muestreo,
             )
+        if (
+            salida_modelo.borrador is not None
+            and salida_modelo.borrador.plataforma == "x"
+            and len(texto_publicacion(salida_modelo.borrador.model_dump())) > LIMITE_CARACTERES_X
+        ):
+            raise ValueError("La publicación para X sigue superando 280 caracteres con hashtags.")
         ids_evidencia = {mensaje["id"] for mensaje in evidencia}
         if any(cita not in ids_evidencia for cita in salida_modelo.citas):
             raise ValueError("El agente citó un mensaje que no estaba en la evidencia.")
@@ -438,6 +458,10 @@ class AgenteConversacional:
             salida_modelo = salida_modelo.model_copy(update={"borrador": None})
 
         respuesta = salida_modelo.respuesta
+        if filtros.agrupar_preguntas:
+            if set(salida_modelo.citas) != ids_evidencia:
+                raise ValueError("Las citas no cubren todas las preguntas recuperadas.")
+            respuesta = _presentar_preguntas(salida_modelo.grupos_preguntas, ids_evidencia)
         borrador = (
             salida_modelo.borrador.model_dump()
             if salida_modelo.borrador is not None
@@ -475,6 +499,10 @@ class AgenteConversacional:
             "modo": filtros.intencion,
             "verificacion": verificacion,
         }
+        if filtros.agrupar_preguntas:
+            salida["grupos_preguntas"] = [
+                grupo.model_dump() for grupo in salida_modelo.grupos_preguntas
+            ]
         self._guardar_turno(consulta, respuesta, borrador)
         return salida
 
@@ -518,12 +546,16 @@ class AgenteConversacional:
                 frozenset({filtros.sentimiento or ""}),
             )
         }
+        tipos = filtros.tipos_detectados or (
+            [filtros.tipo_detectado] if filtros.tipo_detectado else []
+        )
+        tipos_validos = {_normalizar(tipo) for tipo in tipos}
         resultados = []
         for indice in indices:
             mensaje = self._mensajes[indice]
             if filtros.sentimiento and _normalizar(mensaje["sentimiento"]) not in sentimientos_validos:
                 continue
-            if filtros.tipo_detectado and _normalizar(mensaje["tipo_detectado"]) != _normalizar(filtros.tipo_detectado):
+            if tipos_validos and _normalizar(mensaje["tipo_detectado"]) not in tipos_validos:
                 continue
             if filtros.canal and _normalizar(mensaje["canal"]) != _normalizar(filtros.canal):
                 continue
@@ -563,10 +595,15 @@ class AgenteConversacional:
             total = len(self._buscar("", replace(sin_filtros_texto, sentimiento=filtros.sentimiento)))
             if total == 0:
                 motivos.append(f"no hay mensajes con sentimiento {filtros.sentimiento}")
-        if filtros.tipo_detectado:
-            total = len(self._buscar("", replace(sin_filtros_texto, tipo_detectado=filtros.tipo_detectado)))
+        if filtros.tipo_detectado or filtros.tipos_detectados:
+            total = len(self._buscar("", replace(
+                sin_filtros_texto, tipo_detectado=filtros.tipo_detectado,
+                tipos_detectados=filtros.tipos_detectados,
+            )))
             if total == 0:
-                motivos.append(f"no hay mensajes de tipo {filtros.tipo_detectado}")
+                motivos.append(
+                    f"no hay mensajes de tipo {filtros.tipo_detectado or ', '.join(filtros.tipos_detectados)}"
+                )
         if filtros.canal:
             total = len(self._buscar("", replace(sin_filtros_texto, canal=filtros.canal)))
             if total == 0:
@@ -738,6 +775,29 @@ def _filtros_a_dict(filtros: FiltrosConsulta) -> dict:
     return valores
 
 
+def _presentar_preguntas(grupos: list[GrupoPregunta], ids_evidencia: set[str]) -> str:
+    vistos: set[str] = set()
+    lineas = []
+    for grupo in grupos:
+        citas = set(grupo.citas)
+        if len(citas) != len(grupo.citas) or vistos & citas or not citas <= ids_evidencia:
+            raise ValueError("Los grupos de preguntas contienen fuentes repetidas o ajenas.")
+        vistos.update(citas)
+        frecuencia = f"{len(citas)} mensajes" if len(citas) > 1 else "1 mensaje"
+        lineas.append(f"- {grupo.duda} — {frecuencia}. Fuentes: {', '.join(grupo.citas)}.")
+    if vistos != ids_evidencia:
+        raise ValueError("Los grupos no cubren todas las preguntas recuperadas.")
+    repetidos = sum(len(grupo.citas) > 1 for grupo in grupos)
+    return (
+        f"## Dudas de la comunidad\n\n"
+        f"En la muestra recuperada hay {len(vistos)} mensajes, agrupados en "
+        f"{len(grupos)} dudas. Grupos con más de un mensaje: {repetidos}.\n\n"
+        + "\n".join(lineas)
+        + "\n\nEste resumen identifica preguntas; no propone respuestas sin contrastarlas "
+        "por separado con fuentes."
+    )
+
+
 def _evidencia_acotada(mensajes: list[dict]) -> list[dict]:
     """Limita el texto enviado al modelo sin perderlo en el índice local."""
     return [
@@ -818,7 +878,10 @@ def _resumir(mensajes: list[dict], filtros: FiltrosConsulta) -> dict:
 
 
 def _limite_evidencia(filtros: FiltrosConsulta) -> int:
-    limite = min(filtros.cantidad, MAX_EVIDENCIA_LISTADO) if filtros.cantidad else MAX_COINCIDENCIAS
+    limite = min(filtros.cantidad, MAX_EVIDENCIA_LISTADO) if filtros.cantidad else (
+        MAX_EVIDENCIA_LISTADO if filtros.tipos_detectados or filtros.agrupar_preguntas
+        else MAX_COINCIDENCIAS
+    )
     if filtros.intencion == "borrador" and filtros.plataforma == "x":
         return min(limite, MAX_EVIDENCIA_X)
     return limite
@@ -853,5 +916,6 @@ def _obtener_cadena_verificacion(proveedor: str):
         SalidaVerificacion,
         proveedor=proveedor,
         ruta="conversacion",
+        modelo=MODELOS_RESPUESTA["super"] if proveedor == PROVEEDOR_NVIDIA_NIM else None,
     )
     return prompt_verificacion | modelo

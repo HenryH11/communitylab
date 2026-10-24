@@ -5,7 +5,7 @@ from urllib.parse import urlencode, urlsplit
 
 import streamlit as st
 
-from src.agentes.plataformas import NOMBRES_PLATAFORMA
+from src.agentes.plataformas import NOMBRES_PLATAFORMA, texto_publicacion
 
 
 REDES = {
@@ -49,27 +49,6 @@ def validar_url(valor: str, *, servidor: bool = False) -> str:
     ):
         raise ValueError(mensaje)
     return valor.rstrip("/") if servidor else valor
-
-
-def texto_publicacion(publicacion: dict) -> str:
-    plataforma = publicacion.get("plataforma")
-    if plataforma not in REDES:
-        raise ValueError("La red social de esta publicación no es compatible.")
-    campos = ["contenido"] if plataforma == "x" else ["titulo", "contenido"]
-    partes = [
-        publicacion[campo].strip()
-        for campo in campos
-        if isinstance(publicacion.get(campo), str) and publicacion[campo].strip()
-    ]
-    if not partes:
-        raise ValueError("La publicación necesita contenido antes de abrir la red social.")
-    hashtags = publicacion.get("hashtags", [])
-    if not isinstance(hashtags, list) or any(not isinstance(h, str) for h in hashtags):
-        raise ValueError("Revisa las etiquetas de la publicación.")
-    etiquetas = " ".join(h.strip() for h in hashtags if h.strip())
-    if etiquetas:
-        partes.append(etiquetas)
-    return "\n\n".join(partes)
 
 
 def enlace_publicacion(

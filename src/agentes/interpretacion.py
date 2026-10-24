@@ -47,6 +47,18 @@ class PlanConsulta(BaseModel):
         ),
     )
     tipo_detectado: str | None = Field(default=None, max_length=250)
+    tipos_detectados: list[str] = Field(
+        default_factory=list, max_length=32,
+        description=(
+            "Alternativas de tipo (OR). Para preguntas frecuentes, todos los tipos "
+            "de pregunta del vocabulario; no filtrar sentimiento ni buscar 'frecuentes'. "
+            "No combinar con tipo_detectado."
+        ),
+    )
+    agrupar_preguntas: bool = Field(
+        default=False,
+        description="True para identificar o resumir preguntas frecuentes y agrupar dudas por sus fuentes.",
+    )
     canal: str | None = Field(default=None, max_length=250)
     fecha_desde: date | None = None
     fecha_hasta: date | None = None
@@ -56,6 +68,13 @@ class PlanConsulta(BaseModel):
 
     @model_validator(mode="after")
     def validar_plan(self) -> "PlanConsulta":
+        if self.agrupar_preguntas and self.intencion != "consulta":
+            raise ValueError("Agrupar preguntas requiere una consulta, no un borrador.")
+        if self.tipo_detectado and self.tipos_detectados:
+            raise ValueError("Usa tipo_detectado o tipos_detectados, no ambos.")
+        self.tipos_detectados = list(dict.fromkeys(t.strip() for t in self.tipos_detectados))
+        if any(not t or len(t) > 250 for t in self.tipos_detectados):
+            raise ValueError("Cada tipo debe tener entre 1 y 250 caracteres.")
         self.terminos = [termino.strip() for termino in self.terminos]
         if any(not termino or len(termino) > 120 for termino in self.terminos):
             raise ValueError("Los términos deben tener entre 1 y 120 caracteres.")
@@ -66,7 +85,7 @@ class PlanConsulta(BaseModel):
         if self.intencion not in {"consulta", "borrador"}:
             if not self.respuesta.strip():
                 raise ValueError("Una interacción sin búsqueda requiere una respuesta.")
-            if self.terminos or any(
+            if self.terminos or self.tipos_detectados or self.agrupar_preguntas or any(
                 valor is not None
                 for valor in (
                     self.sentimiento, self.tipo_detectado, self.canal,

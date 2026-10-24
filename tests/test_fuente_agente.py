@@ -35,7 +35,7 @@ def instantanea(*textos):
                 "sentimiento": "positivo",
                 "tema": "eventos",
                 "tipo": "testimonio",
-                "contenido_corto": texto,
+                "contenido_textual": texto,
                 "fecha": INICIO,
             }
             for numero, texto in enumerate(textos, start=1)

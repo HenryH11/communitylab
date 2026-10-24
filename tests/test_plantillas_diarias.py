@@ -28,7 +28,7 @@ def salida(plataforma="linkedin"):
 
 def lector():
     return {"registros": [{
-        "id": "m1", "contenido_corto": "Aprendemos juntos.", "sentimiento": "positivo",
+        "id": "m1", "contenido_textual": "Aprendemos juntos.", "sentimiento": "positivo",
     }]}
 
 

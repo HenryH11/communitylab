@@ -28,7 +28,7 @@ CAMPOS_CONJUNTO = (
     "sentimiento",
     "tema",
     "tipo",
-    "contenido_corto",
+    "contenido_textual",
     "fecha",
 )
 _CAMPOS_REQUERIDOS = frozenset(CAMPOS_CONJUNTO)
@@ -43,7 +43,7 @@ USING (
         :sentimiento AS sentimiento,
         :tema AS tema,
         :tipo AS tipo,
-        :contenido_corto AS contenido_corto,
+        :contenido_textual AS contenido_textual,
         CASE
             WHEN :fecha IS NOT NULL THEN
                 TO_TIMESTAMP_TZ(
@@ -61,11 +61,11 @@ WHEN MATCHED THEN
         destino.sentimiento = origen.sentimiento,
         destino.tema = origen.tema,
         destino.tipo = origen.tipo,
-        destino.contenido_corto = origen.contenido_corto,
+        destino.contenido_textual = origen.contenido_textual,
         destino.fecha = origen.fecha
 WHEN NOT MATCHED THEN
     INSERT (
-        id, canal, sentimiento, tema, tipo, contenido_corto, fecha
+        id, canal, sentimiento, tema, tipo, contenido_textual, fecha
     )
     VALUES (
         origen.id,
@@ -73,7 +73,7 @@ WHEN NOT MATCHED THEN
         origen.sentimiento,
         origen.tema,
         origen.tipo,
-        origen.contenido_corto,
+        origen.contenido_textual,
         origen.fecha
     )
 """
@@ -93,7 +93,7 @@ VALUES (origen.id, origen.version, origen.total, origen.total_spam_excluido)
 _SQL_SELECT_TODOS = """
 SELECT
     m.version, m.total, m.total_spam_excluido,
-    d.id, d.canal, d.sentimiento, d.tema, d.tipo, d.contenido_corto,
+    d.id, d.canal, d.sentimiento, d.tema, d.tipo, d.contenido_textual,
     CASE
         WHEN d.fecha IS NOT NULL THEN
             TO_CHAR(d.fecha AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
@@ -205,10 +205,10 @@ def validar_registro(registro: Mapping[str, Any]) -> dict[str, Any]:
         valor = registro[campo]
         if not isinstance(valor, str) or not valor.strip():
             raise ValueError(f"{campo} debe ser texto no vacío, no null")
-    contenido = registro["contenido_corto"]
-    if not isinstance(contenido, str) or len(contenido) > 160:
+    contenido = registro["contenido_textual"]
+    if not isinstance(contenido, str) or not contenido.strip():
         raise ValueError(
-            "contenido_corto debe ser texto de hasta 160 caracteres"
+            "contenido_textual debe ser texto no vacío"
         )
     for valor in registro.values():
         if isinstance(valor, str):
@@ -331,6 +331,7 @@ def _publicar_instantanea(conexion, documento, lote):
             ids_nuevos = {fila["id"] for fila in lote}
             retirados = sorted(ids_actuales - ids_nuevos)
             if lote:
+                cursor.setinputsizes(contenido_textual=oracledb.DB_TYPE_CLOB)
                 cursor.executemany(_SQL_UPSERT, lote)
             if retirados:
                 cursor.executemany(
@@ -354,6 +355,23 @@ def _publicar_instantanea(conexion, documento, lote):
         raise
 
 
+def _leer_filas_con_texto(cursor) -> list[tuple]:
+    cursor.execute(_SQL_SELECT_TODOS)
+    filas = []
+    for fila in cursor.fetchall():
+        valores = list(fila)
+        # Materializar el CLOB antes de cerrar cursor/conexión, sin cambiar
+        # las preferencias globales del driver para otros consumidores.
+        contenido = valores[8]
+        if isinstance(contenido, oracledb.LOB):
+            contenido = contenido.read()
+            if not isinstance(contenido, str):
+                raise ValueError("contenido_textual debe ser un CLOB de texto, no binario")
+            valores[8] = contenido
+        filas.append(tuple(valores))
+    return filas
+
+
 def leer_conjunto(
     *,
     conexion: oracledb.Connection | None = None,
@@ -365,15 +383,13 @@ def leer_conjunto(
     """
     if conexion is not None:
         with conexion.cursor() as cursor:
-            cursor.execute(_SQL_SELECT_TODOS)
-            filas = cursor.fetchall()
+            filas = _leer_filas_con_texto(cursor)
     else:
         with (
             obtener_conexion_lectura() as conexion_activa,
             conexion_activa.cursor() as cursor,
         ):
-            cursor.execute(_SQL_SELECT_TODOS)
-            filas = cursor.fetchall()
+            filas = _leer_filas_con_texto(cursor)
 
     if not filas:
         raise ValueError("no hay una instantánea publicada con metadatos")

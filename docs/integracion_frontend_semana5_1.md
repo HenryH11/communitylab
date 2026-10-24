@@ -163,7 +163,7 @@ configurado si se prueba el guardado.
   tiene; sin captura previa, explica el motivo (no conectada, sin datos
   publicados, en actualización o sin conexión). Tras un fallo espera 2 minutos
   antes de reintentar, para no consultar la base en cada clic.
-- **Mapeo al agente:** `id → id`, `contenido_corto → texto`, `canal`,
+- **Mapeo al agente:** `id → id`, `contenido_textual → texto`, `canal`,
   `sentimiento`, `tema → tema_principal`, `tipo → tipo_detectado`, `fecha`.
   La base no trae autor ni elegibilidad; las respuestas citan el id.
 - **Datos del usuario:** se adjuntan con el clip de la caja de texto (JSON, CSV
@@ -309,21 +309,22 @@ el comando de arranque sin arrancar Streamlit. No es un servicio en bucle.
   El reemplazo elimina del documento actual el contenido anterior de cada
   plantilla exitosa; no genera carpetas diarias ni historial de aplicación.
   No se borran los objetos del antiguo flujo interno `activos/...`.
-- **Retención física:** si el bucket tiene versionado o una regla de retención,
-  OCI puede conservar versiones anteriores aunque el objeto actual se reemplace.
-  Cloud debe confirmar un bucket sin versionado/retención histórica para este
-  prefijo o una política que elimine esas versiones; el código no desactiva
-  políticas ni borra objetos ajenos.
+- **Retención física:** Marco informó que activará el versionado del bucket.
+  OCI conservará versiones anteriores aunque el catálogo visible se reemplace.
+  Se mantiene por ahora para el MVP; revisar el consumo y acordar con Cloud
+  una política de limpieza posterior si hace falta. La aplicación no enumera
+  ni borra versiones históricas, ni modifica políticas del bucket.
 - El frontend solo lee OCI, sin llamadas a modelos. Comprueba cada minuto y
   reutiliza lecturas hasta 45 segundos; ofrece actualización manual. Los
   errores de acceso se muestran como errores, no como un catálogo vacío.
 
 ### Activación pendiente con Cloud
 
-Se reutiliza el cliente existente de **Instance Principals**. Hay una diferencia
-de nombres que Cloud debe resolver: el valor predeterminado del cliente es
-`bkt-communitylab-marketing`; el ejemplo de entorno usa
-`communitylab-activos-marketing`. Configurar explícitamente el bucket real.
+Se reutiliza el cliente existente de **Instance Principals**. Cloud confirmó
+`bkt-communitylab-marketing` para guardar y leer las plantillas. El cliente,
+el script de prueba y el ejemplo de entorno usan ese mismo nombre. Configurar
+`OCI_BUCKET_NAME=bkt-communitylab-marketing` en el despliegue; una variable
+ya definida con otro valor sigue teniendo prioridad sobre el predeterminado.
 
 No se encontró un programador desplegado en el repositorio, y **no se ha
 activado un horario en la nube**. Cloud debe:

@@ -33,7 +33,7 @@ def documento(*ids, version="1.1", spam=1):
                 sentimiento="positivo",
                 tema="aprendizaje",
                 tipo="testimonio",
-                contenido_corto="Acción, ñ y emoji 🚀",
+                contenido_textual="Acción, ñ y emoji 🚀",
                 fecha="2026-09-10T14:32:00Z",
             )
             for i in ids
@@ -132,6 +132,10 @@ class Cursor:
         else:
             raise AssertionError(f"SQL no modelado: {sql}")
 
+    def setinputsizes(self, **tipos):
+        assert tipos == {"contenido_textual": db.oracledb.DB_TYPE_CLOB}
+        self.conexion.operaciones.append("BIND CLOB contenido_textual")
+
     def fetchall(self):
         return self.resultado
 
@@ -176,6 +180,71 @@ def test_roundtrip_version_10():
     doc, con = documento("int-001", version="1.0"), Conexion()
     cargar(doc, con)
     assert db.leer_conjunto(conexion=cast("Connection", con)) == doc
+
+
+@pytest.mark.parametrize("longitud", [161, 4001, 32768, 50000])
+def test_texto_completo_se_carga_con_bind_clob_y_llega_al_agente(longitud):
+    from src.app.fuente_agente import adaptar_conjunto
+
+    texto = "  Inicio 🚀\n" + "á" * longitud + "\nFinal intacto.  "
+    doc, con = documento("int-001"), Conexion()
+    doc["registros"][0]["contenido_textual"] = texto
+    cargar(doc, con)
+    assert con.operaciones.index("BIND CLOB contenido_textual") < con.operaciones.index(db._SQL_UPSERT)
+    leido = db.leer_conjunto(conexion=cast("Connection", con))
+    assert leido["registros"][0]["contenido_textual"] == texto
+    assert adaptar_conjunto(leido)[0]["texto"] == texto
+
+
+@pytest.mark.parametrize("inyectada", [True, False])
+def test_clob_se_materializa_antes_de_cerrar_cursor_y_conexion(inyectada):
+    texto = "Inicio\n" + "Experiencia íntegra 🚀 " * 3000 + "\nFinal."
+    conexion = Mock()
+    cursor = Mock()
+    conexion.__enter__ = Mock(return_value=conexion)
+    conexion.__exit__ = Mock(return_value=False)
+    cursor.__enter__ = Mock(return_value=cursor)
+    cursor.__exit__ = Mock(return_value=False)
+    conexion.cursor.return_value = cursor
+    abierto = {"valor": True}
+    def cerrar(*_):
+        abierto["valor"] = False
+    cursor.__exit__.side_effect = cerrar
+    lob = Mock(spec=db.oracledb.LOB)
+    def leer():
+        assert abierto["valor"], "El CLOB se leyó después de cerrar el cursor"
+        return texto
+    lob.read.side_effect = leer
+    registro = documento("int-001")["registros"][0]
+    registro["contenido_textual"] = lob
+    cursor.fetchall.return_value = [
+        ("1.1", 1, 0) + tuple(registro[c] for c in db.CAMPOS_CONJUNTO),
+    ]
+    with patch.object(db, "obtener_conexion_lectura", return_value=conexion):
+        resultado = db.leer_conjunto(
+            conexion=cast("Connection", conexion) if inyectada else None,
+        )
+    lob.read.assert_called_once_with()
+    assert resultado["registros"][0]["contenido_textual"] == texto
+    assert not abierto["valor"]
+
+
+def test_fallo_clob_se_propaga_sin_convertirlo_en_texto_vacio():
+    cursor = Mock()
+    lob = Mock(spec=db.oracledb.LOB)
+    lob.read.side_effect = RuntimeError("Fallo de lectura")
+    cursor.fetchall.return_value = [("1.1", 1, 0, "id", "canal", "positivo", "tema", "tipo", lob, None)]
+    with pytest.raises(RuntimeError, match="Fallo de lectura"):
+        db._leer_filas_con_texto(cursor)
+
+
+def test_lectura_rechaza_lob_binario():
+    cursor = Mock()
+    lob = Mock(spec=db.oracledb.LOB)
+    lob.read.return_value = b"datos binarios"
+    cursor.fetchall.return_value = [("1.1", 1, 0, "id", "canal", "positivo", "tema", "tipo", lob, None)]
+    with pytest.raises(ValueError, match="no binario"):
+        db._leer_filas_con_texto(cursor)
 
 
 def test_retira_id_que_ya_no_esta_sin_duplicar():
@@ -244,15 +313,16 @@ def test_11_exige_contador_y_no_admite_duplicados():
     [
         {"id": "../otro"},
         {"id": "int-1' OR 1=1"},
-        {"contenido_corto": "x" * 161},
-        {"contenido_corto": None},
+        {"contenido_textual": ""},
+        {"contenido_textual": " \t\n"},
+        {"contenido_textual": None},
         {"tema": 8},
         {"canal": []},
         {"fecha": "2026-02-30T00:00:00Z"},
         {"fecha": "2026-01-01T00:00:00+03:00"},
         {"fecha": 8},
         {"extra": "no debe perderse silenciosamente"},
-        {"contenido_corto": "\ud800"},
+        {"contenido_textual": "\ud800"},
     ],
 )
 def test_registro_invalido_se_rechaza_antes_de_sql(cambio):
@@ -268,6 +338,19 @@ def test_rechaza_campo_faltante():
     del doc["registros"][0]["fecha"]
     with pytest.raises(ValueError):
         cargar(doc, Conexion())
+
+
+def test_contrato_y_sql_usan_nombre_confirmado_sin_alias_legacy():
+    assert "contenido_textual" in db.CAMPOS_CONJUNTO
+    assert "contenido_corto" not in db.CAMPOS_CONJUNTO
+    assert ":contenido_textual" in db._SQL_UPSERT
+    assert "d.contenido_textual" in db._SQL_SELECT_TODOS
+    doc, con = documento("int-001"), Conexion()
+    registro = doc["registros"][0]
+    registro["contenido_corto"] = registro.pop("contenido_textual")
+    with pytest.raises(ValueError, match="7 campos"):
+        cargar(doc, con)
+    assert not con.operaciones
 
 
 @pytest.mark.parametrize("campo", ["canal", "sentimiento", "tema", "tipo"])

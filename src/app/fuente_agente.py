@@ -51,7 +51,7 @@ SIN_CONEXION = (
 )
 
 _COLUMNAS_TEXTO = (
-    "texto", "contenido", "contenido_corto", "mensaje", "comentario",
+    "texto", "contenido", "contenido_textual", "contenido_corto", "mensaje", "comentario",
     "comentarios", "text", "content", "message", "comment", "body", "post",
 )
 _COLUMNAS_OPCIONALES = {
@@ -106,8 +106,11 @@ def adaptar_conjunto(documento: Mapping[str, Any]) -> list[dict[str, Any]]:
         if not isinstance(registro, Mapping):
             continue
         identificador = _texto(registro.get("id"))
-        texto = _texto(registro.get("contenido_corto"))
-        if not identificador or not texto or identificador in vistos:
+        texto = registro.get("contenido_textual")
+        if (
+            not identificador or not isinstance(texto, str)
+            or not texto.strip() or identificador in vistos
+        ):
             continue
         vistos.add(identificador)
         mensajes.append(

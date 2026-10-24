@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from src.datos.conjunto_consultable import CAMPOS, construir_conjunto_consultable, principal, recortar
+from src.datos.conjunto_consultable import CAMPOS, construir_conjunto_consultable, principal
 
 DATASET = Path(__file__).resolve().parents[1] / "src/datos/mensajes_comunidad_simulados.json"
 
@@ -84,13 +84,34 @@ class PruebasConjuntoConsultable(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "int-002"):
             construir_conjunto_consultable(entrega)
 
-    def test_contenido_corto_en_una_linea_y_acotado(self):
-        largo = "palabra " * 60
-        corto = recortar(largo)
-        self.assertLessEqual(len(corto), 160)
-        self.assertTrue(corto.endswith("…"))
-        self.assertEqual(recortar("Hola\n  mundo"), "Hola mundo")
-        self.assertEqual(recortar("¿Qué tal? 🎉"), "¿Qué tal? 🎉")
+    def test_conserva_texto_completo_unicode_y_saltos(self):
+        texto = "  ¿Qué tal? 🎉\n" + "Aprendí muchísimo. " * 2500 + "\nFin completo.  "
+        entrega = entrega_v13()
+        entrega["interacciones"][0]["texto"] = texto
+        conjunto = construir_conjunto_consultable(entrega)
+        self.assertEqual(conjunto["registros"][1]["contenido_textual"], texto)
+
+    def test_texto_completo_desde_dataset_y_auditoria(self):
+        texto = "  Aprendizaje 🚀\n" * 1000
+        entrega = entrega_v13()
+        del entrega["interacciones"][0]["texto"]
+        conjunto = construir_conjunto_consultable(
+            entrega, [{"id": "int-002", "texto": texto}],
+        )
+        self.assertEqual(conjunto["registros"][1]["contenido_textual"], texto)
+        entrega = entrega_v12()
+        entrega["interacciones"][0]["entrada"]["texto"] = texto
+        self.assertEqual(
+            construir_conjunto_consultable(entrega)["registros"][0]["contenido_textual"],
+            texto,
+        )
+
+    def test_rechaza_texto_ausente_o_invalido(self):
+        for texto in (None, "", " \n ", 42, []):
+            entrega = entrega_v13()
+            entrega["interacciones"][0]["texto"] = texto
+            with self.assertRaises(ValueError):
+                construir_conjunto_consultable(entrega)
 
     def test_cli_escribe_json_utf8(self):
         import tempfile
@@ -101,7 +122,19 @@ class PruebasConjuntoConsultable(unittest.TestCase):
             self.assertNotIn(b"\r\n", salida.read_bytes())
             conjunto = json.loads(salida.read_text(encoding="utf-8"))
             self.assertEqual(conjunto["total"], 2)
-            self.assertIn("¿Cómo", conjunto["registros"][1]["contenido_corto"])
+            self.assertIn("¿Cómo", conjunto["registros"][1]["contenido_textual"])
+
+    def test_cli_no_pierde_texto_completo_al_serializar(self):
+        import tempfile
+        texto = "  Inicio 🎉\r\n" + "Experiencia completa. " * 2500 + "\nFinal  "
+        entrega = entrega_v13()
+        entrega["interacciones"][0]["texto"] = texto
+        with tempfile.TemporaryDirectory() as carpeta:
+            entrada, salida = Path(carpeta, "entrega.json"), Path(carpeta, "conjunto.json")
+            entrada.write_text(json.dumps(entrega, ensure_ascii=False), encoding="utf-8")
+            principal(["--entrega", str(entrada), "--salida", str(salida)])
+            conjunto = json.loads(salida.read_text(encoding="utf-8"))
+            self.assertEqual(conjunto["registros"][1]["contenido_textual"], texto)
 
 
 if __name__ == "__main__":

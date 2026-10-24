@@ -6,6 +6,13 @@ Herramientas para convertir conversaciones de comunidades digitales en datos
 analizables y activos estructurados. El flujo combina validación y relevancia
 determinista con análisis de lenguaje y enrutamiento por reglas.
 
+Las aplicaciones se ejecutan por separado: Marketing usa
+`streamlit run src/app/app.py`; el equipo técnico usa
+`streamlit run src/app/app_interna.py` en un proceso con acceso restringido.
+`COMMUNITYLAB_MODO_INTERNO` ya no activa Datos en Marketing.
+Consultar [despliegue y aislamiento de credenciales](docs/docker_cloud_semana4.md)
+antes de publicar cualquiera de las dos entradas.
+
 Nuestra solución opera como una línea de ensamblaje inteligente: ingiere conversaciones desestructuradas, debates y testimonios orgánicos de canales digitales (ruido), los limpia mediante algoritmos matemáticos de relevancia semántica, y los procesa mediante **Modelos de Lenguaje de Gran Escala (LLMs)** y grafos de decisión dirigidos en **LangGraph** para empaquetarlos automáticamente en activos de marketing de alto impacto (MarTech) y entradas dinámicas de FAQ. La persistencia de los reportes se ejecuta de forma nativa e integral en la capa gratuita Always Free de **Oracle Cloud Infrastructure (OCI) Object Storage**.
 
 ---

@@ -6,9 +6,44 @@ Este ajuste no cambia modelos, contratos JSON ni el guardado de activos.
 ## Ejecución
 
 Desde la raíz: `docker compose up --build -d`.
-La app escucha en el puerto 8501. Las claves se proporcionan en `.env` local
-(nunca en la imagen o Git). No publicar la app en Internet sin acordar los
+La aplicación de Marketing escucha en el puerto 8501. Compose lee `.env`
+para interpolar solo las variables enumeradas en el servicio; no inyecta el
+archivo entero. Las claves nunca se incluyen en la imagen o Git.
+No publicar la app en Internet sin acordar los
 controles de acceso; publicar un puerto no configura las reglas de OCI.
+
+### Separación de Marketing y equipo técnico
+
+- **Marketing:** `streamlit run src/app/app.py`. No incluye Datos ni la curaduría
+  interna, ignora `COMMUNITYLAB_MODO_INTERNO` y no usa lotes internos de sesión.
+- **Equipo técnico:** `streamlit run src/app/app_interna.py`. Conserva Datos,
+  procesamiento y curaduría. Es otro proceso con sesiones independientes.
+- `src/app/interfaz.py` comparte la interfaz, pero cada entrada fija explícitamente
+  su modo. No hay selector de modo en el navegador ni una página de Streamlit
+  que permita cambiar de aplicación.
+- Para iniciar solo el servicio interno con Compose:
+  `docker compose --profile interno up --build -d communitylab-interno`.
+  Crear antes `.env.interno` fuera de Git, con la configuración propia del equipo
+  técnico. No copiar secretos internos al entorno de Marketing.
+- El servicio interno está desactivado por defecto, usa su propio volumen
+  `communitylab-interno-salida` y escucha solo en `127.0.0.1:8502` del host.
+  Acceder mediante túnel autorizado; no publicar ese puerto ni enrutarlo desde
+  el dominio de Marketing. El servicio público conserva su volumen existente.
+- Marketing recibe únicamente `DB_READ_USER`, `DB_READ_DSN` y
+  `DB_READ_PASSWORD_SECRET_OCID`. Definir `DB_READ_DSN` explícitamente: el servicio
+  no recibe `DB_DSN`, `DB_USER` ni `DB_PASSWORD_SECRET_OCID`.
+  Al retirar la inyección completa de `.env`, cualquier ajuste adicional autorizado
+  debe enumerarse expresamente en el servicio, no volver a montar el entorno interno.
+
+**Límite importante:** separar contenedores en una misma VM no separa las
+identidades OCI de Instance Principals. Cloud debe desplegar Marketing con una
+identidad que solo pueda leer el secreto `ro_query`, consultar ambas tablas y
+leer el catálogo. La identidad interna y la del ejecutor diario deben conservar
+sus permisos de escritura por separado. Si la VM compartida accede a ambos
+secretos, el aislamiento IAM todavía no está completo: usar recursos con
+identidades distintas y restringir el acceso interno mediante red y autenticación
+del equipo. Esta separación de código no implementa login ni crea recursos OCI.
+El programador diario no se ejecuta dentro del frontend de Marketing.
 
 La imagen tiene dos etapas y ejecuta como `appuser` (UID/GID 1000).
 Solo copia `src/` y `configuracion/`. El entorno de dependencias y el código

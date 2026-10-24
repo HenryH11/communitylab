@@ -333,6 +333,9 @@ def test_ui_controles_compactos_conservan_valores_y_archivos(monkeypatch):
     app.session_state["archivos_usuario"] = {
         "ejemplo.txt": [{"id": "propio-1", "texto": "Un mensaje"}],
     }
+    app.session_state["historial_agente"] = [
+        {"role": "user", "content": "Conversación conservada"}
+    ]
     app.run()
     assert not app.exception
     assert app.selectbox(key="agente_modelo").value == "super"
@@ -365,3 +368,6 @@ def test_ui_controles_compactos_conservan_valores_y_archivos(monkeypatch):
     assert app.selectbox(key="agente_modelo").value == "lightning"
     assert app.number_input(key="agente_temperatura").value == 0.65
     assert app.toggle(key="modo_verificacion").value is True
+    assert app.session_state["historial_agente"] == [
+        {"role": "user", "content": "Conversación conservada"}
+    ]

@@ -39,9 +39,25 @@ def dentro_de_try(arbol, objetivo):
     return False
 
 
-def test_app_no_usa_st_rerun(arbol):
-    """Regla del PM (Semana 3): sin recargas que disparen ráfagas a la IA."""
-    assert llamadas(arbol, "st", "rerun") == []
+def test_app_solo_recarga_al_quitar_un_adjunto(arbol):
+    """Sin recargas automáticas que disparen ráfagas a la IA."""
+    recargas = llamadas(arbol, "st", "rerun")
+    assert len(recargas) == 1
+    recarga = recargas[0]
+    assert not recarga.args
+    assert len(recarga.keywords) == 1
+    assert recarga.keywords[0].arg == "scope"
+    assert isinstance(recarga.keywords[0].value, ast.Constant)
+    assert recarga.keywords[0].value.value == "app"
+    assert any(
+        isinstance(nodo, ast.If)
+        and isinstance(nodo.test, ast.Name)
+        and nodo.test.id == "quitar"
+        and len(nodo.body) == 1
+        and isinstance(nodo.body[0], ast.Expr)
+        and nodo.body[0].value is recarga
+        for nodo in ast.walk(arbol)
+    )
     assert llamadas(arbol, "st", "experimental_rerun") == []
 
 

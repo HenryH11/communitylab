@@ -195,7 +195,7 @@ SECCIONES = (
 ESTILO = """
 <style>
     .ayuda-cabecera { text-align: center; margin: 1.5rem 0 1.4rem; }
-    .ayuda-cabecera .cl-espiral { width: 2.4rem; height: 2.4rem; color: var(--cl-miel); }
+    .ayuda-cabecera .cl-logo { width: 2.4rem; height: 2.4rem; color: var(--cl-miel); }
     .ayuda-cabecera p.ayuda-versal {
         margin: 0.5rem 0 0;
         font-family: var(--cl-versal);
@@ -294,7 +294,7 @@ def render(ir_a=None):
     st.markdown(ESTILO, unsafe_allow_html=True)
     st.markdown(
         '<div class="ayuda-cabecera">'
-        f"{tema.espiral()}"
+        f"{tema.logo()}"
         '<p class="ayuda-versal">CENTRO DE AYUDA</p>'
         '<p class="ayuda-titulo">¿En qué podemos ayudarte?</p>'
         '<p class="ayuda-lema">De las conversaciones de tu comunidad a contenido aprobado, '

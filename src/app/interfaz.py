@@ -17,7 +17,7 @@ from src.datos.entrega_ia import preparar_paquete_ia
 def render(*, modo_interno: bool = False) -> None:
     st.set_page_config(
         page_title="CommunityLab",
-        page_icon=":material/cyclone:",
+        page_icon=identidad.ICONO_PAGINA,
         layout="wide",
     )
 
@@ -470,7 +470,8 @@ def render(*, modo_interno: bool = False) -> None:
         st.session_state.get(CLAVE_ARCHIVOS, {}).pop(nombre, None)
 
 
-    def _controles_agente(adjuntos, contenedor):
+    @st.fragment
+    def _controles_agente(adjuntos):
         """Controles junto a la entrada; se pueden cambiar en cualquier momento del chat."""
         estado = st.session_state
         estado.setdefault("agente_ajuste", _AJUSTE_ESTILOS)
@@ -479,6 +480,8 @@ def render(*, modo_interno: bool = False) -> None:
         estado.setdefault("agente_top_p", ESTILOS_REDACCION["equilibrado"][1])
         estado.setdefault("agente_modelo", "super")
         estado.setdefault("modo_verificacion", False)
+        for clave in ("agente_estilo", "agente_temperatura", "agente_top_p"):
+            estado[clave] = estado[clave]
         if estado["agente_estilo"] not in _ETIQUETAS_ESTILO:
             estado["agente_estilo"] = "equilibrado"
         if estado["agente_ajuste"] not in {_AJUSTE_ESTILOS, _AJUSTE_MANUAL}:
@@ -489,7 +492,7 @@ def render(*, modo_interno: bool = False) -> None:
         else:
             etiqueta = f"Redacción · {_ETIQUETAS_ESTILO[estado['agente_estilo'] or 'equilibrado']}"
 
-        with contenedor:
+        with getattr(st, "bottom", st).container(key="gotico_controles"):
             with st.container(horizontal=True, gap="small", key="agente_barra"):
                 modelo_panel = st.popover(
                     f"Modelo · {estado['agente_modelo'].capitalize()}", key="panel_modelo",
@@ -588,13 +591,17 @@ def render(*, modo_interno: bool = False) -> None:
                             with archivo_col:
                                 st.text(f"{nombre} · {len(mensajes)}", help=nombre)
                             with quitar_col:
-                                st.button(
+                                quitar = st.button(
                                     "", key=f"agente_quitar_{indice}",
                                     icon=":material/close:", help=f"Quitar {nombre}",
                                     type="tertiary", on_click=_quitar_archivo, args=(nombre,),
                                 )
+                                if quitar:
+                                    st.rerun(scope="app")
 
-        modo = "verificacion_automatica" if verificacion else "prompt_estricto"
+    def _ajustes_agente():
+        estado = st.session_state
+        modo = "verificacion_automatica" if estado["modo_verificacion"] else "prompt_estricto"
         if estado["agente_ajuste"] == _AJUSTE_MANUAL:
             temperatura, top_p = estado["agente_temperatura"], estado["agente_top_p"]
         else:
@@ -665,8 +672,6 @@ def render(*, modo_interno: bool = False) -> None:
     def _render_agente(resultado):
         st.markdown(estilo_agente.ESTILO, unsafe_allow_html=True)
         adjuntos = st.session_state.setdefault(CLAVE_ARCHIVOS, {})
-        # Se reserva antes de la entrada para que los controles queden encima de ella.
-        controles = getattr(st, "bottom", st).container(key="gotico_controles")
         # Fuera de contenedores para que quede fija al pie, como en un chat de LLM.
         entrada = st.chat_input(
             "Pregunta sobre la comunidad o adjunta tus datos…",
@@ -676,7 +681,8 @@ def render(*, modo_interno: bool = False) -> None:
         consulta = (entrada.text or "").strip() if entrada else ""
         if entrada and entrada.files:
             _adjuntar(entrada.files)
-        modo, temperatura, top_p, modelo = _controles_agente(adjuntos, controles)
+        _controles_agente(adjuntos)
+        modo, temperatura, top_p, modelo = _ajustes_agente()
 
         with st.container(key="gotico_lienzo"):
             mensajes, firma, aviso = _datos_agente(resultado, adjuntos)

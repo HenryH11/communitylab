@@ -6,19 +6,29 @@ bosque y miel encendida). Así ambas congenian, pero al entrar al agente la
 página resalta por contraste de luz y no por cambio de identidad.
 """
 
-# Espiral de semicírculos crecientes: el logo minimalista de CommunityLab.
-_TRAZO_ESPIRAL = (
-    "M12 12 a2 2 0 0 1 4 0 a4 4 0 0 1 -8 0 a6 6 0 0 1 12 0 a8 8 0 0 1 -16 0"
+from urllib.parse import quote
+
+
+_TRAZOS_NUCLEO = (
+    "M165 48C138 20 91 18 59 42C24 68 19 111 40 142C31 111 44 79 70 65C99 49 130 58 145 78Z",
+    "M38 151C65 179 112 181 144 157C179 131 184 88 163 57C172 88 159 120 133 134C104 150 73 141 58 121Z",
+    "M119 75C93 69 74 85 76 105C78 126 101 136 116 121C126 111 125 92 119 75Z",
 )
 
 
-def espiral(clase: str = "cl-espiral", grosor: float = 1.3) -> str:
+def logo(clase: str = "cl-logo") -> str:
+    """Núcleo: dos cintas opuestas alrededor de una semilla."""
     return (
-        f'<svg class="{clase}" viewBox="0 1 24 24" fill="none" '
-        f'stroke="currentColor" stroke-width="{grosor}" stroke-linecap="round" '
-        f'aria-hidden="true"><path pathLength="100" d="{_TRAZO_ESPIRAL}"/></svg>'
+        f'<svg xmlns="http://www.w3.org/2000/svg" class="{clase}" '
+        'viewBox="0 0 200 200" fill="currentColor" aria-hidden="true">'
+        + "".join(f'<path d="{trazo}"/>' for trazo in _TRAZOS_NUCLEO)
+        + "</svg>"
     )
 
+
+ICONO_PAGINA = "data:image/svg+xml," + quote(
+    logo().replace('fill="currentColor"', 'fill="#8c6214"')
+)
 
 # Solo dos pesos por familia: bold para títulos y light para el texto.
 FUENTES = (
@@ -50,6 +60,11 @@ ESTILO_GLOBAL = f"""
         --cl-titulo: "Cormorant Garamond", Garamond, Georgia, serif;
         --cl-versal: "Cinzel", "Trajan Pro", Georgia, serif;
         --cl-texto: "Inter", "Segoe UI", system-ui, sans-serif;
+        --cl-header-tinta: #2b2216;
+        --cl-header-suave: #54483a;
+        --cl-header-linea: #e3d5b3;
+        --cl-header-activo: #f1e2bd;
+        --cl-header-logo: #8c6214;
     }}
 
     /* Fondo sólido: los degradados translúcidos hacían ver la página borrosa. */
@@ -70,42 +85,49 @@ ESTILO_GLOBAL = f"""
     .stApp h1 {{ font-size: 3.4rem; line-height: 1.1; }}
     .stApp h2 {{ font-size: 2.3rem; }}
 
-    /* Marca: un adelanto nocturno del agente, con texto blanco y espiral miel */
     .communitylab-brand {{
         display: flex;
         align-items: center;
-        gap: 1rem;
-        background: var(--cl-noche);
-        border-radius: 0.75rem;
-        color: #fffaf0;
+        gap: 14px;
+        background: transparent;
+        border-radius: 0;
+        border-bottom: 1px solid var(--cl-header-linea);
+        color: var(--cl-header-tinta);
         font-family: var(--cl-versal);
-        font-size: 1.75rem;
+        font-size: 1.5rem;
         font-weight: 700;
-        letter-spacing: 0.2em;
-        margin-bottom: 1.2rem;
-        padding: 1.1rem 1.6rem;
+        letter-spacing: .06em;
+        margin-bottom: 0;
+        padding: 0 0 16px;
     }}
-    .communitylab-brand .cl-espiral {{
-        width: 2.4rem;
-        height: 2.4rem;
-        color: var(--cl-miel-noche);
+    .communitylab-brand .cl-logo {{
+        width: 3rem;
+        height: 3rem;
+        color: var(--cl-header-logo);
     }}
-
-    /* Navegación: la opción activa va en noche con texto blanco, no miel sobre miel */
-    div[data-testid="stRadio"] > div[role="radiogroup"] {{ gap: 0.4rem; }}
-    div[data-testid="stRadio"] label {{
-        border-radius: 0.6rem;
-        padding: 0.5rem 0.9rem;
+    .st-key-navegacion_principal [role="radiogroup"] {{ gap: 6px; flex-wrap: wrap; }}
+    .st-key-navegacion_principal label {{
+        border-radius: 6px;
+        padding: 8px 16px;
         transition: background 0.2s ease;
     }}
-    div[data-testid="stRadio"] label p {{ font-size: 1.05rem; }}
-    div[data-testid="stRadio"] label:hover {{ background: rgba(43, 34, 22, 0.06); }}
-    div[data-testid="stRadio"] label:has(input:checked) {{
-        background: var(--cl-noche);
+    .st-key-navegacion_principal label > div > div:not([data-testid]) {{ display: none; }}
+    .st-key-navegacion_principal label p {{
+        font-size: 14px; margin: 0; color: var(--cl-header-suave);
     }}
-    div[data-testid="stRadio"] label:has(input:checked) p {{
-        color: #fffaf0;
+    .st-key-navegacion_principal label:hover {{ background: var(--cl-header-activo); }}
+    .st-key-navegacion_principal label:has(input:checked) {{
+        background: var(--cl-header-activo);
+    }}
+    .st-key-navegacion_principal label:has(input:checked) p {{
+        color: var(--cl-header-tinta);
         font-weight: 700;
+    }}
+    .st-key-navegacion_principal label:has(input:focus-visible) {{
+        outline: 2px solid var(--cl-header-logo); outline-offset: 3px;
+    }}
+    @media(max-width:480px) {{
+        .communitylab-brand {{ font-size: 1.25rem; }}
     }}
 
     button[kind="primary"] {{
@@ -151,6 +173,6 @@ ESTILO_GLOBAL = f"""
 
 def marca() -> str:
     return (
-        f'<div class="communitylab-brand">{espiral(grosor=1.6)}'
+        f'<div class="communitylab-brand">{logo()}'
         "<span>COMMUNITYLAB</span></div>"
     )

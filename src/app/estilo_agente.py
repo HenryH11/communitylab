@@ -9,9 +9,9 @@ por contraste de luz. Los estilos solo se inyectan al renderizar esa vista.
 from html import escape
 
 from src.agentes.plataformas import NOMBRES_PLATAFORMA
-from src.app.tema import espiral
+from src.app.tema import logo
 
-EMBLEMA = espiral("gotico-emblema", grosor=1.2)
+EMBLEMA = logo("gotico-emblema")
 
 ESTILO = """
 <style>
@@ -33,25 +33,14 @@ ESTILO = """
     .stApp {
         background: linear-gradient(180deg, var(--noche), var(--ebano));
         color: var(--blanco);
+        --cl-header-tinta: var(--blanco);
+        --cl-header-suave: var(--hueso);
+        --cl-header-linea: var(--linea);
+        --cl-header-activo: var(--bosque);
+        --cl-header-logo: var(--laton);
     }
     header[data-testid="stHeader"] { background: transparent; }
     header[data-testid="stHeader"] * { color: var(--hueso); }
-
-    /* Barra de marca y navegación: texto blanco, el dorado queda para acentos */
-    .communitylab-brand {
-        background: var(--bosque) !important;
-        border: 1px solid var(--linea);
-        color: var(--blanco) !important;
-    }
-    div[data-testid="stRadio"] label p { color: var(--hueso); }
-    div[data-testid="stRadio"] label:hover { background: rgba(251, 247, 236, 0.06); }
-    div[data-testid="stRadio"] label > div > div:first-child:not([data-testid]) { display: none; }
-    div[data-testid="stRadio"] label:has(input:checked) {
-        background: transparent;
-        box-shadow: inset 0 -2px 0 var(--laton);
-        border-radius: 0;
-    }
-    div[data-testid="stRadio"] label:has(input:checked) p { color: var(--blanco); }
 
     /* Lienzo central, como un chat de LLM */
     .st-key-gotico_lienzo {
@@ -74,10 +63,6 @@ ESTILO = """
         animation: gotico-aparecer 0.8s ease-out both;
     }
     .gotico-emblema { width: 64px; height: 64px; color: var(--laton); }
-    .gotico-cabecera .gotico-emblema path {
-        stroke-dasharray: 100;
-        animation: gotico-trazar 2.4s cubic-bezier(.6, 0, .3, 1) both;
-    }
     .gotico-cabecera p.gotico-titulo {
         margin: 0.9rem 0 0.2rem;
         font-family: var(--serif-titulo);
@@ -113,6 +98,10 @@ ESTILO = """
 
     /* Controles junto a la entrada: verificación y estilo de redacción */
     .st-key-gotico_controles { margin-bottom: 0.35rem; }
+    [data-testid="stBottomBlockContainer"] > [data-testid="stVerticalBlock"]
+    > [data-testid="stLayoutWrapper"]:has(> .st-key-gotico_controles) {
+        order: -1;
+    }
     .st-key-agente_barra { flex-wrap: wrap; gap: 0.4rem; }
     .st-key-gotico_controles [data-testid="stCheckbox"] label p {
         font-family: var(--texto) !important;
@@ -410,10 +399,6 @@ ESTILO = """
 
     [data-testid="stSpinner"] p { font-family: var(--texto); font-weight: 300; color: var(--hueso); }
 
-    @keyframes gotico-trazar {
-        from { stroke-dashoffset: 100; }
-        to { stroke-dashoffset: 0; }
-    }
     @keyframes gotico-aparecer {
         from { opacity: 0; transform: translateY(6px); }
         to { opacity: 1; transform: none; }

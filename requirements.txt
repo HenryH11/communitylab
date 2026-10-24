@@ -12,7 +12,7 @@ python-dotenv>=1.0
 # Testing
 pytest>=8,<10
 oci
-streamlit
+streamlit>=1.65
 pandas
 altair
 jsonschema[format-nongpl]>=4.18,<5

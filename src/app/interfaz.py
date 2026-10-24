@@ -8,7 +8,7 @@ import streamlit as st
 
 from src.agentes.conversacion import ESTILOS_REDACCION, AgenteConversacional
 from src.agentes.grafo import procesar_paquete_entrega
-from src.app import estilo_agente, fuente_agente, publicacion_redes, vista_ayuda, vista_plantillas
+from src.app import estilo_agente, fuente_agente, publicacion_redes, vista_ayuda, vista_inicio, vista_plantillas
 from src.app import tema as identidad
 from src.app.curaduria_oci import contexto_curaduria
 from src.app.errores_agente import explicar_error
@@ -338,6 +338,9 @@ def render(*, modo_interno: bool = False) -> None:
 
 
     def _render_inicio(resultado):
+        if not MODO_INTERNO:
+            vista_inicio.render(ir_a=_navegar_a)
+            return
         contenido, resumen = st.columns([1.35, 1], vertical_alignment="center")
         with contenido:
             with st.container(key="inicio_insignia"):
@@ -689,7 +692,7 @@ def render(*, modo_interno: bool = False) -> None:
             if not mensajes:
                 if not historial and not consulta:
                     st.markdown(
-                        estilo_agente.cabecera("El archivo aún está vacío"),
+                        estilo_agente.cabecera("Bienvenido. ¿Qué te gustaría descubrir hoy?"),
                         unsafe_allow_html=True,
                     )
                 st.info(

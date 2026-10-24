@@ -1,7 +1,7 @@
 # Misma base en ambas etapas para conservar compatibilidad del entorno virtual.
 FROM python:3.12-slim AS dependencias
 WORKDIR /build
-COPY requirements.txt .
+COPY requirements.frontend.txt requirements.txt
 RUN python -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
@@ -21,12 +21,16 @@ RUN groupadd --gid 1000 appuser && \
     useradd --uid 1000 --gid 1000 --create-home appuser && \
     mkdir -p /app/salida/datos /app/salida/logs && \
     chown -R appuser:appuser /app/salida
+
 WORKDIR /app
 COPY --from=dependencias /opt/venv /opt/venv
-# No copiar el repositorio completo: solo archivos necesarios en ejecución.
+
+# Copiar módulos del agente y eliminar cualquier script de ingesta
 COPY src/ ./src/
+RUN rm -rf ./src/services/ingest_server.py
 COPY configuracion/ ./configuracion/
 COPY .streamlit/ ./.streamlit/
+
 USER appuser
 
 # Puerto estándar de Streamlit

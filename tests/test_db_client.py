@@ -7,7 +7,8 @@ from unittest.mock import Mock, patch
 import pytest
 
 try:
-    from src.config import db_client as db
+    from scripts import ingesta_db as db
+    from src.config import db_client as lector
 except ModuleNotFoundError as error:
     if error.name not in {"oci", "oracledb"}:
         raise
@@ -28,7 +29,7 @@ def documento(*ids, version="1.1", spam=1):
                 sentimiento="positivo",
                 tema="aprendizaje",
                 tipo="testimonio",
-                contenido_corto="Acción, ñ y emoji 🚀",
+                contenido_textual="Acción, ñ y emoji 🚀",
                 fecha="2026-09-10T14:32:00Z",
             )
             for i in ids
@@ -48,7 +49,8 @@ class Conexion:
     def __init__(self, fallar=None):
         self.filas = {}
         self.meta = None
-        self.confirmado = ({}, None)
+        self.cargas = {}
+        self.confirmado = ({}, None, {})
         self.commits = 0
         self.rollbacks = 0
         self.operaciones = []
@@ -64,11 +66,11 @@ class Conexion:
         return Cursor(self)
 
     def commit(self):
-        self.confirmado = deepcopy((self.filas, self.meta))
+        self.confirmado = deepcopy((self.filas, self.meta, self.cargas))
         self.commits += 1
 
     def rollback(self):
-        self.filas, self.meta = deepcopy(self.confirmado)
+        self.filas, self.meta, self.cargas = deepcopy(self.confirmado)
         self.rollbacks += 1
 
 
@@ -90,11 +92,25 @@ class Cursor:
             raise RuntimeError("Fallo simulado")
         if sql.startswith("LOCK TABLE"):
             assert "NOWAIT" in sql
-        elif sql == "SELECT id FROM conjunto_consultable":
-            self.resultado = [(i,) for i in con.filas]
+        elif sql == db._SQL_FILAS:
+            self.resultado = [
+                tuple(fila[c] for c in db.CAMPOS_CONJUNTO)
+                for fila in con.filas.values()
+            ]
+        elif sql == db._SQL_LEER_META:
+            self.resultado = (
+                [tuple(con.meta[c] for c in
+                       ("version", "total", "total_spam_excluido"))]
+                if con.meta is not None else []
+            )
+        elif sql == db._SQL_CARGA:
+            huella = parametros["huella"]
+            self.resultado = [(huella,)] if huella in con.cargas else []
+        elif sql == db._SQL_REGISTRAR_CARGA:
+            con.cargas[parametros["huella"]] = deepcopy(parametros)
         elif sql == db._SQL_META:
             con.meta = deepcopy(parametros)
-        elif sql == db._SQL_SELECT_TODOS:
+        elif sql == lector._SQL_SELECT_TODOS:
             self.resultado = []
             if con.meta is not None:
                 meta = tuple(
@@ -130,6 +146,9 @@ class Cursor:
     def fetchall(self):
         return self.resultado
 
+    def setinputsizes(self, **tipos):
+        assert tipos == {"contenido_textual": db.oracledb.DB_TYPE_CLOB}
+
 
 @pytest.fixture(autouse=True)
 def impedir_red(monkeypatch):
@@ -143,6 +162,11 @@ def impedir_red(monkeypatch):
         )
         monkeypatch.setattr(
             db,
+            "obtener_cliente_secretos",
+            Mock(side_effect=AssertionError("No se permite acceder a Vault")),
+        )
+        monkeypatch.setattr(
+            lector,
             "obtener_cliente_secretos",
             Mock(side_effect=AssertionError("No se permite acceder a Vault")),
         )
@@ -162,7 +186,7 @@ def test_roundtrip_contrato_11_unicode_null_sin_mutar():
     assert cargar(doc, con)["sincronizados"] == 2
     esperado = deepcopy(doc)
     esperado["registros"].sort(key=lambda r: r["id"])
-    assert db.leer_conjunto(conexion=con) == esperado
+    assert lector.leer_conjunto(conexion=con) == esperado
     assert doc == original
     assert con.commits == 1
 
@@ -170,26 +194,31 @@ def test_roundtrip_contrato_11_unicode_null_sin_mutar():
 def test_roundtrip_version_10():
     doc, con = documento("int-001", version="1.0"), Conexion()
     cargar(doc, con)
-    assert db.leer_conjunto(conexion=con) == doc
+    esperado = dict(doc, version="1.1", total_spam_excluido=0)
+    assert lector.leer_conjunto(conexion=con) == esperado
 
 
-def test_retira_id_que_ya_no_esta_sin_duplicar():
+def test_conserva_otros_lotes_y_reintento_no_duplica():
     con = Conexion()
     cargar(documento("int-001", "int-002"), con)
-    doc = documento("int-001", spam=2)
-    doc["registros"][0]["tema"] = "tema actualizado"
-    assert cargar(doc, con)["retirados"] == 1
-    assert db.leer_conjunto(conexion=con) == doc
+    doc = documento("int-003", spam=2)
+    assert cargar(doc, con)["insertados"] == 1
+    assert set(con.filas) == {"int-001", "int-002", "int-003"}
     assert cargar(doc, con)["retirados"] == 0
-    assert db.leer_conjunto(conexion=con)["total"] == 1
+    assert lector.leer_conjunto(conexion=con)["total"] == 3
+    assert con.meta["total_spam_excluido"] == 3
+    assert len(con.cargas) == 2
 
 
 def test_instantanea_vacia_confirmada_conserva_spam():
     con = Conexion()
     cargar(documento("int-001"), con)
     doc = documento(spam=8)
-    assert cargar(doc, con)["retirados"] == 1
-    assert db.leer_conjunto(conexion=con) == doc
+    assert cargar(doc, con)["retirados"] == 0
+    assert lector.leer_conjunto(conexion=con)["total"] == 1
+    assert con.meta["total_spam_excluido"] == 9
+    cargar(doc, con)
+    assert con.meta["total_spam_excluido"] == 9
 
 
 @pytest.mark.parametrize("confirmacion", [False, None, 1, "true"])
@@ -239,15 +268,14 @@ def test_11_exige_contador_y_no_admite_duplicados():
     [
         {"id": "../otro"},
         {"id": "int-1' OR 1=1"},
-        {"contenido_corto": "x" * 161},
-        {"contenido_corto": None},
+        {"contenido_textual": None},
         {"tema": 8},
         {"canal": []},
         {"fecha": "2026-02-30T00:00:00Z"},
         {"fecha": "2026-01-01T00:00:00+03:00"},
         {"fecha": 8},
         {"extra": "no debe perderse silenciosamente"},
-        {"contenido_corto": "\ud800"},
+        {"contenido_textual": "\ud800"},
     ],
 )
 def test_registro_invalido_se_rechaza_antes_de_sql(cambio):
@@ -293,7 +321,7 @@ def test_columnas_requeridas_conservan_texto_y_fecha_null():
     )
     original = deepcopy(doc)
     cargar(doc, con)
-    assert db.leer_conjunto(conexion=con) == original
+    assert lector.leer_conjunto(conexion=con) == original
     assert doc == original
 
 
@@ -302,8 +330,8 @@ def test_columnas_requeridas_conservan_texto_y_fecha_null():
     [
         "LOCK TABLE",
         "MERGE INTO conjunto_consultable destino",
-        "DELETE FROM",
         "MERGE INTO conjunto_consultable_meta",
+        "INSERT INTO conjunto_consultable_cargas",
     ],
 )
 def test_error_revierte_filas_y_metadatos(etapa):
@@ -314,7 +342,7 @@ def test_error_revierte_filas_y_metadatos(etapa):
     with pytest.raises(RuntimeError):
         cargar(documento("int-003", spam=9), con)
     con.fallar = None
-    assert db.leer_conjunto(conexion=con) == anterior
+    assert lector.leer_conjunto(conexion=con) == anterior
     assert con.commits == 1
     assert con.rollbacks == 1
 
@@ -333,19 +361,19 @@ def test_lectura_no_modifica_ni_hace_commit():
     con = Conexion()
     cargar(documento("int-001"), con)
     con.operaciones.clear()
-    db.leer_conjunto(conexion=con)
-    assert con.operaciones == [db._SQL_SELECT_TODOS]
+    lector.leer_conjunto(conexion=con)
+    assert con.operaciones == [lector._SQL_SELECT_TODOS]
     assert con.commits == 1
 
 
 def test_lectura_sin_publicacion_o_con_total_inconsistente_falla():
     con = Conexion()
     with pytest.raises(ValueError, match="metadatos"):
-        db.leer_conjunto(conexion=con)
+        lector.leer_conjunto(conexion=con)
     cargar(documento("int-001"), con)
     con.meta["total"] = 3
     with pytest.raises(ValueError, match="total"):
-        db.leer_conjunto(conexion=con)
+        lector.leer_conjunto(conexion=con)
 
 
 def test_conexiones_propias_separadas(monkeypatch):
@@ -356,9 +384,9 @@ def test_conexiones_propias_separadas(monkeypatch):
         )
         abrir.assert_called_once_with()
     with patch.object(
-        db, "obtener_conexion_lectura", return_value=con
+        lector, "obtener_conexion_lectura", return_value=con
     ) as abrir:
-        assert db.leer_conjunto()["total"] == 1
+        assert lector.leer_conjunto()["total"] == 1
         abrir.assert_called_once_with()
 
 
@@ -377,15 +405,15 @@ def test_lector_no_reutiliza_credenciales_escritor(
     monkeypatch.setenv("DB_READ_USER", usuario)
     monkeypatch.setenv("DB_READ_PASSWORD_SECRET_OCID", secreto)
     with pytest.raises(ValueError):
-        db.obtener_conexion_lectura()
+        lector.obtener_conexion_lectura()
 
 
 def test_lector_usa_su_usuario_y_secreto(monkeypatch):
     monkeypatch.setenv("DB_READ_USER", "agent_lector")
     monkeypatch.setenv("DB_READ_PASSWORD_SECRET_OCID", "secret-reader")
     monkeypatch.setenv("DB_READ_DSN", "dsn-reader")
-    with patch.object(db, "obtener_conexion") as abrir:
-        db.obtener_conexion_lectura()
+    with patch.object(lector, "obtener_conexion") as abrir:
+        lector.obtener_conexion_lectura()
         abrir.assert_called_once_with(
             usuario="agent_lector",
             dsn="dsn-reader",
@@ -395,9 +423,8 @@ def test_lector_usa_su_usuario_y_secreto(monkeypatch):
 
 def test_password_se_conserva_exacta_y_no_se_imprime():
     cliente = Mock()
-    cliente.get_secret_bundle.return_value.data.secret_bundle_content.content = base64.b64encode(
-        b" password ficticia "
-    ).decode()
+    contenido = cliente.get_secret_bundle.return_value.data.secret_bundle_content
+    contenido.content = base64.b64encode(b" password ficticia ").decode()
     assert (
         db.obtener_secreto_vault("secret-test", cliente=cliente)
         == " password ficticia "
@@ -406,9 +433,8 @@ def test_password_se_conserva_exacta_y_no_se_imprime():
 
 def test_conexion_inyecta_password_sin_normalizar():
     cliente = Mock()
-    cliente.get_secret_bundle.return_value.data.secret_bundle_content.content = base64.b64encode(
-        b" ficticia "
-    ).decode()
+    contenido = cliente.get_secret_bundle.return_value.data.secret_bundle_content
+    contenido.content = base64.b64encode(b" ficticia ").decode()
     db.oracledb.connect.side_effect = None
     db.obtener_conexion(
         usuario="cargador",
@@ -438,6 +464,11 @@ def test_documento_real_generado_por_da():
         ]
     }
     doc = construir_conjunto_consultable(entrega)
+    # La rama de Data de esta base aún emite contenido_corto. El adaptador
+    # explícito no recupera textos ya recortados; la carga final usa la fuente.
+    doc["campos"] = list(db.CAMPOS_CONJUNTO)
+    for registro in doc["registros"]:
+        registro["contenido_textual"] = registro.pop("contenido_corto")
     con = Conexion()
     cargar(doc, con)
-    assert db.leer_conjunto(conexion=con) == doc
+    assert lector.leer_conjunto(conexion=con) == doc

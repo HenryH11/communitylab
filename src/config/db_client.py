@@ -138,7 +138,10 @@ def obtener_conexion_lectura() -> oracledb.Connection:
         raise ValueError(
             "configura DB_READ_USER y DB_READ_PASSWORD_SECRET_OCID"
         )
-    if escritor and usuario.upper() == escritor.upper():
+    usuarios_escritores = {"RW_INGEST_COMMUNITYLAB", "AGENT_COMMUNITYLAB"}
+    if escritor:
+        usuarios_escritores.add(escritor.upper())
+    if usuario.upper() in usuarios_escritores:
         raise ValueError(
             "configura un DB_READ_USER distinto al usuario de escritura"
         )

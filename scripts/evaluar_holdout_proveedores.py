@@ -274,7 +274,7 @@ def ejecutar_corrida(
                 "tiempos_lote_s": tiempos,
             },
             ensure_ascii=False,
-            indent=2,
+            indent=4,
         ),
         encoding="utf-8",
     )
@@ -516,7 +516,7 @@ def main() -> None:
     args.salida.mkdir(parents=True, exist_ok=True)
     ruta_resumen = args.salida / "resumen_holdout_final.json"
     ruta_resumen.write_text(
-        json.dumps(resumen, ensure_ascii=False, indent=2),
+        json.dumps(resumen, ensure_ascii=False, indent=4),
         encoding="utf-8",
     )
 

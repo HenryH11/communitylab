@@ -47,4 +47,4 @@ for m in sorted(chat_candidates):
 print(f"\nTotal accessible: {len(accessible)}")
 with open("salida/experimentos/modelos_nvidia_accesibles.json", "w", encoding="utf-8") as f:
     import json
-    json.dump(accessible, f, indent=2)
+    json.dump(accessible, f, indent=4)

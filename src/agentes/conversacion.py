@@ -3,14 +3,14 @@
 from collections import Counter, defaultdict
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, replace
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from functools import lru_cache
 import json
 import re
-from typing import Literal
+from typing import Any, Literal
 import unicodedata
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from src.agentes.configuracion_ia import (
     PROVEEDOR_GEMINI,
@@ -21,7 +21,9 @@ from src.agentes.modelo_ia import (
     invocar_modelo_con_fallback,
     obtener_modelo_generacion_estructurado,
 )
+from src.agentes.interpretacion import ErrorInterpretacion, PlanConsulta, interpretar_consulta
 from src.agentes.observabilidad import config_ejecucion
+from src.agentes.plataformas import PlataformaPublicacion
 from src.agentes.prompts.conversacion import prompt_conversacion
 from src.agentes.prompts.verificacion import prompt_verificacion
 
@@ -36,133 +38,32 @@ LIMITE_CARACTERES_X = 280
 MAX_HISTORIAL = 6
 MAX_CARACTERES_CONSULTA = 1_000
 MAX_CARACTERES_MENSAJE = 1_200
+TEMPERATURA_MINIMA = 0.0
+TEMPERATURA_MAXIMA = 1.0
+TOP_P_MINIMO = 0.1
+TOP_P_MAXIMO = 1.0
+
+# Estilos de redacción para borradores: (temperatura, top_p).
+ESTILOS_REDACCION: dict[str, tuple[float, float]] = {
+    "preciso": (0.0, 1.0),
+    "equilibrado": (0.4, 0.9),
+    "creativo": (0.8, 0.95),
+}
+MODELOS_RESPUESTA = {
+    "super": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "lightning": "nvidia/nemotron-3.5-lightning-30b-a3b",
+}
 
 ModoVerificacion = Literal["prompt_estricto", "verificacion_automatica"]
 
-_PALABRAS_VACIAS = frozenset(
-    """
-    a al algo ante aqui asi con como cual cuales cuando cuanto de del desde
-    donde dos e el ella en entre era es esa ese eso esta este esto fue ha hay
-    la las le les lo los mas me mi muy no nos o para pero por porque que quien
-    se si sin sobre su sus te tiene un una uno y ya the a an and are as at be
-    by for from how i in is it of on or that the this to was were what when
-    where which with about show find tell me please
-    los las una unos unas del al eso esa este esta post posts publicacion
-    publicaciones mensaje mensajes comunidad datos dato mensajes
-    opiniones opinion cuantos cuantas hubo resumen sentimiento sentimientos
-    escribe escribir crea crear genera generar redacta redactar prepara preparar
-    hazme haz write create draft positive positives negative negatives neutral
-    neutrals sentiment yesterday today last week days past very highly
-    ultimo ultimos ultima ultimas ayer hoy semana dias
-    analytics analysis distribution count counts many happened topic topics
-    frequent frecuencia distribución analitica analiticas cuantos cuantas
-    which were top most common comunes principales dominante predominante
-    theme themes topics tema temas qué cuál cuales cual
-    tenemos tengo tienen hay habia dame dime muestra muestrame mostrar ver
-    quiero queria necesito lista listar puedes podrias usando basado basada
-    basados basadas give list need want using based
-    solo unicamente exclusivamente puro puros pura puras nada todo todos toda
-    todas algun alguno alguna algunos algunas otro otra otros otras
-    we wey guey oye mira porfa porfavor favor plis pls bro
-    recibimos recibido recibidos recibieron llegaron llego dejaron mandaron
-    escribieron enviaron hicieron dijeron
-    mejor mejores top best destacado destacados destacada destacadas
-    favorito favoritos favorita favoritas primeros primeras principales ejemplos
-    """.split()
-)
 _SENTIMIENTOS_INCLUIDOS = {
     "positivo": frozenset({"positivo", "muy_positivo"}),
     "negativo": frozenset({"negativo", "muy_negativo"}),
 }
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
 
-_SINONIMOS_SENTIMIENTO = {
-    "muy_positivo": (
-        "muy positivo", "muy positiva", "muy positivos", "muy positivas",
-        "very positive", "highly positive",
-    ),
-    "positivo": ("positivo", "positiva", "positivos", "positivas", "positive", "positives"),
-    "neutral": ("neutral", "neutro", "neutra", "neutrales", "neutrals"),
-    "negativo": ("negativo", "negativa", "negativos", "negativas", "negative", "negatives"),
-    "muy_negativo": (
-        "muy negativo", "muy negativa", "muy negativos", "muy negativas",
-        "very negative", "highly negative",
-    ),
-}
-_SINONIMOS_TIPO = {
-    "testimonio": ("testimonio", "testimonios", "experiencia", "experiencias", "testimonial", "testimonials"),
-    "pregunta_tecnica": (
-        "pregunta técnica", "preguntas técnicas", "duda técnica", "dudas técnicas",
-        "technical question", "technical questions",
-    ),
-    "pregunta_programa": (
-        "pregunta del programa", "preguntas del programa", "program question",
-        "program questions",
-    ),
-    "feedback": ("feedback", "retroalimentación", "sugerencia", "sugerencias"),
-    "comentario": ("comentario general", "comentarios generales"),
-}
-# «Mejores», «top» o «destacados» piden lo más positivo, priorizando muy_positivo.
-_SOLICITUD_MEJORES = re.compile(
-    r"\b(?:mejor|mejores|top|best|destacad[oa]s?|favorit[oa]s?)\b",
-    re.IGNORECASE,
-)
-_CANTIDAD_SOLICITADA = re.compile(
-    r"\b(?:top\s+(\d{1,3})|(\d{1,3})\s+(?:mejores|primeros|primeras|principales|"
-    r"mensajes|comentarios|testimonios|opiniones|resenas|ejemplos|posts|best))\b",
-    re.IGNORECASE,
-)
-_PLATAFORMAS = {
-    "linkedin": ("linkedin",),
-    "instagram": ("instagram",),
-    "x": ("twitter", "x"),
-}
-_VERBOS_BORRADOR = (
-    r"(?:haz|crea|crear|genera|generar|redacta|redactar|escribe|escribir|"
-    r"prepara|preparar|convierte|convertir|adapta|adaptar|transforma|transformar)"
-)
-_SOLICITUD_BORRADOR = re.compile(
-    rf"\b{_VERBOS_BORRADOR}(?:me|nos)?(?:lo|la|los|las)?\b|"
-    r"\b(?:draft me|write me|create me)\b|"
-    # "dame un post", "quiero una publicación": pedir la pieza sin verbo de redacción.
-    r"\b(?:dame|danos|regalame|quiero|queremos|necesito|necesitamos|propon|"
-    r"proponme|sugiere|sugiereme|me das|me puedes dar|give me|i need|i want)\b"
-    r".{0,40}\b(?:post|posts|publicacion|publicaciones|borrador|tweet|tuit|"
-    r"caption|copy|hilo|carrusel|reel|thread)\b",
-    re.IGNORECASE,
-)
-_SEGUIMIENTO = re.compile(
-    r"^\W*(?:y|tambien|ahora|solo|que tal|and|also|what about|only)\b|"
-    rf"\b{_VERBOS_BORRADOR}(?:me|nos)?(?:lo|la|los|las)\b|"
-    r"\b(?:eso|esos|esa|esas|lo anterior|los mismos|las mismas|those|them)\b",
-    re.IGNORECASE,
-)
-_VERBOS_CODIGO = (
-    r"(?:write|create|build|debug|fix|program|give me|"
-    r"(?:escribe|crea|construye|depura|corrige|programa|haz|genera|dame|"
-    r"arma|desarrolla|implementa)(?:me|nos)?)"
-)
-_OBJETOS_CODIGO = (
-    r"(?:code|codigo|script|function|funcion|app|application|api|query|"
-    r"queries|regex|scraper|endpoint)"
-)
-_SOLICITUD_CODIGO = re.compile(
-    rf"\b{_VERBOS_CODIGO}\b.{{0,50}}\b{_OBJETOS_CODIGO}\b|"
-    rf"\b{_OBJETOS_CODIGO}\b.{{0,50}}\b{_VERBOS_CODIGO}\b|"
-    # Ataques o abuso de sistemas: fuera de alcance en cualquier redacción.
-    r"\b(?:inyeccion|inyector|injection|injector|exploit|exploits|malware|"
-    r"ransomware|keylogger|phishing|ddos|backdoor|hackear|hackeo|hacking)\b",
-    re.IGNORECASE,
-)
-_SOLICITUD_ACTUALIDAD_EXTERNA = re.compile(
-    r"\b(?:who is|current|latest|quien es|actual|actualmente|hoy|ahora)\b"
-    r".{0,50}\b(?:president|presidente|election|eleccion|politic|politica)\b",
-    re.IGNORECASE,
-)
-
-
 class BorradorMarketing(BaseModel):
-    plataforma: Literal["linkedin", "instagram", "x"]
+    plataforma: PlataformaPublicacion
     titulo: str = Field(min_length=1, max_length=180)
     contenido: str = Field(min_length=1, max_length=5_000)
     hashtags: list[str] = Field(min_length=3, max_length=8)
@@ -177,7 +78,13 @@ class BorradorMarketing(BaseModel):
 
 class SalidaConversacional(BaseModel):
     respuesta: str = Field(min_length=1, max_length=4_000)
-    citas: list[str] = Field(min_length=1, max_length=MAX_EVIDENCIA_LISTADO)
+    citas: list[str] = Field(
+        min_length=1, max_length=MAX_EVIDENCIA_LISTADO,
+        description=(
+            "Solo IDs exactos de la evidencia, por ejemplo msg-1. "
+            "Nunca textos citados, autores ni explicaciones."
+        ),
+    )
     borrador: BorradorMarketing | None = None
 
 
@@ -201,6 +108,7 @@ class FiltrosConsulta:
     plataforma: str | None = None
     intencion: Literal["consulta", "borrador"] = "consulta"
     cantidad: int | None = None
+    canal: str | None = None
 
 
 def _normalizar(texto: str) -> str:
@@ -211,121 +119,8 @@ def _normalizar(texto: str) -> str:
     ).replace("_", " ")
 
 
-def _coincide_frase(texto: str, frases: tuple[str, ...]) -> bool:
-    normalizado = _normalizar(texto)
-    return any(_normalizar(frase) in normalizado for frase in frases)
-
-
-def _parsear_filtros(
-    consulta: str,
-    hoy: date,
-    *,
-    plataforma_por_defecto: bool = True,
-) -> FiltrosConsulta:
-    normalizada = _normalizar(consulta)
-    sentimiento = next(
-        (
-            clave
-            for clave, sinonimos in _SINONIMOS_SENTIMIENTO.items()
-            if _coincide_frase(normalizada, sinonimos)
-        ),
-        None,
-    )
-    tipo = next(
-        (
-            clave
-            for clave, sinonimos in _SINONIMOS_TIPO.items()
-            if _coincide_frase(normalizada, sinonimos)
-        ),
-        None,
-    )
-    plataforma = next(
-        (
-            clave
-            for clave, sinonimos in _PLATAFORMAS.items()
-            if any(
-                re.search(r"\bx\b", normalizada)
-                if sinonimo == "x"
-                else _coincide_frase(normalizada, (sinonimo,))
-                for sinonimo in sinonimos
-            )
-        ),
-        None,
-    )
-
-    desde = hasta = None
-    if re.search(r"\bayer\b", normalizada):
-        desde = hasta = hoy - timedelta(days=1)
-    elif re.search(r"\b(?:hoy|today)\b", normalizada):
-        desde = hasta = hoy
-    elif re.search(r"\b(?:semana pasada|la semana anterior|last week)\b", normalizada):
-        inicio_semana = hoy - timedelta(days=hoy.weekday())
-        desde = inicio_semana - timedelta(days=7)
-        hasta = inicio_semana - timedelta(days=1)
-    elif re.search(r"\b(?:ultimos? 7 dias|ultima semana|last 7 days|past week)\b", normalizada):
-        desde = hoy - timedelta(days=6)
-        hasta = hoy
-    else:
-        dias = re.search(r"\b(?:ultimos?|last)\s+(\d{1,3})\s+dias?\b", normalizada)
-        if dias:
-            cantidad = int(dias.group(1))
-            if 1 <= cantidad <= 365:
-                desde = hoy - timedelta(days=cantidad - 1)
-                hasta = hoy
-
-    if sentimiento is None and _SOLICITUD_MEJORES.search(normalizada):
-        sentimiento = "positivo"
-    cantidad_pedida = _CANTIDAD_SOLICITADA.search(normalizada)
-    cantidad = (
-        int(cantidad_pedida.group(1) or cantidad_pedida.group(2))
-        if cantidad_pedida
-        else None
-    )
-
-    return FiltrosConsulta(
-        sentimiento=sentimiento,
-        tipo_detectado=tipo,
-        fecha_desde=desde,
-        fecha_hasta=hasta,
-        plataforma=(
-            plataforma
-            or (
-                "linkedin"
-                if plataforma_por_defecto and _SOLICITUD_BORRADOR.search(normalizada)
-                else None
-            )
-        ),
-        intencion="borrador" if _SOLICITUD_BORRADOR.search(normalizada) else "consulta",
-        cantidad=cantidad if cantidad and cantidad > 0 else None,
-    )
-
-
 def _tokens(texto: str) -> set[str]:
-    return {
-        token
-        for token in _TOKEN.findall(_normalizar(texto))
-        if token not in _PALABRAS_VACIAS and len(token) > 1
-    }
-
-
-_TERMINOS_FILTRO = frozenset(
-    token
-    for grupo in (
-        *_SINONIMOS_SENTIMIENTO.values(),
-        *_SINONIMOS_TIPO.values(),
-        *_PLATAFORMAS.values(),
-    )
-    for frase in grupo
-    for token in _TOKEN.findall(_normalizar(frase))
-) | frozenset(
-    """
-    ayer hoy today yesterday semana pasada anterior last week ultimos dias
-    pregunta preguntas tecnica tecnicas duda dudas testimonio testimonios
-    experiencia experiencias feedback retroalimentacion sugerencia sugerencias
-    comentario comentarios
-    """
-    .split()
-)
+    return set(_TOKEN.findall(_normalizar(texto)))
 
 
 def _fecha_mensaje(valor: object) -> date | None:
@@ -437,13 +232,29 @@ class AgenteConversacional:
         *,
         generador: Callable[..., SalidaConversacional | dict] | None = None,
         verificador: Callable[..., SalidaVerificacion | dict] | None = None,
+        interprete: Callable[..., PlanConsulta | dict] | None = None,
     ):
         self._mensajes = _extraer_mensajes(datos_procesados)
         self._generador = generador
         self._verificador = verificador
+        self._interprete = interprete
         self._historial: list[dict[str, str]] = []
-        self._ultimos_filtros: FiltrosConsulta | None = None
-        self._ultima_busqueda = ""
+        self._ultimo_plan: PlanConsulta | None = None
+        self._indexar()
+
+    def actualizar_datos(self, datos_procesados: object) -> None:
+        """Cambia los mensajes consultables sin perder la conversación en curso."""
+        self._mensajes = _extraer_mensajes(datos_procesados)
+        self._indexar()
+
+    def _indexar(self) -> None:
+        self._vocabulario = {
+            campo: sorted({
+                mensaje[campo][:MAX_CARACTERES_METADATO]
+                for mensaje in self._mensajes if mensaje[campo]
+            })[:32]
+            for campo in ("sentimiento", "tipo_detectado", "canal")
+        }
         self._indice_invertido: dict[str, set[int]] = defaultdict(set)
         for indice, mensaje in enumerate(self._mensajes):
             documento = _tokens(
@@ -474,27 +285,46 @@ class AgenteConversacional:
         *,
         hoy: date | None = None,
         modo_verificacion: ModoVerificacion = "prompt_estricto",
+        temperatura: float | None = None,
+        top_p: float | None = None,
+        modelo_respuesta: str | None = None,
     ) -> dict:
+        """Responde una consulta sobre los datos procesados.
+
+        `temperatura` y `top_p` ajustan la creatividad de la redacción y solo se
+        aplican a borradores; los análisis y conteos siempre son deterministas.
+        """
         if not isinstance(consulta, str) or not consulta.strip():
             raise ValueError("Escribe una consulta para el agente.")
+        if modelo_respuesta is not None and modelo_respuesta not in MODELOS_RESPUESTA:
+            raise ValueError("El modelo de respuesta seleccionado no es válido.")
         if modo_verificacion not in {
             "prompt_estricto",
             "verificacion_automatica",
         }:
             raise ValueError("El modo de verificación seleccionado no es válido.")
+        if temperatura is not None and not (
+            TEMPERATURA_MINIMA <= temperatura <= TEMPERATURA_MAXIMA
+        ):
+            raise ValueError(
+                f"La temperatura debe estar entre {TEMPERATURA_MINIMA} y "
+                f"{TEMPERATURA_MAXIMA}."
+            )
+        if top_p is not None and not (TOP_P_MINIMO <= top_p <= TOP_P_MAXIMO):
+            raise ValueError(
+                f"El top_p debe estar entre {TOP_P_MINIMO} y {TOP_P_MAXIMO}."
+            )
         consulta = consulta.strip()
         if len(consulta) > MAX_CARACTERES_CONSULTA:
             raise ValueError(
                 f"La consulta no puede superar {MAX_CARACTERES_CONSULTA} caracteres."
             )
 
-        normalizada = _normalizar(consulta)
-        if _SOLICITUD_CODIGO.search(normalizada) or _SOLICITUD_ACTUALIDAD_EXTERNA.search(normalizada):
-            respuesta = (
-                "Este agente se limita a explorar los datos de la comunidad y "
-                "preparar borradores de marketing basados en esos datos. "
-                "Reformula la solicitud dentro de ese alcance."
-            )
+        hoy = hoy or datetime.now(timezone.utc).date()
+        plan = self._interpretar(consulta, hoy)
+        intencion = plan.intencion
+        if intencion != "consulta" and intencion != "borrador":
+            respuesta = plan.respuesta
             salida = {
                 "respuesta": respuesta,
                 "citas": [],
@@ -502,42 +332,29 @@ class AgenteConversacional:
                 "total_coincidencias": 0,
                 "resumen": {},
                 "filtros": _filtros_a_dict(FiltrosConsulta()),
-                "modo": "fuera_de_alcance",
+                "modo": plan.intencion,
                 "verificacion": {
                     "modo": modo_verificacion,
                     "estado": "no_aplica",
-                    "resumen": "La solicitud está fuera del alcance del agente.",
+                    "resumen": "Esta interacción no requiere consultar los mensajes.",
                     "afirmaciones": [],
                 },
             }
             self._guardar_turno(consulta, respuesta)
             return salida
 
-        hoy = hoy or datetime.now(timezone.utc).date()
-        anteriores = self._ultimos_filtros
-        es_seguimiento = anteriores is not None and bool(
-            _SEGUIMIENTO.search(normalizada)
+        filtros = FiltrosConsulta(
+            sentimiento=plan.sentimiento,
+            tipo_detectado=plan.tipo_detectado,
+            canal=plan.canal,
+            fecha_desde=plan.fecha_desde,
+            fecha_hasta=plan.fecha_hasta,
+            plataforma=plan.plataforma,
+            intencion=intencion,
+            cantidad=plan.cantidad,
         )
-        filtros = _parsear_filtros(
-            consulta,
-            hoy,
-            plataforma_por_defecto=not es_seguimiento,
-        )
-        consulta_busqueda = consulta
-        if es_seguimiento and anteriores is not None:
-            consulta_busqueda = " ".join(
-                [self._ultima_busqueda]
-                + [
-                    termino
-                    for termino in _tokens(consulta)
-                    if termino in self._indice_invertido
-                ]
-            )
-            filtros = _heredar_filtros(filtros, anteriores)
-            if filtros.intencion == "borrador" and filtros.plataforma is None:
-                filtros = replace(filtros, plataforma="linkedin")
-        self._ultimos_filtros = filtros
-        self._ultima_busqueda = consulta_busqueda
+        consulta_busqueda = " ".join(plan.terminos)
+        self._ultimo_plan = plan
 
         encontrados = self._buscar(consulta_busqueda, filtros)
         hubo_no_elegibles = False
@@ -576,11 +393,19 @@ class AgenteConversacional:
 
         resumen = _resumir(encontrados, filtros)
         evidencia = encontrados[:_limite_evidencia(filtros)]
+        muestreo: dict[str, Any] = (
+            {"temperatura": temperatura, "top_p": top_p}
+            if filtros.intencion == "borrador"
+            else {}
+        )
+        if modelo_respuesta is not None:
+            muestreo["modelo"] = MODELOS_RESPUESTA[modelo_respuesta]
         salida_modelo = self._generar(
             consulta=consulta,
             filtros=filtros,
             resumen=resumen,
             evidencia=_evidencia_acotada(evidencia),
+            **muestreo,
         )
         borrador_modelo = salida_modelo.borrador
         if (
@@ -600,6 +425,7 @@ class AgenteConversacional:
                 filtros=filtros,
                 resumen=resumen,
                 evidencia=_evidencia_acotada(evidencia),
+                **muestreo,
             )
         ids_evidencia = {mensaje["id"] for mensaje in evidencia}
         if any(cita not in ids_evidencia for cita in salida_modelo.citas):
@@ -652,19 +478,30 @@ class AgenteConversacional:
         self._guardar_turno(consulta, respuesta, borrador)
         return salida
 
-    def _terminos_busqueda(self, consulta: str) -> set[str]:
-        return {
-            termino
-            for termino in _tokens(consulta) - _TERMINOS_FILTRO
-            if not termino.isdecimal() and not _SOLICITUD_BORRADOR.fullmatch(termino)
-        }
+    def _interpretar(self, consulta: str, hoy: date) -> PlanConsulta:
+        resultado = (self._interprete or interpretar_consulta)(
+            consulta=consulta,
+            hoy=hoy,
+            historial=self.historial[-MAX_HISTORIAL:],
+            consulta_anterior=(
+                self._ultimo_plan.model_dump(mode="json")
+                if self._ultimo_plan is not None else None
+            ),
+            vocabulario=self._vocabulario,
+        )
+        try:
+            return PlanConsulta.model_validate(resultado)
+        except ValidationError as error:
+            raise ErrorInterpretacion(
+                "No pude interpretar la solicitud de forma fiable. Intenta reformularla."
+            ) from error
 
     def _buscar(
         self,
         consulta: str,
         filtros: FiltrosConsulta,
     ) -> list[dict]:
-        terminos = self._terminos_busqueda(consulta)
+        terminos = _tokens(consulta)
         puntajes: Counter[int] = Counter()
         for termino in terminos:
             for indice in self._indice_invertido.get(termino, ()):
@@ -687,6 +524,8 @@ class AgenteConversacional:
             if filtros.sentimiento and _normalizar(mensaje["sentimiento"]) not in sentimientos_validos:
                 continue
             if filtros.tipo_detectado and _normalizar(mensaje["tipo_detectado"]) != _normalizar(filtros.tipo_detectado):
+                continue
+            if filtros.canal and _normalizar(mensaje["canal"]) != _normalizar(filtros.canal):
                 continue
             fecha = _fecha_mensaje(mensaje["fecha"])
             if filtros.fecha_desde and (fecha is None or fecha < filtros.fecha_desde):
@@ -712,7 +551,7 @@ class AgenteConversacional:
         hubo_no_elegibles: bool,
     ) -> str:
         motivos = []
-        terminos = self._terminos_busqueda(consulta_busqueda)
+        terminos = _tokens(consulta_busqueda)
         sin_aparicion = sorted(t for t in terminos if t not in self._indice_invertido)
         if terminos and len(sin_aparicion) == len(terminos):
             motivos.append(
@@ -728,6 +567,10 @@ class AgenteConversacional:
             total = len(self._buscar("", replace(sin_filtros_texto, tipo_detectado=filtros.tipo_detectado)))
             if total == 0:
                 motivos.append(f"no hay mensajes de tipo {filtros.tipo_detectado}")
+        if filtros.canal:
+            total = len(self._buscar("", replace(sin_filtros_texto, canal=filtros.canal)))
+            if total == 0:
+                motivos.append(f"no hay mensajes del canal {filtros.canal}")
         if filtros.fecha_desde or filtros.fecha_hasta:
             if not any(_fecha_mensaje(m["fecha"]) for m in self._mensajes):
                 motivos.append("estos datos no tienen fechas, así que no puedo filtrar por período")
@@ -762,6 +605,9 @@ class AgenteConversacional:
         filtros: FiltrosConsulta,
         resumen: dict,
         evidencia: list[dict],
+        temperatura: float | None = None,
+        top_p: float | None = None,
+        modelo: str | None = None,
     ) -> SalidaConversacional:
         if self._generador is not None:
             resultado = self._generador(
@@ -789,20 +635,20 @@ class AgenteConversacional:
                 ensure_ascii=False,
             ),
         }
-        proveedor = obtener_proveedor_generacion()
-        cadena = _obtener_cadena(proveedor)
+        proveedor = PROVEEDOR_NVIDIA_NIM if modelo else obtener_proveedor_generacion()
+        seleccion = {"modelo_id": modelo} if modelo else {}
         config = config_ejecucion(
             "agente_conversacional",
             intento=1,
             ruta="conversacion",
         )
         if proveedor == PROVEEDOR_NVIDIA_NIM:
-            primario = lambda valor: _obtener_cadena(PROVEEDOR_NVIDIA_NIM).invoke(
-                valor, config=config
-            )
-            respaldo = lambda valor: _obtener_cadena(PROVEEDOR_GEMINI).invoke(
-                valor, config=config
-            )
+            primario = lambda valor: _obtener_cadena(
+                PROVEEDOR_NVIDIA_NIM, temperatura, top_p, **seleccion
+            ).invoke(valor, config=config)
+            respaldo = lambda valor: _obtener_cadena(
+                PROVEEDOR_GEMINI, temperatura, top_p
+            ).invoke(valor, config=config)
             primario.__name__ = PROVEEDOR_NVIDIA_NIM
             respaldo.__name__ = PROVEEDOR_GEMINI
             resultado = invocar_modelo_con_fallback(
@@ -811,7 +657,9 @@ class AgenteConversacional:
                 respaldo=respaldo,
             )["resultado"]
         else:
-            resultado = cadena.invoke(entrada, config=config)
+            resultado = _obtener_cadena(proveedor, temperatura, top_p).invoke(
+                entrada, config=config
+            )
         return SalidaConversacional.model_validate(resultado)
 
     def _verificar(
@@ -880,22 +728,6 @@ class AgenteConversacional:
             ]
         )
         del self._historial[:-MAX_HISTORIAL * 2]
-
-
-def _heredar_filtros(actual: FiltrosConsulta, anterior: FiltrosConsulta) -> FiltrosConsulta:
-    return FiltrosConsulta(
-        sentimiento=actual.sentimiento or anterior.sentimiento,
-        tipo_detectado=actual.tipo_detectado or anterior.tipo_detectado,
-        fecha_desde=actual.fecha_desde or anterior.fecha_desde,
-        fecha_hasta=actual.fecha_hasta or anterior.fecha_hasta,
-        plataforma=actual.plataforma or anterior.plataforma,
-        intencion=(
-            actual.intencion
-            if actual.intencion == "borrador"
-            else anterior.intencion
-        ),
-        cantidad=actual.cantidad or anterior.cantidad,
-    )
 
 
 def _filtros_a_dict(filtros: FiltrosConsulta) -> dict:
@@ -986,19 +818,31 @@ def _resumir(mensajes: list[dict], filtros: FiltrosConsulta) -> dict:
 
 
 def _limite_evidencia(filtros: FiltrosConsulta) -> int:
+    limite = min(filtros.cantidad, MAX_EVIDENCIA_LISTADO) if filtros.cantidad else MAX_COINCIDENCIAS
     if filtros.intencion == "borrador" and filtros.plataforma == "x":
-        return MAX_EVIDENCIA_X
-    if filtros.intencion == "consulta" and filtros.cantidad:
-        return min(filtros.cantidad, MAX_EVIDENCIA_LISTADO)
-    return MAX_COINCIDENCIAS
+        return min(limite, MAX_EVIDENCIA_X)
+    return limite
 
 
-@lru_cache(maxsize=4)
-def _obtener_cadena(proveedor: str):
+@lru_cache(maxsize=32)
+def _obtener_cadena(
+    proveedor: str,
+    temperatura: float | None = None,
+    top_p: float | None = None,
+    modelo_id: str | None = None,
+):
+    muestreo: dict[str, Any] = {
+        clave: valor
+        for clave, valor in (("temperatura", temperatura), ("top_p", top_p))
+        if valor is not None
+    }
+    if modelo_id is not None:
+        muestreo["modelo"] = modelo_id
     modelo = obtener_modelo_generacion_estructurado(
         SalidaConversacional,
         proveedor=proveedor,
         ruta="conversacion",
+        **muestreo,
     )
     return prompt_conversacion | modelo
 

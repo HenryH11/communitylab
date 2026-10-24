@@ -1,0 +1,137 @@
+"""Plan semántico de una petición antes de consultar los datos de la sesión."""
+
+from datetime import date
+from functools import lru_cache
+import json
+from typing import Literal
+
+from langchain_core.exceptions import OutputParserException
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+
+from src.agentes.configuracion_ia import (
+    PROVEEDOR_GEMINI,
+    PROVEEDOR_NVIDIA_NIM,
+    obtener_modelo_nvidia_interpretacion,
+    obtener_proveedor_generacion,
+)
+from src.agentes.modelo_ia import (
+    invocar_modelo_con_fallback,
+    obtener_modelo_generacion_estructurado,
+)
+from src.agentes.observabilidad import config_ejecucion
+from src.agentes.plataformas import PlataformaPublicacion
+from src.agentes.prompts.interpretacion import prompt_interpretacion
+
+
+class ErrorInterpretacion(RuntimeError):
+    """La respuesta del intérprete no cumple el contrato de búsqueda."""
+
+
+class PlanConsulta(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    intencion: Literal[
+        "consulta", "borrador", "conversacion", "aclaracion", "fuera_de_alcance"
+    ]
+    terminos: list[str] = Field(
+        default_factory=list, max_length=12,
+        description="Solo temas de búsqueda. Sin saludos, instrucciones ni filtros.",
+    )
+    sentimiento: Literal[
+        "positivo", "muy_positivo", "neutral", "negativo", "muy_negativo"
+    ] | None = Field(
+        default=None,
+        description=(
+            "positivo incluye muy_positivo. Top o mejores usa positivo, no "
+            "muy_positivo, salvo que el usuario pida explícitamente muy positivos."
+        ),
+    )
+    tipo_detectado: str | None = Field(default=None, max_length=250)
+    canal: str | None = Field(default=None, max_length=250)
+    fecha_desde: date | None = None
+    fecha_hasta: date | None = None
+    plataforma: PlataformaPublicacion | None = None
+    cantidad: int | None = Field(default=None, ge=1, le=1_000, strict=True)
+    respuesta: str = Field(default="", max_length=1_200)
+
+    @model_validator(mode="after")
+    def validar_plan(self) -> "PlanConsulta":
+        self.terminos = [termino.strip() for termino in self.terminos]
+        if any(not termino or len(termino) > 120 for termino in self.terminos):
+            raise ValueError("Los términos deben tener entre 1 y 120 caracteres.")
+        if self.fecha_desde and self.fecha_hasta and self.fecha_desde > self.fecha_hasta:
+            raise ValueError("El inicio del período no puede ser posterior al final.")
+        if self.intencion == "borrador" and self.plataforma is None:
+            raise ValueError("Un borrador requiere una plataforma.")
+        if self.intencion not in {"consulta", "borrador"}:
+            if not self.respuesta.strip():
+                raise ValueError("Una interacción sin búsqueda requiere una respuesta.")
+            if self.terminos or any(
+                valor is not None
+                for valor in (
+                    self.sentimiento, self.tipo_detectado, self.canal,
+                    self.fecha_desde, self.fecha_hasta, self.plataforma, self.cantidad,
+                )
+            ):
+                raise ValueError("Una interacción sin búsqueda no puede incluir filtros.")
+        return self
+
+
+@lru_cache(maxsize=4)
+def _obtener_cadena_interpretacion(proveedor: str):
+    modelo = obtener_modelo_generacion_estructurado(
+        PlanConsulta,
+        proveedor=proveedor,
+        ruta="conversacion",
+        temperatura=0.0,
+        modelo=(
+            obtener_modelo_nvidia_interpretacion()
+            if proveedor == PROVEEDOR_NVIDIA_NIM else None
+        ),
+    )
+    return prompt_interpretacion | modelo
+
+
+def interpretar_consulta(
+    *,
+    consulta: str,
+    hoy: date,
+    historial: list[dict[str, str]],
+    consulta_anterior: dict | None,
+    vocabulario: dict[str, list[str]],
+) -> PlanConsulta:
+    entrada = {
+        "consulta": consulta,
+        "hoy": hoy.isoformat(),
+        "historial": json.dumps(historial, ensure_ascii=False),
+        "consulta_anterior": json.dumps(consulta_anterior, ensure_ascii=False),
+        "vocabulario": json.dumps(vocabulario, ensure_ascii=False),
+    }
+    proveedor = obtener_proveedor_generacion()
+    config = config_ejecucion("interpretar_consulta", intento=1, ruta="conversacion")
+    try:
+        if proveedor == PROVEEDOR_NVIDIA_NIM:
+            def primario(valor):
+                return _obtener_cadena_interpretacion(PROVEEDOR_NVIDIA_NIM).invoke(
+                    valor, config=config
+                )
+
+            def respaldo(valor):
+                return _obtener_cadena_interpretacion(PROVEEDOR_GEMINI).invoke(
+                    valor, config=config
+                )
+
+            primario.__name__ = PROVEEDOR_NVIDIA_NIM
+            respaldo.__name__ = PROVEEDOR_GEMINI
+            resultado = invocar_modelo_con_fallback(
+                entrada, primario=primario, respaldo=respaldo
+            )["resultado"]
+        else:
+            resultado = _obtener_cadena_interpretacion(proveedor).invoke(
+                entrada, config=config
+            )
+        return PlanConsulta.model_validate(resultado)
+    except (ValidationError, OutputParserException) as error:
+        raise ErrorInterpretacion(
+            "No pude interpretar la solicitud de forma fiable. Intenta reformularla."
+        ) from error

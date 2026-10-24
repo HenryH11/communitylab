@@ -1,5 +1,7 @@
 """Fachada de acceso a proveedores de modelos de IA."""
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from src.agentes.fallback_ia import (
@@ -82,27 +84,26 @@ def _obtener_modelo_estructurado(
     *,
     proveedor: str,
     modelo: str | None = None,
+    temperatura: float | None = None,
+    top_p: float | None = None,
 ):
     """Obtiene un modelo estructurado del proveedor indicado."""
-    if proveedor == PROVEEDOR_GEMINI:
-        if modelo is not None:
-            return obtener_modelo_gemini_estructurado(
-                esquema,
-                modelo=modelo,
-            )
-        return obtener_modelo_gemini_estructurado(
-            esquema
+    # Solo se reenvían los parámetros indicados para no romper adaptadores
+    # que no aceptan muestreo.
+    extras: dict[str, Any] = {
+        clave: valor
+        for clave, valor in (
+            ("modelo", modelo),
+            ("temperatura", temperatura),
+            ("top_p", top_p),
         )
+        if valor is not None
+    }
+    if proveedor == PROVEEDOR_GEMINI:
+        return obtener_modelo_gemini_estructurado(esquema, **extras)
 
     if proveedor == PROVEEDOR_NVIDIA_NIM:
-        if modelo is not None:
-            return obtener_modelo_nvidia_estructurado(
-                esquema,
-                modelo=modelo,
-            )
-        return obtener_modelo_nvidia_estructurado(
-            esquema
-        )
+        return obtener_modelo_nvidia_estructurado(esquema, **extras)
 
     raise ValueError(
         f"Proveedor de IA no soportado: {proveedor}"
@@ -115,6 +116,8 @@ def obtener_modelo_generacion_estructurado(
     proveedor: str,
     ruta: str | None = None,
     modelo: str | None = None,
+    temperatura: float | None = None,
+    top_p: float | None = None,
 ):
     """Obtiene el modelo estructurado utilizado por los generadores."""
     modelo_resuelto = modelo
@@ -130,6 +133,8 @@ def obtener_modelo_generacion_estructurado(
         esquema,
         proveedor=proveedor,
         modelo=modelo_resuelto,
+        temperatura=temperatura,
+        top_p=top_p,
     )
 
 

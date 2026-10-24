@@ -20,14 +20,15 @@ from src.agentes.conversacion import (
     ModoVerificacion,
 )
 from src.agentes.observabilidad import LOGGER, configurar_logging
+from src.agentes.interpretacion import ErrorInterpretacion
 
 
 RAIZ_REPOSITORIO = Path(__file__).resolve().parents[1]
 RUTA_DATOS = RAIZ_REPOSITORIO / "docs/evidencia2_entrega_ciencia_datos_completa.json"
 
 NOMBRES_MODO: dict[ModoVerificacion, str] = {
-    "prompt_estricto": "estricto (1 llamada, rápido, sin verificación separada)",
-    "verificacion_automatica": "verificación automática (2 llamadas, revisa cada afirmación)",
+    "prompt_estricto": "estricto (interpreta y responde, sin verificación separada)",
+    "verificacion_automatica": "verificación automática (interpreta, redacta y verifica el borrador)",
 }
 COMANDOS_MODO: dict[str, ModoVerificacion] = {
     "/estricto": "prompt_estricto",
@@ -71,6 +72,8 @@ def _mostrar(salida: dict, detalle: bool) -> None:
 
 
 def _explicar_error(error: Exception) -> str:
+    if isinstance(error, ErrorInterpretacion):
+        return str(error)
     if isinstance(error, ValueError):
         return str(error)
     actual: BaseException | None = error
@@ -113,7 +116,7 @@ def principal() -> int:
     parser.add_argument(
         "--verificar",
         action="store_true",
-        help="Verifica las afirmaciones del borrador con una segunda llamada.",
+        help="Verifica las afirmaciones del borrador con una llamada adicional.",
     )
     parser.add_argument(
         "--datos",

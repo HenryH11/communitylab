@@ -50,9 +50,11 @@ _rate_limiter = InMemoryRateLimiter(
 )
 
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=32)
 def obtener_modelo_gemini(
     modelo: str | None = None,
+    temperatura: float | None = None,
+    top_p: float | None = None,
 ) -> ChatGoogleGenerativeAI:
     """
     Carga las credenciales y crea un cliente configurado.
@@ -72,12 +74,18 @@ def obtener_modelo_gemini(
         )
 
     modelo_id = modelo or obtener_modelo_gemini_id()
+    muestreo = {
+        clave: valor
+        for clave, valor in (("temperature", temperatura), ("top_p", top_p))
+        if valor is not None
+    }
 
     return ChatGoogleGenerativeAI(
         api_key=api_key,
         model=modelo_id,
         rate_limiter=_rate_limiter,
         max_retries=MAX_RETRIES_GEMINI,
+        **muestreo,
     )
 
 
@@ -85,12 +93,19 @@ def obtener_modelo_gemini_estructurado(
     esquema: type[BaseModel],
     *,
     modelo: str | None = None,
+    temperatura: float | None = None,
+    top_p: float | None = None,
 ):
     """Adapta Gemini al contrato estructurado solicitado."""
+    muestreo = {
+        clave: valor
+        for clave, valor in (("temperatura", temperatura), ("top_p", top_p))
+        if valor is not None
+    }
     try:
         cliente_base = (
-            obtener_modelo_gemini(modelo=modelo)
-            if modelo is not None
+            obtener_modelo_gemini(modelo=modelo, **muestreo)
+            if modelo is not None or muestreo
             else obtener_modelo_gemini()
         )
     except TypeError:

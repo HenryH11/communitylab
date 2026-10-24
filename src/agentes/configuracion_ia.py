@@ -22,6 +22,7 @@ VARIABLE_MODELO_GEMINI = "COMMUNITYLAB_MODELO_GEMINI"
 
 
 VARIABLE_MODELO_NVIDIA = "COMMUNITYLAB_MODELO_NVIDIA"
+VARIABLE_MODELO_NVIDIA_INTERPRETACION = "COMMUNITYLAB_MODELO_NVIDIA_INTERPRETACION"
 
 VARIABLE_TIMEOUT_NVIDIA = "COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS"
 
@@ -148,6 +149,17 @@ def obtener_modelo_nvidia_por_ruta(ruta: str | None) -> str:
     """Obtiene el modelo de NVIDIA NIM correspondiente a la ruta según su tier."""
     tier = obtener_tier_por_ruta(ruta)
     return obtener_modelo_nvidia_por_tier(tier)
+
+
+def obtener_modelo_nvidia_interpretacion() -> str:
+    """El intérprete usa Super por defecto, independiente del modelo redactor."""
+    load_dotenv()
+    return (
+        os.getenv(
+            VARIABLE_MODELO_NVIDIA_INTERPRETACION, MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
+        ).strip()
+        or MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
+    )
 
 
 class ConfiguracionTier(TypedDict):

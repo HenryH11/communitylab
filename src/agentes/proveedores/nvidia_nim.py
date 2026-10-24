@@ -34,9 +34,11 @@ def obtener_configuracion_nvidia() -> dict[str, str | int]:
     }
 
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=32)
 def obtener_modelo_nvidia(
     modelo: str | None = None,
+    temperatura: float = 0,
+    top_p: float | None = None,
 ) -> ChatOpenAI:
     """Construye el cliente NVIDIA NIM usando su API OpenAI-compatible."""
     load_dotenv()
@@ -58,14 +60,17 @@ def obtener_modelo_nvidia(
             }
         }
 
+    muestreo: dict[str, Any] = {"top_p": top_p} if top_p is not None else {}
+
     return ChatOpenAI(
         api_key=SecretStr(api_key),
         base_url=NVIDIA_BASE_URL,
         model=modelo_id,
-        temperature=0,
+        temperature=temperatura,
         timeout=obtener_timeout_nvidia(),
         max_retries=MAX_RETRIES_CLIENTE_NVIDIA,
         extra_body=extra_body,
+        **muestreo,
     )
 
 
@@ -131,17 +136,26 @@ def obtener_modelo_nvidia_estructurado(
     esquema: type[BaseModel],
     *,
     modelo: str | None = None,
+    temperatura: float | None = None,
+    top_p: float | None = None,
 ):
     """
     Adapta NVIDIA NIM al contrato estructurado solicitado.
 
     NVIDIA trabaja en JSON mode y recibe explícitamente el
     JSON Schema correspondiente. Pydantic realiza la validación final.
+    `temperatura` y `top_p` solo se envían cuando se indican; si no, el
+    cliente conserva su configuración determinista.
     """
+    muestreo: dict[str, Any] = {}
+    if temperatura is not None:
+        muestreo["temperatura"] = temperatura
+    if top_p is not None:
+        muestreo["top_p"] = top_p
     try:
         cliente_base = (
-            obtener_modelo_nvidia(modelo=modelo)
-            if modelo is not None
+            obtener_modelo_nvidia(modelo=modelo, **muestreo)
+            if modelo is not None or muestreo
             else obtener_modelo_nvidia()
         )
     except TypeError:

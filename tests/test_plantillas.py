@@ -103,21 +103,23 @@ APP = str(Path(__file__).resolve().parents[1] / "src/app/app.py")
 
 
 @con_entorno_ui
-def test_ui_sin_lote_muestra_catalogo_sin_editores():
+def test_ui_sin_lote_muestra_catalogo_sin_editores(monkeypatch):
     from streamlit.testing.v1 import AppTest
 
+    monkeypatch.setenv("COMMUNITYLAB_MODO_INTERNO", "1")
     app = AppTest.from_file(APP, default_timeout=30)
     app.session_state["navegacion_principal"] = "Plantillas"
     app.run()
     assert not app.exception
     assert not app.text_area
-    assert any("Procesa un lote" in i.value for i in app.info)
+    assert any("Todavía no hay un lote procesado" in i.value for i in app.info)
 
 
 @con_entorno_ui
-def test_ui_con_lote_pinta_cada_activo_una_vez_y_proximamente():
+def test_ui_con_lote_pinta_cada_activo_una_vez_y_proximamente(monkeypatch):
     from streamlit.testing.v1 import AppTest
 
+    monkeypatch.setenv("COMMUNITYLAB_MODO_INTERNO", "1")
     app = AppTest.from_file(APP, default_timeout=30)
     app.session_state["resultado"] = {"resultados_por_id": resultados()}
     app.session_state["navegacion_principal"] = "Plantillas"

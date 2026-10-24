@@ -804,7 +804,10 @@ elif pagina_actual == "Agente":
 elif pagina_actual == "Análisis":
     _render_analisis(resultado)
 elif pagina_actual == "Plantillas":
-    if resultado is None:
+    if not MODO_INTERNO:
+        from src.app.vista_plantillas_diarias import render as render_plantillas_diarias
+        render_plantillas_diarias()
+    elif resultado is None:
         vista_plantillas.render()
     else:
         vista_plantillas.render(resultado, curaduria)

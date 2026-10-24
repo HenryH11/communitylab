@@ -70,6 +70,11 @@ con_entorno_ui = pytest.mark.skipif(
 )
 
 
+@pytest.fixture(autouse=True)
+def modo_interno(monkeypatch):
+    monkeypatch.setenv("COMMUNITYLAB_MODO_INTERNO", "1")
+
+
 def crear_app():
     from streamlit.testing.v1 import AppTest
 

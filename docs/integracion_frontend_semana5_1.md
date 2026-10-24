@@ -60,7 +60,7 @@ En `st.tabs`, la pestaña **Plantillas** tiene dos partes.
 **A. Catálogo**, según la vista "Elige el resultado que necesitas":
 - Columna izquierda: buscador (`st.text_input`), categoría (`st.radio`: Todas, Contenido para redes, Analíticas, Preguntas frecuentes) y "Fuente de datos: JSON importado · redes conectadas: no requeridas".
 - Cuadrícula de tarjetas en `st.columns(2)`: icono, nombre, etiqueta de categoría, descripción y un **contador real**, por ejemplo "8 borradores". Ordenar: recomendadas o por número de borradores.
-- Sin resultado procesado: tarjetas atenuadas con el aviso "Procesa un lote en Datos".
+- Sin resultado procesado: tarjetas atenuadas con el aviso "Todavía no hay un lote procesado".
 
 **B. Resultado**, según la vista "Publicación generada a partir de conversaciones":
 - Una sub-pestaña por plantilla (`st.tabs`) para abrirla.
@@ -125,9 +125,224 @@ configurado si se prueba el guardado.
   contraste de luz.
 - **Ayuda** (`src/app/vista_ayuda.py`) incluye el flujo en cuatro pasos con
   accesos directos, preguntas frecuentes por tema (datos, agente, plantillas y
-  problemas comunes) y una búsqueda que ignora mayúsculas y acentos.
+  problemas comunes) presentadas como bloques en cuadrícula, y una búsqueda que
+  ignora mayúsculas y acentos. Los textos de ayuda no mencionan código, archivos
+  ni variables de entorno: el usuario final no tiene acceso a ellos.
+- Ajustes tras la revisión de equipo: solo pesos bold (títulos) y light (texto)
+  con Inter para el cuerpo; barra de marca y títulos más grandes; fondos sólidos
+  sin texturas ni resplandores (se veían borrosos); el texto va en blanco y el
+  dorado queda para acentos, sin dorado sobre dorado (pestaña activa, insignia
+  de inicio, bordes del agente).
+- Controles del agente junto a la entrada del chat (`st.bottom`): se retiró la
+  barra de estado ("Lote procesado · N mensajes · N con activos"), que no le
+  aportaba al usuario. Ahora hay un interruptor de **Verificación automática** y
+  un botón **Redacción** con dos formas de ajuste: **Estilos** (Preciso 0.0/1.0,
+  Equilibrado 0.4/0.9 por defecto, Creativo 0.8/0.95 de temperatura/top_p) o
+  **Manual** (deslizadores de temperatura 0–1 y top_p 0.1–1). Todo se puede
+  cambiar en cualquier momento del chat. La creatividad solo se aplica a
+  borradores; análisis y conteos siguen en temperatura 0.
+- Errores del agente: en lugar del error técnico se muestra un aviso claro
+  (`src/app/errores_agente.py`): modelo no disponible, acceso rechazado, límite
+  de uso, servicio caído o sin conexión con el servicio de IA o la fuente de
+  datos. El detalle técnico queda en el log. Este mismo patrón cubrirá la
+  futura conexión a base de datos.
+- Conteos de mensajes: solo se muestran para los datos que adjunta el usuario
+  (botón **Tus datos**), no para la base.
 
-## Para Eduardo (QA-3 de Plantillas)
+## Fuente de datos del agente: base de la comunidad + datos del usuario
+
+- **Datos sale del frontend público.** Es el flujo interno del equipo
+  (importar → procesar con la segunda capa → publicar en la base). Solo aparece
+  con `COMMUNITYLAB_MODO_INTERNO=1`; sin esa variable la navegación es
+  Inicio, Agente, Análisis, Plantillas y Ayuda.
+- **Captura de la base** (`src/app/fuente_agente.py`): el agente lee
+  `conjunto_consultable` completo una vez por sesión con el usuario de solo
+  lectura (`db_client.obtener_conexion_lectura` + `leer_conjunto`) y reutiliza
+  esa captura para todas las preguntas. A la hora la vuelve a leer. Si la base
+  falla y hay una captura previa, la sigue usando y avisa cuántos minutos
+  tiene; sin captura previa, explica el motivo (no conectada, sin datos
+  publicados, en actualización o sin conexión). Tras un fallo espera 2 minutos
+  antes de reintentar, para no consultar la base en cada clic.
+- **Mapeo al agente:** `id → id`, `contenido_corto → texto`, `canal`,
+  `sentimiento`, `tema → tema_principal`, `tipo → tipo_detectado`, `fecha`.
+  La base no trae autor ni elegibilidad; las respuestas citan el id.
+- **Datos del usuario:** se adjuntan con el clip de la caja de texto (JSON, CSV
+  o TXT, hasta 5 MB y 5.000 mensajes por archivo). No exigen estructura: se
+  detecta la columna de texto por nombre (`texto`, `comentario`, `message`…)
+  o, si no hay ninguna conocida, la de textos más largos; también autor, canal
+  y fecha si existen. Un TXT es un mensaje por línea. Se combinan con la
+  captura solo en la sesión (ids sin colisiones) y nunca se escriben en la base.
+- Al cambiar la captura o los archivos, el agente actualiza sus datos con
+  `AgenteConversacional.actualizar_datos` sin perder la conversación.
+- Con `COMMUNITYLAB_MODO_INTERNO=1` y un lote procesado en Datos, el agente usa
+  ese lote (para revisarlo antes de publicarlo) en lugar de la base.
+- Pendiente: Análisis y Plantillas siguen dependiendo de un lote procesado
+  internamente; la base no guarda activos.
+
+## Interpretación del lenguaje en el agente
+
+- El modelo separa saludos, aclaraciones, tareas sobre los datos y solicitudes
+  fuera de alcance antes de buscar. Se retiraron los diccionarios y regex de
+  interpretación; la recuperación y los conteos siguen siendo deterministas.
+- Un mensaje puede saludar y pedir un post: solo los temas reales entran en la
+  búsqueda; plataforma, sentimiento y cantidad pasan como filtros.
+- Saludos y aclaraciones no necesitan mensajes cargados: la interfaz permite
+  conversar aun si la base no está disponible.
+- Cada turno añade una llamada de interpretación a temperatura 0, con
+  historial y último plan acotados. Si falla, se muestra el error sin recurrir
+  silenciosamente al intérprete anterior.
+
+## Controles compactos y modelo de respuesta
+
+Las explicaciones se abren desde un icono **i** junto a Modelo, Redacción y
+Modo: al pasar el puntero o enfocar con teclado se muestra una tarjeta en los
+márgenes laterales (pantallas de 1350 px o más), sin tapar el chat central.
+En móvil se superpone una tarjeta limitada al ancho de pantalla; tocar el
+icono permite abrirla y cerrarla. Los menús conservan solo sus controles.
+Los nombres de adjuntos usan texto blanco cálido sobre nogal con tipografía
+Inter/Segoe UI y peso normal para asegurar legibilidad.
+
+- Barra adaptable con **Modelo**, **Redacción**, **Estricto/Verificado** y
+  **Tus datos** (solo con adjuntos). Los paneles tienen hasta 330 px de ancho,
+  limitado por la pantalla; la lista de archivos tiene desplazamiento interno.
+- Modelo: Super recomendado y Lightning ligero. Solo cambia las respuestas
+  siguientes, sin recrear el agente, cambiar el intérprete/verificador ni
+  modificar variables de entorno compartidas. Los proveedores conservan su
+  respaldo operativo.
+- Redacción: selector compacto con explicación del estilo activo. Preciso =
+  sobrio/directo; Equilibrado = variedad moderada; Creativo = más variedad
+  editorial sin inventar hechos. Manual usa dos campos numéricos en la misma
+  fila, con ayuda sobre temperatura y top_p, en lugar de deslizadores.
+- Los valores manuales y el estilo elegido se conservan al alternar.
+- Estricto y Verificado explican su diferencia en una línea junto al
+  interruptor; ambos trabajan con evidencia y ninguno garantiza exactitud.
+- Los archivos se muestran por nombre y conteo, con un botón de quitar y altura
+  acotada. No se expanden los mensajes de cada archivo en este menú.
+- Las peticiones fuera de alcance reciben una sugerencia contextual opcional,
+  generada en la misma llamada de interpretación; no se fuerza el retorno
+  si el usuario cambió a otro tema válido.
+
+## Abrir una publicación en la red social
+
+El agente muestra **Publicación preparada** y acciones debajo del contenido,
+tanto en el turno actual como en el historial (`src/app/publicacion_redes.py`).
+El contrato interno sigue usando `borrador` para conservar compatibilidad.
+
+- **X:** abre `https://twitter.com/intent/tweet` con `text` codificado, incluyendo
+  contenido y hashtags. El título editorial no se envía. No se recorta el
+  contenido: se avisa si supera 280 caracteres incluyendo etiquetas y
+  separadores; el límite definitivo lo comprueba X. Existe copia como alternativa.
+- **LinkedIn:** muestra el texto completo (título, contenido y hashtags) con
+  copia nativa de Streamlit y un enlace a la red. La persona inicia una
+  publicación y pega el contenido; no se promete precarga mediante URL.
+- **Instagram:** mismo flujo de copia y apertura; requiere que la persona añada
+  una imagen o video. No se generan ni suben archivos multimedia.
+- **Threads / Bluesky:** abren sus editores oficiales con texto codificado,
+  incluyendo título, contenido y etiquetas. Se avisa, sin recortar, cuando
+  el conteo local supera 500/300 caracteres. Bluesky cuenta grafemas Unicode;
+  el aviso local por puntos de código es conservador y el editor decide el límite.
+- **WhatsApp:** `https://wa.me/?text=...` prepara un mensaje; la persona elige
+  el destinatario. No es una publicación pública automática.
+- **Telegram:** al añadir un enlace real, `https://t.me/share/url` recibe `url`
+  y `text`. El enlace es obligatorio en el mecanismo oficial (un `url` vacío
+  es rechazado, por ejemplo, por Telegram Desktop). Sin enlace se ofrece
+  copiar y abrir Telegram, sin prometer precarga.
+- **Facebook:** un enlace introducido por la persona se comparte con
+  `https://www.facebook.com/sharer/sharer.php?u=...`. No se inventa un enlace
+  ni se envía un parámetro de texto no admitido. Sin enlace queda copia y apertura.
+- **Mastodon:** requiere el origen HTTPS del servidor de la cuenta, por ejemplo
+  `https://mastodon.social`, y abre `/share?text=...` en ese servidor. No se
+  presupone una instancia ni se contacta al servidor desde el backend.
+- Los campos de enlace/servidor se validan y tienen claves por turno, también
+  cuando hay publicaciones idénticas en el historial. Los errores se muestran
+  junto al control y no se crea un botón con URL inválida.
+- **Multimedia pendiente:** TikTok y YouTube quedan fuera del contrato de
+  destinos de texto hasta definir la integración con el trabajo del equipo.
+  No se crean acciones que prometan precargar videos ni subir archivos.
+- No se conectan cuentas ni se usan APIs para publicar. Puede ser necesario
+  iniciar sesión; la persona revisa y confirma en la red. Abrir un enlace no
+  publica ni registra un guardado en OCI.
+
+Referencias de los mecanismos:
+[Threads](https://developers.facebook.com/documentation/threads/threads-web-intents/),
+[Bluesky](https://bsky.network/docs/intent-links/),
+[Telegram](https://core.telegram.org/widgets/share),
+[WhatsApp](https://faq.whatsapp.com/5913398998672934),
+[Facebook](https://developers.facebook.com/docs/sharing/web/).
+Mastodon usa la ruta `/share` de la instancia; requiere iniciar sesión en ella.
+
+## Catálogo diario de Plantillas (flujo público)
+
+La vista pública ya no obtiene las plantillas del lote cargado en Streamlit:
+lee el catálogo preparado en OCI. El catálogo/editores anteriores se conservan
+únicamente en modo interno (`COMMUNITYLAB_MODO_INTERNO=1`).
+
+El ejecutor `python -m scripts.generar_plantillas_diarias` realiza una pasada,
+independiente del frontend. Está incluido en la imagen y permite sobrescribir
+el comando de arranque sin arrancar Streamlit. No es un servicio en bucle.
+
+- Hora del producto: **08:00 America/Bogota**, equivalente a **13:00 UTC**.
+  Antes de esa hora no genera contenido. Una ejecución tardía prepara el día
+  actual; no reconstruye días perdidos.
+- La primera selección contiene nueve prompts definidos en
+  `src/app/plantillas_diarias.py`: LinkedIn, Instagram, X, newsletter, caso de
+  éxito, sentimiento, temas, oportunidades de mejora y preguntas frecuentes.
+  Los análisis/boletín se guardan como texto con fuentes; los posts usan las
+  acciones sociales. El caso de éxito se prepara para LinkedIn.
+- Toma una sola captura de la base publicada; no incluye adjuntos de usuarios.
+  Cada prompt usa una instancia nueva del agente conversacional sobre esa
+  captura: no se heredan filtros o mensajes de otra plantilla.
+- Usa Super para responder y modo de verificación automática. Se guarda como
+  **preparado para revisión**, nunca como aprobado ni publicado. Un aviso de
+  revisión del verificador se conserva y se muestra a Marketing.
+- Una plantilla exitosa sustituye su versión anterior. Una fallida conserva
+  íntegra su última versión y registra un aviso. Sin versión anterior aparece
+  como no disponible. Una captura vacía o fallida no borra el contenido.
+- Reejecutar el mismo día no regenera las plantillas ya exitosas; reintenta
+  únicamente las pendientes. Un cambio del prompt requiere regeneración.
+- El catálogo completo se guarda mediante un solo PUT condicional, con ETag
+  (`If-Match`, o `If-None-Match: *` para crearlo). Ante dos ejecuciones
+  concurrentes, la que tenga una versión obsoleta falla sin sobrescribir la
+  más reciente. Pueden consumir IA duplicada antes de detectar el conflicto:
+  el programador debe evitar solapamientos.
+- Objeto único: `plantillas/catalogo_actual.json`, en `OCI_BUCKET_NAME`.
+  El reemplazo elimina del documento actual el contenido anterior de cada
+  plantilla exitosa; no genera carpetas diarias ni historial de aplicación.
+  No se borran los objetos del antiguo flujo interno `activos/...`.
+- **Retención física:** si el bucket tiene versionado o una regla de retención,
+  OCI puede conservar versiones anteriores aunque el objeto actual se reemplace.
+  Cloud debe confirmar un bucket sin versionado/retención histórica para este
+  prefijo o una política que elimine esas versiones; el código no desactiva
+  políticas ni borra objetos ajenos.
+- El frontend solo lee OCI, sin llamadas a modelos. Comprueba cada minuto y
+  reutiliza lecturas hasta 45 segundos; ofrece actualización manual. Los
+  errores de acceso se muestran como errores, no como un catálogo vacío.
+
+### Activación pendiente con Cloud
+
+Se reutiliza el cliente existente de **Instance Principals**. Hay una diferencia
+de nombres que Cloud debe resolver: el valor predeterminado del cliente es
+`bkt-communitylab-marketing`; el ejemplo de entorno usa
+`communitylab-activos-marketing`. Configurar explícitamente el bucket real.
+
+No se encontró un programador desplegado en el repositorio, y **no se ha
+activado un horario en la nube**. Cloud debe:
+
+1. Confirmar bucket, namespace, políticas de retención y permisos: lectura para
+   frontend; lectura/escritura condicional del catálogo para el ejecutor.
+2. Dar al ejecutor las credenciales de lectura de la base, acceso a Secretos y
+   a los proveedores de IA, sin incorporar secretos a la imagen.
+3. Programar la ejecución a las 13:00 UTC cada día con exclusión de solapamientos.
+   Puede invocar la misma imagen con
+   `python -m scripts.generar_plantillas_diarias`; no depende del navegador.
+4. Alertar sobre código de salida 1 (fallo de acceso/guardado/conflicto) y 2
+   (catálogo confirmado pero con plantillas pendientes). El 0 significa que
+   quedó completo o todavía no era la hora. Configurar reintentos espaciados
+   tras las 13:00 UTC, dentro del mismo día de Bogotá.
+5. Hacer una prueba real de captura, generación, escritura y lectura antes de
+   anunciar que el catálogo diario está operativo.
+
+## Para Eduardo (QA-3 del flujo interno de Plantillas)
 
 - Abrir Plantillas sin lote procesado: las tarjetas aparecen atenuadas y no hay error.
 - Lote sin activos de un tipo: la plantilla muestra "0 borradores" y un mensaje claro.

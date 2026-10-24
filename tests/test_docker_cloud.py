@@ -22,6 +22,7 @@ def test_imagen_copia_solo_directorios_de_ejecucion():
         "COPY --from=dependencias /opt/venv /opt/venv",
         "COPY src/ ./src/",
         "COPY configuracion/ ./configuracion/",
+        "COPY scripts/generar_plantillas_diarias.py ./scripts/generar_plantillas_diarias.py",
     ]
 
 

@@ -112,6 +112,21 @@ como próximas plantillas hasta que exista un generador. La validación final de
 diseño debe hacerse en el navegador con lotes representativos y el entorno OCI
 configurado si se prueba el guardado.
 
+## Identidad visual y agente en vivo (23 de octubre de 2026)
+
+- Paleta "pergamino y miel": las vistas generales usan pergamino claro, tinta
+  sepia, miel y musgo (`.streamlit/config.toml` para los widgets nativos y
+  `src/app/tema.py` para tipografía, marca y estilos compartidos).
+- El logo es una espiral minimalista (`tema.espiral()`), presente en la barra de
+  marca, el agente y la ayuda.
+- **Agente** es ahora un chat en vivo con estética gótica formal
+  (`src/app/estilo_agente.py`): la versión nocturna de la misma paleta (ébano,
+  bosque y miel encendida). Congenia con el resto de la app, pero resalta por
+  contraste de luz.
+- **Ayuda** (`src/app/vista_ayuda.py`) incluye el flujo en cuatro pasos con
+  accesos directos, preguntas frecuentes por tema (datos, agente, plantillas y
+  problemas comunes) y una búsqueda que ignora mayúsculas y acentos.
+
 ## Para Eduardo (QA-3 de Plantillas)
 
 - Abrir Plantillas sin lote procesado: las tarjetas aparecen atenuadas y no hay error.
@@ -124,5 +139,5 @@ configurado si se prueba el guardado.
 ## Verificación
 
 ```powershell
-python -m pytest tests/test_tolerancia_app.py tests/test_curaduria_oci.py tests/test_docker_cloud.py tests/test_plantillas.py -q
+python -m pytest tests/test_tolerancia_app.py tests/test_curaduria_oci.py tests/test_docker_cloud.py tests/test_plantillas.py tests/test_ayuda.py -q
 ```

@@ -28,22 +28,22 @@ from src.app.plantillas_catalogo import (
 
 ESTILOS = """
 <style>
-    .section-title { color: #17213c; font-size: 1.35rem; font-weight: 700; margin: 1.1rem 0 .6rem; }
-    .pl-card { background: white; border: 1px solid #e4e9f1; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+    .section-title { color: #2b2216; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.6rem; font-weight: 600; margin: 1.1rem 0 .6rem; }
+    .pl-card { background: #fffaf0; border: 1px solid #e3d5b3; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
     .pl-card.off { opacity: .55; }
     .pl-top { display: flex; align-items: center; gap: 12px; }
-    .pl-icon { width: 40px; height: 40px; border-radius: 10px; background: #f0edff; color: #6557e8;
+    .pl-icon { width: 40px; height: 40px; border-radius: 10px; background: #f1e2bd; color: #b07d22;
                display: flex; align-items: center; justify-content: center; font-weight: 700; }
-    .pl-name { font-weight: 700; color: #161c32; font-size: 1.02rem; flex: 1; }
-    .pl-tag { font-size: .68rem; letter-spacing: 1px; color: #68748a; border: 1px solid #e4e9f1; border-radius: 6px; padding: 2px 8px; }
-    .pl-desc { color: #161c32; margin: 12px 0 2px; font-size: .92rem; }
-    .pl-detail { color: #68748a; font-size: .82rem; }
-    .pl-count { color: #6557e8; font-weight: 600; font-size: .85rem; margin-top: 10px; }
-    .pl-count.soon { color: #bc7521; }
-    .pl-preview { background: white; border: 1px solid #e4e9f1; border-radius: 14px; padding: 16px; }
-    .pl-preview .org { font-weight: 600; color: #161c32; margin-bottom: 10px; }
-    .pl-preview .body { white-space: pre-wrap; color: #161c32; font-size: .9rem; line-height: 1.5; }
-    .pl-preview .note { color: #68748a; font-size: .7rem; letter-spacing: 1px; margin-top: 12px; }
+    .pl-name { font-weight: 700; color: #2b2216; font-size: 1.02rem; flex: 1; }
+    .pl-tag { font-size: .68rem; letter-spacing: 1px; color: #6e604a; border: 1px solid #e3d5b3; border-radius: 6px; padding: 2px 8px; }
+    .pl-desc { color: #2b2216; margin: 12px 0 2px; font-size: .92rem; }
+    .pl-detail { color: #6e604a; font-size: .82rem; }
+    .pl-count { color: #b07d22; font-weight: 600; font-size: .85rem; margin-top: 10px; }
+    .pl-count.soon { color: #8a4b2a; }
+    .pl-preview { background: #fffaf0; border: 1px solid #e3d5b3; border-radius: 14px; padding: 16px; }
+    .pl-preview .org { font-weight: 600; color: #2b2216; margin-bottom: 10px; }
+    .pl-preview .body { white-space: pre-wrap; color: #2b2216; font-size: .9rem; line-height: 1.5; }
+    .pl-preview .note { color: #6e604a; font-size: .7rem; letter-spacing: 1px; margin-top: 12px; }
 </style>
 """
 
@@ -227,7 +227,7 @@ def _resultado_analisis(plantilla, resultados):
             chart = alt.Chart(df).mark_arc(innerRadius=50).encode(
                 theta="Mensajes:Q", color=alt.Color(f"{etiqueta}:N"), tooltip=[f"{etiqueta}:N", "Mensajes:Q"])
         else:
-            chart = alt.Chart(df).mark_bar(color="#6557e8").encode(
+            chart = alt.Chart(df).mark_bar(color="#b07d22").encode(
                 x="Mensajes:Q", y=alt.Y(f"{etiqueta}:N", sort="-x"), tooltip=[f"{etiqueta}:N", "Mensajes:Q"])
         st.altair_chart(chart.properties(height=260), use_container_width=True)
     with tabla:

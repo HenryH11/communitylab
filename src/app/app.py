@@ -10,75 +10,18 @@ import streamlit as st
 
 from src.agentes.conversacion import AgenteConversacional
 from src.agentes.grafo import procesar_paquete_entrega
-from src.app import vista_plantillas
+from src.app import estilo_agente, vista_ayuda, vista_plantillas
+from src.app import tema as identidad
 from src.app.curaduria_oci import contexto_curaduria
 from src.datos.entrega_ia import preparar_paquete_ia
 
 st.set_page_config(
     page_title="CommunityLab",
-    page_icon=":material/forum:",
+    page_icon=":material/cyclone:",
     layout="wide",
 )
 
-st.markdown(
-    """
-    <style>
-        :root {
-            --communitylab-violet: #6557E8;
-            --communitylab-heading: #17213c;
-        }
-        .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
-            color: var(--communitylab-heading);
-        }
-        div[data-testid="stRadio"] > div[role="radiogroup"] {
-            gap: 0.4rem;
-        }
-        div[data-testid="stRadio"] label {
-            border-radius: 0.6rem;
-            padding: 0.45rem 0.8rem;
-        }
-        div[data-testid="stRadio"] label:has(input:checked) {
-            background: #f0edff;
-            color: var(--communitylab-violet);
-            font-weight: 700;
-        }
-        button[kind="primary"] {
-            background-color: var(--communitylab-violet);
-            border-color: var(--communitylab-violet);
-            color: #ffffff;
-        }
-        button[kind="primary"]:hover {
-            background-color: #5144cf;
-            border-color: #5144cf;
-            color: #ffffff;
-        }
-        .st-key-inicio_card_datos button,
-        .st-key-inicio_card_analisis button,
-        .st-key-inicio_card_plantillas button {
-            height: 9rem;
-            justify-content: flex-start;
-            text-align: left;
-            white-space: pre-wrap;
-        }
-        .communitylab-brand {
-            background: #111b3a;
-            border-radius: 0.75rem;
-            color: #ffffff;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            margin-bottom: 1rem;
-            padding: 0.85rem 1.1rem;
-        }
-        .block-container {
-            max-width: 1440px;
-            padding-bottom: 2rem;
-            padding-top: 1.25rem;
-        }
-    </style>
-    <div class="communitylab-brand">◉ COMMUNITYLAB</div>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown(identidad.ESTILO_GLOBAL + identidad.marca(), unsafe_allow_html=True)
 
 PAGINAS = ("Inicio", "Datos", "Agente", "Análisis", "Plantillas", "Ayuda")
 CLAVE_NAVEGACION = "navegacion_principal"
@@ -253,7 +196,7 @@ def _render_analisis(resultado):
             st.markdown("**Distribución por tema principal**")
             chart_temas = (
                 alt.Chart(df)
-                .mark_bar(color="#6557e8")
+                .mark_bar(color=identidad.MIEL)
                 .encode(
                     x=alt.X("tema:N", sort="-y", title="Tema"),
                     y=alt.Y("count():Q", title="Cantidad"),
@@ -293,7 +236,7 @@ def _render_analisis(resultado):
             st.markdown("**Distribución por canal**")
             chart_canal = (
                 alt.Chart(df)
-                .mark_bar(color="#6557e8")
+                .mark_bar(color=identidad.MIEL)
                 .encode(
                     x=alt.X("count():Q", title="Cantidad"),
                     y=alt.Y("canal:N", sort="-x", title="Canal"),
@@ -324,7 +267,7 @@ def _render_analisis(resultado):
     st.caption(
         "Vista de solo lectura. Edita y aprueba los activos en Plantillas."
     )
-    for id_msg, data in resultados.items():
+    for data in resultados.values():
         autor = data.get("autor", "Anónimo")
         tema = data.get("tema_principal", "sin tema")
         sentimiento = data.get("sentimiento", "N/A")
@@ -380,7 +323,7 @@ def _render_analisis(resultado):
 def _render_inicio(resultado):
     contenido, resumen = st.columns([1.35, 1], vertical_alignment="center")
     with contenido:
-        st.badge("COMMUNITYLAB · INTELIGENCIA PARA COMUNIDADES", color="violet")
+        st.badge("COMMUNITYLAB · INTELIGENCIA PARA COMUNIDADES", color="primary")
         st.title("Tu comunidad habla. Convierte esa voz en valor.")
         st.write(
             "Transforma conversaciones en conocimiento, analítica y activos "
@@ -426,172 +369,143 @@ def _render_inicio(resultado):
                 )
 
 
-def _render_agente(resultado):
-    st.header("Agente CommunityLab")
+def _mostrar_fuentes(salida, resultados):
+    citas = salida.get("citas", [])
+    if not citas:
+        st.caption("La respuesta no incluye fuentes citadas.")
+        return
+    for cita in citas:
+        fuente = resultados.get(cita, {})
+        st.markdown(
+            f"**{cita}** · "
+            f"{fuente.get('autor', 'Autor desconocido')} · "
+            f"{fuente.get('canal', 'Canal desconocido')}"
+        )
+        st.write(fuente.get("texto", ""))
+
+
+def _mostrar_verificacion(salida):
+    verificacion = salida.get("verificacion", {})
+    st.caption(f"Estado: {verificacion.get('estado', 'no_disponible')}")
     st.write(
-        "Explora los datos procesados de la comunidad y consulta sus "
-        "conversaciones en lenguaje natural."
+        verificacion.get(
+            "resumen",
+            "El agente no devolvió un resumen de verificación.",
+        )
+    )
+    for afirmacion in verificacion.get("afirmaciones", []):
+        estado_afirmacion = (
+            "Respaldada" if afirmacion.get("respaldada") else "Requiere revisión"
+        )
+        st.markdown(f"- **{estado_afirmacion}:** {afirmacion['afirmacion']}")
+        if afirmacion.get("citas"):
+            st.caption("Fuentes: " + ", ".join(afirmacion["citas"]))
+
+
+def _render_agente(resultado):
+    st.markdown(estilo_agente.ESTILO, unsafe_allow_html=True)
+    resultados = (
+        resultado.get("resultados_por_id", {}) if resultado is not None else {}
+    )
+    # Fuera de contenedores para que quede fija al pie, como en un chat de LLM.
+    consulta = (
+        st.chat_input("Pregunta sobre las conversaciones de la comunidad…")
+        if resultados
+        else None
     )
 
-    chat, estado_columna = st.columns([2, 1])
-    with chat:
-        with st.container(border=True):
-            st.markdown("#### Conversación")
-            modo_verificacion = st.toggle(
-                "Modo de verificación automática",
-                help=(
-                    "Verifica automáticamente las afirmaciones de los borradores "
-                    "de marketing y muestra las fuentes citadas."
-                ),
-                key="modo_verificacion",
+    with st.container(key="gotico_lienzo"):
+        if not resultados:
+            st.markdown(
+                estilo_agente.cabecera("El archivo aún está vacío"),
+                unsafe_allow_html=True,
             )
-            resultados = (
-                resultado.get("resultados_por_id", {})
-                if resultado is not None
-                else {}
+            st.info("Importa y procesa un lote desde Datos para consultar al agente.")
+            return
+
+        if "agente_conversacional" not in st.session_state:
+            st.session_state["agente_conversacional"] = AgenteConversacional(resultado)
+
+        with st.container(key="gotico_barra"):
+            estado_columna, modo_columna = st.columns([3, 2], vertical_alignment="center")
+            con_activos = sum(
+                bool(item.get("activos_generados")) for item in resultados.values()
             )
-            if resultados:
-                if "agente_conversacional" not in st.session_state:
-                    st.session_state["agente_conversacional"] = (
-                        AgenteConversacional(resultado)
-                    )
-
-                consulta = st.chat_input(
-                    "Pregunta sobre las conversaciones procesadas..."
+            estado_columna.markdown(
+                estilo_agente.estado(len(resultados), con_activos),
+                unsafe_allow_html=True,
+            )
+            with modo_columna:
+                modo_verificacion = st.toggle(
+                    "Verificación automática",
+                    help=(
+                        "Verifica automáticamente las afirmaciones de los borradores "
+                        "de marketing y muestra las fuentes citadas."
+                    ),
+                    key="modo_verificacion",
                 )
-                if consulta:
-                    mensajes = st.session_state.setdefault("historial_agente", [])
-                    mensajes.append({"role": "user", "content": consulta})
-                    agente = st.session_state["agente_conversacional"]
-                    modo = (
-                        "verificacion_automatica"
-                        if modo_verificacion
-                        else "prompt_estricto"
-                    )
-                    try:
-                        with st.spinner("Consultando al agente..."):
-                            salida = agente.consultar(
-                                consulta,
-                                modo_verificacion=modo,
-                            )
-                        mensajes.append(
-                            {
-                                "role": "assistant",
-                                "content": salida["respuesta"],
-                                "salida": salida,
-                                "modo_verificacion": modo,
-                            }
-                        )
-                    except Exception as error:
-                        mensajes.append(
-                            {
-                                "role": "assistant",
-                                "error": str(error),
-                            }
-                        )
 
-                for mensaje in st.session_state.get("historial_agente", []):
-                    with st.chat_message(mensaje["role"]):
-                        if "error" in mensaje:
-                            st.error(f"No se pudo consultar al agente: {mensaje['error']}")
-                            continue
-                        st.markdown(mensaje["content"])
-                        if mensaje.get("modo_verificacion") == "verificacion_automatica":
-                            salida = mensaje["salida"]
-                            verificacion = salida.get("verificacion", {})
-                            with st.expander("Verificación y fuentes", expanded=True):
-                                st.caption(
-                                    f"Estado: {verificacion.get('estado', 'no_disponible')}"
-                                )
-                                st.write(
-                                    verificacion.get(
-                                        "resumen",
-                                        "El agente no devolvió un resumen de verificación.",
-                                    )
-                                )
-                                for afirmacion in verificacion.get("afirmaciones", []):
-                                    estado_afirmacion = (
-                                        "Respaldada"
-                                        if afirmacion.get("respaldada")
-                                        else "Requiere revisión"
-                                    )
-                                    st.markdown(
-                                        f"- **{estado_afirmacion}:** "
-                                        f"{afirmacion['afirmacion']}"
-                                    )
-                                    if afirmacion.get("citas"):
-                                        st.caption(
-                                            "Fuentes: "
-                                            + ", ".join(afirmacion["citas"])
-                                        )
+        historial = st.session_state.setdefault("historial_agente", [])
+        if not historial and not consulta:
+            st.markdown(
+                estilo_agente.cabecera("¿Qué deseas saber de la comunidad?"),
+                unsafe_allow_html=True,
+            )
 
-                                citas = salida.get("citas", [])
-                                if citas:
-                                    st.markdown("**Fuentes citadas**")
-                                    for cita in citas:
-                                        fuente = resultados.get(cita, {})
-                                        st.markdown(
-                                            f"**{cita}** · "
-                                            f"{fuente.get('autor', 'Autor desconocido')} · "
-                                            f"{fuente.get('canal', 'Canal desconocido')}"
-                                        )
-                                        st.write(fuente.get("texto", ""))
-                                else:
-                                    st.caption("La respuesta no incluye fuentes citadas.")
-            else:
-                st.info("Importa y procesa un lote desde Datos para iniciar el chat.")
-    with estado_columna:
-        with st.container(border=True):
-            st.markdown("#### Estado del lote")
-            if resultado is None:
-                st.badge("Pendiente", color="orange")
-                st.write("Importa y procesa un lote desde Datos.")
-            else:
-                total = len(resultado.get("resultados_por_id", {}))
-                con_activos = sum(
-                    bool(item.get("activos_generados"))
-                    for item in resultado.get("resultados_por_id", {}).values()
+        for mensaje in historial:
+            with st.chat_message(mensaje["role"]):
+                st.markdown(
+                    estilo_agente.marca_voz(mensaje["role"]),
+                    unsafe_allow_html=True,
                 )
-                st.badge("Procesado", color="green")
-                st.metric("Mensajes analizados", total)
-                st.metric("Mensajes con activos", con_activos)
+                if "error" in mensaje:
+                    st.error(f"No se pudo consultar al agente: {mensaje['error']}")
+                    continue
+                st.markdown(mensaje["content"])
+                salida = mensaje.get("salida")
+                if salida:
+                    _mostrar_detalle_agente(mensaje, salida, resultados)
 
+        if consulta:
+            modo = "verificacion_automatica" if modo_verificacion else "prompt_estricto"
+            with st.chat_message("user"):
+                st.markdown(estilo_agente.marca_voz("user"), unsafe_allow_html=True)
+                st.markdown(consulta)
+            with st.chat_message("assistant"):
+                st.markdown(estilo_agente.marca_voz("assistant"), unsafe_allow_html=True)
+                try:
+                    with st.spinner("Consultando el archivo…"):
+                        salida = st.session_state["agente_conversacional"].consultar(
+                            consulta,
+                            modo_verificacion=modo,
+                        )
+                except Exception as error:
+                    respuesta = {"role": "assistant", "error": str(error)}
+                    st.error(f"No se pudo consultar al agente: {error}")
+                else:
+                    respuesta = {
+                        "role": "assistant",
+                        "content": salida["respuesta"],
+                        "salida": salida,
+                        "modo_verificacion": modo,
+                    }
+                    st.markdown(respuesta["content"])
+                    _mostrar_detalle_agente(respuesta, salida, resultados)
+            # Se guarda el turno completo para no dejar preguntas sin respuesta
+            # si la ejecución se interrumpe a mitad de la consulta.
+            historial.extend([{"role": "user", "content": consulta}, respuesta])
 
-def _render_ayuda():
-    st.header("¿En qué podemos ayudarte?")
-    st.write("Respuestas rápidas para importar, analizar y revisar un lote.")
-    preguntas = (
-        (
-            "¿Cómo importo conversaciones?",
-            "Abre Datos, selecciona un archivo JSON compatible y revisa la "
-            "muestra antes de procesarlo.",
-        ),
-        (
-            "¿Qué ocurre al procesar el lote?",
-            "El pipeline analiza los mensajes y genera resultados según las "
-            "rutas disponibles. El procesamiento puede tardar según el lote "
-            "y el proveedor de IA.",
-        ),
-        (
-            "¿El contenido se publica automáticamente?",
-            "No. Los activos requieren revisión y aprobación. Abrir un enlace "
-            "a una red social no publica ni guarda el contenido.",
-        ),
-        (
-            "¿Cómo guardo un activo aprobado?",
-            "Aprueba el contenido en Plantillas y usa la sección de guardado "
-            "en OCI al final de esa vista.",
-        ),
-        (
-            "¿Por qué no veo un borrador para cada mensaje?",
-            "El pipeline solo genera activos para los mensajes que cumplen "
-            "las condiciones de sus rutas.",
-        ),
-    )
-    for pregunta, respuesta in preguntas:
-        with st.expander(pregunta):
-            st.write(respuesta)
-
+def _mostrar_detalle_agente(mensaje, salida, resultados):
+    if salida.get("borrador"):
+        st.markdown(estilo_agente.borrador(salida["borrador"]), unsafe_allow_html=True)
+    if mensaje.get("modo_verificacion") == "verificacion_automatica":
+        with st.expander("Verificación y fuentes", expanded=True):
+            _mostrar_verificacion(salida)
+            st.markdown("**Fuentes citadas**")
+            _mostrar_fuentes(salida, resultados)
+    elif salida.get("citas"):
+        with st.expander("Fuentes citadas"):
+            _mostrar_fuentes(salida, resultados)
 
 pagina_actual = st.radio(
     "Navegación principal",
@@ -623,4 +537,4 @@ elif pagina_actual == "Plantillas":
     else:
         vista_plantillas.render(resultado, curaduria)
 elif pagina_actual == "Ayuda":
-    _render_ayuda()
+    vista_ayuda.render(ir_a=_navegar_a)

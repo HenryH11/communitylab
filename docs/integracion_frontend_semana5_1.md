@@ -8,6 +8,19 @@ plantillas y Eduardo prepara los casos de prueba del chat.
 
 ### Inicio de Marketing
 
+La identidad usa el logo **Núcleo** (dos cintas y una semilla), centralizado
+en `src/app/tema.py`. Cabecera, footer, Ayuda, agente e icono de pestaña
+comparten la misma geometría, con color adaptado a cada superficie.
+La cabecera y las pestañas comparten sus estilos en `tema.py` en todas las
+vistas; el agente solo adapta la paleta al fondo nocturno. Sus selectores
+no afectan a los radios de los ajustes del chat.
+
+Los ajustes del agente se renderizan en un fragmento de Streamlit: cambiar
+modelo, redacción o verificación actualiza únicamente los controles, sin
+volver a dibujar la conversación ni consultar la fuente. La siguiente pregunta
+lee los ajustes actuales del estado de sesión. Quitar un adjunto sí actualiza
+la vista completa para reflejar el cambio de datos, conservando el historial.
+
 El Inicio público se renderiza desde `src/app/vista_inicio.py`: hero,
 conversación ilustrativa, capacidades, tres ejemplos de plantillas y footer.
 Los botones usan la navegación de Streamlit, sin recargar la sesión ni llamar
@@ -19,9 +32,16 @@ entrar en pantalla mediante `IntersectionObserver`, respetando la preferencia
 de movimiento reducido; sin JavaScript, el contenido permanece visible.
 La portada ocupa el espacio restante de la primera pantalla, descontando la
 marca y la navegación; el recorrido comienza fuera del área visible. Una flecha
-accesible permite bajar al primer ejemplo. Su movimiento también se desactiva
+decorativa y no interactiva invita a bajar. Tras desplazar 120 píxeles se oculta
+y guarda esa preferencia en el navegador (localStorage), incluso entre recargas.
+Si el almacenamiento está bloqueado, se avisa en consola y se conserva la
+preferencia durante la vida de la página. Su movimiento se desactiva
 con la preferencia de movimiento reducido. El footer usa botones terciarios
 sin recuadro y el ejemplo presenta los turnos como una conversación.
+El recorrido usa espaciado compacto, énfasis tipográfico y tarjetas alineadas
+con acentos de color discretos, sin giros ni decoración de notas adhesivas.
+El footer agrupa la navegación en una fila adaptable, con marca e información
+de contacto en columnas y una línea legal separada.
 La animación requiere el soporte de `st.html(unsafe_allow_javascript=True)`
 de Streamlit 1.65 o posterior. El footer remite al administrador de la
 instalación mientras no exista un canal oficial de contacto.

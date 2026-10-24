@@ -6,6 +6,26 @@ plantillas y Eduardo prepara los casos de prueba del chat.
 
 ## Estado de partida
 
+### Inicio de Marketing
+
+El Inicio público se renderiza desde `src/app/vista_inicio.py`: hero,
+conversación ilustrativa, capacidades, tres ejemplos de plantillas y footer.
+Los botones usan la navegación de Streamlit, sin recargar la sesión ni llamar
+a la IA. El Inicio interno conserva el acceso al flujo de Datos y su estado.
+Los ejemplos no representan consultas reales ni contenido del catálogo.
+
+El degradado de fondo es fijo y exclusivo de Inicio. Los textos aparecen al
+entrar en pantalla mediante `IntersectionObserver`, respetando la preferencia
+de movimiento reducido; sin JavaScript, el contenido permanece visible.
+La portada ocupa el espacio restante de la primera pantalla, descontando la
+marca y la navegación; el recorrido comienza fuera del área visible. Una flecha
+accesible permite bajar al primer ejemplo. Su movimiento también se desactiva
+con la preferencia de movimiento reducido. El footer usa botones terciarios
+sin recuadro y el ejemplo presenta los turnos como una conversación.
+La animación requiere el soporte de `st.html(unsafe_allow_javascript=True)`
+de Streamlit 1.65 o posterior. El footer remite al administrador de la
+instalación mientras no exista un canal oficial de contacto.
+
 - **Diseño:** Jhonattan, rama `feature/frontend-streamlit-local`. Dos vistas del
   boceto: *Plantillas* (el catálogo) y *Resultado* (la plantilla abierta). En su
   rama todo es simulado: el SVG lleva botones transparentes encima y
@@ -298,9 +318,17 @@ el comando de arranque sin arrancar Streamlit. No es un servicio en bucle.
 - Usa Super para responder y modo de verificación automática. Se guarda como
   **preparado para revisión**, nunca como aprobado ni publicado. Un aviso de
   revisión del verificador se conserva y se muestra a Marketing.
+  La verificación factual NVIDIA también usa Super, independientemente del modelo
+  elegido para redactar en el chat; Lightning aprobó un título sin respaldo en
+  la evaluación real. Se conserva el respaldo Gemini ante fallos del proveedor,
+  por lo que seleccionar Super no garantiza que todas las llamadas terminen allí.
 - Una plantilla exitosa sustituye su versión anterior. Una fallida conserva
   íntegra su última versión y registra un aviso. Sin versión anterior aparece
   como no disponible. Una captura vacía o fallida no borra el contenido.
+  Una consulta sin coincidencias no es una caída del servicio: se guarda
+  explícitamente como `sin_evidencia`, con cero coincidencias, sin borrador y
+  sin citas. Puede sustituir una versión previa para no mostrar contenido que
+  ya no corresponde a la captura. La vista lo distingue de un fallo de ejecución.
 - Reejecutar el mismo día no regenera las plantillas ya exitosas; reintenta
   únicamente las pendientes. Un cambio del prompt requiere regeneración.
 - El catálogo completo se guarda mediante un solo PUT condicional, con ETag
@@ -320,6 +348,43 @@ el comando de arranque sin arrancar Streamlit. No es un servicio en bucle.
 - El frontend solo lee OCI, sin llamadas a modelos. Comprueba cada minuto y
   reutiliza lecturas hasta 45 segundos; ofrece actualización manual. Los
   errores de acceso se muestran como errores, no como un catálogo vacío.
+
+### Correcciones de calidad y evaluación opt-in
+
+- El esquema de hashtags expone al modelo el prefijo `#` obligatorio y la
+  prohibición de espacios; no se corrigen silenciosamente etiquetas inválidas.
+- La generación de X y la interfaz comparten `texto_publicacion`: se cuenta
+  contenido, hashtags y separadores, sin título. Si se exceden 280 caracteres,
+  se pide una reescritura; si aún se exceden, la generación falla explícitamente,
+  sin recortar texto ni sustituir la versión previa del catálogo.
+  El conteo local es de caracteres Unicode, no un validador oficial de X.
+- El intérprete admite `tipos_detectados` como alternativas OR. FAQ selecciona
+  preguntas técnicas y del programa, sin filtrar sentimiento ni recuperar
+  testimonios por defecto. La evidencia sigue acotada a 20 mensajes;
+  los conteos se calculan sobre todas las coincidencias.
+  Con `agrupar_preguntas=true`, el modelo entrega grupos estructurados de duda e
+  IDs. La aplicación exige que cubran la evidencia sin duplicados ni fuentes
+  ajenas y calcula las frecuencias y los grupos repetidos a partir de IDs únicos,
+  no de las cifras narradas por el modelo. El resumen no propone respuestas:
+  para responder dudas se requiere otra consulta que contraste sus fuentes.
+- Los agregados distinguen `universo_total` de `total_coincidencias`.
+  El boletín exige titular Markdown, máximo 180 palabras y explicita el
+  subconjunto positivo. Si incumple titular o longitud no sustituye la versión
+  previa; las plantillas analíticas no aceptan borradores de redes sociales.
+  Temas solicita todos los conteos, incluidos empates. Las reglas editoriales
+  evitan mezclar historias y exigen sustento para títulos y puntos de partida.
+
+Evaluación real reproducible (consume cuota; no ejecutarla con la suite offline):
+
+```powershell
+python -m pytest tests\integracion\prueba_plantillas_diarias.py -q -p no:cacheprovider
+```
+
+Usa datos simulados versionados en el repositorio, no Oracle ni OCI. Comprueba
+los nueve prompts, negativos sintéticos y títulos con/sin respaldo. Las salidas
+de los nueve prompts se guardan en los temporales de pytest para revisión.
+Los criterios medibles y el verificador no garantizan por sí solos calidad
+editorial general ni estabilidad: Marketing debe revisar antes de publicar.
 
 ### Activación pendiente con Cloud
 

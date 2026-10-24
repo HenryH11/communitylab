@@ -28,7 +28,7 @@ from src.app.plantillas_catalogo import (
 
 ESTILOS = """
 <style>
-    .section-title { color: #2b2216; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.6rem; font-weight: 600; margin: 1.1rem 0 .6rem; }
+    .section-title { color: #2b2216; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.7rem; font-weight: 700; margin: 1.1rem 0 .6rem; }
     .pl-card { background: #fffaf0; border: 1px solid #e3d5b3; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
     .pl-card.off { opacity: .55; }
     .pl-top { display: flex; align-items: center; gap: 12px; }
@@ -38,10 +38,10 @@ ESTILOS = """
     .pl-tag { font-size: .68rem; letter-spacing: 1px; color: #6e604a; border: 1px solid #e3d5b3; border-radius: 6px; padding: 2px 8px; }
     .pl-desc { color: #2b2216; margin: 12px 0 2px; font-size: .92rem; }
     .pl-detail { color: #6e604a; font-size: .82rem; }
-    .pl-count { color: #b07d22; font-weight: 600; font-size: .85rem; margin-top: 10px; }
+    .pl-count { color: #8c6214; font-weight: 700; font-size: .85rem; margin-top: 10px; }
     .pl-count.soon { color: #8a4b2a; }
     .pl-preview { background: #fffaf0; border: 1px solid #e3d5b3; border-radius: 14px; padding: 16px; }
-    .pl-preview .org { font-weight: 600; color: #2b2216; margin-bottom: 10px; }
+    .pl-preview .org { font-weight: 700; color: #2b2216; margin-bottom: 10px; }
     .pl-preview .body { white-space: pre-wrap; color: #2b2216; font-size: .9rem; line-height: 1.5; }
     .pl-preview .note { color: #6e604a; font-size: .7rem; letter-spacing: 1px; margin-top: 12px; }
 </style>
@@ -79,7 +79,7 @@ def _catalogo(resultados):
             with columnas[indice % 2]:
                 st.markdown(_tarjeta(plantilla, resultados), unsafe_allow_html=True)
     if resultados is None:
-        st.info("Procesa un lote en **Importar interacciones** para ver los resultados de cada plantilla.")
+        st.info("Todavía no hay un lote procesado para mostrar los resultados de cada plantilla.")
 
 
 def _tarjeta(plantilla, resultados):

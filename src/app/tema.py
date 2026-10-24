@@ -20,10 +20,11 @@ def espiral(clase: str = "cl-espiral", grosor: float = 1.3) -> str:
     )
 
 
+# Solo dos pesos por familia: bold para títulos y light para el texto.
 FUENTES = (
-    "@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600"
-    "&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500"
-    "&family=EB+Garamond:wght@400;500&display=swap');"
+    "@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700"
+    "&family=Cormorant+Garamond:wght@300;700"
+    "&family=Inter:wght@300;700&display=swap');"
 )
 
 # Colores de gráficas alineados con .streamlit/config.toml.
@@ -39,7 +40,7 @@ ESTILO_GLOBAL = f"""
         --cl-superficie: #fffaf0;
         --cl-linea: #e3d5b3;
         --cl-tinta: #2b2216;
-        --cl-tinta-suave: #6e604a;
+        --cl-tinta-suave: #54483a;
         --cl-miel: {MIEL};
         --cl-miel-oscura: #8c6214;
         --cl-miel-clara: #f1e2bd;
@@ -48,71 +49,89 @@ ESTILO_GLOBAL = f"""
         --cl-miel-noche: #d6ab50;
         --cl-titulo: "Cormorant Garamond", Garamond, Georgia, serif;
         --cl-versal: "Cinzel", "Trajan Pro", Georgia, serif;
+        --cl-texto: "Inter", "Segoe UI", system-ui, sans-serif;
     }}
 
-    .stApp {{
-        background:
-            radial-gradient(ellipse 80% 50% at 50% -15%, rgba(214, 171, 80, 0.16), transparent 70%),
-            var(--cl-pergamino);
+    /* Fondo sólido: los degradados translúcidos hacían ver la página borrosa. */
+    .stApp {{ background: var(--cl-pergamino); }}
+    .stApp p, .stApp li, .stApp label, .stApp input, .stApp textarea,
+    .stApp td, .stApp th {{
+        font-family: var(--cl-texto);
+        font-weight: 300;
+        -webkit-font-smoothing: antialiased;
     }}
+    .stApp strong, .stApp b {{ font-weight: 700; }}
     .stApp h1, .stApp h2, .stApp h3, .stApp h4 {{
         color: var(--cl-tinta);
         font-family: var(--cl-titulo);
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.005em;
     }}
-    .stApp h1 {{ font-size: 2.9rem; line-height: 1.1; }}
-    .stApp h2 {{ font-size: 2.1rem; }}
+    .stApp h1 {{ font-size: 3.4rem; line-height: 1.1; }}
+    .stApp h2 {{ font-size: 2.3rem; }}
 
-    /* Marca: un adelanto nocturno del agente */
+    /* Marca: un adelanto nocturno del agente, con texto blanco y espiral miel */
     .communitylab-brand {{
         display: flex;
         align-items: center;
-        gap: 0.7rem;
-        background:
-            radial-gradient(ellipse 60% 140% at 0% 50%, rgba(214, 171, 80, 0.14), transparent 70%),
-            var(--cl-noche);
-        border: 1px solid rgba(214, 171, 80, 0.25);
+        gap: 1rem;
+        background: var(--cl-noche);
         border-radius: 0.75rem;
-        color: var(--cl-miel-noche);
+        color: #fffaf0;
         font-family: var(--cl-versal);
-        font-weight: 600;
-        letter-spacing: 0.24em;
-        margin-bottom: 1rem;
-        padding: 0.75rem 1.1rem;
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        margin-bottom: 1.2rem;
+        padding: 1.1rem 1.6rem;
     }}
-    .communitylab-brand .cl-espiral {{ width: 1.45rem; height: 1.45rem; }}
+    .communitylab-brand .cl-espiral {{
+        width: 2.4rem;
+        height: 2.4rem;
+        color: var(--cl-miel-noche);
+    }}
 
-    /* Navegación */
+    /* Navegación: la opción activa va en noche con texto blanco, no miel sobre miel */
     div[data-testid="stRadio"] > div[role="radiogroup"] {{ gap: 0.4rem; }}
     div[data-testid="stRadio"] label {{
         border-radius: 0.6rem;
-        padding: 0.45rem 0.8rem;
+        padding: 0.5rem 0.9rem;
         transition: background 0.2s ease;
     }}
-    div[data-testid="stRadio"] label:hover {{ background: rgba(176, 125, 34, 0.08); }}
+    div[data-testid="stRadio"] label p {{ font-size: 1.05rem; }}
+    div[data-testid="stRadio"] label:hover {{ background: rgba(43, 34, 22, 0.06); }}
     div[data-testid="stRadio"] label:has(input:checked) {{
-        background: var(--cl-miel-clara);
-        color: var(--cl-miel-oscura);
+        background: var(--cl-noche);
+    }}
+    div[data-testid="stRadio"] label:has(input:checked) p {{
+        color: #fffaf0;
         font-weight: 700;
     }}
 
     button[kind="primary"] {{
-        background-color: var(--cl-miel);
-        border-color: var(--cl-miel);
+        background-color: var(--cl-miel-oscura);
+        border-color: var(--cl-miel-oscura);
         color: #fffaf0;
     }}
     button[kind="primary"]:hover {{
-        background-color: var(--cl-miel-oscura);
-        border-color: var(--cl-miel-oscura);
+        background-color: var(--cl-tinta);
+        border-color: var(--cl-tinta);
         color: #fffaf0;
     }}
     [data-testid="stVerticalBlockBorderWrapper"],
     div[data-testid="stExpander"] details {{
         background: var(--cl-superficie);
     }}
+    /* Insignia de inicio: texto blanco sobre noche, no miel sobre miel */
+    .st-key-inicio_insignia span {{
+        background: var(--cl-noche) !important;
+        color: #fffaf0 !important;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+    }}
 
     .st-key-inicio_card_datos button,
+    .st-key-inicio_card_agente button,
     .st-key-inicio_card_analisis button,
     .st-key-inicio_card_an-lisis button,
     .st-key-inicio_card_plantillas button {{

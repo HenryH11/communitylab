@@ -1,71 +1,57 @@
 """Tema visual gótico formal del agente en vivo.
 
 Es la versión nocturna de la paleta "pergamino y miel" de `tema.py`: ébano,
-bosque, nogal y miel encendida con tipografía serif clásica (naturaleza, fauna
+bosque, nogal y miel encendida con titulares serif en bold y texto light (naturaleza, fauna
 y madera en clave sobria). Comparte tonos con el resto de la app, pero resalta
 por contraste de luz. Los estilos solo se inyectan al renderizar esa vista.
 """
 
 from html import escape
 
+from src.agentes.plataformas import NOMBRES_PLATAFORMA
 from src.app.tema import espiral
-
-NOMBRES_PLATAFORMA = {"linkedin": "LinkedIn", "instagram": "Instagram", "x": "X"}
 
 EMBLEMA = espiral("gotico-emblema", grosor=1.2)
 
 ESTILO = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=EB+Garamond:wght@400;500&display=swap');
-
     :root {
         --ebano: #0c0b08;
         --noche: #15140e;
-        --bosque: #1d1d14;
-        --musgo: #2f2e1e;
-        --laton: #d4a84c;
-        --laton-tenue: rgba(212, 168, 76, 0.35);
-        --marfil: #f3e9cc;
-        --salvia: #aca37f;
-        --nogal: #271c10;
+        --bosque: #1c1b14;
+        --nogal: #241b10;
+        --laton: #d6ab50;
+        --blanco: #fbf7ec;
+        --hueso: #ddd6c3;
+        --linea: rgba(251, 247, 236, 0.14);
         --serif-titulo: "Cinzel", "Trajan Pro", Georgia, serif;
         --serif-display: "Cormorant Garamond", Garamond, Georgia, serif;
-        --serif-texto: "EB Garamond", Garamond, Georgia, serif;
-        --veta: repeating-linear-gradient(
-            90deg,
-            rgba(255, 235, 200, 0.018) 0 1px,
-            transparent 1px 7px,
-            rgba(0, 0, 0, 0.05) 7px 8px,
-            transparent 8px 19px
-        );
+        --texto: "Inter", "Segoe UI", system-ui, sans-serif;
     }
 
+    /* Fondo sólido para que el texto se vea nítido */
     .stApp {
-        background:
-            radial-gradient(ellipse 70% 45% at 50% -10%, rgba(214, 168, 76, 0.13), transparent 70%),
-            radial-gradient(ellipse 100% 70% at 50% 120%, rgba(0, 0, 0, 0.7), transparent 70%),
-            linear-gradient(180deg, var(--noche), var(--ebano));
-        color: var(--marfil);
+        background: linear-gradient(180deg, var(--noche), var(--ebano));
+        color: var(--blanco);
     }
     header[data-testid="stHeader"] { background: transparent; }
-    header[data-testid="stHeader"] * { color: var(--salvia); }
+    header[data-testid="stHeader"] * { color: var(--hueso); }
 
-    /* Barra de marca y navegación en clave sobria */
+    /* Barra de marca y navegación: texto blanco, el dorado queda para acentos */
     .communitylab-brand {
-        background: transparent !important;
-        border: 1px solid var(--laton-tenue);
-        color: var(--laton) !important;
-        font-family: var(--serif-titulo);
-        letter-spacing: 0.22em !important;
+        background: var(--bosque) !important;
+        border: 1px solid var(--linea);
+        color: var(--blanco) !important;
     }
-    div[data-testid="stRadio"] label p { color: var(--salvia); font-family: var(--serif-texto); }
+    div[data-testid="stRadio"] label p { color: var(--hueso); }
+    div[data-testid="stRadio"] label:hover { background: rgba(251, 247, 236, 0.06); }
     div[data-testid="stRadio"] label > div > div:first-child:not([data-testid]) { display: none; }
     div[data-testid="stRadio"] label:has(input:checked) {
         background: transparent;
-        box-shadow: inset 0 -1px 0 var(--laton);
+        box-shadow: inset 0 -2px 0 var(--laton);
         border-radius: 0;
     }
-    div[data-testid="stRadio"] label:has(input:checked) p { color: var(--marfil); }
+    div[data-testid="stRadio"] label:has(input:checked) p { color: var(--blanco); }
 
     /* Lienzo central, como un chat de LLM */
     .st-key-gotico_lienzo {
@@ -76,35 +62,37 @@ ESTILO = """
     .st-key-gotico_lienzo p,
     .st-key-gotico_lienzo li,
     .st-key-gotico_lienzo label {
-        font-family: var(--serif-texto);
-        color: var(--marfil);
+        font-family: var(--texto);
+        font-weight: 300;
+        color: var(--blanco);
     }
+    .st-key-gotico_lienzo strong { font-weight: 700; }
 
     .gotico-cabecera {
         text-align: center;
         margin: 9vh 0 2rem;
         animation: gotico-aparecer 0.8s ease-out both;
     }
-    .gotico-emblema { width: 54px; height: 54px; color: var(--laton); }
+    .gotico-emblema { width: 64px; height: 64px; color: var(--laton); }
     .gotico-cabecera .gotico-emblema path {
         stroke-dasharray: 100;
         animation: gotico-trazar 2.4s cubic-bezier(.6, 0, .3, 1) both;
     }
     .gotico-cabecera p.gotico-titulo {
-        margin: 0.7rem 0 0.1rem;
+        margin: 0.9rem 0 0.2rem;
         font-family: var(--serif-titulo);
-        font-weight: 500;
-        font-size: 0.95rem;
-        letter-spacing: 0.32em;
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: 0.3em;
         color: var(--laton);
     }
     .gotico-cabecera p.gotico-lema {
         margin: 0;
         font-family: var(--serif-display);
-        font-style: italic;
-        font-size: 2.3rem;
-        line-height: 1.25;
-        color: var(--marfil);
+        font-weight: 700;
+        font-size: 2.7rem;
+        line-height: 1.2;
+        color: var(--blanco);
     }
     .gotico-ornamento {
         display: flex;
@@ -120,42 +108,165 @@ ESTILO = """
         content: "";
         flex: 1;
         height: 1px;
-        background: linear-gradient(90deg, transparent, var(--laton-tenue), transparent);
+        background: var(--linea);
     }
 
-    /* Barra de estado: madera de nogal con filete de latón */
-    .st-key-gotico_barra {
-        padding: 0.55rem 1rem;
-        margin-bottom: 1.6rem;
-        border: 1px solid var(--laton-tenue);
-        border-radius: 4px;
-        background: var(--veta), linear-gradient(180deg, #1f160c, var(--nogal));
-    }
-    .gotico-estado {
-        font-family: var(--serif-titulo);
-        font-size: 0.72rem;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: var(--salvia);
-        padding-top: 0.35rem;
-    }
-    .gotico-estado b { color: var(--laton); font-weight: 600; }
-    .st-key-gotico_barra [data-testid="stCheckbox"] label p {
-        font-family: var(--serif-titulo) !important;
-        font-size: 0.72rem !important;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--salvia) !important;
+    /* Controles junto a la entrada: verificación y estilo de redacción */
+    .st-key-gotico_controles { margin-bottom: 0.35rem; }
+    .st-key-agente_barra { flex-wrap: wrap; gap: 0.4rem; }
+    .st-key-gotico_controles [data-testid="stCheckbox"] label p {
+        font-family: var(--texto) !important;
+        font-weight: 300 !important;
+        font-size: 0.88rem !important;
+        color: var(--blanco) !important;
     }
     /* La pista del interruptor es el primer div sin testid de la etiqueta. */
-    .st-key-gotico_barra [data-testid="stCheckbox"] label > div:not([data-testid]) {
-        background: rgba(212, 168, 76, 0.22) !important;
+    .st-key-gotico_controles [data-testid="stCheckbox"] label > div:not([data-testid]) {
+        background: #4a4434 !important;
     }
-    .st-key-gotico_barra [data-testid="stCheckbox"] label:has(input:checked) > div:not([data-testid]) {
+    .st-key-gotico_controles [data-testid="stCheckbox"] label:has(input:checked) > div:not([data-testid]) {
         background: var(--laton) !important;
     }
-    .st-key-gotico_barra [data-testid="stCheckbox"] label > div:not([data-testid]) > div {
-        background: var(--marfil) !important;
+    .st-key-gotico_controles [data-testid="stCheckbox"] label > div:not([data-testid]) > div {
+        background: var(--blanco) !important;
+    }
+    .st-key-gotico_controles [data-testid="stTooltipIcon"] * { color: var(--hueso) !important; }
+    .st-key-gotico_controles [data-testid="stPopover"] button {
+        min-height: 2rem;
+        padding: 0.2rem 0.85rem;
+        background: var(--nogal);
+        border: 1px solid var(--linea);
+        border-radius: 999px;
+        color: var(--blanco);
+    }
+    .st-key-gotico_controles [data-testid="stPopover"] button:hover { border-color: var(--laton); }
+    .st-key-gotico_controles [data-testid="stPopover"] button p {
+        font-family: var(--texto);
+        font-weight: 300;
+        font-size: 0.88rem;
+        color: var(--blanco);
+    }
+    [data-testid="stPopoverBody"] {
+        background: var(--nogal);
+        border: 1px solid var(--linea);
+    }
+    [data-testid="stPopoverBody"]:has([class*="st-key-agente_panel_"]) {
+        width: min(330px, calc(100vw - 32px)) !important;
+        min-width: 0 !important;
+        padding: 0.7rem !important;
+    }
+    [class*="st-key-agente_panel_"] {
+        gap: 0.45rem !important;
+    }
+    [class*="st-key-agente_panel_"] [data-testid="stCaptionContainer"] p {
+        font-size: 0.78rem;
+        line-height: 1.35;
+        margin-bottom: 0;
+    }
+    [class*="st-key-agente_panel_"] [data-testid="stCaptionContainer"] {
+        margin-bottom: 0 !important;
+    }
+    .st-key-agente_panel_datos [data-testid="stText"] {
+        font-family: var(--texto) !important;
+        color: var(--blanco) !important;
+        font-weight: 400;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.8rem;
+    }
+    .st-key-agente_panel_datos [data-testid="stText"] * {
+        color: var(--blanco) !important;
+    }
+    .agente-info { width: 1.6rem; }
+    .agente-info summary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.8rem;
+        cursor: pointer;
+        color: var(--blanco);
+        font: 700 0.85rem var(--texto);
+        list-style: none;
+        border: 1px solid var(--linea);
+        border-radius: 50%;
+    }
+    .agente-info summary::-webkit-details-marker { display: none; }
+    .agente-info summary:hover,
+    .agente-info summary:focus-visible {
+        outline: 2px solid var(--laton);
+        outline-offset: 2px;
+    }
+    .agente-info-tarjeta {
+        display: none;
+        position: fixed;
+        bottom: 155px;
+        left: 16px;
+        width: min(330px, calc(100vw - 32px));
+        max-height: min(440px, calc(100dvh - 200px));
+        overflow-y: auto;
+        padding: 1rem;
+        background: var(--nogal);
+        color: var(--blanco);
+        border: 1px solid var(--linea);
+        border-radius: 8px;
+        box-shadow: 0 8px 28px #0008;
+        z-index: 10000;
+        font: 400 0.85rem/1.5 var(--texto);
+    }
+    .agente-info-tarjeta strong { color: var(--blanco); }
+    .agente-info-tarjeta p {
+        color: var(--blanco);
+        font: 400 0.85rem/1.5 var(--texto) !important;
+        margin: 0.6rem 0 0;
+    }
+    .agente-info details[open] + .agente-info-tarjeta,
+    .agente-info:has(summary:focus-visible) .agente-info-tarjeta { display: block; }
+    @media (hover: hover) {
+        .agente-info:hover .agente-info-tarjeta { display: block; }
+    }
+    @media (max-width: 700px) {
+        .agente-info-tarjeta {
+            bottom: 250px;
+            max-height: calc(100dvh - 290px);
+        }
+    }
+    @media (min-width: 1350px) {
+        .agente-info-tarjeta {
+            left: max(16px, calc((100vw - 1320px) / 2));
+            bottom: 180px;
+            width: 230px;
+        }
+        .agente-info-derecha .agente-info-tarjeta {
+            left: auto;
+            right: max(16px, calc((100vw - 1320px) / 2));
+        }
+    }
+    [data-testid="stPopoverBody"] p,
+    [data-testid="stPopoverBody"] label p,
+    [data-testid="stPopoverBody"] [data-testid="stCaptionContainer"] {
+        font-family: var(--texto);
+        color: var(--blanco);
+    }
+    [data-testid="stPopoverBody"] [data-testid="stCaptionContainer"] p { color: var(--hueso); }
+    [data-testid="stPopoverBody"] [data-testid="stTooltipIcon"] * { color: var(--hueso) !important; }
+    [data-testid="stPopoverBody"] [data-testid="stSliderThumbValue"] { color: var(--laton); }
+    [data-testid="stPopoverBody"] [data-testid="stSlider"] [role="slider"] {
+        background: var(--laton);
+        border-color: var(--laton);
+    }
+    [data-testid="stPopoverBody"] [data-testid="stButtonGroup"] button {
+        background: var(--bosque);
+        border-color: var(--linea);
+    }
+    [data-testid="stPopoverBody"] [data-testid="stButtonGroup"] button[aria-checked="true"] {
+        background: var(--laton) !important;
+        border-color: var(--laton) !important;
+    }
+    [data-testid="stPopoverBody"] [data-testid="stButtonGroup"] button[aria-checked="true"] p {
+        color: var(--ebano);
+        font-weight: 700;
     }
 
     /* Mensajes */
@@ -174,126 +285,130 @@ ESTILO = """
         max-width: 78%;
         margin-left: auto;
         padding: 0.75rem 1.1rem;
-        border: 1px solid var(--laton-tenue);
+        border: 1px solid var(--linea);
         border-radius: 14px 14px 2px 14px;
-        background: var(--veta), linear-gradient(180deg, #241a0f, #1a130b);
+        background: var(--nogal);
     }
     [data-testid="stChatMessage"] [data-testid="stElementContainer"]:has(.gotico-voz-persona) {
         display: none;
     }
     [data-testid="stChatMessage"]:has(.gotico-voz-agente) p,
     [data-testid="stChatMessage"]:has(.gotico-voz-agente) li {
-        font-size: 1.08rem;
+        font-size: 1.05rem;
         line-height: 1.7;
     }
-    [data-testid="stChatMessage"] strong { color: #fbf1d3; }
+    [data-testid="stChatMessage"] strong { color: var(--blanco); }
     .gotico-firma {
         display: flex;
         align-items: center;
         gap: 0.5rem;
         font-family: var(--serif-titulo);
-        font-size: 0.7rem;
-        letter-spacing: 0.24em;
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.2em;
         color: var(--laton);
     }
-    .gotico-firma .gotico-emblema { width: 17px; height: 17px; }
+    .gotico-firma .gotico-emblema { width: 20px; height: 20px; }
     [data-testid="stChatMessage"]:has(.gotico-voz-agente) [data-testid="stMarkdownContainer"] .gotico-firma {
         margin-bottom: 0.25rem;
     }
 
-    /* Borrador: folio con doble filete */
+    /* Borrador: folio sólido con filete neutro y título blanco */
     .gotico-borrador {
         margin: 0.9rem 0 0.3rem;
         padding: 1.3rem 1.5rem 1.1rem;
-        border: 1px solid var(--laton-tenue);
-        outline: 1px solid rgba(212, 168, 76, 0.15);
-        outline-offset: 4px;
-        border-radius: 2px;
-        background: linear-gradient(180deg, rgba(47, 46, 30, 0.4), rgba(21, 20, 14, 0.65));
+        border: 1px solid var(--linea);
+        border-left: 3px solid var(--laton);
+        border-radius: 4px;
+        background: var(--bosque);
     }
     .gotico-borrador-plataforma {
         font-family: var(--serif-titulo);
-        font-size: 0.68rem;
-        letter-spacing: 0.26em;
+        font-weight: 700;
+        font-size: 0.78rem;
+        letter-spacing: 0.2em;
         text-transform: uppercase;
         color: var(--laton);
     }
     .gotico-borrador-titulo {
         margin: 0.35rem 0 0.7rem;
         font-family: var(--serif-display);
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--marfil);
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: var(--blanco);
     }
     .gotico-borrador-contenido {
-        font-family: var(--serif-texto);
-        font-size: 1.02rem;
+        font-family: var(--texto);
+        font-weight: 300;
+        font-size: 1rem;
         line-height: 1.7;
-        color: var(--marfil);
+        color: var(--blanco);
     }
     .gotico-hashtags {
         margin-top: 0.9rem;
         padding-top: 0.6rem;
-        border-top: 1px solid rgba(212, 168, 76, 0.18);
-        font-family: var(--serif-texto);
-        font-style: italic;
-        color: var(--salvia);
+        border-top: 1px solid var(--linea);
+        font-family: var(--texto);
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--hueso);
     }
 
     /* Desplegables de fuentes y verificación */
     .st-key-gotico_lienzo [data-testid="stExpander"] details {
         background: transparent;
         border: none;
-        border-top: 1px solid rgba(212, 168, 76, 0.18);
+        border-top: 1px solid var(--linea);
         border-radius: 0;
     }
     .st-key-gotico_lienzo [data-testid="stExpander"] summary p {
-        font-family: var(--serif-titulo);
-        font-size: 0.7rem;
-        letter-spacing: 0.18em;
+        font-family: var(--texto);
+        font-weight: 700;
+        font-size: 0.85rem;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: var(--laton);
+        color: var(--blanco);
     }
+    .st-key-gotico_lienzo [data-testid="stExpander"] summary svg { color: var(--laton); }
     .st-key-gotico_lienzo [data-testid="stCaptionContainer"],
-    .st-key-gotico_lienzo [data-testid="stCaptionContainer"] p { color: var(--salvia); }
+    .st-key-gotico_lienzo [data-testid="stCaptionContainer"] p { color: var(--hueso); }
+
+    /* Avisos: el fondo del aviso es claro, así que el texto va oscuro */
+    .st-key-gotico_lienzo [data-testid="stAlert"] p { color: var(--ebano); }
 
     /* Entrada fija al pie, como en un chat de LLM */
-    [data-testid="stBottom"] > div {
-        background: linear-gradient(180deg, transparent, var(--ebano) 35%);
-    }
+    [data-testid="stBottom"] > div { background: var(--ebano); }
     [data-testid="stBottomBlockContainer"] {
         max-width: 812px;
         padding-bottom: 1.6rem;
     }
     [data-testid="stChatInput"] {
-        background: #17160f;
-        border: 1px solid var(--laton-tenue) !important;
+        background: var(--bosque);
+        border: 1px solid var(--linea) !important;
         border-radius: 14px;
-        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        transition: border-color 0.3s ease;
     }
-    [data-testid="stChatInput"]:focus-within {
-        border-color: var(--laton) !important;
-        box-shadow: 0 0 0 1px rgba(212, 168, 76, 0.25), 0 12px 40px rgba(0, 0, 0, 0.55);
-    }
+    [data-testid="stChatInput"]:focus-within { border-color: var(--laton) !important; }
     [data-testid="stChatInput"] > div,
     [data-testid="stChatInput"] > div:focus-within {
         background: transparent;
         border-color: transparent !important;
     }
     [data-testid="stChatInput"] textarea {
-        font-family: var(--serif-texto);
-        font-size: 1.05rem;
-        color: var(--marfil);
+        font-family: var(--texto);
+        font-weight: 300;
+        font-size: 1.02rem;
+        color: var(--blanco);
         caret-color: var(--laton);
     }
-    [data-testid="stChatInput"] textarea::placeholder { color: #81775a; font-style: italic; }
+    [data-testid="stChatInput"] textarea::placeholder { color: #b3ab95; }
     [data-testid="stChatInput"] button {
-        background: transparent;
-        border: 1px solid var(--laton-tenue);
-        color: var(--laton);
+        background: var(--laton);
+        border: none;
+        color: var(--ebano);
     }
 
-    [data-testid="stSpinner"] p { font-family: var(--serif-display); font-style: italic; color: var(--salvia); }
+    [data-testid="stSpinner"] p { font-family: var(--texto); font-weight: 300; color: var(--hueso); }
 
     @keyframes gotico-trazar {
         from { stroke-dashoffset: 100; }
@@ -322,13 +437,6 @@ def cabecera(lema: str) -> str:
     )
 
 
-def estado(total: int, con_activos: int) -> str:
-    return (
-        '<div class="gotico-estado">Lote procesado · '
-        f"<b>{total}</b> mensajes · <b>{con_activos}</b> con activos</div>"
-    )
-
-
 def marca_voz(rol: str) -> str:
     """Marca que da a cada mensaje su estilo según quién habla."""
     if rol == "user":
@@ -339,13 +447,26 @@ def marca_voz(rol: str) -> str:
     )
 
 
+def informacion_lateral(clave: str, titulo: str, parrafos: list[str], *, derecha: bool = False) -> str:
+    lado = " agente-info-derecha" if derecha else ""
+    contenido = "".join(f"<p>{escape(texto)}</p>" for texto in parrafos)
+    return (
+        f'<div class="agente-info{lado}"><details name="agente-informacion">'
+        f'<summary aria-label="Información de {escape(titulo, quote=True)}" '
+        f'aria-describedby="info-{escape(clave, quote=True)}">i</summary></details>'
+        f'<aside class="agente-info-tarjeta" id="info-{escape(clave, quote=True)}" '
+        f'aria-label="{escape(titulo, quote=True)}">'
+        f"<strong>{escape(titulo)}</strong>{contenido}</aside></div>"
+    )
+
+
 def borrador(datos: dict) -> str:
-    plataforma = NOMBRES_PLATAFORMA.get(datos.get("plataforma", ""), "Borrador")
+    plataforma = NOMBRES_PLATAFORMA.get(datos.get("plataforma", ""), "Publicación")
     contenido = escape(datos.get("contenido", "")).replace("\n", "<br>")
     hashtags = " · ".join(escape(etiqueta) for etiqueta in datos.get("hashtags", []))
     return (
         '<div class="gotico-borrador">'
-        f'<div class="gotico-borrador-plataforma">Borrador · {escape(plataforma)}</div>'
+        f'<div class="gotico-borrador-plataforma">Publicación preparada · {escape(plataforma)}</div>'
         f'<div class="gotico-borrador-titulo">{escape(datos.get("titulo", ""))}</div>'
         f'<div class="gotico-borrador-contenido">{contenido}</div>'
         f'<div class="gotico-hashtags">{hashtags}</div>'

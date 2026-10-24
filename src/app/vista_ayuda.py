@@ -1,39 +1,48 @@
 """Página de Ayuda: flujo en cuatro pasos, preguntas frecuentes y búsqueda."""
 
 import unicodedata
+from html import escape
 
 import streamlit as st
 
 from src.app import tema
 
 PASOS = (
-    ("Datos", "Importa", "Sube el JSON de la comunidad y revisa la muestra."),
-    ("Datos", "Procesa", "El pipeline clasifica mensajes y genera activos."),
-    ("Agente", "Pregunta", "Conversa con el agente sobre el lote procesado."),
-    ("Plantillas", "Aprueba", "Edita, aprueba y guarda los activos en OCI."),
+    ("Agente", "Pregunta", "Consulta al agente lo que dice la comunidad."),
+    ("Agente", "Adjunta", "Suma tus archivos para cruzarlos con la comunidad."),
+    ("Análisis", "Explora", "Revisa métricas, temas y sentimiento."),
+    ("Plantillas", "Publica", "Revisa el contenido del día y abre la red para publicarlo."),
 )
 
 SECCIONES = (
     (
-        "Datos y procesamiento",
-        ":material/upload_file:",
+        "Datos del agente",
+        ":material/database:",
         (
             (
-                "¿Cómo importo conversaciones?",
-                "Abre **Datos**, selecciona un archivo JSON compatible y revisa la "
-                "vista previa (hasta 20 interacciones) antes de procesarlo.",
+                "¿De dónde salen los datos?",
+                "De la base de datos de la comunidad, que el equipo de CommunityLab "
+                "mantiene con los mensajes ya clasificados por canal, sentimiento y "
+                "tema. El agente solo la consulta: nunca la modifica.",
             ),
             (
-                "¿Qué ocurre al procesar el lote?",
-                "El pipeline analiza sentimiento y tipo de cada mensaje y genera "
-                "activos según las rutas disponibles. Puede tardar según el tamaño "
-                "del lote y el proveedor de IA.",
+                "¿Cada cuánto se actualizan?",
+                "Al empezar tu sesión el agente toma una captura de la base y la usa "
+                "para todas tus preguntas, sin volver a consultarla cada vez. Cuando "
+                "pasa más de una hora, la vuelve a capturar para traer lo más reciente.",
             ),
             (
-                "¿Qué pasa si proceso otro lote?",
-                "Análisis, Plantillas y el Agente pasan a trabajar con el último "
-                "lote. La conversación con el agente se reinicia para no mezclar "
-                "datos de lotes distintos.",
+                "¿Puedo usar mis propios datos?",
+                "Sí. Usa el clip de la caja de texto para adjuntar archivos JSON, CSV "
+                "o TXT (hasta 5 MB cada uno). No necesitan un formato especial: el "
+                "agente busca el texto de cada mensaje y, si existen, el autor, el "
+                "canal y la fecha. En un TXT, cada línea es un mensaje. Se combinan "
+                "con la base solo durante tu sesión y no se guardan.",
+            ),
+            (
+                "¿Cómo quito un archivo que adjunté?",
+                "Abre **Tus datos**, junto a la caja de texto, y elige **Quitar**. La "
+                "conversación sigue con el resto de la información.",
             ),
         ),
     ),
@@ -42,17 +51,27 @@ SECCIONES = (
         ":material/cyclone:",
         (
             (
+                "¿Dónde veo qué cambia cada ajuste?",
+                "Usa el icono **i** junto a Modelo, Redacción o Estricto/Verificado. "
+                "Al pasar el puntero o enfocar el icono con el teclado aparece una "
+                "explicación: en pantallas amplias ocupa los márgenes del chat. "
+                "Puedes tocar o pulsar el icono para dejarla abierta y volver a "
+                "pulsarlo para cerrarla; en móvil se adapta al ancho disponible.",
+            ),
+            (
                 "¿Qué le puedo preguntar al agente?",
-                "Preguntas sobre el lote procesado: conteos, sentimiento, temas, "
-                "listados (por ejemplo, *«dame los 10 mejores comentarios»*) y "
-                "borradores para LinkedIn, Instagram o X. Admite seguimientos como "
-                "*«¿y los negativos?»* o *«conviértelo en un post para X»*.",
+                "Preguntas sobre los mensajes de la comunidad y tus archivos: conteos, "
+                "sentimiento, temas, listados (por ejemplo, *«dame los 10 mejores "
+                "comentarios»*) y contenido para LinkedIn, Instagram, X, Facebook, "
+                "WhatsApp, Telegram, Threads, Bluesky o Mastodon. Admite "
+                "seguimientos como *«¿y los negativos?»* o *«conviértelo en un post "
+                "para X»*.",
             ),
             (
                 "¿Puede inventar datos?",
-                "No. Solo usa los mensajes del lote y cita sus IDs como fuente. Si "
-                "pides 20 elementos y hay 12, entrega 12 y lo explica en lugar de "
-                "rellenar.",
+                "No. Solo usa los mensajes de la base y de tus archivos, y cita sus IDs "
+                "como fuente. Si pides 20 elementos y hay 12, entrega 12 y lo explica "
+                "en lugar de rellenar.",
             ),
             (
                 "¿Por qué a veces no responde lo que pedí?",
@@ -63,17 +82,36 @@ SECCIONES = (
             ),
             (
                 "¿Qué hace la verificación automática?",
-                "Sin ella (modo estricto) el agente responde con una sola llamada al "
-                "modelo. Activada, revisa cada afirmación de los borradores contra "
-                "las fuentes y muestra cuáles están respaldadas. Es más confiable, "
-                "pero tarda más y consume más cuota.",
+                "Abre **Estricto** o **Verificado** junto a la caja de texto. "
+                "Con Verificar borradores apagado, no se hace "
+                "una revisión separada del borrador. Encendido, revisa cada "
+                "afirmación de los borradores contra los mensajes de la comunidad y "
+                "muestra cuáles están respaldadas. Es más confiable, pero tarda más "
+                "y consume más cuota.",
             ),
             (
-                "¿Puedo usar el agente desde la terminal?",
-                "Sí. Ejecuta `python -m scripts.agente_en_vivo` para abrir un chat, "
-                "o pasa la pregunta entre comillas para una sola respuesta. Dentro "
-                "del chat, `/verificar` y `/estricto` cambian el modo y `/ayuda` "
-                "lista los comandos.",
+                "¿Para qué sirve el botón Redacción?",
+                "Ajusta qué tan creativos son los borradores de marketing. En "
+                "**Estilos** eliges Preciso (sobrio y directo), Equilibrado (variedad "
+                "moderada) o Creativo (más recursos de redacción, sin inventar hechos). "
+                "En **Manual** ajustas la temperatura (variedad del texto) y el top_p (amplitud del "
+                "vocabulario). Puedes cambiarlo en cualquier momento del chat. Los "
+                "análisis y conteos no cambian: siempre son exactos.",
+            ),
+            (
+                "¿Puedo elegir el modelo?",
+                "Sí. En **Modelo** eliges Super, recomendado para peticiones elaboradas, "
+                "o Lightning, una alternativa ligera que puede requerir más ajustes. "
+                "Cambia las respuestas siguientes sin borrar la conversación; no cambia "
+                "cómo se interpreta tu petición ni cómo se verifican los borradores. "
+                "Si el servicio falla, puede usarse un proveedor de respaldo.",
+            ),
+            (
+                "¿Tengo que escribir solo palabras clave?",
+                "No. Puedes saludar y hacer tu petición en el mismo mensaje. El "
+                "agente separa la conversación de los temas y filtros que necesita "
+                "para buscar. Si falta algo para entenderte, te lo pregunta antes "
+                "de consultar los mensajes.",
             ),
         ),
     ),
@@ -83,19 +121,43 @@ SECCIONES = (
         (
             (
                 "¿El contenido se publica automáticamente?",
-                "No. Los activos requieren revisión y aprobación. Abrir un enlace a "
-                "una red social no publica ni guarda el contenido.",
+                "No. X, Threads y Bluesky abren el editor con texto preparado. "
+                "Para Mastodon, indica el servidor donde tienes tu cuenta. "
+                "En WhatsApp eliges dónde enviar el mensaje; en Telegram añade "
+                "un enlace para compartirlo con el texto o copia el mensaje. "
+                "Facebook permite compartir un enlace, pero no garantiza precargar "
+                "texto libre. Para LinkedIn e Instagram, copia el texto con "
+                "el botón del recuadro, abre la red y pégalo. Instagram necesita además "
+                "una imagen o video. Puede ser necesario iniciar sesión. Abrir la red "
+                "no publica ni guarda el contenido en CommunityLab.",
+            ),
+            (
+                "¿Y TikTok, YouTube o contenido multimedia?",
+                "La integración multimedia está pendiente. Por ahora no se generan "
+                "ni adjuntan imágenes o videos, ni se publican en TikTok o YouTube. "
+                "Las acciones actuales preparan texto para revisión; no conectan cuentas.",
             ),
             (
                 "¿Cómo guardo un activo aprobado?",
-                "Aprueba el contenido en **Plantillas** y usa la sección de guardado "
-                "en OCI al final de esa vista.",
+                "En el catálogo diario no necesitas guardarlo: el contenido preparado "
+                "ya está almacenado. Abre **Plantillas**, revisa su fecha, las fuentes "
+                "y cualquier aviso antes de copiarlo o abrir la red para publicarlo. "
+                "Preparado para revisión no significa aprobado ni publicado.",
+            ),
+            (
+                "¿Cuándo se renuevan las plantillas?",
+                "La renovación está prevista todos los días a las 08:00, hora de Bogotá, "
+                "una vez que el equipo active el servicio programado. Cada contenido "
+                "nuevo sustituye al anterior. Si una plantilla falla, conserva su última "
+                "versión disponible con la fecha y un aviso; las demás sí se actualizan. "
+                "La página comprueba el catálogo cada minuto mientras está abierta y "
+                "también puedes pulsar Actualizar catálogo.",
             ),
             (
                 "¿Por qué no veo un borrador para cada mensaje?",
-                "El pipeline solo genera activos para los mensajes que cumplen las "
-                "condiciones de sus rutas. Instagram y X aparecen como próximamente "
-                "en el catálogo, aunque el agente sí puede redactarlos.",
+                "Cada plantilla diaria responde a una petición predefinida sobre "
+                "la comunidad, no a cada mensaje individual. Si no hay evidencia "
+                "suficiente o falla la preparación, se muestra un aviso en esa plantilla.",
             ),
         ),
     ),
@@ -104,20 +166,27 @@ SECCIONES = (
         ":material/build:",
         (
             (
-                "El agente dice que el modelo no está disponible (404)",
-                "El modelo configurado no existe o no está habilitado para tu "
-                "cuenta. Revisa las variables `COMMUNITYLAB_MODELO_NVIDIA_*` en "
-                "`.env`.",
+                "El agente dice que el modelo no está disponible",
+                "El modelo de IA no está habilitado en este momento. Intenta de "
+                "nuevo en unos minutos; si continúa, avisa al administrador de "
+                "CommunityLab.",
             ),
             (
-                "El agente o el procesamiento fallan por credenciales",
-                "Confirma que `.env` incluya las claves del proveedor (por ejemplo "
-                "`NVIDIA_API_KEY`) y reinicia la aplicación.",
+                "El agente o el procesamiento no logran conectarse",
+                "La conexión con el proveedor de IA no fue autorizada. Avisa al "
+                "administrador de CommunityLab para que revise el acceso y vuelve "
+                "a intentarlo.",
             ),
             (
                 "La página del agente aparece vacía",
-                "El agente necesita un lote procesado. Importa y procesa un archivo "
-                "en **Datos** y vuelve a la página.",
+                "El agente no pudo leer la base de la comunidad y no hay archivos "
+                "adjuntos. El aviso en pantalla explica el motivo; mientras tanto "
+                "puedes adjuntar tus propios archivos con el clip.",
+            ),
+            (
+                "El agente dice que usa información de hace unos minutos",
+                "La base no respondió al renovar la captura, así que el agente sigue "
+                "con la última que obtuvo. Volverá a intentarlo en unos minutos.",
             ),
         ),
     ),
@@ -130,42 +199,45 @@ ESTILO = """
     .ayuda-cabecera p.ayuda-versal {
         margin: 0.5rem 0 0;
         font-family: var(--cl-versal);
-        font-size: 0.78rem;
+        font-weight: 700;
+        font-size: 0.85rem;
         letter-spacing: 0.3em;
         color: var(--cl-miel-oscura);
     }
     .ayuda-cabecera p.ayuda-titulo {
         margin: 0.1rem 0 0.2rem;
         font-family: var(--cl-titulo);
-        font-size: 2.6rem;
-        font-weight: 600;
+        font-size: 3rem;
+        font-weight: 700;
         color: var(--cl-tinta);
     }
     .ayuda-cabecera p.ayuda-lema { margin: 0; color: var(--cl-tinta-suave); }
     .st-key-ayuda_busqueda { max-width: 620px; margin: 0 auto 1.6rem; }
     .ayuda-paso-numero {
         font-family: var(--cl-titulo);
-        font-size: 2.1rem;
+        font-weight: 700;
+        font-size: 2.3rem;
         line-height: 1;
-        color: var(--cl-miel);
+        color: var(--cl-miel-oscura);
     }
     .ayuda-paso-titulo {
         margin-top: 0.3rem;
         font-family: var(--cl-versal);
-        font-size: 0.82rem;
+        font-weight: 700;
+        font-size: 0.85rem;
         letter-spacing: 0.18em;
         text-transform: uppercase;
         color: var(--cl-tinta);
     }
     .ayuda-paso-texto { color: var(--cl-tinta-suave); font-size: 0.92rem; min-height: 2.8rem; }
-    .ayuda-cierre {
-        margin-top: 2rem;
-        padding: 1.1rem 1.4rem;
-        border-left: 3px solid var(--cl-miel);
-        border-radius: 0 0.6rem 0.6rem 0;
-        background: var(--cl-miel-clara);
+    .ayuda-bloque-pregunta {
+        margin-bottom: 0.4rem;
+        font-family: var(--cl-texto);
+        font-weight: 700;
+        font-size: 1.02rem;
         color: var(--cl-tinta);
     }
+    [class*="st-key-ayuda_bloque_"] p { color: var(--cl-tinta-suave); }
 </style>
 """
 
@@ -225,14 +297,14 @@ def render(ir_a=None):
         f"{tema.espiral()}"
         '<p class="ayuda-versal">CENTRO DE AYUDA</p>'
         '<p class="ayuda-titulo">¿En qué podemos ayudarte?</p>'
-        '<p class="ayuda-lema">Del lote de conversaciones a contenido aprobado, '
+        '<p class="ayuda-lema">De las conversaciones de tu comunidad a contenido aprobado, '
         "paso a paso.</p></div>",
         unsafe_allow_html=True,
     )
     with st.container(key="ayuda_busqueda"):
         busqueda = st.text_input(
             "Buscar en la ayuda",
-            placeholder="Busca por tema: verificación, OCI, JSON, terminal…",
+            placeholder="Busca por tema: verificación, OCI, JSON, borradores…",
             icon=":material/search:",
             label_visibility="collapsed",
         )
@@ -248,14 +320,22 @@ def render(ir_a=None):
         )
     for titulo, icono, preguntas in secciones:
         st.subheader(f"{icono} {titulo}")
-        for pregunta, respuesta in preguntas:
-            with st.expander(pregunta, expanded=bool(busqueda.strip())):
-                st.markdown(respuesta)
+        _bloques(titulo, preguntas)
 
-    st.markdown(
-        '<div class="ayuda-cierre"><b>¿Sigues con dudas?</b> La guía técnica del '
-        "agente está en <code>docs/agente_conversacional.md</code> y el detalle "
-        "de la interfaz en <code>docs/integracion_frontend_semana5_1.md</code>."
-        "</div>",
-        unsafe_allow_html=True,
-    )
+
+def _bloques(seccion, preguntas):
+    """Cada pregunta como un bloque legible de un vistazo, en una cuadrícula."""
+    # Con cuatro preguntas, 2 × 2 evita una tarjeta huérfana en la segunda fila.
+    por_fila = 2 if len(preguntas) % 3 == 1 else 3
+    for inicio in range(0, len(preguntas), por_fila):
+        fila = preguntas[inicio : inicio + por_fila]
+        for indice, (columna, (pregunta, respuesta)) in enumerate(
+            zip(st.columns(por_fila), fila), start=inicio
+        ):
+            clave = f"ayuda_bloque_{_normalizar(seccion).replace(' ', '_')}_{indice}"
+            with columna, st.container(border=True, key=clave, height="stretch"):
+                st.markdown(
+                    f'<div class="ayuda-bloque-pregunta">{escape(pregunta)}</div>',
+                    unsafe_allow_html=True,
+                )
+                st.markdown(respuesta)

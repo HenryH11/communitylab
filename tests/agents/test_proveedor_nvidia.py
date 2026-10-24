@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import SecretStr
 
 import json
 
@@ -11,10 +12,8 @@ from src.agentes.modelos import AnalisisMensaje
 
 from src.agentes.configuracion_ia import (
     MAX_RETRIES_CLIENTE_NVIDIA,
-    MODELO_NVIDIA_NEMOTRON,
     MODELO_NVIDIA_POR_DEFECTO,
     NVIDIA_BASE_URL,
-    obtener_modelo_nvidia_id,
     obtener_timeout_nvidia,
 )
 from src.agentes.errores_ia import (
@@ -92,7 +91,7 @@ def test_construye_cliente_nvidia_sin_realizar_llamada(monkeypatch):
         nvidia_nim.obtener_modelo_nvidia()
 
     cliente.assert_called_once_with(
-        api_key="clave-de-prueba",
+        api_key=SecretStr("clave-de-prueba"),
         base_url=NVIDIA_BASE_URL,
         model=MODELO_NVIDIA_POR_DEFECTO,
         temperature=0,
@@ -131,7 +130,7 @@ def test_modelo_nvidia_configurable_por_entorno(monkeypatch):
         nvidia_nim.obtener_modelo_nvidia()
 
     cliente.assert_called_once_with(
-        api_key="clave-de-prueba",
+        api_key=SecretStr("clave-de-prueba"),
         base_url=NVIDIA_BASE_URL,
         model="nvidia/nemotron-3-ultra-550b-a55b",
         temperature=0,

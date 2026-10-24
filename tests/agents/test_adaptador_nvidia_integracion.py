@@ -1,6 +1,7 @@
 """Adaptador y fallback reales: solo el transporte se sustituye, sin red."""
 
 import json
+from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
 import pytest
@@ -9,12 +10,15 @@ from langchain_core.runnables import RunnableLambda
 
 from src.agentes.modelos import AnalisisMensaje
 
-try:
+if TYPE_CHECKING:
     from src.agentes.proveedores import nvidia_nim
-except ModuleNotFoundError as error:
-    if error.name not in {"src.agentes.proveedores", "src.agentes.proveedores.nvidia_nim"}:
-        raise
-    nvidia_nim = None
+else:
+    try:
+        from src.agentes.proveedores import nvidia_nim
+    except ModuleNotFoundError as error:
+        if error.name not in {"src.agentes.proveedores", "src.agentes.proveedores.nvidia_nim"}:
+            raise
+        nvidia_nim = None
 
 pytestmark = pytest.mark.skipif(nvidia_nim is None, reason="El adaptador NIM de DS no está integrado en esta rama")
 

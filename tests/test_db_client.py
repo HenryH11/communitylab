@@ -2,16 +2,21 @@
 
 import base64
 from copy import deepcopy
+from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock, patch
 
 import pytest
 
-try:
+if TYPE_CHECKING:
     from src.config import db_client as db
-except ModuleNotFoundError as error:
-    if error.name not in {"oci", "oracledb"}:
-        raise
-    db = None
+    from oracledb import Connection
+else:
+    try:
+        from src.config import db_client as db
+    except ModuleNotFoundError as error:
+        if error.name not in {"oci", "oracledb"}:
+            raise
+        db = None
 
 pytestmark = pytest.mark.skipif(db is None, reason="requiere OCI y oracledb")
 
@@ -150,7 +155,7 @@ def impedir_red(monkeypatch):
 
 def cargar(doc, con):
     return db.sincronizar_conjunto(
-        doc, conexion=con, instantanea_completa=True
+        doc, conexion=cast("Connection", con), instantanea_completa=True
     )
 
 
@@ -162,7 +167,7 @@ def test_roundtrip_contrato_11_unicode_null_sin_mutar():
     assert cargar(doc, con)["sincronizados"] == 2
     esperado = deepcopy(doc)
     esperado["registros"].sort(key=lambda r: r["id"])
-    assert db.leer_conjunto(conexion=con) == esperado
+    assert db.leer_conjunto(conexion=cast("Connection", con)) == esperado
     assert doc == original
     assert con.commits == 1
 
@@ -170,7 +175,7 @@ def test_roundtrip_contrato_11_unicode_null_sin_mutar():
 def test_roundtrip_version_10():
     doc, con = documento("int-001", version="1.0"), Conexion()
     cargar(doc, con)
-    assert db.leer_conjunto(conexion=con) == doc
+    assert db.leer_conjunto(conexion=cast("Connection", con)) == doc
 
 
 def test_retira_id_que_ya_no_esta_sin_duplicar():
@@ -179,9 +184,9 @@ def test_retira_id_que_ya_no_esta_sin_duplicar():
     doc = documento("int-001", spam=2)
     doc["registros"][0]["tema"] = "tema actualizado"
     assert cargar(doc, con)["retirados"] == 1
-    assert db.leer_conjunto(conexion=con) == doc
+    assert db.leer_conjunto(conexion=cast("Connection", con)) == doc
     assert cargar(doc, con)["retirados"] == 0
-    assert db.leer_conjunto(conexion=con)["total"] == 1
+    assert db.leer_conjunto(conexion=cast("Connection", con))["total"] == 1
 
 
 def test_instantanea_vacia_confirmada_conserva_spam():
@@ -189,7 +194,7 @@ def test_instantanea_vacia_confirmada_conserva_spam():
     cargar(documento("int-001"), con)
     doc = documento(spam=8)
     assert cargar(doc, con)["retirados"] == 1
-    assert db.leer_conjunto(conexion=con) == doc
+    assert db.leer_conjunto(conexion=cast("Connection", con)) == doc
 
 
 @pytest.mark.parametrize("confirmacion", [False, None, 1, "true"])
@@ -197,7 +202,7 @@ def test_no_escribe_sin_confirmacion_exacta(confirmacion):
     con = Conexion()
     with pytest.raises(ValueError, match="instantanea_completa"):
         db.sincronizar_conjunto(
-            documento(), conexion=con, instantanea_completa=confirmacion
+            documento(), conexion=cast("Connection", con), instantanea_completa=confirmacion
         )
     assert con.operaciones == []
 
@@ -293,7 +298,7 @@ def test_columnas_requeridas_conservan_texto_y_fecha_null():
     )
     original = deepcopy(doc)
     cargar(doc, con)
-    assert db.leer_conjunto(conexion=con) == original
+    assert db.leer_conjunto(conexion=cast("Connection", con)) == original
     assert doc == original
 
 
@@ -314,7 +319,7 @@ def test_error_revierte_filas_y_metadatos(etapa):
     with pytest.raises(RuntimeError):
         cargar(documento("int-003", spam=9), con)
     con.fallar = None
-    assert db.leer_conjunto(conexion=con) == anterior
+    assert db.leer_conjunto(conexion=cast("Connection", con)) == anterior
     assert con.commits == 1
     assert con.rollbacks == 1
 
@@ -333,7 +338,7 @@ def test_lectura_no_modifica_ni_hace_commit():
     con = Conexion()
     cargar(documento("int-001"), con)
     con.operaciones.clear()
-    db.leer_conjunto(conexion=con)
+    db.leer_conjunto(conexion=cast("Connection", con))
     assert con.operaciones == [db._SQL_SELECT_TODOS]
     assert con.commits == 1
 
@@ -341,11 +346,12 @@ def test_lectura_no_modifica_ni_hace_commit():
 def test_lectura_sin_publicacion_o_con_total_inconsistente_falla():
     con = Conexion()
     with pytest.raises(ValueError, match="metadatos"):
-        db.leer_conjunto(conexion=con)
+        db.leer_conjunto(conexion=cast("Connection", con))
     cargar(documento("int-001"), con)
+    assert con.meta is not None
     con.meta["total"] = 3
     with pytest.raises(ValueError, match="total"):
-        db.leer_conjunto(conexion=con)
+        db.leer_conjunto(conexion=cast("Connection", con))
 
 
 def test_conexiones_propias_separadas(monkeypatch):
@@ -440,4 +446,4 @@ def test_documento_real_generado_por_da():
     doc = construir_conjunto_consultable(entrega)
     con = Conexion()
     cargar(doc, con)
-    assert db.leer_conjunto(conexion=con) == doc
+    assert db.leer_conjunto(conexion=cast("Connection", con)) == doc

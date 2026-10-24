@@ -7,6 +7,8 @@ IMPORTANTE:
 - no forma parte de la suite pytest normal.
 """
 
+from src.agentes.estado_agente import EstadoAgente
+
 from src.agentes.configuracion_ia import (
     PROVEEDOR_NVIDIA_NIM,
     VARIABLE_PROVEEDOR_ANALISIS,
@@ -24,7 +26,7 @@ def test_nvidia_nim_analiza_lote_sin_perder_resultados(
         PROVEEDOR_NVIDIA_NIM,
     )
 
-    estados = [
+    estados: list[EstadoAgente] = [
         {
             "id": "nvidia-lote-001",
             "autor": "Ana",

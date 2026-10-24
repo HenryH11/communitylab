@@ -78,6 +78,7 @@ def crear_app():
         default_timeout=30,
     )
     app.session_state["resultado"] = salida()
+    app.session_state["navegacion_principal"] = "Plantillas"
     app.run()
     assert not app.exception
     return app

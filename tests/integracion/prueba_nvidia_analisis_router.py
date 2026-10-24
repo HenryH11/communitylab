@@ -7,6 +7,10 @@ IMPORTANTE:
 - no forma parte de la suite pytest normal.
 """
 
+from typing import cast
+
+from src.agentes.estado_agente import EstadoAgente
+
 from src.agentes.configuracion_ia import (
     PROVEEDOR_NVIDIA_NIM,
     VARIABLE_PROVEEDOR_ANALISIS,
@@ -23,7 +27,7 @@ def test_nvidia_analiza_y_el_router_conserva_logica_actual(
         PROVEEDOR_NVIDIA_NIM,
     )
 
-    estados = [
+    estados: list[EstadoAgente] = [
         {
             "id": "nvidia-router-001",
             "autor": "Ana",
@@ -91,10 +95,10 @@ def test_nvidia_analiza_y_el_router_conserva_logica_actual(
         estados,
         analisis,
     ):
-        estado_analizado = {
+        estado_analizado: EstadoAgente = cast(EstadoAgente, {
             **estado,
             **campos_analisis,
-        }
+        })
 
         rutas = determinar_rutas(
             estado_analizado

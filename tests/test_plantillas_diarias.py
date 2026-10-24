@@ -206,6 +206,108 @@ def test_consulta_analitica_se_guarda_sin_fingir_una_publicacion():
     assert catalogo.entradas["sentimiento"].salida == resultado
 
 
+@pytest.mark.parametrize("respuesta", [
+    "Falta el titular.", "## Titular\n\n" + "palabra " * 180,
+])
+def test_boletin_invalido_no_se_publica_como_exito(respuesta):
+    repo = Memoria()
+    resultado = {"respuesta": respuesta, "citas": ["m1"], "borrador": None}
+    catalogo = diario.actualizar_catalogo(
+        repo, ahora=AHORA, plantillas=(diario.PLANTILLAS_DIARIAS[3],),
+        lector=lector, crear_agente=fabrica(resultado),
+    )
+    assert catalogo is not None
+    assert "boletin" in catalogo.fallos
+    assert not catalogo.entradas
+
+
+def test_plantilla_analitica_no_guarda_borrador_de_red_social():
+    repo = Memoria()
+    catalogo = diario.actualizar_catalogo(
+        repo, ahora=AHORA, plantillas=(diario.PLANTILLAS_DIARIAS[5],),
+        lector=lector, crear_agente=fabrica(salida()),
+    )
+    assert catalogo is not None
+    assert "sentimiento" in catalogo.fallos
+
+def sin_evidencia():
+    return {
+        "respuesta": "No hay mensajes negativos en esta captura.",
+        "citas": [], "borrador": None, "total_coincidencias": 0,
+        "modo": "consulta",
+        "verificacion": {
+            "estado": "sin_evidencia", "resumen": "Sin coincidencias.",
+        },
+    }
+
+
+def test_ausencia_explicita_se_guarda_y_se_relee_sin_fabricar_citas():
+    repo = Memoria()
+    resultado = sin_evidencia()
+    catalogo = diario.actualizar_catalogo(
+        repo, ahora=AHORA, plantillas=(diario.PLANTILLAS_DIARIAS[7],),
+        lector=lector, crear_agente=fabrica(resultado),
+    )
+    assert catalogo is not None
+    assert not catalogo.fallos
+    assert catalogo.entradas["insight_mejora"].salida == resultado
+    cliente = Mock()
+    cliente.get_object.return_value = SimpleNamespace(
+        data=SimpleNamespace(content=catalogo.model_dump_json().encode()),
+        headers={"etag": "v1"},
+    )
+    assert diario.RepositorioCatalogo(cliente, "ns", "bucket").leer()[0] == catalogo
+
+
+@pytest.mark.parametrize("cambio", [
+    {"total_coincidencias": 2}, {"citas": ["m1"]}, {"modo": "conversacion"},
+    {"borrador": salida()["borrador"]},
+])
+def test_ausencia_no_permite_resultados_contradictorios(cambio):
+    resultado = sin_evidencia() | cambio
+    repo = Memoria()
+    catalogo = diario.actualizar_catalogo(
+        repo, ahora=AHORA, plantillas=(diario.PLANTILLAS_DIARIAS[7],),
+        lector=lector, crear_agente=fabrica(resultado),
+    )
+    assert catalogo is not None
+    assert "insight_mejora" in catalogo.fallos
+    assert not catalogo.entradas
+
+
+def test_ausencia_sustituye_plantilla_previa_sin_dejar_contenido_obsoleto():
+    repo = Memoria()
+    ejecutar(repo)
+    resultado = sin_evidencia() | {"modo": "borrador"}
+    catalogo = ejecutar(
+        repo, ahora=AHORA + timedelta(days=1),
+        crear=fabrica(resultado, salida("instagram")),
+    )
+    assert not catalogo.fallos
+    assert catalogo.entradas["linkedin"].salida == resultado
+    assert catalogo.entradas["linkedin"].generado_en == AHORA + timedelta(days=1)
+
+
+def test_vista_muestra_ausencia_sin_fuentes_ni_botones_de_publicacion(monkeypatch):
+    from src.app import vista_plantillas_diarias as vista
+
+    catalogo = diario.CatalogoDiario(
+        intentado_en=AHORA,
+        entradas={"insight_mejora": diario.EntradaDiaria(
+            nombre="Mejoras", prompt="Analiza", generado_en=AHORA,
+            salida=sin_evidencia(),
+        )},
+    )
+    monkeypatch.setattr(vista, "leer_catalogo", Mock(return_value=catalogo))
+    app = AppTest.from_string(
+        "from src.app.vista_plantillas_diarias import render\nrender()"
+    ).run()
+    assert not app.exception
+    assert any("Sin evidencia para esta plantilla" in i.value for i in app.info)
+    assert not any(c.value.startswith("Fuentes:") for c in app.caption)
+    assert not app.get("link_button")
+
+
 APP = str(Path(__file__).resolve().parents[1] / "src" / "app" / "app.py")
 
 

@@ -60,6 +60,8 @@ def render():
             if fecha.date() < ahora.date():
                 st.warning(f"Contenido anterior: corresponde al {fecha:%d/%m/%Y}, no a hoy.")
             salida = entrada.salida
+            if salida.get("verificacion", {}).get("estado") == "sin_evidencia":
+                st.info("Sin evidencia para esta plantilla en la captura actual.")
             st.markdown(salida["respuesta"])
             if salida.get("borrador"):
                 st.markdown("**" + salida["borrador"]["titulo"] + "**")
@@ -75,5 +77,6 @@ def render():
                 st.warning("La verificación encontró afirmaciones que requieren revisión antes de publicar.")
             if verificacion.get("resumen"):
                 st.caption(verificacion["resumen"])
-            st.caption("Fuentes: " + ", ".join(salida["citas"]))
+            if salida["citas"]:
+                st.caption("Fuentes: " + ", ".join(salida["citas"]))
     st.caption("TikTok, YouTube y generación multimedia: integración pendiente.")

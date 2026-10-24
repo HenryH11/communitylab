@@ -42,11 +42,11 @@ PLANTILLAS_DIARIAS = (
     ),
     PlantillaDiaria(
         id="boletin", nombre="Destacado para newsletter",
-        prompt="Resume los principales temas y comentarios positivos de la comunidad en una sección breve para un boletín de marketing, con un titular y fuentes.",
+        prompt="Redacta una sección de máximo 180 palabras para un boletín de marketing sobre los comentarios positivos de la comunidad. En respuesta empieza con un titular Markdown (##), seguido de un único párrafo de síntesis. No enumeres ni copies los testimonios. Aclara que los conteos y porcentajes describen el subconjunto positivo, no toda la comunidad. Incluye fuentes en citas.",
     ),
     PlantillaDiaria(
         id="caso_exito", nombre="Caso de éxito", plataforma="linkedin",
-        prompt="Crea un post para LinkedIn sobre un caso de éxito explícito de la comunidad. Si no hay evidencia de un logro real, explica la falta de evidencia sin inventarlo.",
+        prompt="Crea un post para LinkedIn sobre un caso de éxito explícito de la comunidad. Tanto el título como el cuerpo deben describir solo el logro de una misma persona. No añadas un punto de partida como 'desde cero' si esa persona no lo dice. Si no hay evidencia de un logro real, explica la falta de evidencia sin inventarlo.",
     ),
     PlantillaDiaria(
         id="sentimiento", nombre="Sentimiento de comunidad",
@@ -54,15 +54,15 @@ PLANTILLAS_DIARIAS = (
     ),
     PlantillaDiaria(
         id="temas", nombre="Temas y tendencias",
-        prompt="Resume los principales temas de toda la comunidad con sus frecuencias y fuentes. No afirmes cambios temporales sin evidencia.",
+        prompt="Resume los temas de toda la comunidad. Enumera todos los temas de distribucion_temas con su conteo exacto, de mayor a menor, conservando los empates. Añade una síntesis breve y fuentes. No afirmes cambios temporales sin evidencia.",
     ),
     PlantillaDiaria(
         id="insight_mejora", nombre="Oportunidades de mejora",
-        prompt="Analiza los comentarios negativos de la comunidad e identifica oportunidades de mejora respaldadas por fuentes. Distingue sugerencias de hechos.",
+        prompt="Analiza los comentarios negativos de la comunidad e identifica oportunidades de mejora respaldadas por fuentes. Distingue problemas reportados por usuarios de sus sugerencias; no presentes los reportes como hechos comprobados.",
     ),
     PlantillaDiaria(
         id="preguntas_frecuentes", nombre="Preguntas de la comunidad",
-        prompt="Identifica preguntas frecuentes en los mensajes de la comunidad. Resume las dudas y solo ofrece respuestas si están respaldadas por los mensajes.",
+        prompt="Identifica preguntas frecuentes entre todos los tipos de pregunta de la comunidad, técnicas y del programa, sin filtrar sentimiento. Resume las dudas con sus fuentes; no confundas cantidad de preguntas con repetición de una misma duda. Solo ofrece respuestas respaldadas por los mensajes.",
     ),
 )
 
@@ -82,6 +82,27 @@ class CatalogoDiario(BaseModel):
     captura_en: datetime | None = None
     entradas: dict[str, EntradaDiaria] = Field(default_factory=dict)
     fallos: dict[str, str] = Field(default_factory=dict)
+
+
+class VerificacionSinEvidencia(BaseModel):
+    estado: Literal["sin_evidencia"]
+    resumen: str = Field(min_length=1)
+
+
+class SalidaSinEvidencia(BaseModel):
+    respuesta: str = Field(min_length=1, max_length=4_000)
+    citas: list[str] = Field(max_length=0)
+    borrador: None
+    total_coincidencias: Literal[0]
+    modo: Literal["consulta", "borrador"]
+    verificacion: VerificacionSinEvidencia
+
+
+def validar_salida_catalogo(salida: dict) -> SalidaConversacional | SalidaSinEvidencia:
+    verificacion = salida.get("verificacion")
+    if isinstance(verificacion, dict) and verificacion.get("estado") == "sin_evidencia":
+        return SalidaSinEvidencia.model_validate(salida)
+    return SalidaConversacional.model_validate(salida)
 
 
 class RepositorioCatalogo:
@@ -121,7 +142,7 @@ class RepositorioCatalogo:
         if any(f is not None and f.tzinfo is None for f in fechas):
             raise ValueError("Las fechas del catálogo requieren zona horaria.")
         for entrada in catalogo.entradas.values():
-            SalidaConversacional.model_validate(entrada.salida)
+            validar_salida_catalogo(entrada.salida)
         return catalogo, etag
 
     def guardar(self, catalogo: CatalogoDiario, etag: str | None) -> None:
@@ -189,8 +210,13 @@ def actualizar_catalogo(
                     plantilla.prompt, hoy=fecha,
                     modo_verificacion="verificacion_automatica", modelo_respuesta="super",
                 )
-                validada = SalidaConversacional.model_validate(salida)
-                if plantilla.plataforma and (
+                validada = validar_salida_catalogo(salida)
+                if plantilla.plataforma is None and validada.borrador is not None:
+                    raise ValueError("Una plantilla analítica no debe generar una publicación.")
+                if plantilla.id == "boletin" and not isinstance(validada, SalidaSinEvidencia):
+                    if not validada.respuesta.startswith("## ") or len(validada.respuesta.split()) > 180:
+                        raise ValueError("El boletín requiere titular y un máximo de 180 palabras.")
+                if plantilla.plataforma and not isinstance(validada, SalidaSinEvidencia) and (
                     validada.borrador is None
                     or validada.borrador.plataforma != plantilla.plataforma
                 ):

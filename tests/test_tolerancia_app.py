@@ -1,6 +1,6 @@
 """Revisión estática de la app de Streamlit frente a archivos anómalos.
 
-No importa Streamlit ni ejecuta la app: analiza src/app/app.py con ast, de
+No importa Streamlit ni ejecuta la app: analiza src/app/interfaz.py con ast, de
 modo que corre en cualquier entorno del equipo. La lectura protegida del
 archivo subido la corrigió Soluciones de Software (PR #19).
 """
@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 
-APP = Path(__file__).resolve().parents[1] / "src" / "app" / "app.py"
+APP = Path(__file__).resolve().parents[1] / "src" / "app" / "interfaz.py"
 
 
 @pytest.fixture(scope="module")
@@ -51,7 +51,7 @@ def test_procesamiento_con_ia_esta_protegido(arbol):
             n for n in ast.walk(arbol)
             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == nombre
         ]
-        assert nodos, f"app.py ya no llama a {nombre}"
+        assert nodos, f"interfaz.py ya no llama a {nombre}"
         assert all(dentro_de_try(arbol, n) for n in nodos)
 
 

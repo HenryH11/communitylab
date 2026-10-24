@@ -48,7 +48,7 @@ def test_no_se_recorta_texto_ni_se_inventa_una_red():
 @pytest.mark.parametrize("plataforma", list(REDES))
 def test_ui_prepara_publicaciones_actuales_y_del_historial(plataforma):
     app = AppTest.from_file(
-        str(Path(__file__).resolve().parents[1] / "src" / "app" / "app.py"),
+        str(Path(__file__).resolve().parents[1] / "src" / "app" / "app_interna.py"),
         default_timeout=30,
     )
     datos = publicacion(plataforma)

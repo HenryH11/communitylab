@@ -99,14 +99,13 @@ con_entorno_ui = pytest.mark.skipif(
     any(importlib.util.find_spec(n) is None for n in ("streamlit", "oci", "pandas", "altair")),
     reason="Prueba de UI requiere dependencias de producción",
 )
-APP = str(Path(__file__).resolve().parents[1] / "src/app/app.py")
+APP = str(Path(__file__).resolve().parents[1] / "src/app/app_interna.py")
 
 
 @con_entorno_ui
 def test_ui_sin_lote_muestra_catalogo_sin_editores(monkeypatch):
     from streamlit.testing.v1 import AppTest
 
-    monkeypatch.setenv("COMMUNITYLAB_MODO_INTERNO", "1")
     app = AppTest.from_file(APP, default_timeout=30)
     app.session_state["navegacion_principal"] = "Plantillas"
     app.run()
@@ -119,7 +118,6 @@ def test_ui_sin_lote_muestra_catalogo_sin_editores(monkeypatch):
 def test_ui_con_lote_pinta_cada_activo_una_vez_y_proximamente(monkeypatch):
     from streamlit.testing.v1 import AppTest
 
-    monkeypatch.setenv("COMMUNITYLAB_MODO_INTERNO", "1")
     app = AppTest.from_file(APP, default_timeout=30)
     app.session_state["resultado"] = {"resultados_por_id": resultados()}
     app.session_state["navegacion_principal"] = "Plantillas"

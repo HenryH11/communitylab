@@ -70,16 +70,11 @@ con_entorno_ui = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(autouse=True)
-def modo_interno(monkeypatch):
-    monkeypatch.setenv("COMMUNITYLAB_MODO_INTERNO", "1")
-
-
 def crear_app():
     from streamlit.testing.v1 import AppTest
 
     app = AppTest.from_file(
-        str(Path(__file__).resolve().parents[1] / "src/app/app.py"),
+        str(Path(__file__).resolve().parents[1] / "src/app/app_interna.py"),
         default_timeout=30,
     )
     app.session_state["resultado"] = salida()

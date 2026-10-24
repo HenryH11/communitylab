@@ -153,8 +153,11 @@ configurado si se prueba el guardado.
 
 - **Datos sale del frontend público.** Es el flujo interno del equipo
   (importar → procesar con la segunda capa → publicar en la base). Solo aparece
-  con `COMMUNITYLAB_MODO_INTERNO=1`; sin esa variable la navegación es
-  Inicio, Agente, Análisis, Plantillas y Ayuda.
+  en la entrada independiente `src/app/app_interna.py`. Marketing ejecuta
+  `src/app/app.py`: su navegación es Inicio, Agente, Análisis, Plantillas y Ayuda,
+  incluso si el servidor conserva `COMMUNITYLAB_MODO_INTERNO=1`.
+  Esta variable ya no habilita funciones internas. Ver el aislamiento de procesos,
+  credenciales y acceso en [Docker para Cloud](docker_cloud_semana4.md).
 - **Captura de la base** (`src/app/fuente_agente.py`): el agente lee
   `conjunto_consultable` completo una vez por sesión con el usuario de solo
   lectura (`db_client.obtener_conexion_lectura` + `leer_conjunto`) y reutiliza
@@ -174,7 +177,7 @@ configurado si se prueba el guardado.
   captura solo en la sesión (ids sin colisiones) y nunca se escriben en la base.
 - Al cambiar la captura o los archivos, el agente actualiza sus datos con
   `AgenteConversacional.actualizar_datos` sin perder la conversación.
-- Con `COMMUNITYLAB_MODO_INTERNO=1` y un lote procesado en Datos, el agente usa
+- En `src/app/app_interna.py`, con un lote procesado en Datos, el agente usa
   ese lote (para revisarlo antes de publicarlo) en lugar de la base.
 - Pendiente: Análisis y Plantillas siguen dependiendo de un lote procesado
   internamente; la base no guarda activos.
@@ -275,7 +278,7 @@ Mastodon usa la ruta `/share` de la instancia; requiere iniciar sesión en ella.
 
 La vista pública ya no obtiene las plantillas del lote cargado en Streamlit:
 lee el catálogo preparado en OCI. El catálogo/editores anteriores se conservan
-únicamente en modo interno (`COMMUNITYLAB_MODO_INTERNO=1`).
+únicamente en la aplicación interna (`src/app/app_interna.py`).
 
 El ejecutor `python -m scripts.generar_plantillas_diarias` realiza una pasada,
 independiente del frontend. Está incluido en la imagen y permite sobrescribir

@@ -212,7 +212,7 @@ def ejecutar_corrida(
 
                 duracion = time.perf_counter() - comienzo
 
-                if isinstance(respuesta, dict):
+                if not isinstance(respuesta, AnalisisLote):
                     respuesta = AnalisisLote.model_validate(respuesta)
 
                 ids_esperados = {caso["id"] for caso in lote}

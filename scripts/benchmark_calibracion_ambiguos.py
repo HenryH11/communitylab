@@ -9,6 +9,7 @@ de este proceso experimental. No modifica la configuración productiva
 del proyecto.
 """
 
+import io
 import json
 import os
 import subprocess
@@ -23,7 +24,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
-if hasattr(sys.stdout, "reconfigure"):
+if isinstance(sys.stdout, io.TextIOWrapper):
     sys.stdout.reconfigure(encoding="utf-8")
 
 load_dotenv(override=True)

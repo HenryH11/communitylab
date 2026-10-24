@@ -79,7 +79,7 @@ def main() -> int:
     Orquesta la configuración, la verificación del bucket y la subida del archivo.
     Retorna 0 en caso de éxito, o 1 en caso de captura de error.
     """
-    bucket_name = os.getenv("OCI_BUCKET_NAME", "communitylab-activos-marketing")
+    bucket_name = os.getenv("OCI_BUCKET_NAME", "bkt-communitylab-marketing")
     profile_name = os.getenv("OCI_PROFILE", "DEFAULT")
 
     target_object = "activos/2026-semana-00/prueba-inicial.json"

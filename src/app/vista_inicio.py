@@ -18,13 +18,6 @@ ESTILO = """
         #eee4ce 55%, #f5efe1 80%, #fcf7ed 100%);
     background-attachment: local;
 }
-.stApp:has(.st-key-inicio) .communitylab-brand {
-    background: transparent; color: var(--cl-tinta);
-    padding: 0; letter-spacing: .08em; margin-bottom: .5rem;
-}
-.stApp:has(.st-key-inicio) .communitylab-brand .cl-espiral {
-    width: 3.5rem; height: 3.5rem; color: var(--cl-miel-oscura);
-}
 .st-key-inicio { max-width: 1160px; margin: 0 auto; }
 .st-key-inicio_portada {
     min-height: calc(100svh - var(--inicio-top, 0px));
@@ -33,18 +26,23 @@ ESTILO = """
 }
 .cl-inicio .scroll-cue {
     display: flex; align-items: center; justify-content: center;
-    width: 48px; height: 48px; margin: 0 auto; border-radius: 50%;
-    border: 1px solid var(--cl-linea); color: var(--cl-miel-oscura);
-    text-decoration: none; font-size: 26px;
-    animation: cl-invitar 2.5s ease-in-out infinite;
+    width: 48px; height: 58px; margin: 0 auto;
+    border: 0; color: var(--cl-miel-oscura);
+    background: transparent; text-decoration: none;
+    pointer-events: none; visibility: hidden; opacity: 0;
+    transition: opacity .3s ease, visibility .3s;
+}
+.cl-inicio .scroll-cue.is-visible { visibility: visible; opacity: 1; }
+.cl-inicio .scroll-cue svg {
+    width: 28px; height: 44px; animation: cl-invitar 3s ease-in-out infinite;
 }
 .st-key-inicio_portada > [data-testid="stElementContainer"]:last-child {
     position: absolute; bottom: 20px; width: 100%;
 }
-@keyframes cl-invitar { 50% { transform: translateY(6px); } }
+@keyframes cl-invitar { 50% { transform: translateY(4px); } }
 .cl-inicio a:focus-visible { outline: 3px solid var(--cl-miel-oscura); outline-offset: 5px; }
 .cl-inicio { color: var(--cl-tinta); }
-.cl-inicio p { color: var(--cl-tinta-suave); line-height: 1.75; }
+.cl-inicio p { color: var(--cl-tinta-suave); line-height: 1.6; }
 .cl-inicio .eyebrow {
     font: 700 11px var(--cl-texto); letter-spacing: .2em;
     text-transform: uppercase; color: var(--cl-miel-oscura);
@@ -59,8 +57,15 @@ ESTILO = """
 .cl-inicio h1 em { color: var(--cl-miel-oscura); font-weight: 400; }
 .cl-inicio h2 {
     font-size: clamp(34px, 4vw, 51px); line-height: 1.15;
-    letter-spacing: -.025em; margin: 18px 0;
+    letter-spacing: -.025em; margin: 12px 0;
 }
+.cl-inicio .ink-mark {
+    color: var(--cl-miel-oscura); font-style: italic;
+}
+.cl-inicio .hero em {
+    display: inline-block;
+}
+.cl-inicio .hero .eyebrow { display: inline-block; }
 .cl-inicio h3 { font-size: 25px; line-height: 1.25; margin: 16px 0; }
 .cl-inicio .lead { font-size: 18px; max-width: 590px; }
 .cl-inicio .hero { text-align: center; padding: 0; }
@@ -76,11 +81,11 @@ ESTILO = """
     background: var(--cl-tinta); border-color: var(--cl-tinta);
     color: var(--cl-superficie);
 }
-.cl-inicio .section { padding: 75px 0; border-top: 1px solid var(--cl-linea); }
-.cl-inicio .agent-scene { border-top: 0; padding-top: 65px; }
+.cl-inicio .section { padding: 48px 0; border-top: 1px solid var(--cl-linea); }
+.cl-inicio .agent-scene { border-top: 0; padding-top: 46px; }
 .cl-inicio .split {
     display: grid; grid-template-columns: 1fr 1fr;
-    gap: 65px; align-items: center;
+    gap: 42px; align-items: center;
 }
 .cl-inicio .panel, .cl-inicio .card, .cl-inicio .file {
     background: var(--cl-superficie); border: 1px solid var(--cl-linea);
@@ -96,7 +101,9 @@ ESTILO = """
     border-radius: 18px 18px 4px 18px; font-size: 16px;
     max-width: 85%; width: fit-content;
 }
-.cl-inicio .chat { padding: 30px; border-radius: 20px; }
+.cl-inicio .chat {
+    padding: 26px; border-radius: 12px;
+}
 .cl-inicio .answer { font-size: 16px; margin: 0 20px 28px 0; padding-left: 18px; border-left: 2px solid var(--cl-linea); }
 .cl-inicio .answer:last-child { margin-bottom: 0; }
 .cl-inicio .answer strong { color: var(--cl-miel-oscura); }
@@ -110,9 +117,20 @@ ESTILO = """
 .cl-inicio .track { height: 7px; background: var(--cl-pergamino); border-radius: 10px; }
 .cl-inicio .track span { display: block; height: 100%; background: var(--cl-miel-oscura); border-radius: 10px; }
 .cl-inicio .track.green span { background: var(--cl-musgo); }
-.cl-inicio .section-head { max-width: 650px; margin-bottom: 40px; }
-.cl-inicio .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.cl-inicio .card { display: flex; flex-direction: column; }
+.cl-inicio .section-head { max-width: 650px; margin-bottom: 25px; }
+.cl-inicio .cards {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+.cl-inicio .card {
+    display: flex; flex-direction: column; border-radius: 10px;
+    border-top: 3px solid var(--cl-linea);
+}
+.cl-inicio .card:nth-child(2) { border-top-color: var(--cl-miel-oscura); }
+@media(hover:hover) and (prefers-reduced-motion:no-preference) {
+    .cl-inicio .card { transition: border-color .25s ease; }
+    .cl-inicio .card:hover { border-color: var(--cl-miel-oscura); }
+}
 .cl-inicio .card p { font-size: 14px; }
 .cl-inicio .tag { color: var(--cl-miel-oscura); font-size: 11px; letter-spacing: .12em; }
 .cl-inicio .sample {
@@ -128,17 +146,28 @@ ESTILO = """
 .cl-inicio .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 35px; }
 .cl-inicio .step { border-top: 1px solid var(--cl-linea); padding-top: 23px; }
 .cl-inicio .step p { font-size: 14px; }
-.cl-inicio .step-number { color: var(--cl-miel-oscura); font-size: 12px; }
-.cl-inicio .closing { text-align: center; padding: 65px 0 10px; }
-.st-key-inicio_cierre_botones { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 65px; }
-.st-key-inicio_footer { border-top: 1px solid var(--cl-linea); padding-top: 35px; }
+.cl-inicio .step-number {
+    display: inline-block; color: var(--cl-miel-oscura);
+    font: 24px Georgia, serif;
+}
+.cl-inicio .closing { text-align: center; padding: 42px 0 10px; }
+.st-key-inicio_cierre_botones { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 42px; }
+.st-key-inicio_footer {
+    border-top: 1px solid var(--cl-linea); padding-top: 28px;
+}
+.st-key-inicio_footer [data-testid="stVerticalBlock"] { gap: 6px; }
+.st-key-inicio_footer_nav { gap: 4px 18px; }
+.st-key-inicio_footer .footer-heading {
+    font: 700 14px var(--cl-texto); color: var(--cl-tinta);
+    margin: 8px 0 12px;
+}
 .st-key-inicio_footer button[kind="tertiary"] {
-    padding: 4px 0; min-height: 40px; justify-content: flex-start;
+    padding: 6px 0; min-height: 36px; justify-content: flex-start;
     border: none; border-radius: 0; background: transparent; color: var(--cl-tinta-suave);
 }
 .st-key-inicio_footer button[kind="tertiary"]:hover { color: var(--cl-miel-oscura); text-decoration: underline; }
 .st-key-inicio_footer [data-testid="stExpander"] details { background: transparent; border: none; }
-.st-key-inicio_footer [data-testid="stExpander"] summary { padding-left: 0; }
+.st-key-inicio_footer [data-testid="stExpander"] summary { padding: 6px 0; min-height: 36px; }
 .cl-inicio .footer-brand {
     display: flex; gap: 12px; align-items: center; font: 700 22px Georgia, serif;
 }
@@ -146,7 +175,7 @@ ESTILO = """
 .cl-inicio .footer-bottom {
     border-top: 1px solid var(--cl-linea); margin-top: 25px; padding: 20px 0;
     display: flex; justify-content: space-between; flex-wrap: wrap;
-    gap: 15px; font-size: 12px; color: var(--cl-tinta-suave);
+    gap: 15px; font-size: 13px; color: var(--cl-tinta-suave);
 }
 .cl-inicio .cl-reveal.cl-pending {
     opacity: 0; transform: translateY(24px);
@@ -156,18 +185,18 @@ ESTILO = """
     transition-delay: var(--delay, 0ms);
 }
 @media(max-width:800px) {
-    .cl-inicio .split { grid-template-columns: 1fr; gap: 30px; }
-    .cl-inicio .cards { grid-template-columns: 1fr; }
-    .cl-inicio .section { padding: 50px 0; }
+    .cl-inicio .split { grid-template-columns: 1fr; gap: 24px; }
+    .cl-inicio .cards { grid-template-columns: 1fr; gap: 25px; }
+    .cl-inicio .section { padding: 36px 0; }
     .cl-inicio .lead { font-size: 16px; }
 }
 @media(max-width:480px) {
     .cl-inicio .steps { grid-template-columns: 1fr; gap: 20px; }
     .cl-inicio .panel { padding: 20px; }
-    .stApp:has(.st-key-inicio) .communitylab-brand { font-size: 1.25rem; }
 }
 @media(prefers-reduced-motion:reduce) {
-    .cl-inicio .scroll-cue { animation: none; }
+    .cl-inicio .scroll-cue { transition: none; }
+    .cl-inicio .scroll-cue svg { animation: none; }
     .cl-inicio .cl-reveal.cl-animated { transition: none; }
     .cl-inicio .cl-reveal.cl-pending { opacity: 1; transform: none; }
 }
@@ -183,6 +212,32 @@ ANIMACION = """
     const media = matchMedia('(prefers-reduced-motion: reduce)');
     const cover = root.querySelector('.st-key-inicio_portada');
     const main = root.closest('[data-testid="stMain"]');
+    const cue = root.querySelector('.scroll-cue');
+    const cueKey = 'communitylab.inicio.guia-descartada';
+    let dismissed = window.clInicioCueDismissed === true;
+    try {
+        dismissed = dismissed || localStorage.getItem(cueKey) === '1';
+    } catch (error) {
+        console.warn('CommunityLab: no se pudo leer la preferencia de la guía.', error);
+    }
+    const updateCue = () => {
+        if (!cue || !main || dismissed) return;
+        if (main.scrollTop < 120) {
+            cue.classList.add('is-visible');
+            return;
+        }
+        dismissed = true;
+        window.clInicioCueDismissed = true;
+        cue.classList.remove('is-visible');
+        try {
+            localStorage.setItem(cueKey, '1');
+        } catch (error) {
+            console.warn('CommunityLab: no se pudo guardar la preferencia de la guía.', error);
+        }
+    };
+    if (dismissed && cue) cue.classList.remove('is-visible');
+    updateCue();
+    if (main) main.addEventListener('scroll', updateCue, {passive: true});
     const sizeCover = () => {
         if (!cover || !main) return;
         const top = cover.getBoundingClientRect().top + main.scrollTop;
@@ -226,6 +281,7 @@ ANIMACION = """
         if (observer) observer.disconnect();
         removal.disconnect();
         resize.disconnect();
+        if (main) main.removeEventListener('scroll', updateCue);
         media.removeEventListener('change', configure);
         showAll();
         delete window.clInicioCleanup;
@@ -256,14 +312,17 @@ def render(*, ir_a: Callable[[str], None]) -> None:
                           key="inicio_nav_agente", on_click=ir_a, args=("Agente",))
                 st.button("Explorar plantillas", key="inicio_nav_plantillas",
                           on_click=ir_a, args=("Plantillas",))
-            _html('<a class="scroll-cue" href="#inicio-recorrido" '
-                  'aria-label="Descubre CommunityLab, baja al recorrido">↓</a>')
+            st.markdown('<div class="cl-inicio"><div class="scroll-cue" aria-hidden="true">'
+                  '<svg viewBox="0 0 28 44" fill="none" stroke="currentColor" '
+                  'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" '
+                  'aria-hidden="true"><path d="M14 4v34M6 30l8 8 8-8"/></svg></div></div>',
+                  unsafe_allow_html=True)
         _html("""
         <section class="section agent-scene" id="inicio-recorrido">
           <div class="split">
             <div>
               <div class="eyebrow cl-reveal">Así comienza</div>
-              <h2 class="cl-reveal">Pregunta.<br>Encuentra una idea.</h2>
+              <h2 class="cl-reveal">Pregunta.<br>Encuentra <span class="ink-mark">una idea.</span></h2>
               <p class="lead cl-reveal">Un agente para explorar lo que tu comunidad
               está contando, sin perder de vista de dónde viene.</p>
             </div>
@@ -283,13 +342,10 @@ def render(*, ir_a: Callable[[str], None]) -> None:
           <div class="split">
             <div>
               <div class="eyebrow cl-reveal">01 / Comprender</div>
-              <h2 class="cl-reveal">Menos ruido.<br>Más contexto.</h2>
+              <h2 class="cl-reveal">Menos ruido.<br><span class="ink-mark">Más contexto.</span></h2>
               <p class="cl-reveal">Pregunta por los temas, sentimientos y experiencias
               de la comunidad. El agente consulta los datos disponibles y acompaña
               sus respuestas con fuentes.</p>
-              <div class="pills cl-reveal"><span class="pill">Temas y frecuencias</span>
-              <span class="pill">Sentimiento</span>
-              <span class="pill">Historias de la comunidad</span></div>
             </div>
             <div class="panel cl-reveal">
               <div class="label">Un hallazgo / Datos de ejemplo</div>
@@ -306,8 +362,8 @@ def render(*, ir_a: Callable[[str], None]) -> None:
         <section class="section">
           <div class="section-head">
             <div class="eyebrow cl-reveal">02 / Crear</div>
-            <h2 class="cl-reveal">Tres formas de empezar.<br>Una comunidad detrás.</h2>
-            <p class="cl-reveal">Tres ejemplos del catálogo de nueve plantillas.
+            <h2 class="cl-reveal">Distintas formas de empezar.<br><span class="ink-mark">Tu comunidad</span> detrás.</h2>
+            <p class="cl-reveal">Explora algunas posibilidades del catálogo de plantillas.
             Contenido preparado para revisión, no publicaciones automáticas.</p>
           </div>
           <div class="cards">
@@ -334,7 +390,7 @@ def render(*, ir_a: Callable[[str], None]) -> None:
           </div>
         </section>
         """)
-        st.button("Ver las nueve plantillas ↗", key="inicio_catalogo",
+        st.button("Explorar el catálogo ↗", key="inicio_catalogo",
                   on_click=ir_a, args=("Plantillas",))
         _html("""
         <section class="section">
@@ -349,7 +405,7 @@ def render(*, ir_a: Callable[[str], None]) -> None:
             </div>
             <div>
               <div class="eyebrow cl-reveal">03 / Ampliar</div>
-              <h2 class="cl-reveal">Tus preguntas.<br>También tus archivos.</h2>
+              <h2 class="cl-reveal">Tus preguntas.<br>También <span class="ink-mark">tus archivos.</span></h2>
               <p class="cl-reveal">Añade JSON, CSV o TXT con el clip del chat.
               El agente puede combinarlos con la información disponible de la comunidad
               para responder en esa sesión.</p>
@@ -361,7 +417,7 @@ def render(*, ir_a: Callable[[str], None]) -> None:
         <section class="section">
           <div class="section-head">
             <div class="eyebrow cl-reveal">04 / Decidir</div>
-            <h2 class="cl-reveal">La última palabra<br>siempre es tuya.</h2>
+            <h2 class="cl-reveal">La última palabra<br><span class="ink-mark">siempre es tuya.</span></h2>
             <p class="cl-reveal">El agente propone. Tú revisas las fuentes, ajustas
             el contenido y confirmas la publicación en la plataforma de destino.</p>
           </div>
@@ -392,16 +448,19 @@ def render(*, ir_a: Callable[[str], None]) -> None:
         with st.container(key="inicio_footer"):
             marca, enlaces, contacto = st.columns([1.4, 1, 1])
             with marca:
-                _html(
-                    f'<div class="footer-brand">{tema.espiral()}CommunityLab</div>'
+                st.markdown(
+                    f'<div class="cl-inicio"><div class="footer-brand">'
+                    f'{tema.logo()}CommunityLab</div></div>',
+                    unsafe_allow_html=True,
                 )
             with enlaces:
-                st.markdown("**Explora**")
-                for pagina in ("Agente", "Análisis", "Plantillas", "Ayuda"):
-                    st.button(pagina, key=f"inicio_footer_{pagina}", type="tertiary",
-                              on_click=ir_a, args=(pagina,))
+                _html('<h3 class="footer-heading">Explora</h3>')
+                with st.container(key="inicio_footer_nav", horizontal=True):
+                    for pagina in ("Agente", "Análisis", "Plantillas", "Ayuda"):
+                        st.button(pagina, key=f"inicio_footer_{pagina}", type="tertiary",
+                                  on_click=ir_a, args=(pagina,))
             with contacto:
-                st.markdown("**Hablemos**")
+                _html('<h3 class="footer-heading">Información y contacto</h3>')
                 with st.expander("Contacto"):
                     st.write("Contacta al administrador de tu instalación de "
                              "CommunityLab para soporte y solicitudes sobre tus datos.")

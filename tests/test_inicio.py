@@ -30,6 +30,9 @@ def test_inicio_muestra_recorrido_ejemplos_y_footer_sin_consultar_base(monkeypat
         assert texto in html
     assert [e.label for e in app.expander] == ["Contacto", "Sobre tus datos"]
     assert "Datos" not in app.radio(key="navegacion_principal").options
+    assert "catálogo de nueve" not in html
+    assert "Tres formas de empezar" not in html
+    assert app.button(key="inicio_catalogo").label == "Explorar el catálogo ↗"
     lector.assert_not_called()
 
 
@@ -64,7 +67,11 @@ def test_inicio_abre_agente_con_navegacion_real(monkeypatch):
 def test_inicio_footer_usa_enlaces_discretos_y_portada_con_guia():
     app = _inicio()
     html = " ".join(elemento.proto.body for elemento in app.get("html"))
+    html += " ".join(elemento.value for elemento in app.markdown)
+    html += " ".join(elemento.value for elemento in app.markdown)
     assert 'class="scroll-cue"' in html
+    assert 'class="scroll-cue" aria-hidden="true"' in html
+    assert 'href="#inicio-recorrido"' not in html
     assert 'id="inicio-recorrido"' in html
     assert "<small>" not in html
     assert "Fragmentos ilustrativos." not in html
@@ -73,3 +80,31 @@ def test_inicio_footer_usa_enlaces_discretos_y_portada_con_guia():
     app.button(key="inicio_footer_Ayuda").click().run()
     assert not app.exception
     assert app.radio(key="navegacion_principal").value == "Ayuda"
+
+
+def test_ajustes_actuales_se_aplican_a_la_siguiente_pregunta(monkeypatch):
+    from src.agentes.conversacion import AgenteConversacional
+
+    monkeypatch.setattr(
+        fuente_agente, "leer_base",
+        Mock(side_effect=fuente_agente.FuenteNoDisponible(fuente_agente.NO_CONFIGURADA)),
+    )
+    consulta = Mock(return_value={
+        "respuesta": "Hola, seguimos conversando.",
+        "modo": "conversacion",
+        "citas": [],
+    })
+    monkeypatch.setattr(AgenteConversacional, "consultar", consulta)
+    app = _inicio()
+    app.button(key="inicio_nav_agente").click().run()
+    app.radio(key="agente_ajuste").set_value("Manual").run()
+    app.number_input(key="agente_temperatura").set_value(0.65).run()
+    app.selectbox(key="agente_modelo").set_value("lightning").run()
+    app.toggle(key="modo_verificacion").set_value(True).run()
+    app.chat_input[0].set_value("Hola").run()
+
+    assert not app.exception
+    consulta.assert_called_once_with(
+        "Hola", modo_verificacion="verificacion_automatica",
+        temperatura=0.65, top_p=0.9, modelo_respuesta="lightning",
+    )

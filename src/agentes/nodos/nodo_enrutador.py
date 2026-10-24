@@ -11,7 +11,7 @@ from src.agentes.estado_agente import EstadoAgente, Ruta
 UMBRAL_RELEVANCIA = 40
 
 
-class ResultadoRutas(TypedDict, total=False):
+class ResultadoRutas(TypedDict):
     rutas: list[Ruta]
     tier_modelo: str
 

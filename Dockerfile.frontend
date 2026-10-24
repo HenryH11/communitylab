@@ -30,7 +30,6 @@ COPY src/ ./src/
 RUN rm -rf ./src/services/ingest_server.py
 COPY configuracion/ ./configuracion/
 COPY .streamlit/ ./.streamlit/
-
 USER appuser
 
 # Puerto estándar de Streamlit

@@ -1,3 +1,6 @@
+from src.agentes.estado_agente import EstadoAgente
+from typing import cast
+
 import logging
 import threading
 import time
@@ -13,9 +16,9 @@ def test_dos_mensajes_simultaneos_conservan_orden_y_trazas(
 ):
     monkeypatch.setenv("COMMUNITYLAB_CONCURRENCIA_MENSAJES", "2")
 
-    marca = ContextVar("marca_experimento", default=None)
+    marca = ContextVar[str | None]("marca_experimento", default=None)
     ids = [f"exp-{i}" for i in range(4)]
-    estados = [
+    estados: list[EstadoAgente] = [
         {
             "id": identificador,
             "texto": "Mensaje experimental",
@@ -87,7 +90,7 @@ def test_dos_mensajes_simultaneos_conservan_orden_y_trazas(
 
     assert max_activos == 2
     assert [r["id"] for r in resultados] == ids
-    assert all(r["marca"] == "contexto-original" for r in resultados)
+    assert all(cast(dict, r)["marca"] == "contexto-original" for r in resultados)
 
     registros = [
         r for r in caplog.records
@@ -103,7 +106,7 @@ def test_dos_mensajes_simultaneos_conservan_orden_y_trazas(
 def test_fallo_analisis_no_detiene_mensajes_concurrentes(monkeypatch):
     monkeypatch.setenv("COMMUNITYLAB_CONCURRENCIA_MENSAJES", "2")
 
-    estados = [
+    estados: list[EstadoAgente] = [
         {
             "id": f"test-{i}",
             "texto": f"Mensaje {i}",
@@ -145,10 +148,10 @@ def test_fallo_analisis_no_detiene_mensajes_concurrentes(monkeypatch):
         "test-0", "test-1", "test-2"
     ]
     assert set(procesados) == {"test-0", "test-2"}
-    assert resultados[1]["errores"] == ["Fallo simulado"]
-    assert resultados[1]["activos_generados"] == {}
-    assert resultados[0]["procesado"] is True
-    assert resultados[2]["procesado"] is True
+    assert cast(dict, resultados[1])["errores"] == ["Fallo simulado"]
+    assert cast(dict, resultados[1])["activos_generados"] == {}
+    assert cast(dict, resultados[0])["procesado"] is True
+    assert cast(dict, resultados[2])["procesado"] is True
 
 
 def test_configuracion_experimental_super_en_todos_los_tiers(monkeypatch):
@@ -171,7 +174,7 @@ def test_configuracion_experimental_super_en_todos_los_tiers(monkeypatch):
 def test_excepcion_inesperada_no_interrumpe_lote(monkeypatch):
     monkeypatch.setenv("COMMUNITYLAB_CONCURRENCIA_MENSAJES", "2")
 
-    estados = [
+    estados: list[EstadoAgente] = [
         {
             "id": f"exp-{i}",
             "texto": f"Mensaje experimental {i}",
@@ -223,16 +226,16 @@ def test_excepcion_inesperada_no_interrumpe_lote(monkeypatch):
     ]
 
     for indice in (0, 2, 3):
-        assert resultados[indice]["procesado"] is True
-        assert resultados[indice]["errores"] == []
+        assert cast(dict, resultados[indice])["procesado"] is True
+        assert cast(dict, resultados[indice])["errores"] == []
 
     fallido = resultados[1]
 
-    assert fallido["errores"]
-    assert fallido["activos_generados"] == {}
-    assert len(fallido["fallos"]) == 1
+    assert cast(dict, fallido)["errores"]
+    assert cast(dict, fallido)["activos_generados"] == {}
+    assert len(cast(dict, fallido)["fallos"]) == 1
 
-    fallo = fallido["fallos"][0]
+    fallo = cast(dict, fallido)["fallos"][0]
 
     assert fallo["id"] == "exp-1"
     assert fallo["etapa"] == "procesar_grafo"

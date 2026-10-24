@@ -360,7 +360,7 @@ def test_entrega_funcional_ciencia_datos():
 
     assert entrega[
         "version_contrato"
-    ] == "1.3"
+    ] == "1.4"
 
     assert resumen[
         "total_interacciones_procesadas"

@@ -12,7 +12,8 @@ from unittest import mock
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 from src.datos.entrega_ia import construir_plan_procesamiento, preparar_entrega, preparar_paquete_ia
-from src.datos.ingesta import construir_estados_agente, construir_ciclos, guardar_ciclos, principal
+from src.datos.ingesta import construir_estados_agente, principal
+from src.datos.ciclos_transporte import construir_ciclos, guardar_ciclos
 from src.datos.ingesta_reddit import parsear_entradas_atom, transformar_entrada, comentario_fue_eliminado, construir_lote
 from src.datos.relevancia import ConfiguracionRelevancia
 from src.agentes.configuracion_ia import obtener_modelo_nvidia_id

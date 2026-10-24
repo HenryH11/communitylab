@@ -4,6 +4,8 @@ Verifica asociación por ID y preservación de contenido. No evalúa modelos rea
 no implementa el auditor semántico de Gustavo y no simula aprobación en la UI.
 """
 
+from typing import cast
+
 from copy import deepcopy
 import json
 from importlib.util import find_spec
@@ -14,6 +16,7 @@ from unittest.mock import Mock
 import pytest
 
 from src.agentes import modelos, reintentos
+from src.agentes.estado_agente import EstadoAgente
 from src.agentes.entrega_resultados import entrega_resultados_a_json, preparar_entrega_resultados
 from src.agentes.nodos import nodo_analizador, nodos_generadores
 from src.agentes.nodos.nodo_enrutador import determinar_rutas
@@ -171,21 +174,21 @@ def test_perfiles_conservan_identidad_contenido_y_exclusion(perfiles, monkeypatc
 def test_int020_feedback_conserva_ruta_con_ambos_sentimientos(sentimiento):
     fixture = json.loads((RAIZ / "tests/fixtures/casos_referencia_ia_candidatos.json").read_text(encoding="utf-8"))
     caso = next(c for c in fixture["interacciones"] if c["id"] == "int-020")
-    estado = {**caso, "sentimiento": sentimiento}
+    estado: EstadoAgente = cast(EstadoAgente, {**caso, "sentimiento": sentimiento})
     original = deepcopy(estado)
     assert determinar_rutas(estado)["rutas"] == ["insight_mejora"]
     assert estado == original
-    assert estado["tipo_original"] == "feedback"
+    assert cast(dict, estado)["tipo_original"] == "feedback"
 
 
 def test_int020_divergencia_de_tipo_puede_perder_insight_sin_cambiar_original():
     fixture = json.loads((RAIZ / "tests/fixtures/casos_referencia_ia_candidatos.json").read_text(encoding="utf-8"))
     caso = next(c for c in fixture["interacciones"] if c["id"] == "int-020")
-    estado = {**caso, "tipo_detectado": "comentario"}
+    estado: EstadoAgente = cast(EstadoAgente, {**caso, "tipo_detectado": "comentario"})
     original = deepcopy(estado)
     assert determinar_rutas(estado)["rutas"] == []
     assert estado == original
-    assert estado["tipo_original"] == "feedback"
+    assert cast(dict, estado)["tipo_original"] == "feedback"
 
 
 @pytest.mark.skipif(find_spec("src.agentes.auditoria_semana4") is None,

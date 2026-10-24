@@ -1,3 +1,6 @@
+from src.agentes.estado_agente import EstadoAgente
+from typing import cast
+
 import threading
 from unittest.mock import patch
 
@@ -13,7 +16,7 @@ def test_dos_lotes_de_analisis_en_paralelo_conservan_orden(monkeypatch):
     activos = 0
     maximo_simultaneo = 0
 
-    estados = [
+    estados: list[EstadoAgente] = [
         {
             "id": f"prueba-{i}",
             "texto": f"Mensaje {i}",
@@ -73,7 +76,7 @@ def test_dos_lotes_de_analisis_en_paralelo_conservan_orden(monkeypatch):
     ]
 
 
-def _estados_prueba_lotes():
+def _estados_prueba_lotes() -> list[EstadoAgente]:
     return [
         {
             "id": f"lote-{i}",
@@ -128,17 +131,17 @@ def test_fallo_de_un_lote_no_interrumpe_los_demas(monkeypatch):
     ]
 
     for resultado in resultados[:2]:
-        assert resultado["errores"]
-        assert resultado["rutas"] == []
-        assert resultado["activos_generados"] == {}
-        assert len(resultado["fallos"]) == 1
-        assert resultado["fallos"][0]["id"] == resultado["id"]
-        assert resultado["fallos"][0]["etapa"] == "analizar_lote"
-        assert resultado["fallos"][0]["tipo_error"] == "RuntimeError"
+        assert cast(dict, resultado)["errores"]
+        assert cast(dict, resultado)["rutas"] == []
+        assert cast(dict, resultado)["activos_generados"] == {}
+        assert len(cast(dict, resultado)["fallos"]) == 1
+        assert cast(dict, resultado)["fallos"][0]["id"] == resultado["id"]
+        assert cast(dict, resultado)["fallos"][0]["etapa"] == "analizar_lote"
+        assert cast(dict, resultado)["fallos"][0]["tipo_error"] == "RuntimeError"
 
     for resultado in resultados[2:]:
-        assert resultado["sentimiento"] == "neutral"
-        assert not resultado["errores"]
+        assert cast(dict, resultado)["sentimiento"] == "neutral"
+        assert not cast(dict, resultado)["errores"]
 
     assert invocar.call_count == 2
 
@@ -244,7 +247,7 @@ def test_lote_incompleto_no_pierde_mensajes(monkeypatch):
         side_effect=lambda estado: estado,
     ):
         resultados = procesar_estados_por_lotes(
-            estados,
+            cast(list[EstadoAgente], estados),
             ids_contenido=set(),
             tamano_lote=2,
         )
@@ -254,8 +257,8 @@ def test_lote_incompleto_no_pierde_mensajes(monkeypatch):
     ]
 
     faltante = resultados[1]
-    assert faltante["errores"]
-    assert faltante["fallos"][0]["id"] == "lote-1"
+    assert cast(dict, faltante)["errores"]
+    assert cast(dict, faltante)["fallos"][0]["id"] == "lote-1"
 
 
 @pytest.mark.parametrize("trabajadores", [1, 2])
@@ -284,7 +287,7 @@ def test_lote_con_resultados_excedentes(monkeypatch, trabajadores):
         side_effect=lambda estado: estado,
     ):
         resultados = procesar_estados_por_lotes(
-            estados,
+            cast(list[EstadoAgente], estados),
             ids_contenido=set(),
             tamano_lote=2,
         )
@@ -294,13 +297,13 @@ def test_lote_con_resultados_excedentes(monkeypatch, trabajadores):
     ]
 
     for resultado in resultados[:2]:
-        assert resultado["errores"]
-        assert resultado["fallos"][0]["id"] == resultado["id"]
-        assert resultado["fallos"][0]["etapa"] == "analizar_lote"
+        assert cast(dict, resultado)["errores"]
+        assert cast(dict, resultado)["fallos"][0]["id"] == resultado["id"]
+        assert cast(dict, resultado)["fallos"][0]["etapa"] == "analizar_lote"
 
     for resultado in resultados[2:]:
         assert not resultado.get("errores")
-        assert resultado["sentimiento"] == "neutral"
+        assert cast(dict, resultado)["sentimiento"] == "neutral"
 
 
 @pytest.mark.parametrize("trabajadores", [1, 2])
@@ -340,6 +343,6 @@ def test_excepcion_inesperada_mantiene_ids_en_ambos_modos(
     assert all(r.get("errores") for r in resultados[:2])
     assert all(not r.get("errores") for r in resultados[2:])
     assert all(
-        r["fallos"][0]["id"] == r["id"]
+        cast(dict, r)["fallos"][0]["id"] == r["id"]
         for r in resultados[:2]
     )

@@ -16,6 +16,9 @@ services:
       - STREAMLIT_SERVER_ADDRESS=0.0.0.0
       - COMMUNITYLAB_PROVEEDOR_ANALISIS=${COMMUNITYLAB_PROVEEDOR_ANALISIS:-nvidia_nim}
       - COMMUNITYLAB_PROVEEDOR_GENERACION=${COMMUNITYLAB_PROVEEDOR_GENERACION:-nvidia_nim}
+      - COMMUNITYLAB_MODELO_GEMINI=${COMMUNITYLAB_MODELO_GEMINI:-gemini-3.5-flash-lite}
+      - COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS=${COMMUNITYLAB_NVIDIA_TIMEOUT_SEGUNDOS:-15.0}
+      - COMMUNITYLAB_MODELO_NVIDIA_INTERPRETACION=${COMMUNITYLAB_MODELO_NVIDIA_INTERPRETACION:-nvidia/nemotron-3.5-super-vl-120b-a12b}
       - COMMUNITYLAB_MODELO_NVIDIA=${COMMUNITYLAB_MODELO_NVIDIA:-nvidia/nemotron-3.5-lightning-30b-a3b}
       - COMMUNITYLAB_ENRUTAMIENTO_ADAPTATIVO=${COMMUNITYLAB_ENRUTAMIENTO_ADAPTATIVO:-true}
       - COMMUNITYLAB_MODELO_NVIDIA_RAPIDO=${COMMUNITYLAB_MODELO_NVIDIA_RAPIDO:-nvidia/nemotron-3.5-lightning-30b-a3b}
@@ -56,6 +59,25 @@ services:
       - DB_PASSWORD_SECRET_OCID=${DB_PASSWORD_SECRET_OCID}
     networks:
       - communitylab-internal
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  communitylab-interno:
+    profiles: ["interno"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["streamlit", "run", "src/app/app_interna.py"]
+    ports:
+      - "127.0.0.1:8502:8501"
+    env_file:
+      - path: .env.interno
+        required: true
+    volumes:
+      - communitylab-interno-salida:/app/salida
     security_opt:
       - no-new-privileges:true
     cap_drop:

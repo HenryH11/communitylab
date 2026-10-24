@@ -1,3 +1,6 @@
+from src.agentes.estado_agente import EstadoAgente
+from typing import cast
+
 from unittest.mock import Mock, patch
 
 import pytest
@@ -94,7 +97,7 @@ def test_nodo_generador_entrega_activos_aprobables():
             return_value=generadores,
         ),
     ):
-        salida = nodos_generadores.generar_activos(estado)
+        salida = nodos_generadores.generar_activos(cast(EstadoAgente, estado))
 
     assert salida["errores"] == []
     assert salida["fallos"] == []

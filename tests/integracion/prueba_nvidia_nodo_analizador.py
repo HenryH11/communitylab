@@ -7,6 +7,8 @@ IMPORTANTE:
 - no pertenece a la suite pytest normal.
 """
 
+from src.agentes.estado_agente import EstadoAgente
+
 from src.agentes.configuracion_ia import (
     PROVEEDOR_NVIDIA_NIM,
     VARIABLE_PROVEEDOR_ANALISIS,
@@ -24,7 +26,7 @@ def test_nodo_analizador_funciona_con_nvidia(
         PROVEEDOR_NVIDIA_NIM,
     )
 
-    estado = {
+    estado: EstadoAgente = {
         "id": "nvidia-prueba-001",
         "autor": "Usuario de prueba",
         "canal": "#dudas-langgraph",

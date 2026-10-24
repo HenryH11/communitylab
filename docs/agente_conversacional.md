@@ -28,7 +28,39 @@ reemplaza el procesamiento por lotes de LangGraph ni publica en redes sociales.
 
 Las consultas sin coincidencias y las solicitudes fuera del alcance no llaman
 al modelo. Las fechas relativas se calculan en UTC; `hoy` permite fijar la fecha
-para pruebas reproducibles.
+para pruebas reproducibles. El filtro `positivo` incluye `muy_positivo` y
+`negativo` incluye `muy_negativo`; `muy positivo` filtra solo ese valor. Si el
+modelo propone un borrador en una consulta analítica, se descarta.
+
+Cuando no hay coincidencias, el agente explica el motivo sin llamar al modelo:
+términos que ningún mensaje menciona, filtros sin resultados, falta de fechas o
+mensajes no aptos para contenido, junto con los sentimientos y tipos
+disponibles. Pedidos como "los 20 mejores comentarios" se interpretan como
+mensajes positivos ordenados con `muy_positivo` primero; la cantidad pedida
+(hasta 20) se respeta y, si hay menos, la respuesta lo dice sin rellenar.
+
+## Uso desde la terminal
+
+El agente se usa directamente desde la terminal. Carga por defecto
+`docs/evidencia2_entrega_ciencia_datos_completa.json` y usa las credenciales
+de `.env`.
+
+```bash
+# Una pregunta y su respuesta
+python -m scripts.agente_en_vivo "Crea un post de LinkedIn con testimonios positivos"
+
+# Chat con historial de sesión: permite seguimientos como
+# "y los negativos?" o "conviértelo en un post para X"
+python -m scripts.agente_en_vivo
+```
+
+Opciones: `--verificar` activa `verificacion_automatica`, `--datos` usa otro
+archivo de salida DS y `--detalle` muestra filtros y número de coincidencias.
+Dentro del chat, `/estricto` y `/verificar` cambian el modo de verificación,
+`/modo` muestra el modo actual y `/ayuda` lista los comandos. Cada borrador
+indica si fue verificado y lista las afirmaciones sin respaldo.
+Los eventos internos se escriben en `salida/logs/ciencia_datos.jsonl`, no en la
+terminal. Las consultas al modelo consumen cuota real del proveedor.
 
 ## Uso desde código
 

@@ -139,7 +139,7 @@ def test_ui_detalle_incluye_mensajes_sin_activos_y_spam():
     datos.update(lote_con_spam())
     app = AppTest.from_file(APP, default_timeout=30)
     app.session_state["resultado"] = {"resultados_por_id": datos}
-    app.session_state["navegacion_principal"] = "Análisis"
+    app.session_state["navegacion_principal"] = "Analíticas"
     app.run()
     assert not app.exception
     detalle = [e for e in app.expander if e.label.startswith(("📝", "💬", "🚫"))]

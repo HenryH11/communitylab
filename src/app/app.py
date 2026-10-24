@@ -1,3 +1,4 @@
+import html
 import json
 import os
 import sys
@@ -11,6 +12,7 @@ import streamlit as st
 from src.agentes.conversacion import AgenteConversacional
 from src.agentes.grafo import procesar_paquete_entrega
 from src.app import vista_plantillas
+from src.app.navegacion import CLAVE_NAVEGACION, PESTANAS, navegar_a
 from src.app.curaduria_oci import contexto_curaduria
 from src.datos.entrega_ia import preparar_paquete_ia
 
@@ -24,68 +26,94 @@ st.markdown(
     """
     <style>
         :root {
-            --communitylab-violet: #6557E8;
-            --communitylab-heading: #17213c;
+            --cl-violeta: #6557e8;
+            --cl-tinta: #161c32;
+            --cl-gris: #68748a;
+            --cl-linea: #e4e9f1;
+            --cl-fondo: #f7f9fc;
         }
-        .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
-            color: var(--communitylab-heading);
+        .stApp { background: var(--cl-fondo); }
+        /* Helvetica en todo menos en los iconos de Material. */
+        .stApp :is(div, p, span, li, label, button, input, textarea, h1, h2, h3, h4, code):not([data-testid="stIconMaterial"]) {
+            font-family: Helvetica, Arial, sans-serif;
         }
-        div[data-testid="stRadio"] > div[role="radiogroup"] {
-            gap: 0.4rem;
+        .stApp h1, .stApp h2, .stApp h3, .stApp h4 { color: var(--cl-tinta); font-weight: 400; }
+        .block-container { max-width: 1440px; padding-top: 1rem; padding-bottom: 2rem; }
+        /* La barra propia sustituye a la cabecera de Streamlit. */
+        header[data-testid="stHeader"] { display: none; }
+
+        /* Barra superior: marca a la izquierda, pestañas al centro y estado a la derecha, en una fila. */
+        .cl-barra { display: flex; align-items: center; gap: .7rem; background: #ffffff; height: 3.6rem;
+                    border: 1px solid var(--cl-linea); border-radius: 14px; padding: 0 1.2rem; }
+        .cl-logo { width: 34px; height: 34px; border-radius: 9px; background: var(--cl-violeta); color: #fff;
+                   display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.15rem; }
+        .cl-marca { font-size: 1.25rem; color: var(--cl-tinta); }
+        .cl-estado { margin-left: auto; font-size: .7rem; letter-spacing: 1px; color: var(--cl-gris);
+                     background: var(--cl-fondo); border: 1px solid var(--cl-linea); border-radius: 6px; padding: 4px 10px; }
+
+        /* Pestañas principales como navegación del boceto */
+        /* Solo la barra principal: las sub-pestañas de Resultado quedan con el estilo normal. */
+        .st-key-navegacion_principal > div > [role="tablist"] {
+            margin: -3.6rem auto 2rem; width: max-content; max-width: calc(100% - 26rem);
+            justify-content: center; gap: 2rem; border: 0; background: transparent; position: relative; z-index: 1;
         }
-        div[data-testid="stRadio"] label {
-            border-radius: 0.6rem;
-            padding: 0.45rem 0.8rem;
+        .st-key-navegacion_principal > div > [role="tablist"] > [data-testid="stTab"] { height: 3.6rem; }
+        .st-key-navegacion_principal > div > [role="tablist"] > [data-testid="stTab"] p { color: var(--cl-gris); font-size: .95rem; }
+        .st-key-navegacion_principal > div > [role="tablist"] > [aria-selected="true"] p { color: var(--cl-violeta); font-weight: 500; }
+        .st-key-navegacion_principal > div > [role="tablist"] .react-aria-SelectionIndicator { height: 4px; border-radius: 4px 4px 0 0; }
+        .stApp .react-aria-SelectionIndicator { background-color: var(--cl-violeta); }
+        /* En pantallas angostas las pestañas vuelven a su fila, bajo la marca. */
+        @media (max-width: 1100px) {
+            .cl-barra { border-radius: 14px 14px 0 0; }
+            .st-key-navegacion_principal > div > [role="tablist"] {
+                margin: 0 0 1.4rem; width: auto; max-width: none; justify-content: flex-start; gap: 1.2rem;
+                background: #ffffff; border: 1px solid var(--cl-linea); border-top: 0; border-radius: 0 0 14px 14px; padding: 0 1rem;
+            }
         }
-        div[data-testid="stRadio"] label:has(input:checked) {
-            background: #f0edff;
-            color: var(--communitylab-violet);
-            font-weight: 700;
-        }
-        button[kind="primary"] {
-            background-color: var(--communitylab-violet);
-            border-color: var(--communitylab-violet);
-            color: #ffffff;
-        }
-        button[kind="primary"]:hover {
-            background-color: #5144cf;
-            border-color: #5144cf;
-            color: #ffffff;
-        }
-        .st-key-inicio_card_datos button,
-        .st-key-inicio_card_analisis button,
-        .st-key-inicio_card_plantillas button {
-            height: 9rem;
-            justify-content: flex-start;
-            text-align: left;
-            white-space: pre-wrap;
-        }
-        .communitylab-brand {
-            background: #111b3a;
-            border-radius: 0.75rem;
-            color: #ffffff;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            margin-bottom: 1rem;
-            padding: 0.85rem 1.1rem;
-        }
-        .block-container {
-            max-width: 1440px;
-            padding-bottom: 2rem;
-            padding-top: 1.25rem;
-        }
+        .cl-pie { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 3rem;
+                  padding-top: 1rem; border-top: 1px solid var(--cl-linea); color: var(--cl-gris); font-size: .75rem; }
+
+        /* Botones y tarjetas */
+        button[kind="primary"] { background-color: var(--cl-violeta); border-color: var(--cl-violeta); color: #fff; }
+        button[kind="primary"]:hover { background-color: #5144cf; border-color: #5144cf; color: #fff; }
+        button[kind="tertiary"] { color: var(--cl-violeta); font-weight: 600; padding-left: 0; }
+        div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border-color: var(--cl-linea); border-radius: 18px; }
+        .stApp .stTextArea textarea, .stApp .stTextInput input { background: #ffffff; border: 1px solid var(--cl-linea); border-radius: 10px; }
+        div[data-testid="stRadio"] label:has(input:checked) { color: var(--cl-violeta); font-weight: 700; }
+
+        /* Inicio */
+        .cl-eyebrow { display: inline-block; font-size: .72rem; letter-spacing: 1px; font-weight: 600; color: var(--cl-violeta);
+                      background: #f0edff; border-radius: 6px; padding: 5px 10px; margin-bottom: 1rem; }
+        .cl-hero h1 { font-size: 3rem; font-weight: 400; line-height: 1.15; margin: 0 0 1.2rem; padding: 0; }
+        .cl-hero p { color: var(--cl-gris); font-size: 1.1rem; line-height: 1.5; max-width: 34rem; margin-bottom: 2rem; }
+        .st-key-inicio_explorar_plantillas button, .st-key-inicio_hablar_agente button { min-height: 2.9rem; border-radius: 8px; }
+        .cl-preview { background: #101a36; border-radius: 24px; padding: 1.8rem 2rem; color: #fff; }
+        .cl-preview .tag { display: inline-block; font-size: .66rem; letter-spacing: 1px; background: #2c3856;
+                           border-radius: 6px; padding: 4px 8px; color: #b7c5e3; }
+        .cl-preview h3 { color: #fff !important; font-size: 1.7rem; font-weight: 400; margin: 1rem 0 .4rem; padding: 0; }
+        .cl-preview p { color: #b7c5e3; font-size: .95rem; margin: 0 0 1.2rem; }
+        .cl-fila { display: flex; align-items: center; gap: .9rem; background: #23365a; border-radius: 12px;
+                   padding: 1.1rem 1rem; margin-top: .7rem; font-size: .9rem; }
+        .cl-fila b { font-size: .66rem; letter-spacing: 1px; border-radius: 6px; padding: 4px 8px; background: #385577; }
+        .cl-fila b.salida { background: #355d66; color: #ddfbf6; }
+        .cl-nota { color: #b7c5e3; font-size: .72rem; margin-top: .8rem; }
+        .cl-opcion { display: flex; align-items: center; gap: .8rem; }
+        .cl-opcion .icono { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center;
+                            justify-content: center; font-weight: 700; background: #f0edff; color: var(--cl-violeta); }
+        .cl-opcion .icono.verde { background: #e7f7f4; color: #078f83; }
+        .cl-opcion .icono.ambar { background: #fff3e4; color: #bc7521; }
+        .cl-opcion span { font-size: 1.25rem; color: var(--cl-tinta); }
+        .cl-seccion { font-size: 1.5rem; color: var(--cl-tinta); margin: 3rem 0 1rem; }
+        [class*="st-key-inicio_opcion_"] { padding: 1.3rem 1.5rem; min-height: 12.5rem; }
+        [class*="st-key-inicio_opcion_"] [data-testid="stButton"] { margin-top: 1.2rem; }
+        .cl-desc { color: var(--cl-gris); font-size: 1.05rem; margin: 1rem 0 .2rem; }
+        .cl-detalle { color: var(--cl-gris); font-size: .82rem; }
     </style>
-    <div class="communitylab-brand">◉ COMMUNITYLAB</div>
+    <div class="cl-barra"><div class="cl-logo">C</div><div class="cl-marca">communitylab</div>
+    <div class="cl-estado">JSON IMPORTADO · SIN CUENTAS</div></div>
     """,
     unsafe_allow_html=True,
 )
-
-PAGINAS = ("Inicio", "Datos", "Agente", "Análisis", "Plantillas", "Ayuda")
-CLAVE_NAVEGACION = "navegacion_principal"
-
-
-def _navegar_a(pagina):
-    st.session_state[CLAVE_NAVEGACION] = pagina
 
 
 def _interacciones_para_vista(datos):
@@ -209,7 +237,7 @@ def _render_datos():
 
 
 def _render_analisis(resultado):
-    st.header("Estado de las conversaciones de la comunidad")
+    st.header("Entiende las conversaciones de tu comunidad")
     if resultado is None:
         st.info("Carga y procesa un lote desde Datos para ver las métricas.")
         return
@@ -322,7 +350,7 @@ def _render_analisis(resultado):
 
     st.subheader("Detalle por mensaje")
     st.caption(
-        "Vista de solo lectura. Edita y aprueba los activos en Plantillas."
+        "Vista de solo lectura. Edita y aprueba los activos en Resultado."
     )
     for id_msg, data in resultados.items():
         autor = data.get("autor", "Anónimo")
@@ -366,7 +394,7 @@ def _render_analisis(resultado):
                 st.caption(
                     "Activos generados: "
                     + ", ".join(activos)
-                    + " · edítalos y apruébalos en Plantillas."
+                    + " · edítalos y apruébalos en Resultado."
                 )
             else:
                 st.caption("Este mensaje no generó activos.")
@@ -377,53 +405,71 @@ def _render_analisis(resultado):
                 )
 
 
+def _vista_previa_inicio(resultado):
+    """Tarjeta oscura de Inicio: con lote, insight y salida reales; sin lote, el ejemplo del boceto."""
+    insight, salida = "Interés en recomendaciones prácticas", "Publicación lista para revisar"
+    nota = "Ejemplo ilustrativo · procesa un lote en Datos para ver el tuyo."
+    resultados = (resultado or {}).get("resultados_por_id") or {}
+    if resultados:
+        temas = pd.Series([d.get("tema_principal") for d in resultados.values()
+                           if d.get("tema_principal") and d.get("es_spam_detectado") is not True])
+        if not temas.empty:
+            tema = str(temas.value_counts().index[0]).replace("_", " ")
+            insight = f"Tema más frecuente: {tema}"
+        total_activos = sum(len(d.get("activos_generados") or {}) for d in resultados.values())
+        salida = f"{total_activos} borrador(es) listos para revisar"
+        nota = f"Último lote: {len(resultados)} mensajes procesados."
+    return (
+        '<div class="cl-preview"><span class="tag">VISTA PREVIA</span>'
+        "<h3>De miles de mensajes a una idea</h3>"
+        "<p>Se detectaron temas y opiniones útiles para construir contenidos relevantes.</p>"
+        f'<div class="cl-fila"><b>INSIGHT</b>{html.escape(insight)}</div>'
+        f'<div class="cl-fila"><b class="salida">SALIDA</b>{html.escape(salida)}</div>'
+        f'<div class="cl-nota">{html.escape(nota)}</div></div>'
+    )
+
+
 def _render_inicio(resultado):
-    contenido, resumen = st.columns([1.35, 1], vertical_alignment="center")
+    contenido, resumen = st.columns([1.25, 1], gap="large", vertical_alignment="center")
     with contenido:
-        st.badge("COMMUNITYLAB · INTELIGENCIA PARA COMUNIDADES", color="violet")
-        st.title("Tu comunidad habla. Convierte esa voz en valor.")
-        st.write(
-            "Transforma conversaciones en conocimiento, analítica y activos "
-            "de marketing con revisión humana."
+        st.markdown(
+            '<div class="cl-hero"><span class="cl-eyebrow">DE CONVERSACIONES A OPORTUNIDADES</span>'
+            "<h1>Tu comunidad habla.<br>Convierte esa voz en valor.</h1>"
+            "<p>Analiza conversaciones, descubre lo que importa y crea contenidos "
+            "para tus redes sin empezar desde cero.</p></div>",
+            unsafe_allow_html=True,
         )
+        primario, secundario, _ = st.columns([1.1, 1, 1])
+        primario.button("Explorar plantillas →", type="primary", key="inicio_explorar_plantillas",
+                        use_container_width=True, on_click=navegar_a, args=("Plantillas",))
+        secundario.button("Hablar con agente", key="inicio_hablar_agente",
+                          use_container_width=True, on_click=navegar_a, args=("Agente en vivo",))
         if resultado is None:
-            st.info("Comienza en Datos importando un archivo JSON.")
-        else:
-            total = len(resultado.get("resultados_por_id", {}))
-            st.success(f"El último lote tiene {total} mensajes procesados.")
+            st.caption("¿Primera vez? Empieza importando un lote en Datos.")
+            st.button("Importar datos →", key="inicio_ir_datos", type="tertiary",
+                      on_click=navegar_a, args=("Datos",))
 
     with resumen:
-        with st.container(border=True):
-            st.markdown("#### De conversación a resultado")
-            st.markdown(
-                ":material/upload_file: **Importar** · Lote JSON de la comunidad\n\n"
-                ":material/analytics: **Analizar** · Temas y sentimiento\n\n"
-                ":material/edit_note: **Revisar** · Editar y aprobar activos"
-            )
+        st.markdown(_vista_previa_inicio(resultado), unsafe_allow_html=True)
 
-    st.subheader("Explora CommunityLab")
-    tarjetas = st.columns(3)
-    for columna, pagina, icono, titulo, descripcion in zip(
-        tarjetas,
-        ("Datos", "Análisis", "Plantillas"),
-        (":material/table_view:", ":material/insights:", ":material/article:"),
-        ("Datos", "Análisis", "Plantillas"),
+    st.markdown('<div class="cl-seccion">Elige cómo quieres trabajar</div>', unsafe_allow_html=True)
+    for columna, (destino, icono, tono, titulo, descripcion, detalle) in zip(
+        st.columns(3),
         (
-            "Importa y revisa interacciones antes de procesarlas.",
-            "Explora métricas, temas y sentimiento de la comunidad.",
-            "Prepara contenidos y apruébalos antes de guardarlos.",
+            ("Plantillas", "T", "", "Plantillas", "Resultados listos para adaptar", "Contenido · análisis"),
+            ("Agente en vivo", "A", "verde", "Agente en vivo", "Pide un post, análisis o resumen", "Lenguaje natural"),
+            ("Ayuda", "?", "ambar", "FAQ y ayuda", "Conoce capacidades y límites", "Guías · consultas"),
         ),
     ):
         with columna:
-            with st.container(border=True, key=f"inicio_card_{pagina.lower()}"):
-                st.button(
-                    f"**{titulo}**\n\n{descripcion}",
-                    icon=icono,
-                    key=f"inicio_nav_{pagina.lower()}",
-                    use_container_width=True,
-                    on_click=_navegar_a,
-                    args=(pagina,),
+            with st.container(border=True, key=f"inicio_opcion_{destino.split()[0].lower()}"):
+                st.markdown(
+                    f'<div class="cl-opcion"><div class="icono {tono}">{icono}</div><span>{titulo}</span></div>'
+                    f'<div class="cl-desc">{descripcion}</div><div class="cl-detalle">{detalle}</div>',
+                    unsafe_allow_html=True,
                 )
+                st.button("Explorar →", key=f"inicio_nav_{destino.split()[0].lower()}", type="tertiary",
+                          on_click=navegar_a, args=(destino,))
 
 
 def _render_agente(resultado):
@@ -452,9 +498,13 @@ def _render_agente(resultado):
             )
             if resultados:
                 if "agente_conversacional" not in st.session_state:
-                    st.session_state["agente_conversacional"] = (
-                        AgenteConversacional(resultado)
-                    )
+                    try:
+                        st.session_state["agente_conversacional"] = (
+                            AgenteConversacional(resultado)
+                        )
+                    except ValueError as error:
+                        st.warning(f"El agente no puede usar este lote: {error}")
+                        return
 
                 consulta = st.chat_input(
                     "Pregunta sobre las conversaciones procesadas..."
@@ -579,7 +629,7 @@ def _render_ayuda():
         ),
         (
             "¿Cómo guardo un activo aprobado?",
-            "Aprueba el contenido en Plantillas y usa la sección de guardado "
+            "Aprueba el contenido en Resultado y usa la sección de guardado "
             "en OCI al final de esa vista.",
         ),
         (
@@ -593,17 +643,19 @@ def _render_ayuda():
             st.write(respuesta)
 
 
-pagina_actual = st.radio(
-    "Navegación principal",
-    PAGINAS,
-    horizontal=True,
-    key=CLAVE_NAVEGACION,
-    label_visibility="collapsed",
-)
+# Todas las pestañas se pintan en cada ejecución, así que cambiar de pestaña no
+# pierde nada de st.session_state.
+pestanas = dict(zip(PESTANAS, st.tabs(PESTANAS, key=CLAVE_NAVEGACION, on_change="rerun")))
 
-if pagina_actual == "Datos":
+resultado = st.session_state.get("resultado")
+
+with pestanas["Inicio"]:
+    _render_inicio(resultado)
+with pestanas["Datos"]:
     _render_datos()
 
+# Datos puede actualizar el lote durante esta ejecución; las pestañas siguientes
+# usan el resultado actualizado.
 resultado = st.session_state.get("resultado")
 curaduria = (
     contexto_curaduria(st.session_state, resultado)
@@ -611,16 +663,19 @@ curaduria = (
     else None
 )
 
-if pagina_actual == "Inicio":
-    _render_inicio(resultado)
-elif pagina_actual == "Agente":
+with pestanas["Plantillas"]:
+    vista_plantillas.render_plantillas(resultado)
+with pestanas["Resultado"]:
+    vista_plantillas.render_resultado(resultado, curaduria)
+with pestanas["Agente en vivo"]:
     _render_agente(resultado)
-elif pagina_actual == "Análisis":
+with pestanas["Analíticas"]:
     _render_analisis(resultado)
-elif pagina_actual == "Plantillas":
-    if resultado is None:
-        vista_plantillas.render()
-    else:
-        vista_plantillas.render(resultado, curaduria)
-elif pagina_actual == "Ayuda":
+with pestanas["Ayuda"]:
     _render_ayuda()
+
+st.markdown(
+    '<div class="cl-pie"><span>CommunityLab · de conversaciones a oportunidades</span>'
+    "<span>Revisión humana antes de publicar · nada se publica automáticamente</span></div>",
+    unsafe_allow_html=True,
+)

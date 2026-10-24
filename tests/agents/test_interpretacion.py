@@ -397,3 +397,75 @@ def test_interprete_nvidia_conserva_fallback_a_gemini():
     assert salida.intencion == "conversacion"
     primario.invoke.assert_called()
     respaldo.invoke.assert_called_once()
+
+
+@pytest.mark.parametrize("proveedor", ["gemini", "nvidia_nim"])
+@pytest.mark.parametrize("intencion", ["aclaracion", "borrador"])
+def test_aclaracion_repetida_se_reinterpreta_con_contexto(proveedor, intencion):
+    repetida = "¿Qué texto quieres adaptar?"
+    cadena = Mock()
+    final = (
+        PlanConsulta(intencion="borrador", plataforma="instagram", terminos=["Python"])
+        if intencion == "borrador" else PlanConsulta(
+            intencion="aclaracion",
+            respuesta="Pega aquí el texto de referencia y podré adaptarlo.",
+        )
+    )
+    cadena.invoke.side_effect = [
+        PlanConsulta(intencion="aclaracion", respuesta=f"  {repetida.upper()}  "),
+        final,
+    ]
+    historial = [
+        {"rol": "usuario", "contenido": "Adapta ese texto"},
+        {"rol": "asistente", "contenido": repetida},
+    ]
+    with (
+        patch.object(interpretacion, "obtener_proveedor_generacion", return_value=proveedor),
+        patch.object(interpretacion, "_obtener_cadena_interpretacion", return_value=cadena),
+    ):
+        plan = interpretacion.interpretar_consulta(
+            consulta="El de arriba", hoy=date(2026, 10, 24), historial=historial,
+            consulta_anterior=None, vocabulario={},
+        )
+    assert plan == final
+    assert cadena.invoke.call_count == 2
+    primera, segunda = [llamada.args[0] for llamada in cadena.invoke.call_args_list]
+    assert primera["revision"] == ""
+    assert "repite una respuesta anterior" in segunda["revision"]
+    assert primera["historial"] == segunda["historial"]
+    assert primera["consulta"] == segunda["consulta"] == "El de arriba"
+    assert historial[-1]["contenido"] == repetida
+
+
+def test_aclaracion_persistente_falla_sin_bucle_ni_respuesta_prefabricada():
+    cadena = Mock()
+    cadena.invoke.return_value = PlanConsulta(
+        intencion="aclaracion", respuesta="¿Qué texto quieres adaptar?",
+    )
+    with (
+        patch.object(interpretacion, "obtener_proveedor_generacion", return_value="gemini"),
+        patch.object(interpretacion, "_obtener_cadena_interpretacion", return_value=cadena),
+        pytest.raises(ErrorInterpretacion, match="sin repetir"),
+    ):
+        interpretacion.interpretar_consulta(
+            consulta="Ese", hoy=date(2026, 10, 24),
+            historial=[{"rol": "asistente", "contenido": "¿Qué texto quieres adaptar?"}],
+            consulta_anterior=None, vocabulario={},
+        )
+    assert cadena.invoke.call_count == 2
+
+
+def test_saludo_repetido_no_activa_reintento_de_aclaracion():
+    cadena = Mock()
+    cadena.invoke.return_value = PlanConsulta(intencion="conversacion", respuesta="Hola")
+    with (
+        patch.object(interpretacion, "obtener_proveedor_generacion", return_value="gemini"),
+        patch.object(interpretacion, "_obtener_cadena_interpretacion", return_value=cadena),
+    ):
+        plan = interpretacion.interpretar_consulta(
+            consulta="Hola", hoy=date(2026, 10, 24),
+            historial=[{"rol": "asistente", "contenido": "Hola"}],
+            consulta_anterior=None, vocabulario={},
+        )
+    assert plan.respuesta == "Hola"
+    cadena.invoke.assert_called_once()

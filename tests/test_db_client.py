@@ -2,12 +2,10 @@
 
 import base64
 from copy import deepcopy
-from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock, patch
 
 import pytest
 
-<<<<<<< HEAD
 try:
     from scripts import ingesta_db as db
     from src.config import db_client as lector
@@ -15,18 +13,6 @@ except ModuleNotFoundError as error:
     if error.name not in {"oci", "oracledb"}:
         raise
     db = None
-=======
-if TYPE_CHECKING:
-    from src.config import db_client as db
-    from oracledb import Connection
-else:
-    try:
-        from src.config import db_client as db
-    except ModuleNotFoundError as error:
-        if error.name not in {"oci", "oracledb"}:
-            raise
-        db = None
->>>>>>> origin/develop3
 
 pytestmark = pytest.mark.skipif(db is None, reason="requiere OCI y oracledb")
 
@@ -157,10 +143,6 @@ class Cursor:
         else:
             raise AssertionError(f"SQL no modelado: {sql}")
 
-    def setinputsizes(self, **tipos):
-        assert tipos == {"contenido_textual": db.oracledb.DB_TYPE_CLOB}
-        self.conexion.operaciones.append("BIND CLOB contenido_textual")
-
     def fetchall(self):
         return self.resultado
 
@@ -192,7 +174,7 @@ def impedir_red(monkeypatch):
 
 def cargar(doc, con):
     return db.sincronizar_conjunto(
-        doc, conexion=cast("Connection", con), instantanea_completa=True
+        doc, conexion=con, instantanea_completa=True
     )
 
 
@@ -204,11 +186,7 @@ def test_roundtrip_contrato_11_unicode_null_sin_mutar():
     assert cargar(doc, con)["sincronizados"] == 2
     esperado = deepcopy(doc)
     esperado["registros"].sort(key=lambda r: r["id"])
-<<<<<<< HEAD
     assert lector.leer_conjunto(conexion=con) == esperado
-=======
-    assert db.leer_conjunto(conexion=cast("Connection", con)) == esperado
->>>>>>> origin/develop3
     assert doc == original
     assert con.commits == 1
 
@@ -216,83 +194,13 @@ def test_roundtrip_contrato_11_unicode_null_sin_mutar():
 def test_roundtrip_version_10():
     doc, con = documento("int-001", version="1.0"), Conexion()
     cargar(doc, con)
-<<<<<<< HEAD
     esperado = dict(doc, version="1.1", total_spam_excluido=0)
     assert lector.leer_conjunto(conexion=con) == esperado
-=======
-    assert db.leer_conjunto(conexion=cast("Connection", con)) == doc
-
-
-@pytest.mark.parametrize("longitud", [161, 4001, 32768, 50000])
-def test_texto_completo_se_carga_con_bind_clob_y_llega_al_agente(longitud):
-    from src.app.fuente_agente import adaptar_conjunto
-
-    texto = "  Inicio 🚀\n" + "á" * longitud + "\nFinal intacto.  "
-    doc, con = documento("int-001"), Conexion()
-    doc["registros"][0]["contenido_textual"] = texto
-    cargar(doc, con)
-    assert con.operaciones.index("BIND CLOB contenido_textual") < con.operaciones.index(db._SQL_UPSERT)
-    leido = db.leer_conjunto(conexion=cast("Connection", con))
-    assert leido["registros"][0]["contenido_textual"] == texto
-    assert adaptar_conjunto(leido)[0]["texto"] == texto
-
-
-@pytest.mark.parametrize("inyectada", [True, False])
-def test_clob_se_materializa_antes_de_cerrar_cursor_y_conexion(inyectada):
-    texto = "Inicio\n" + "Experiencia íntegra 🚀 " * 3000 + "\nFinal."
-    conexion = Mock()
-    cursor = Mock()
-    conexion.__enter__ = Mock(return_value=conexion)
-    conexion.__exit__ = Mock(return_value=False)
-    cursor.__enter__ = Mock(return_value=cursor)
-    cursor.__exit__ = Mock(return_value=False)
-    conexion.cursor.return_value = cursor
-    abierto = {"valor": True}
-    def cerrar(*_):
-        abierto["valor"] = False
-    cursor.__exit__.side_effect = cerrar
-    lob = Mock(spec=db.oracledb.LOB)
-    def leer():
-        assert abierto["valor"], "El CLOB se leyó después de cerrar el cursor"
-        return texto
-    lob.read.side_effect = leer
-    registro = documento("int-001")["registros"][0]
-    registro["contenido_textual"] = lob
-    cursor.fetchall.return_value = [
-        ("1.1", 1, 0) + tuple(registro[c] for c in db.CAMPOS_CONJUNTO),
-    ]
-    with patch.object(db, "obtener_conexion_lectura", return_value=conexion):
-        resultado = db.leer_conjunto(
-            conexion=cast("Connection", conexion) if inyectada else None,
-        )
-    lob.read.assert_called_once_with()
-    assert resultado["registros"][0]["contenido_textual"] == texto
-    assert not abierto["valor"]
-
-
-def test_fallo_clob_se_propaga_sin_convertirlo_en_texto_vacio():
-    cursor = Mock()
-    lob = Mock(spec=db.oracledb.LOB)
-    lob.read.side_effect = RuntimeError("Fallo de lectura")
-    cursor.fetchall.return_value = [("1.1", 1, 0, "id", "canal", "positivo", "tema", "tipo", lob, None)]
-    with pytest.raises(RuntimeError, match="Fallo de lectura"):
-        db._leer_filas_con_texto(cursor)
-
-
-def test_lectura_rechaza_lob_binario():
-    cursor = Mock()
-    lob = Mock(spec=db.oracledb.LOB)
-    lob.read.return_value = b"datos binarios"
-    cursor.fetchall.return_value = [("1.1", 1, 0, "id", "canal", "positivo", "tema", "tipo", lob, None)]
-    with pytest.raises(ValueError, match="no binario"):
-        db._leer_filas_con_texto(cursor)
->>>>>>> origin/develop3
 
 
 def test_conserva_otros_lotes_y_reintento_no_duplica():
     con = Conexion()
     cargar(documento("int-001", "int-002"), con)
-<<<<<<< HEAD
     doc = documento("int-003", spam=2)
     assert cargar(doc, con)["insertados"] == 1
     assert set(con.filas) == {"int-001", "int-002", "int-003"}
@@ -300,30 +208,17 @@ def test_conserva_otros_lotes_y_reintento_no_duplica():
     assert lector.leer_conjunto(conexion=con)["total"] == 3
     assert con.meta["total_spam_excluido"] == 3
     assert len(con.cargas) == 2
-=======
-    doc = documento("int-001", spam=2)
-    doc["registros"][0]["tema"] = "tema actualizado"
-    assert cargar(doc, con)["retirados"] == 1
-    assert db.leer_conjunto(conexion=cast("Connection", con)) == doc
-    assert cargar(doc, con)["retirados"] == 0
-    assert db.leer_conjunto(conexion=cast("Connection", con))["total"] == 1
->>>>>>> origin/develop3
 
 
 def test_instantanea_vacia_confirmada_conserva_spam():
     con = Conexion()
     cargar(documento("int-001"), con)
     doc = documento(spam=8)
-<<<<<<< HEAD
     assert cargar(doc, con)["retirados"] == 0
     assert lector.leer_conjunto(conexion=con)["total"] == 1
     assert con.meta["total_spam_excluido"] == 9
     cargar(doc, con)
     assert con.meta["total_spam_excluido"] == 9
-=======
-    assert cargar(doc, con)["retirados"] == 1
-    assert db.leer_conjunto(conexion=cast("Connection", con)) == doc
->>>>>>> origin/develop3
 
 
 @pytest.mark.parametrize("confirmacion", [False, None, 1, "true"])
@@ -331,7 +226,7 @@ def test_no_escribe_sin_confirmacion_exacta(confirmacion):
     con = Conexion()
     with pytest.raises(ValueError, match="instantanea_completa"):
         db.sincronizar_conjunto(
-            documento(), conexion=cast("Connection", con), instantanea_completa=confirmacion
+            documento(), conexion=con, instantanea_completa=confirmacion
         )
     assert con.operaciones == []
 
@@ -373,11 +268,6 @@ def test_11_exige_contador_y_no_admite_duplicados():
     [
         {"id": "../otro"},
         {"id": "int-1' OR 1=1"},
-<<<<<<< HEAD
-=======
-        {"contenido_textual": ""},
-        {"contenido_textual": " \t\n"},
->>>>>>> origin/develop3
         {"contenido_textual": None},
         {"tema": 8},
         {"canal": []},
@@ -401,19 +291,6 @@ def test_rechaza_campo_faltante():
     del doc["registros"][0]["fecha"]
     with pytest.raises(ValueError):
         cargar(doc, Conexion())
-
-
-def test_contrato_y_sql_usan_nombre_confirmado_sin_alias_legacy():
-    assert "contenido_textual" in db.CAMPOS_CONJUNTO
-    assert "contenido_corto" not in db.CAMPOS_CONJUNTO
-    assert ":contenido_textual" in db._SQL_UPSERT
-    assert "d.contenido_textual" in db._SQL_SELECT_TODOS
-    doc, con = documento("int-001"), Conexion()
-    registro = doc["registros"][0]
-    registro["contenido_corto"] = registro.pop("contenido_textual")
-    with pytest.raises(ValueError, match="7 campos"):
-        cargar(doc, con)
-    assert not con.operaciones
 
 
 @pytest.mark.parametrize("campo", ["canal", "sentimiento", "tema", "tipo"])
@@ -444,11 +321,7 @@ def test_columnas_requeridas_conservan_texto_y_fecha_null():
     )
     original = deepcopy(doc)
     cargar(doc, con)
-<<<<<<< HEAD
     assert lector.leer_conjunto(conexion=con) == original
-=======
-    assert db.leer_conjunto(conexion=cast("Connection", con)) == original
->>>>>>> origin/develop3
     assert doc == original
 
 
@@ -469,11 +342,7 @@ def test_error_revierte_filas_y_metadatos(etapa):
     with pytest.raises(RuntimeError):
         cargar(documento("int-003", spam=9), con)
     con.fallar = None
-<<<<<<< HEAD
     assert lector.leer_conjunto(conexion=con) == anterior
-=======
-    assert db.leer_conjunto(conexion=cast("Connection", con)) == anterior
->>>>>>> origin/develop3
     assert con.commits == 1
     assert con.rollbacks == 1
 
@@ -492,33 +361,19 @@ def test_lectura_no_modifica_ni_hace_commit():
     con = Conexion()
     cargar(documento("int-001"), con)
     con.operaciones.clear()
-<<<<<<< HEAD
     lector.leer_conjunto(conexion=con)
     assert con.operaciones == [lector._SQL_SELECT_TODOS]
-=======
-    db.leer_conjunto(conexion=cast("Connection", con))
-    assert con.operaciones == [db._SQL_SELECT_TODOS]
->>>>>>> origin/develop3
     assert con.commits == 1
 
 
 def test_lectura_sin_publicacion_o_con_total_inconsistente_falla():
     con = Conexion()
     with pytest.raises(ValueError, match="metadatos"):
-<<<<<<< HEAD
         lector.leer_conjunto(conexion=con)
-=======
-        db.leer_conjunto(conexion=cast("Connection", con))
->>>>>>> origin/develop3
     cargar(documento("int-001"), con)
-    assert con.meta is not None
     con.meta["total"] = 3
     with pytest.raises(ValueError, match="total"):
-<<<<<<< HEAD
         lector.leer_conjunto(conexion=con)
-=======
-        db.leer_conjunto(conexion=cast("Connection", con))
->>>>>>> origin/develop3
 
 
 def test_conexiones_propias_separadas(monkeypatch):
@@ -609,15 +464,63 @@ def test_documento_real_generado_por_da():
         ]
     }
     doc = construir_conjunto_consultable(entrega)
-    # La rama de Data de esta base aún emite contenido_corto. El adaptador
-    # explícito no recupera textos ya recortados; la carga final usa la fuente.
-    doc["campos"] = list(db.CAMPOS_CONJUNTO)
-    for registro in doc["registros"]:
-        registro["contenido_textual"] = registro.pop("contenido_corto")
     con = Conexion()
     cargar(doc, con)
-<<<<<<< HEAD
     assert lector.leer_conjunto(conexion=con) == doc
-=======
-    assert db.leer_conjunto(conexion=cast("Connection", con)) == doc
->>>>>>> origin/develop3
+
+
+@pytest.mark.parametrize("binario", [False, True])
+def test_lector_materializa_clob_antes_de_cerrar_cursor(binario):
+    texto = "Texto completo ñ\n" * 1000
+    lob = Mock(spec=lector.oracledb.LOB)
+    lob.read.return_value = texto.encode() if binario else texto
+    cursor = Mock()
+    cursor.fetchall.return_value = [
+        ("1.1", 1, 0, "id-1", "discord", "positivo", "tema", "testimonio", lob, None),
+    ]
+    con = Mock()
+    con.cursor.return_value.__enter__ = Mock(return_value=cursor)
+    con.cursor.return_value.__exit__ = Mock(return_value=False)
+    if binario:
+        with pytest.raises(ValueError, match="no binario"):
+            lector.leer_conjunto(conexion=con)
+    else:
+        assert lector.leer_conjunto(conexion=con)["registros"][0]["contenido_textual"] == texto
+    lob.read.assert_called_once_with()
+    con.commit.assert_not_called()
+
+
+def test_lector_exige_respuesta_de_vault():
+    cliente = Mock()
+    cliente.get_secret_bundle.return_value = None
+    with pytest.raises(RuntimeError, match="Vault no devolvió"):
+        lector.obtener_secreto_vault("secreto-ficticio", cliente=cliente)
+
+
+def test_lector_consulta_el_esquema_del_escritor():
+    assert "FROM rw_ingest_communitylab.conjunto_consultable_meta" in lector._SQL_SELECT_TODOS
+    assert "JOIN rw_ingest_communitylab.conjunto_consultable" in lector._SQL_SELECT_TODOS
+
+
+def test_fallo_clob_se_propaga_sin_convertirlo_en_texto_vacio():
+    cursor = Mock()
+    lob = Mock(spec=lector.oracledb.LOB)
+    lob.read.side_effect = RuntimeError("Fallo de lectura")
+    cursor.fetchall.return_value = [
+        ("1.1", 1, 0, "id", "canal", "positivo", "tema", "tipo", lob, None),
+    ]
+    with pytest.raises(RuntimeError, match="Fallo de lectura"):
+        lector._leer_filas_con_texto(cursor)
+
+
+def test_contrato_y_sql_no_reintroducen_alias_recortado():
+    assert "contenido_textual" in db.CAMPOS_CONJUNTO
+    assert "contenido_corto" not in db.CAMPOS_CONJUNTO
+    assert ":contenido_textual" in db._SQL_UPSERT
+    assert "d.contenido_textual" in lector._SQL_SELECT_TODOS
+    doc, con = documento("int-001"), Conexion()
+    registro = doc["registros"][0]
+    registro["contenido_corto"] = registro.pop("contenido_textual")
+    with pytest.raises(ValueError, match="7 campos"):
+        cargar(doc, con)
+    assert not con.operaciones

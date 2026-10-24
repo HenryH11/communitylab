@@ -120,3 +120,48 @@ def test_fuera_de_alcance_real_sugiere_retomar_el_post_sin_buscar():
     assert plan.terminos == []
     assert "linkedin" in plan.respuesta.casefold()
     assert plan.plataforma is None
+
+
+@pytest.mark.parametrize("consulta", ["dale", "algo nuevo, no lo mismo", "más cercano"])
+def test_seguimiento_editorial_real_no_repite_el_menu(consulta):
+    plan = interpretar_consulta(
+        consulta=consulta, hoy=date(2026, 10, 24),
+        historial=[
+            {"rol": "usuario", "contenido": "Un post para Instagram sobre Python"},
+            {"rol": "asistente", "contenido": (
+                "Publicación para Instagram preparada: aprender Python con proyectos. "
+                "Puedo darle otro enfoque más cercano."
+            )},
+        ],
+        consulta_anterior={
+            "intencion": "borrador", "terminos": ["Python"], "plataforma": "instagram",
+        },
+        vocabulario=VOCABULARIO,
+    )
+    assert plan.intencion == "borrador"
+    assert plan.plataforma == "instagram"
+    assert [t.casefold() for t in plan.terminos] == ["python"]
+
+
+def test_redaccion_real_aporta_otro_enfoque_sin_pegar_el_testimonio():
+    texto = (
+        "En el taller aprendí a limpiar datos con Python. Antes revisaba cada "
+        "fila a mano y ahora uso un script para encontrar valores faltantes."
+    )
+    agente = AgenteConversacional([
+        {"id": "ficticio-1", "autor": "Persona de prueba", "texto": texto,
+         "sentimiento": "positivo", "tipo_detectado": "testimonio"},
+    ])
+    primera = agente.consultar(
+        "Crea una publicación para Instagram basada en este testimonio de Python. "
+        "No copies el comentario: dale una apertura y un enfoque propios."
+    )
+    segunda = agente.consultar("Algo nuevo, no lo mismo; usa otro enfoque.")
+    for salida in (primera, segunda):
+        assert salida["modo"] == "borrador"
+        assert salida["borrador"] is not None
+        assert salida["borrador"]["plataforma"] == "instagram"
+        assert salida["citas"] == ["ficticio-1"]
+        assert texto.casefold() not in salida["borrador"]["contenido"].casefold()
+    assert primera["borrador"]["contenido"] != segunda["borrador"]["contenido"]
+    assert primera["borrador"]["titulo"] != segunda["borrador"]["titulo"]

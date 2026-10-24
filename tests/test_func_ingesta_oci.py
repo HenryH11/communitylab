@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
+import test_db_client
 
 from test_db_client import Conexion, cargar, db, documento, impedir_red
 
@@ -12,6 +13,19 @@ pytestmark = [
     pytest.mark.skipif(db is None, reason="requiere OCI y oracledb"),
     pytest.mark.usefixtures("impedir_red"),
 ]
+
+
+@pytest.fixture(autouse=True, params=["script", "servicio_http"])
+def escritor(request, monkeypatch, impedir_red):
+    if request.param == "servicio_http":
+        from src.services import ingest_server
+
+        monkeypatch.setattr(test_db_client, "db", ingest_server)
+        monkeypatch.setitem(globals(), "db", ingest_server)
+        monkeypatch.setattr(
+            ingest_server, "obtener_cliente_secretos",
+            lambda: pytest.fail("No se permite acceder a Vault"),
+        )
 
 
 def test_lotes_a_b_repetir_b_conserva_textos_completos():

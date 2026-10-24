@@ -25,11 +25,15 @@ RUN groupadd --gid 1000 appuser && \
 WORKDIR /app
 COPY --from=dependencias /opt/venv /opt/venv
 
-# Copiar módulos del agente y eliminar cualquier script de ingesta
-COPY src/ ./src/
-RUN rm -rf ./src/services/ingest_server.py
+# No incluir el escritor ni el servicio HTTP en ninguna capa del frontend.
+COPY src/__init__.py src/evaluacion.py ./src/
+COPY src/agentes/ ./src/agentes/
+COPY src/app/ ./src/app/
+COPY src/config/ ./src/config/
+COPY src/datos/ ./src/datos/
 COPY configuracion/ ./configuracion/
 COPY .streamlit/ ./.streamlit/
+COPY scripts/generar_plantillas_diarias.py ./scripts/generar_plantillas_diarias.py
 USER appuser
 
 # Puerto estándar de Streamlit

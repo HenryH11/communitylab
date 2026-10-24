@@ -16,9 +16,6 @@ from oci.auth.signers import InstancePrincipalsSecurityTokenSigner
 from oci.secrets import SecretsClient
 import oracledb
 
-# Forzar al driver a devolver CLOBs como str y BLOBs como bytes
-oracledb.defaults.fetch_lobs = False
-
 USUARIO_PREDETERMINADO = "ro_query_communitylab"
 VERSION_CONJUNTO = "1.1"
 CAMPOS_CONJUNTO = (
@@ -152,6 +149,21 @@ def obtener_conexion_lectura() -> oracledb.Connection:
         dsn=os.getenv("DB_READ_DSN") or os.getenv("DB_DSN"),
         ocid_secreto=secreto,
     )
+
+
+def _leer_filas_con_texto(cursor) -> list[tuple]:
+    cursor.execute(_SQL_SELECT_TODOS)
+    filas = []
+    for fila in cursor.fetchall():
+        valores = list(fila)
+        contenido = valores[8]
+        if isinstance(contenido, oracledb.LOB):
+            contenido = contenido.read()
+            if not isinstance(contenido, str):
+                raise ValueError("contenido_textual debe ser un CLOB de texto, no binario")
+            valores[8] = contenido
+        filas.append(tuple(valores))
+    return filas
 
 
 def leer_conjunto(

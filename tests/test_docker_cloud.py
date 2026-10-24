@@ -1,13 +1,14 @@
 """Regresión de la configuración de despliegue; no usa red ni credenciales."""
 
 from pathlib import Path
+import re
 
 
 RAIZ = Path(__file__).resolve().parents[1]
 
 
 def test_imagen_multistage_y_usuario_sin_privilegios():
-    dockerfile = (RAIZ / "Dockerfile").read_text()
+    dockerfile = (RAIZ / "Dockerfile.frontend").read_text()
     assert dockerfile.count("\nFROM ") + dockerfile.startswith("FROM ") == 2
     assert "COPY --from=dependencias /opt/venv /opt/venv" in dockerfile
     assert "USER appuser" in dockerfile
@@ -15,12 +16,16 @@ def test_imagen_multistage_y_usuario_sin_privilegios():
 
 
 def test_imagen_copia_solo_directorios_de_ejecucion():
-    lineas = (RAIZ / "Dockerfile").read_text().splitlines()
+    lineas = (RAIZ / "Dockerfile.frontend").read_text().splitlines()
     copias = [linea for linea in lineas if linea.startswith("COPY ")]
     assert copias == [
-        "COPY requirements.txt .",
+        "COPY requirements.frontend.txt requirements.txt",
         "COPY --from=dependencias /opt/venv /opt/venv",
-        "COPY src/ ./src/",
+        "COPY src/__init__.py src/evaluacion.py ./src/",
+        "COPY src/agentes/ ./src/agentes/",
+        "COPY src/app/ ./src/app/",
+        "COPY src/config/ ./src/config/",
+        "COPY src/datos/ ./src/datos/",
         "COPY configuracion/ ./configuracion/",
         "COPY .streamlit/ ./.streamlit/",
         "COPY scripts/generar_plantillas_diarias.py ./scripts/generar_plantillas_diarias.py",
@@ -46,14 +51,15 @@ def test_compose_conserva_puerto_y_volumen_sin_elevar_privilegios():
 
 
 def test_salud_no_requiere_apis_de_ia_ni_oci():
-    dockerfile = (RAIZ / "Dockerfile").read_text()
+    dockerfile = (RAIZ / "Dockerfile.frontend").read_text()
     assert "http://127.0.0.1:8501/_stcore/health" in dockerfile
     assert 'CMD ["streamlit", "run", "src/app/app.py"]' in dockerfile
 
 
 def test_compose_separa_entorno_puerto_y_volumen_interno():
     compose = (RAIZ / "docker-compose.yml").read_text()
-    marketing, interno = compose.split("  communitylab-interno:", 1)
+    marketing, resto = compose.split("  communitylab-ingestor:", 1)
+    _, interno = resto.split("  communitylab-interno:", 1)
     assert "env_file:" not in marketing
     assert "DB_USER=" not in marketing
     assert "DB_PASSWORD_SECRET_OCID=" not in marketing
@@ -63,3 +69,41 @@ def test_compose_separa_entorno_puerto_y_volumen_interno():
     assert '"127.0.0.1:8502:8501"' in interno
     assert "path: .env.interno" in interno
     assert "communitylab-interno-salida:/app/salida" in interno
+
+
+def test_ingestor_optativo_no_bloquea_marketing_ni_publica_puerto():
+    compose = (RAIZ / "docker-compose.yml").read_text()
+    marketing, resto = compose.split("  communitylab-ingestor:", 1)
+    ingestor, _ = resto.split("  communitylab-interno:", 1)
+    assert "depends_on:" not in marketing
+    assert "INGESTOR_URL=" not in marketing
+    assert 'profiles: ["ingesta"]' in ingestor
+    assert 'expose:\n      - "8000"' in ingestor
+    assert "ports:" not in ingestor
+    assert "DB_PASSWORD_SECRET_OCID=" in ingestor
+    assert "DB_READ_PASSWORD_SECRET_OCID=" not in ingestor
+
+
+def test_backend_especializado_y_dependencias_locales_compatibles():
+    backend = (RAIZ / "Dockerfile.backend").read_text()
+    assert "COPY src/services/ingest_server.py ./src/services/ingest_server.py" in backend
+    assert "COPY src/ ./src/" not in backend
+    assert "USER appuser" in backend
+    assert "http://127.0.0.1:8000/health" in backend
+    assert 'CMD ["python", "src/services/ingest_server.py"]' in backend
+    dependencias = (RAIZ / "requirements.txt").read_text()
+    assert "-r requirements.frontend.txt" in dependencias
+    assert "-r requirements.backend.txt" in dependencias
+
+
+def test_compose_referencia_archivos_existentes_y_declara_sus_volumenes():
+    compose = (RAIZ / "docker-compose.yml").read_text()
+    archivos = re.findall(r"^\s+dockerfile:\s+(\S+)$", compose, re.MULTILINE)
+    assert len(archivos) == 3
+    for archivo in archivos:
+        assert (RAIZ / archivo).is_file(), f"Falta el archivo de construcción: {archivo}"
+    servicios, declaraciones = compose.split("\nvolumes:\n", 1)
+    declaraciones = declaraciones.split("\nnetworks:", 1)[0]
+    usados = re.findall(r"^\s+- ([\w-]+):/app/salida$", servicios, re.MULTILINE)
+    declarados = re.findall(r"^  ([\w-]+):$", declaraciones, re.MULTILINE)
+    assert set(usados) <= set(declarados)

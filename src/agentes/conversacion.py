@@ -421,18 +421,37 @@ class AgenteConversacional:
             **muestreo,
         )
         borrador_modelo = salida_modelo.borrador
+        copia_literal = (
+            borrador_modelo is not None
+            and _copia_literal_sin_cita(borrador_modelo.contenido, evidencia)
+        )
         if (
             filtros.intencion == "borrador"
             and borrador_modelo is not None
-            and borrador_modelo.plataforma == "x"
-            and len(texto_publicacion(borrador_modelo.model_dump())) > LIMITE_CARACTERES_X
+            and (
+                copia_literal
+                or (
+                    borrador_modelo.plataforma == "x"
+                    and len(texto_publicacion(borrador_modelo.model_dump())) > LIMITE_CARACTERES_X
+                )
+            )
         ):
-            # Los modelos pequeños suelen ignorar el límite; se pide una reescritura.
+            correccion = (
+                "El cuerpo copia un testimonio completo. Reescribe con una "
+                "apertura y una estructura propias, sintetizando sus hechos en "
+                "tercera persona. No pegues el comentario ni añadas afirmaciones "
+                "factuales que no figuren en la evidencia. "
+                if copia_literal else ""
+            )
+            if borrador_modelo.plataforma == "x":
+                correccion += (
+                    f"Reescribe este borrador para X en máximo {LIMITE_CARACTERES_X} "
+                    "caracteres EN TOTAL: contenido + dos saltos de línea + "
+                    "hashtags separados por espacios. Usa 3 hashtags breves. "
+                )
             salida_modelo = self._generar(
                 consulta=(
-                    f"{consulta}\n\nReescribe este borrador para X en máximo "
-                    f"{LIMITE_CARACTERES_X} caracteres EN TOTAL: contenido + dos saltos "
-                    "de línea + hashtags separados por espacios. Usa 3 hashtags breves. "
+                    f"{consulta}\n\n{correccion}"
                     "No incluyas el título en el cuerpo. Texto anterior:\n"
                     f"{texto_publicacion(borrador_modelo.model_dump())}"
                 ),
@@ -447,6 +466,15 @@ class AgenteConversacional:
             and len(texto_publicacion(salida_modelo.borrador.model_dump())) > LIMITE_CARACTERES_X
         ):
             raise ValueError("La publicación para X sigue superando 280 caracteres con hashtags.")
+        if (
+            filtros.intencion == "borrador"
+            and salida_modelo.borrador is not None
+            and _copia_literal_sin_cita(salida_modelo.borrador.contenido, evidencia)
+        ):
+            raise ValueError(
+                "La publicación sigue copiando un testimonio completo sin "
+                "transformarlo. No se guardó esta versión; pide otro enfoque."
+            )
         ids_evidencia = {mensaje["id"] for mensaje in evidencia}
         if any(cita not in ids_evidencia for cita in salida_modelo.citas):
             raise ValueError("El agente citó un mensaje que no estaba en la evidencia.")
@@ -814,6 +842,21 @@ def _evidencia_acotada(mensajes: list[dict]) -> list[dict]:
         }
         for mensaje in mensajes
     ]
+
+
+def _copia_literal_sin_cita(contenido: str, evidencia: list[dict]) -> bool:
+    cuerpo = " ".join(contenido.casefold().split())
+    for mensaje in _evidencia_acotada(evidencia):
+        texto = " ".join(mensaje["texto"].casefold().split())
+        # Los hechos breves y las citas delimitadas no equivalen a pegar un post.
+        if len(texto) < 80 or texto not in cuerpo:
+            continue
+        if not any(
+            f"{inicio}{texto}{fin}" in cuerpo
+            for inicio, fin in (('"', '"'), ("«", "»"), ("“", "”"))
+        ):
+            return True
+    return False
 
 
 def _preparar_verificacion(

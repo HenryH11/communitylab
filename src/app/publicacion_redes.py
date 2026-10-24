@@ -22,6 +22,65 @@ REDES = {
 
 LIMITES_TEXTO = {"x": 280, "threads": 500, "bluesky": 300}
 
+ESTILO_ACCIONES = """
+<style>
+[class*="st-key-"][class*="_acciones_publicacion"] {
+    --publicacion-fondo: #fffaf0;
+    --publicacion-texto: #2b2216;
+    --publicacion-borde: #8c6214;
+}
+.st-key-gotico_lienzo [class*="_acciones_publicacion"] {
+    --publicacion-fondo: #241b10;
+    --publicacion-texto: #fbf7ec;
+    --publicacion-borde: #d6ab50;
+}
+[class*="_acciones_publicacion"] [data-testid="stExpander"] details {
+    background: var(--publicacion-fondo) !important;
+    border: 1px solid var(--publicacion-borde) !important;
+    border-radius: 8px !important;
+}
+[class*="_acciones_publicacion"] [data-testid="stExpander"] summary,
+[class*="_acciones_publicacion"] [data-testid="stExpander"] summary:hover,
+[class*="_acciones_publicacion"] [data-testid="stCode"],
+[class*="_acciones_publicacion"] [data-testid="stCode"] pre {
+    background: var(--publicacion-fondo) !important;
+    color: var(--publicacion-texto) !important;
+}
+[class*="_acciones_publicacion"] [data-testid="stExpander"] summary *,
+[class*="_acciones_publicacion"] [data-testid="stCode"] code,
+[class*="_acciones_publicacion"] [data-testid="stCode"] code span {
+    color: var(--publicacion-texto) !important;
+}
+[class*="_acciones_publicacion"] [data-testid="stCode"] button {
+    background: var(--publicacion-fondo) !important;
+    color: var(--publicacion-texto) !important;
+    border: 1px solid var(--publicacion-borde) !important;
+    opacity: 1 !important;
+}
+[class*="_acciones_publicacion"] [data-testid="stCode"] div:has(> [data-testid="stElementToolbarButton"]) {
+    background: var(--publicacion-fondo) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+[class*="_acciones_publicacion"] [data-testid="stLinkButton"] a {
+    background: var(--publicacion-fondo) !important;
+    color: var(--publicacion-texto) !important;
+    border: 1px solid var(--publicacion-borde) !important;
+    margin-top: 0.4rem;
+    font-weight: 600;
+}
+[class*="_acciones_publicacion"] [data-testid="stLinkButton"] a * {
+    color: var(--publicacion-texto) !important;
+}
+[class*="_acciones_publicacion"] [data-testid="stLinkButton"] a:hover,
+[class*="_acciones_publicacion"] [data-testid="stLinkButton"] a:focus-visible,
+[class*="_acciones_publicacion"] [data-testid="stCode"] button:focus-visible {
+    outline: 2px solid var(--publicacion-borde);
+    outline-offset: 3px;
+}
+</style>
+"""
+
 
 def validar_url(valor: str, *, servidor: bool = False) -> str:
     valor = valor.strip()
@@ -73,6 +132,12 @@ def enlace_publicacion(
 
 
 def render(publicacion: dict, *, clave: str = "publicacion") -> None:
+    st.markdown(ESTILO_ACCIONES, unsafe_allow_html=True)
+    with st.container(key=f"{clave}_acciones_publicacion"):
+        _render_acciones(publicacion, clave=clave)
+
+
+def _render_acciones(publicacion: dict, *, clave: str) -> None:
     texto = texto_publicacion(publicacion)
     plataforma = publicacion["plataforma"]
     nombre = NOMBRES_PLATAFORMA[plataforma]
@@ -94,10 +159,15 @@ def render(publicacion: dict, *, clave: str = "publicacion") -> None:
     precarga = plataforma in {"x", "threads", "bluesky", "whatsapp", "mastodon"}
     precarga = precarga or (plataforma == "telegram" and bool(enlace))
     if precarga:
-        with st.expander(f"Copiar texto si {nombre} no lo precarga"):
+        with st.expander(
+            f"Copiar texto si {nombre} no lo precarga", icon=":material/content_copy:",
+        ):
             st.code(texto, language=None, wrap_lines=True, height=140)
     else:
-        with st.expander(f"Copiar publicación para {nombre}", expanded=True):
+        with st.expander(
+            f"Copiar publicación para {nombre}", expanded=True,
+            icon=":material/content_copy:",
+        ):
             st.caption("Usa el botón de copiar del recuadro; después abre la red y pega el texto.")
             st.code(texto, language=None, wrap_lines=True, height=140)
 

@@ -26,10 +26,13 @@ communitylab/
 ├── .dockerignore           # Exclusiones de contexto para construcción limpia de contenedores
 ├── .env.example            # Plantilla maestra para la inyección segura de credenciales y tokens
 ├── .gitignore              # CRÍTICO: Exclusión de credenciales privadas de Oracle (.oci/, *.pem) y entornos locales.
-├── Dockerfile              # Empaquetado industrial multi-stage basado en entorno Linux
-├── docker-compose.yml      # Orquestador local automatizado del contenedor de la aplicación
+├── Dockerfile.frontend     # Imagen multi-stage de Marketing y de la aplicación interna
+├── Dockerfile.backend      # Imagen independiente del servicio de ingesta
+├── docker-compose.yml      # Marketing y perfiles optativos interno e ingesta
 ├── README.md               # Documentación e informe técnico institucional del proyecto.
 ├── requirements.txt        # Dependencias del ecosistema unificado (Streamlit, LangGraph, OCI SDK).
+├── requirements.frontend.txt # Dependencias de las interfaces y consulta
+├── requirements.backend.txt  # Dependencias de persistencia e ingesta
 ├── configuracion/          # Módulos globales de configuración y entornos locales.
 │   └── relevancia.json     # Pesos y parámetros analíticos del algoritmo de selección de datos.
 ├── docs/                   # Documentación técnica, contratos de datos y especificaciones.

@@ -1,6 +1,7 @@
 """Regresión de la configuración de despliegue; no usa red ni credenciales."""
 
 from pathlib import Path
+import re
 
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -93,3 +94,16 @@ def test_backend_especializado_y_dependencias_locales_compatibles():
     dependencias = (RAIZ / "requirements.txt").read_text()
     assert "-r requirements.frontend.txt" in dependencias
     assert "-r requirements.backend.txt" in dependencias
+
+
+def test_compose_referencia_archivos_existentes_y_declara_sus_volumenes():
+    compose = (RAIZ / "docker-compose.yml").read_text()
+    archivos = re.findall(r"^\s+dockerfile:\s+(\S+)$", compose, re.MULTILINE)
+    assert len(archivos) == 3
+    for archivo in archivos:
+        assert (RAIZ / archivo).is_file(), f"Falta el archivo de construcción: {archivo}"
+    servicios, declaraciones = compose.split("\nvolumes:\n", 1)
+    declaraciones = declaraciones.split("\nnetworks:", 1)[0]
+    usados = re.findall(r"^\s+- ([\w-]+):/app/salida$", servicios, re.MULTILINE)
+    declarados = re.findall(r"^  ([\w-]+):$", declaraciones, re.MULTILINE)
+    assert set(usados) <= set(declarados)

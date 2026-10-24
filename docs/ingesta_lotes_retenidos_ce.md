@@ -63,8 +63,11 @@ resultado = sincronizar_conjunto(documento, instantanea_completa=True)
 ```
 
 Este import reemplaza la ubicación anterior de la escritura, no el del lector.
-Coordinar con Marco el adaptador concreto del contenedor; aquí no se define
-otro despliegue ni se modifica el trabajo que está preparando.
+El contenedor de ingesta usa el adaptador HTTP de
+`src/services/ingest_server.py`, no el adaptador opcional de Functions.
+Consultar `docker_cloud_semana4.md` para el perfil optativo de Compose.
+La interfaz todavía no invoca ese endpoint y el servicio requiere revisión
+de acceso e identidad antes de usarse fuera de un entorno autorizado.
 
 ## Pruebas y límites
 

@@ -500,3 +500,27 @@ def test_lector_exige_respuesta_de_vault():
 def test_lector_consulta_el_esquema_del_escritor():
     assert "FROM rw_ingest_communitylab.conjunto_consultable_meta" in lector._SQL_SELECT_TODOS
     assert "JOIN rw_ingest_communitylab.conjunto_consultable" in lector._SQL_SELECT_TODOS
+
+
+def test_fallo_clob_se_propaga_sin_convertirlo_en_texto_vacio():
+    cursor = Mock()
+    lob = Mock(spec=lector.oracledb.LOB)
+    lob.read.side_effect = RuntimeError("Fallo de lectura")
+    cursor.fetchall.return_value = [
+        ("1.1", 1, 0, "id", "canal", "positivo", "tema", "tipo", lob, None),
+    ]
+    with pytest.raises(RuntimeError, match="Fallo de lectura"):
+        lector._leer_filas_con_texto(cursor)
+
+
+def test_contrato_y_sql_no_reintroducen_alias_recortado():
+    assert "contenido_textual" in db.CAMPOS_CONJUNTO
+    assert "contenido_corto" not in db.CAMPOS_CONJUNTO
+    assert ":contenido_textual" in db._SQL_UPSERT
+    assert "d.contenido_textual" in lector._SQL_SELECT_TODOS
+    doc, con = documento("int-001"), Conexion()
+    registro = doc["registros"][0]
+    registro["contenido_corto"] = registro.pop("contenido_textual")
+    with pytest.raises(ValueError, match="7 campos"):
+        cargar(doc, con)
+    assert not con.operaciones

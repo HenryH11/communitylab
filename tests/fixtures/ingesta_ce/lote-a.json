@@ -1,0 +1,34 @@
+{
+    "version": "1.1",
+    "campos": [
+        "id",
+        "canal",
+        "sentimiento",
+        "tema",
+        "tipo",
+        "contenido_textual",
+        "fecha"
+    ],
+    "total": 2,
+    "total_spam_excluido": 0,
+    "registros": [
+        {
+            "id": "ce-ret-a-001",
+            "canal": "prueba_ce",
+            "sentimiento": "positivo",
+            "tema": "validacion_tecnica",
+            "tipo": "testimonio",
+            "contenido_textual": "DATO FICTICIO DE PRUEBA CE, lote A. No representa a una persona real ni debe publicarse como testimonio. Este texto supera los ciento sesenta caracteres para comprobar que el campo CLOB conserva el comentario completo, con tildes, eñes y un emoji 🚀.\nSegunda línea que debe permanecer intacta al cargar y leer.",
+            "fecha": "2026-10-24T10:00:00Z"
+        },
+        {
+            "id": "ce-ret-a-002",
+            "canal": "prueba_ce",
+            "sentimiento": "neutral",
+            "tema": "validacion_tecnica",
+            "tipo": "pregunta_tecnica",
+            "contenido_textual": "DATO FICTICIO DE PRUEBA CE, lote A. ¿Se conserva este segundo registro cuando llega otro lote?",
+            "fecha": "2026-10-24T10:01:00Z"
+        }
+    ]
+}

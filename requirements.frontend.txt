@@ -1,6 +1,4 @@
-# Librerías iniciales del proyecto (se añadirán en la Semana 0 [14-20 Septiembre 2026]).
-# Dependencias del pipeline de Data Science.
-
+# Dependencias del Agente, Interfaz y Consulta (Solo Lectura)
 langchain>=0.3
 langchain-core>=0.3
 langchain-google-genai>=2.0
@@ -9,7 +7,7 @@ langgraph>=0.2
 pydantic>=2.7
 python-dotenv>=1.0
 
-# Testing
+# Testing y Utilidades
 pytest>=8,<10
 oci
 streamlit>=1.65

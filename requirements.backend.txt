@@ -1,0 +1,4 @@
+# Dependencias exclusivas de persistencia e ingesta DML
+oci
+oracledb
+python-dotenv>=1.0

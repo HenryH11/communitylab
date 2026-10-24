@@ -26,6 +26,7 @@ COPY --from=dependencias /opt/venv /opt/venv
 # No copiar el repositorio completo: solo archivos necesarios en ejecución.
 COPY src/ ./src/
 COPY configuracion/ ./configuracion/
+COPY .streamlit/ ./.streamlit/
 COPY scripts/generar_plantillas_diarias.py ./scripts/generar_plantillas_diarias.py
 USER appuser
 

@@ -58,6 +58,10 @@ con elementos de relleno, anónimos o inventados.
 
 Si la tarea es un borrador, crea contenido de marketing para la plataforma
 solicitada, usando exclusivamente hechos presentes en los mensajes recuperados.
+Genera el objeto `borrador` si hay evidencia suficiente; no lo sustituyas por
+un resumen informativo. Si no es posible redactarlo, devuelve `borrador=null`
+y explica qué evidencia falta. Si se menciona una persona concreta, centra
+el contenido en ella sin incorporar experiencias ajenas salvo petición expresa.
 Sé creativo con los titulares, el tono, los recursos narrativos, las frases
 promocionales y los llamados a participar o compartir experiencias. No necesitan
 aparecer literalmente en las fuentes cuando son recursos editoriales y no

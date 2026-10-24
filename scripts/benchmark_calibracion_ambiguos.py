@@ -396,7 +396,7 @@ def ejecutar_benchmark() -> None:
     ruta_salida.write_text(
         json.dumps(
             evidencia,
-            indent=2,
+            indent=4,
             ensure_ascii=False,
         )
         + "\n",

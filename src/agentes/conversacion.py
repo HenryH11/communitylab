@@ -454,8 +454,7 @@ class AgenteConversacional:
             if salida_modelo.borrador.plataforma != filtros.plataforma:
                 raise ValueError("La plataforma del borrador no coincide con la solicitud.")
         elif salida_modelo.borrador is not None:
-            # Una consulta analítica no publica borradores aunque el modelo los proponga.
-            salida_modelo = salida_modelo.model_copy(update={"borrador": None})
+            raise ValueError("El agente devolvió un borrador sin que se solicitara.")
 
         respuesta = salida_modelo.respuesta
         if filtros.agrupar_preguntas:
@@ -469,9 +468,17 @@ class AgenteConversacional:
         )
         verificacion = {
             "modo": modo_verificacion,
-            "estado": "no_aplica" if borrador is None else "no_verificado",
+            "estado": (
+                "borrador_no_generado"
+                if borrador is None and filtros.intencion == "borrador"
+                else "no_aplica" if borrador is None else "no_verificado"
+            ),
             "resumen": (
-                "No se solicitó un borrador."
+                (
+                    "Se solicitó un borrador, pero el modelo no lo generó."
+                    if filtros.intencion == "borrador"
+                    else "No se solicitó un borrador."
+                )
                 if borrador is None
                 else "Se usó un prompt estricto; las afirmaciones no se contrastaron por separado."
             ),

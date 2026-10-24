@@ -289,9 +289,9 @@ def principal(argv=None):
             reporte["resultados"] = registros
         if args.salida:
             args.salida.parent.mkdir(parents=True, exist_ok=True)
-            args.salida.write_text(json.dumps(reporte, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            args.salida.write_text(json.dumps(reporte, ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
         # Las respuestas completas solo se guardan en el informe opcional.
-        print(json.dumps({k: v for k, v in reporte.items() if k != "resultados"}, ensure_ascii=False, indent=2))
+        print(json.dumps({k: v for k, v in reporte.items() if k != "resultados"}, ensure_ascii=False, indent=4))
         return 1 if any(not r["valida"] for r in registros) else 0
     except (OSError, ValueError, TypeError) as error:
         parser.exit(2, f"Error: {error}\n")

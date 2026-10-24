@@ -373,6 +373,12 @@ el comando de arranque sin arrancar Streamlit. No es un servicio en bucle.
 
 - El esquema de hashtags expone al modelo el prefijo `#` obligatorio y la
   prohibición de espacios; no se corrigen silenciosamente etiquetas inválidas.
+- Una consulta analítica que recibe un borrador no solicitado falla
+  explícitamente: no se descarta en silencio ni se añade al historial.
+  Si se pidió un borrador y el modelo no lo entrega, la verificación indica
+  `borrador_no_generado` y explica que no se generó; no afirma que no se solicitó.
+- El generador institucional de LinkedIn conserva su tono sobrio, sin
+  cierres editoriales añadidos. Las restricciones factuales siguen aplicando.
 - La generación de X y la interfaz comparten `texto_publicacion`: se cuenta
   contenido, hashtags y separadores, sin título. Si se exceden 280 caracteres,
   se pide una reescritura; si aún se exceden, la generación falla explícitamente,

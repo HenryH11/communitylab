@@ -14,3 +14,6 @@ blueTextColor = "#6b4a10"
 greenColor = "#5b6a42"
 greenBackgroundColor = "#e4e6cf"
 greenTextColor = "#424d2f"
+
+[client]
+toolbarMode = "viewer"

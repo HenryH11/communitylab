@@ -10,8 +10,8 @@ from tests.casos_semanticos_regresion import (
 
 
 def test_criterios_semanticos_compartidos_por_ambos_modos():
-    sistema = template_analisis.messages[0].prompt.template
-    assert template_analisis_lote.messages[0].prompt.template == sistema
+    sistema = template_analisis.messages[0].pretty_repr()
+    assert template_analisis_lote.messages[0].pretty_repr() == sistema
     for criterio in (
         "Resolver mensajes con varias funciones",
         "Elegir el tema por el objeto de la petición",
@@ -45,17 +45,17 @@ def test_pendientes_conservan_los_siete_casos_y_controles():
 
 
 def test_revision_operativa_es_igual_en_individual_y_lote():
-    individual = template_analisis.messages[1].prompt.template
-    lote = template_analisis_lote.messages[1].prompt.template
+    individual = template_analisis.messages[1].pretty_repr()
+    lote = template_analisis_lote.messages[1].pretty_repr()
     marcador = "Revisa cada resultado con este orden de decisión"
     assert individual[individual.index(marcador):] == lote[lote.index(marcador):]
-    assert "Un reporte puntual de fallo" in template_analisis.messages[0].prompt.template
+    assert "Un reporte puntual de fallo" in template_analisis.messages[0].pretty_repr()
     assert "sigue siendo feedback" in individual
     assert "logro concreto alcanzado" in individual
 
 
 def test_reporte_de_fallo_no_se_ejemplifica_como_comentario():
-    sistema = template_analisis.messages[0].prompt.template
+    sistema = template_analisis.messages[0].pretty_repr()
     ejemplo = sistema.split("Ejemplo 4", 1)[1].split("Ejemplo 5", 1)[0]
     assert "fallo de despliegue remoto" in ejemplo
     assert "tipo_detectado: feedback" in ejemplo

@@ -59,7 +59,7 @@ def test_navegacion_interna_conserva_datos_sin_resultado_separado():
 def test_cambiar_de_pestana_conserva_lote_y_aprobaciones():
     app = crear_app(salida())
     original = app.session_state["resultado"]
-    next(b for b in app.button if b.key.endswith("int-demo_linkedin")).click().run()
+    next(b for b in app.button if b.key and b.key.endswith("int-demo_linkedin")).click().run()
     assert not app.button(key="guardar_aprobados_oci").disabled
     for pestana in ("Inicio", "Datos", "Análisis", "Ayuda", "Plantillas"):
         ir_a(app, pestana)
@@ -70,7 +70,7 @@ def test_cambiar_de_pestana_conserva_lote_y_aprobaciones():
 def test_boton_oci_visible_y_conectado_a_curaduria():
     app = crear_app(salida())
     assert app.button(key="guardar_aprobados_oci").disabled
-    next(b for b in app.button if b.key.endswith("int-demo_linkedin")).click().run()
+    next(b for b in app.button if b.key and b.key.endswith("int-demo_linkedin")).click().run()
     with patch("src.config.oci_client.subir_json") as subir:
         subir.return_value = {"object_name": "objeto.json", "etag": "recibo"}
         app.button(key="guardar_aprobados_oci").click().run()

@@ -10,6 +10,12 @@ El frontend se construye con `Dockerfile.frontend` y
 `requirements.frontend.txt`; el backend usa `Dockerfile.backend` y
 `requirements.backend.txt`. Para desarrollo local se conserva
 `pip install -r requirements.txt`, que incluye ambos manifiestos.
+La lógica de escritura reside únicamente en `src/services/ingest_server.py`.
+`scripts/ingesta_db.py` conserva los imports públicos y el adaptador opcional de
+Functions por compatibilidad; ya no mantiene otra copia de las transacciones.
+Functions requiere su propio paquete `fdk`, no incluido en el backend HTTP.
+`src/config/protocolo_db.py` define el contrato usado por el lector, el escritor
+y sus pruebas; ambas imágenes lo incluyen. Marketing no incorpora el escritor.
 La aplicación de Marketing escucha en el puerto 8501. Compose lee `.env`
 para interpolar solo las variables enumeradas en el servicio; no inyecta el
 archivo entero. Las claves nunca se incluyen en la imagen o Git.
@@ -67,8 +73,9 @@ El backend acumulativo queda disponible como perfil optativo:
 No publica el puerto 8000 en el host y expone `/health` y `/sincronizar`
 en la red puente de Compose. Marketing arranca independientemente de él:
 no tiene `depends_on`, variables de escritura ni `INGESTOR_URL`.
-La vista interna conserva su perfil y su puerto local; todavía no llama
-al endpoint de carga. No se añade carga de Oracle a Marketing.
+La vista interna conserva su perfil y su puerto local; permite comprobar el
+destino y cargar un Conjunto Consultable con confirmación explícita (ver la
+sección de carga interna más abajo). No se añade carga de Oracle a Marketing.
 
 El lector usa `DB_READ_*` y consulta las tablas de
 `rw_ingest_communitylab`, que requiere los permisos SELECT acordados por Cloud.

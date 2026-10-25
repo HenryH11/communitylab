@@ -11,8 +11,8 @@ from tests.casos_spam_regresion import CASOS
 
 
 def test_prompt_individual_y_lote_conservan_quejas_y_detectan_captacion():
-    sistema = template_analisis.messages[0].prompt.template
-    assert template_analisis_lote.messages[0].prompt.template == sistema
+    sistema = template_analisis.messages[0].pretty_repr()
+    assert template_analisis_lote.messages[0].pretty_repr() == sistema
     assert "Una queja no es captación" in sistema
     for _, texto, esperado in CASOS:
         if not esperado and texto.startswith(("Nos convocaron", "Ya me harté", "Ya me cansé")):

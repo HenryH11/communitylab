@@ -37,6 +37,7 @@ def distribucion(mensajes: tuple[dict, ...], campo: str) -> pd.DataFrame:
     )
 
 
+@st.fragment
 def render() -> None:
     st.header("Estado de las conversaciones de la comunidad")
     st.caption("Fuente: captura de Oracle compartida con el agente. No ejecuta IA.")

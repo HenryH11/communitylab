@@ -268,6 +268,39 @@ No prueba permisos de escritura ni certifica que IAM los haya denegado.
 
 ## Activar Analisis y Plantillas en Marketing
 
+### Navegacion y contacto
+
+Las paginas se renderizan dentro de un contenedor reemplazable para reducir
+restos de la vista anterior durante el rerun. El fondo oscuro del agente se
+activa solo cuando existe su lienzo. Los filtros de Analiticas se ejecutan en
+un fragmento: no vuelven a renderizar la cabecera ni el resto de la aplicacion.
+No se introduce un delay artificial. Las primeras lecturas de Oracle y OCI
+siguen dependiendo de la latencia de red; estos cambios no certifican un tiempo
+maximo de respuesta. Verificar cambios rapidos entre vistas y WebSocket estable
+despues del despliegue, sin enviar preguntas a modelos durante esa comprobacion.
+
+Contacto aparece en Inicio y Ayuda. Crear primero el buzon
+`contacto@communitylab.lat`, verificar recepcion y respuesta desde otra cuenta
+y solo entonces configurar `COMMUNITYLAB_CONTACTO_EMAIL=contacto@communitylab.lat`.
+Compose pasa ese valor al frontend; en el proceso interno se configura por
+`.env.interno`. Sin configurar, la web indica que el correo esta pendiente y
+no publica un enlace a un buzon inexistente. El enlace mailto abre el cliente
+del visitante: la aplicacion no almacena contrasenas SMTP ni envia mensajes.
+
+Opcion dentro del limite de 10 USD anuales: Zoho Mail anuncia un plan gratuito
+con dominio propio, hasta cinco usuarios y 5 GB por usuario, sin IMAP/POP/ActiveSync
+(https://www.zoho.com/mail/zohomail-pricing.html). Confirmar disponibilidad regional
+durante el alta; no sustituir por un plan de pago sin autorizacion. Se recibe y
+responde mediante webmail. Alternativa: cotizar Spacemail en Spaceship, comprobando
+precio total con impuestos y renovacion antes de pagar; no se verifico su tarifa.
+No se ha creado ninguna cuenta ni contratado servicio.
+
+Para el proveedor elegido, verificar el dominio por TXT y agregar exclusivamente
+los MX, SPF y DKIM que muestre su panel. Mantener los A/CNAME de la web. No crear
+dos registros SPF separados ni copiar valores de otra region. Publicar DMARC
+segun las instrucciones del proveedor y probar alineacion antes de endurecer la
+politica. No enviar claves, contrasenas o accesos del panel por chat o repositorio.
+
 Analisis publico lee la misma captura de Oracle que el agente: muestra conteos
 de mensajes, canales, temas, sentimientos y tipos sin invocar IA. No necesita
 un lote procesado en la sesion interna. No muestra metricas de activos o

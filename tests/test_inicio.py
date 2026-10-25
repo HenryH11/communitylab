@@ -93,6 +93,26 @@ def test_flecha_reaparece_al_volver_arriba_sin_descarte_permanente():
     assert "clInicioCueDismissed" not in ANIMACION
 
 
+def test_recorrido_entre_paginas_reutiliza_captura_y_no_pierde_chat(monkeypatch):
+    from src.app import vista_plantillas_diarias
+
+    lector = Mock(return_value={"registros": [{
+        "id": "m1", "contenido_textual": "Aprendi SQL",
+        "tema": "datos_ia", "tipo": "testimonio", "sentimiento": "positivo",
+        "canal": "#datos", "fecha": None,
+    }]})
+    monkeypatch.setattr(fuente_agente, "leer_base", lector)
+    monkeypatch.setattr(vista_plantillas_diarias, "leer_catalogo", Mock(return_value=None))
+    app = _inicio()
+    app.session_state["historial_agente"] = []
+    for pagina in ("Agente", "Análisis", "Plantillas", "Ayuda", "Inicio", "Agente"):
+        app.radio[0].set_value(pagina).run()
+        assert not app.exception
+        assert app.radio[0].value == pagina
+        assert app.session_state["historial_agente"] == []
+    lector.assert_called_once()
+
+
 def test_ajustes_actuales_se_aplican_a_la_siguiente_pregunta(monkeypatch):
     from src.agentes.conversacion import AgenteConversacional
 

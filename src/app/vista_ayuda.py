@@ -346,6 +346,9 @@ def render(ir_a=None):
     for titulo, icono, preguntas in secciones:
         st.subheader(f"{icono} {titulo}")
         _bloques(titulo, preguntas)
+    st.subheader("Contacto")
+    from src.app.contacto import render as render_contacto
+    render_contacto()
 
 
 def _bloques(seccion, preguntas):

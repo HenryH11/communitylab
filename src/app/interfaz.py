@@ -884,23 +884,25 @@ def render(*, modo_interno: bool = False) -> None:
         else None
     )
 
-    if pagina_actual == "Inicio":
-        _render_inicio(resultado)
-    elif pagina_actual == "Agente":
-        _render_agente(resultado)
-    elif pagina_actual == "Análisis":
-        if MODO_INTERNO:
-            _render_analisis(resultado)
-        else:
-            from src.app.vista_analiticas import render as render_analiticas
-            render_analiticas()
-    elif pagina_actual == "Plantillas":
-        if not MODO_INTERNO:
-            from src.app.vista_plantillas_diarias import render as render_plantillas_diarias
-            render_plantillas_diarias()
-        elif resultado is None:
-            vista_plantillas.render()
-        else:
-            vista_plantillas.render(resultado, curaduria)
-    elif pagina_actual == "Ayuda":
-        vista_ayuda.render(ir_a=_navegar_a)
+    contenido = st.empty()
+    with contenido.container():
+        if pagina_actual == "Inicio":
+            _render_inicio(resultado)
+        elif pagina_actual == "Agente":
+            _render_agente(resultado)
+        elif pagina_actual == "Análisis":
+            if MODO_INTERNO:
+                _render_analisis(resultado)
+            else:
+                from src.app.vista_analiticas import render as render_analiticas
+                render_analiticas()
+        elif pagina_actual == "Plantillas":
+            if not MODO_INTERNO:
+                from src.app.vista_plantillas_diarias import render as render_plantillas_diarias
+                render_plantillas_diarias()
+            elif resultado is None:
+                vista_plantillas.render()
+            else:
+                vista_plantillas.render(resultado, curaduria)
+        elif pagina_actual == "Ayuda":
+            vista_ayuda.render(ir_a=_navegar_a)

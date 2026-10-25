@@ -443,8 +443,8 @@ def render(*, ir_a: Callable[[str], None]) -> None:
             with contacto:
                 _html('<h3 class="footer-heading">Información y contacto</h3>')
                 with st.expander("Contacto"):
-                    st.write("Contacta al administrador de tu instalación de "
-                             "CommunityLab para soporte y solicitudes sobre tus datos.")
+                    from src.app.contacto import render as render_contacto
+                    render_contacto()
                 with st.expander("Sobre tus datos"):
                     st.write("Los archivos adjuntos se usan en tu sesión y no se "
                              "publican en la base de la comunidad. Al consultar, "

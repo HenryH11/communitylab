@@ -30,7 +30,7 @@ ESTILO = """
     }
 
     /* Fondo sólido para que el texto se vea nítido */
-    .stApp {
+    .stApp:has(.st-key-gotico_lienzo) {
         background: linear-gradient(180deg, var(--noche), var(--ebano));
         color: var(--blanco);
         --cl-header-tinta: var(--blanco);
@@ -39,8 +39,8 @@ ESTILO = """
         --cl-header-activo: var(--bosque);
         --cl-header-logo: var(--laton);
     }
-    header[data-testid="stHeader"] { background: transparent; }
-    header[data-testid="stHeader"] * { color: var(--hueso); }
+    .stApp:has(.st-key-gotico_lienzo) header[data-testid="stHeader"] { background: transparent; }
+    .stApp:has(.st-key-gotico_lienzo) header[data-testid="stHeader"] * { color: var(--hueso); }
 
     /* Lienzo central, como un chat de LLM */
     .st-key-gotico_lienzo {

@@ -268,6 +268,24 @@ No prueba permisos de escritura ni certifica que IAM los haya denegado.
 
 ## Activar Analisis y Plantillas en Marketing
 
+### Entrada interna y apertura de redes
+
+`src/app/app_interna.py` es la entrada vigente y delega en la interfaz compartida.
+Datos importa el procesador actual de `src.agentes.procesamiento`; no necesita
+los scripts de demostracion ni JSON antiguos. Acepta lotes/interacciones y casos
+editoriales usando el adaptador existente, sin enviar etiquetas propuestas como
+resultados. No borrar el modulo grafo: el procesador sigue usandolo internamente.
+Para un lote ya analizado, subir el Conjunto Consultable y no ejecutar IA otra vez.
+
+Las acciones de redes ya precargan texto mediante intents en X, Threads, Bluesky
+y WhatsApp; Mastodon requiere el servidor y Telegram un enlace. El usuario debe
+iniciar sesion si procede y confirmar en la red. LinkedIn, Instagram y Facebook
+no ofrecen en este flujo un enlace fiable para precargar texto libre: copiar y
+pegar sigue siendo necesario. Instagram requiere ademas imagen/video. Un enlace
+para compartir URL no equivale a una publicacion de texto precargada.
+No se implementan endpoints no documentados ni publicacion automatica: esta
+ultima requiere integracion oficial, permisos/cuentas y gestion de tokens aparte.
+
 ### Navegacion
 
 Las paginas se renderizan dentro de un contenedor reemplazable para reducir

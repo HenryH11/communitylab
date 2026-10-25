@@ -1,5 +1,6 @@
 import json
 import logging
+from copy import deepcopy
 from datetime import datetime, timezone
 
 import altair as alt
@@ -134,6 +135,10 @@ def render(*, modo_interno: bool = False) -> None:
                                     )
                                     resultado = procesar_paquete_entrega(paquete)
                                     st.session_state["resultado"] = resultado
+                                    st.session_state["_origen_publicacion_oracle"] = {
+                                        "resultado": resultado,
+                                        "mensajes": deepcopy(datos),
+                                    }
                                     st.session_state.pop("agente_conversacional", None)
                                     st.session_state.pop("historial_agente", None)
                                     st.success("Procesamiento completado.")
@@ -162,6 +167,12 @@ def render(*, modo_interno: bool = False) -> None:
                     "El procesamiento analiza el lote y genera los activos "
                     "disponibles. No publica contenido en redes."
                 )
+
+        origen = st.session_state.get("_origen_publicacion_oracle")
+        if origen and origen["resultado"] is st.session_state.get("resultado"):
+            from src.app.publicacion_oracle import render as publicar_lote_revisado
+
+            publicar_lote_revisado(origen["resultado"], origen["mensajes"])
 
 
     def _render_analisis(resultado):

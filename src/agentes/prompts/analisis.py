@@ -890,6 +890,32 @@ Ejemplos legítimos:
 
 Evalúa la intención y el contexto completo del mensaje.
 
+Una queja no es captación. Distingue lo que la persona HACE en su mensaje de
+lo que relata que otras personas hicieron. Mencionar una convocatoria, pedir
+el contacto de un mentor o buscar apoyo entre compañeros no ofrece ni
+promociona un servicio. Frustración, crítica y falta de organización no son
+evidencia de spam, aunque el tono sea muy negativo.
+Para marcar true identifica una oferta, promoción no solicitada, captación o
+engaño realizado por el emisor; el motivo debe señalar esa evidencia concreta.
+No inventes una intención comercial a partir de una petición de ayuda.
+
+Contrastes de quejas legítimas (es_spam_detectado=false, motivo_spam=null):
+- "Nos convocaron a ayudar sin decir qué había que hacer, fue un desastre. Publiquen las tareas antes de pedir voluntarios."
+  Relata una convocatoria y pide mejorarla; no está captando voluntarios.
+- "Ya me harté de escribir a sitios donde nadie responde. cuál es el canal del curso para contactar a mi mentor."
+  Solicita un canal de soporte; no promueve sitios externos.
+- "Ya me cansé de buscar a quién preguntar. el programa tiene algún espacio del grupo para pedir apoyo entre compañeros?"
+  Pregunta por apoyo disponible; no vende ni recluta.
+- "Cuidado con el mensaje que promete 500 dólares diarios. Es una estafa."
+  Es una advertencia CONTRA una oferta, no una oferta del emisor. Devuelve
+  false y null aunque cite cantidades o palabras usadas por un estafador.
+
+En cambio, "Olvídense del curso: compren mi mentoría privada, descuento solo
+hoy. Escríbanme por privado para pagar." sí es promoción no solicitada y
+captación comercial. Mantén es_spam_detectado=true con un motivo concreto.
+No conviertas estos contrastes en una lista blanca de palabras: una solicitud
+de ayuda puede ser spam si además incluye una oferta engañosa o captación real.
+
 Si es_spam_detectado = true:
 - motivo_spam debe explicar brevemente la evidencia.
 - No inventes motivos que el texto no sustente.
@@ -899,6 +925,10 @@ Si es_spam_detectado = false:
 
 No crees una categoría de sentimiento llamada spam.
 No utilices tipo_detectado como sustituto de esta señal.
+Comprobación final obligatoria: si el mensaje denuncia, rechaza o advierte
+contra una oferta ajena sin ofrecerla al lector, es_spam_detectado=false.
+No escribas motivos contradictorios como "promueve advertencia sobre estafa":
+advertir contra un engaño no es promoverlo.
 
 Los ejemplos antiguos del prompt pueden mostrar solo las
 cinco dimensiones originales. Independientemente de ello,

@@ -88,6 +88,23 @@ Ultra queda fuera del selector hasta validarlo con el flujo actual.
 
 ## Criterio editorial de las publicaciones
 
+Los botones de destino muestran el logo local de cada red junto con su nombre;
+el control para copiar conserva el icono de portapapeles. Abrir una red no
+publica automaticamente ni conecta cuentas.
+
+### Accesibilidad de la interfaz
+
+La navegación conserva controles nativos de teclado y un foco visible, separado
+de la línea del encabezado. Los controles principales tienen objetivos de al
+menos 44 px y los paneles de información conservan nombres accesibles. El agente
+expone un encabezado para lectores de pantalla y oculta adornos decorativos.
+Se respetan movimiento reducido y colores forzados del sistema. Las gráficas
+de Análisis ofrecen los mismos conteos en texto, con la misma exclusión de spam
+para sentimiento; no es necesario escuchar audio ni distinguir colores para
+consultarlos. Ayuda incluye instrucciones de teclado. Estas mejoras no
+constituyen una certificación WCAG ni sustituyen pruebas con tecnologías de
+asistencia y personas usuarias.
+
 El agente en vivo usa `src/agentes/prompts/conversacion.py`; el generador
 especializado de LinkedIn conserva su voz institucional sobria por separado.
 Una versión nueva puede cambiar el ángulo, la apertura y el cierre, no los
@@ -100,6 +117,12 @@ o enfoque. Si su título o cuerpo repite el último borrador de la sesión
 persiste la repetición, se rechaza sin guardar el turno. Los cambios de tono,
 longitud o plataforma no activan esta restricción. Es un control de repetición
 textual, no una garantía de diversidad semántica.
+Aceptar con «dale» una oferta explícita de otro enfoque también pide una nueva
+versión; «más cercano» por sí solo solicita un cambio de tono.
+La generación de otra propuesta recibe el último borrador completo en JSON
+como referencia que no debe repetir, sin depender del historial truncado.
+El único reintento incluye también el candidato rechazado, con título y cuerpo.
+Estos controles no modifican el texto original guardado como petición del usuario.
 
 El tono solicitado decide si encajan agradecimientos, reconocimiento o una
 invitación a conversar: no se imponen felicitaciones, emojis ni una pregunta
@@ -114,6 +137,179 @@ El modo Verificado revisa también esos beneficios y los hechos implícitos en
 reconocimientos; no trata una felicitación como prueba del logro mencionado.
 Estas instrucciones reducen riesgos, pero no sustituyen la revisión editorial
 ni garantizan que cada publicación sea correcta.
+
+### Detección de spam en capa 2
+
+El analizador de capa 2 distingue quejas y solicitudes de apoyo de captación
+comercial: relatar una convocatoria no significa convocar, y advertir contra
+una estafa no significa promoverla. Se conservan los controles positivos de
+promoción no solicitada y ofertas engañosas, incluso si se presentan como
+ayuda. La evaluación optativa `tests/integracion/prueba_spam_regresion.py`
+comprueba ejemplos originales y variantes, individualmente y por lote.
+Los resultados ya guardados no cambian al modificar estas instrucciones;
+cualquier corrección de las marcas antiguas debe versionarse por separado.
+
+### Tipos y temas: evaluación editorial acotada
+
+El analizador y las descripciones del contrato distinguen pedir información
+existente de proponer una mejora, acceso institucional de configuración técnica,
+y elogios de experiencias con resultado. El tema se determina por el objeto
+central, no por mencionar el curso: una entrevista laboral sigue siendo
+empleabilidad y contactar al mentor sigue siendo mentoria.
+
+La evaluación optativa [prueba_semantica_regresion.py](../tests/integracion/prueba_semantica_regresion.py)
+usa 27 mensajes revisados y ocho controles adicionales. Solo exige campos
+adjudicados: 34 tipos, 21 temas y 35 marcas de no spam por modo. Los nueve
+sentimientos revisados se registran como observaciones, no como criterio de
+aprobación de este ajuste de tipos y temas. No se pasan etiquetas propuestas
+al analizador ni se modifican los 600 resultados históricos.
+
+La evaluación anterior obtuvo 30/34 tipos y 20/21 temas concordantes por lote;
+individualmente, 31/34 tipos y 20/21 temas. Los 35 casos conservaron la marca
+de no spam en ambos modos; el control adicional de spam mantuvo 40/40 decisiones
+esperadas. Esa versión dejó cinco casos por lote y cuatro individuales
+con diferencias.
+
+#### Cierre acotado de los pendientes
+
+Se acordó una frontera editorial explícita: un reporte puntual de fallo es
+feedback, incluso en primera persona; un logro alcanzado, aprendizaje,
+transformación o trayectoria personal puede ser testimonio. Un aprendizaje
+desarrollado a partir de un fracaso sigue siendo testimonio. Se corrigió un
+ejemplo contradictorio que clasificaba un fallo de despliegue como comentario.
+También se readjudicaron `syn-eval-0459` y `syn-eval-0495`, antes considerados
+testimonio, como feedback. **Estas dos readjudicaciones son un cambio de
+criterio acordado, no una mejora atribuible al modelo.**
+
+La prueba `test_pendientes_y_contrastes` selecciona únicamente los siete casos
+discrepantes de ambos modos, ocho controles existentes y cuatro contrastes
+adicionales: 19 textos. Se evalúan 19 tipos, 13 temas y 19 marcas de no spam
+por ejecución; los cuatro sentimientos adjudicados son solo observaciones.
+No se pasa ninguna etiqueta esperada al modelo.
+
+Con las mismas instrucciones finales, dos repeticiones por modo dieron:
+
+| Modelo NVIDIA | Lote, repetición 1 / 2 | Individual, repetición 1 / 2 |
+| --- | --- | --- |
+| `nvidia/nemotron-3.5-lightning-30b-a3b` | 17/19 y 16/19 | 18/19 y 18/19 |
+| `nvidia/nemotron-3.5-super-vl-120b-a12b` | 19/19 y 19/19 | 19/19 y 19/19 |
+
+Los conteos exigen coincidencia en todos los campos adjudicados de cada texto,
+excepto sentimiento. Las trazas confirmaron NVIDIA sin fallback a Gemini.
+La configuración local autorizada de análisis usa el segundo modelo, con el
+timeout existente de 15 segundos: repitió 76/76 evaluaciones concordantes y
+los controles de spam mantuvieron 40/40 decisiones esperadas.
+Los modelos de redacción no se cambiaron. No se actualizó la VM.
+
+Para repetir solo el cierre y los controles de spam:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests\integracion\prueba_semantica_regresion.py tests\integracion\prueba_spam_regresion.py -k "pendientes or quejas" -q -s
+```
+
+Los JSON de evaluación guardan texto, expectativa parcial, resultado y
+diferencias; un archivo de contexto separado registra el modelo configurado
+y las resoluciones de proveedor para detectar fallback. Usar un directorio
+temporal aislado para conservar evidencia si se ejecutan otras suites.
+La muestra completa de 35 no se volvió a ejecutar tras este ajuste.
+Este cierre no estima la precisión de los 600: hay ejemplos cercanos en las
+instrucciones, expectativas parciales, una sola revisión editorial y
+variabilidad del proveedor. No es una evaluación ciega ni una certificación.
+
+#### Validación nueva con expectativas congeladas
+
+Después del cierre acotado se fijaron 24 mensajes sintéticos nuevos en
+[datos_validacion_semantica_nueva.json](../tests/datos_validacion_semantica_nueva.json),
+sin repetir literalmente textos de los 600, controles ni ejemplos previos.
+Se guardaron huellas SHA-256 de muestra, prompt y contrato antes de ejecutar.
+Las expectativas, instrucciones y contrato permanecieron sin cambios durante
+la ronda y después de conocer los resultados.
+
+La muestra contiene ocho casos de quejas y spam (cuatro positivos de spam),
+seis fallos o testimonios, seis preguntas administrativas o técnicas y cuatro
+ambiguos. Las alternativas aceptables de los ambiguos y sus justificaciones
+se fijaron de antemano; no se fuerza una única etiqueta en esas dimensiones.
+No se evalúa sentimiento. Las expectativas solo las lee el evaluador, nunca
+se envían al modelo.
+
+Una ejecución por modo con `nvidia/nemotron-3.5-super-vl-120b-a12b` dio:
+
+| Criterio adjudicado | Lote | Individual |
+| --- | --- | --- |
+| Casos concordantes en todos sus campos | 23/24 | 21/24 |
+| Tipo | 19/19 | 19/19 |
+| Tema | 16/17 | 14/17 |
+| Spam | 24/24 | 24/24 |
+| Casos ambiguos dentro de las alternativas previstas | 4/4 | 4/4 |
+
+Los casos ambiguos ya están incluidos en los totales, no son ocho aciertos
+adicionales. Los cuatro positivos de spam y los veinte negativos coincidieron
+en ambos modos. Las 27 resoluciones de proveedor confirmaron NVIDIA, sin
+fallback a Gemini; no hubo errores finales de ejecución o contrato.
+
+**La validación nueva no aprueba el criterio de coincidencia total.** Quedan
+estas diferencias, sin reajustar el prompt ni ampliar las alternativas:
+
+| ID | Modo | Tema esperado | Tema obtenido |
+| --- | --- | --- | --- |
+| nuevo-10 | Individual | datos_ia | cloud_infraestructura |
+| nuevo-13 | Lote e individual | datos_ia | aprendizaje |
+| nuevo-15 | Individual | cloud_infraestructura | plataforma |
+
+Corresponden al guardado de pesos durante entrenamiento, al aprendizaje de
+correlación/causalidad y al permiso para crear una máquina virtual.
+Una eventual corrección debe ser una ronda posterior, no sustituir estos
+resultados ni convertir esta muestra ya observada en una nueva prueba ciega.
+
+La prueba optativa genera un JSON por modo con expectativas, resultados,
+diferencias, huellas antes/después y trazas de proveedor:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests\integracion\prueba_validacion_semantica_nueva.py -q -s
+```
+
+Es una muestra dirigida y sintética, con una sola persona autora/adjudicadora,
+no una medición representativa, ciega o independiente. La disjunción comprobada
+es textual exacta, no novedad conceptual; dos modos tampoco son 48 textos
+independientes. Los 600 históricos no se reprocesaron y no se desplegó nada.
+
+#### Rendimiento de esa misma ronda
+
+Se agregaron los tiempos ya guardados, sin repetir llamadas a los proveedores.
+Son duraciones de llamadas de aplicación: incluyen cliente, red, validación y
+los reintentos que ocurran dentro; no son tiempo puro de inferencia ni latencia
+de la interfaz.
+
+| Medida | Lote | Individual secuencial |
+| --- | --- | --- |
+| Mensajes / llamadas de aplicación | 24 / 3 (10, 10 y 4) | 24 / 24 |
+| Tiempo acumulado | 16,41 s | 51,92 s |
+| Mediana por llamada | 5,43 s por lote | 1,24 s |
+| Media por llamada | 5,47 s por lote | 2,16 s |
+| Máximo por llamada | 8,72 s por lote | 18,89 s |
+| P95 observado por rango más próximo | 8,72 s por lote | 4,05 s |
+| Tiempo amortizado por mensaje | 0,68 s | 2,16 s |
+| Fallback a Gemini / errores finales | 0 / 0 | 0 / 0 |
+
+En esta ronda, completar los 24 textos por lote consumió 3,16 veces menos
+tiempo acumulado que hacerlo individualmente. Los 0,68 s amortizados no
+significan que cada mensaje de un lote reciba su respuesta en ese tiempo.
+Los percentiles se calculan con el elemento `ceil(p*n)` de las duraciones
+ordenadas; con solo tres lotes, el P95 coincide con el máximo y no es robusto.
+No deben interpretarse como un SLA.
+
+La salida original de pytest mostró un error de LLM y un reintento programado
+en modo individual, sin fallo final. La llamada más lenta fue `nuevo-18`
+(18,89 s), pero el informe original no guardaba los campos de los eventos de
+reintento: no se puede atribuirle ese evento ni afirmar su causa o espera
+exacta. El `intento=1` de la resolución final tampoco descarta reintentos
+internos del proveedor. No se observaron eventos de reintento por lote en esa
+salida. No se han reconstruido métricas de tokens ni coste.
+
+El evaluador ahora conserva, para próximas ejecuciones, eventos de fin/error
+del LLM y reintentos con ID, duración, tipo de error y espera cuando existan;
+no persiste mensajes de excepción en ese bloque. Este añadido no rellena
+retroactivamente los informes originales ni requiere repetir esta muestra.
 
 ### Metadatos ausentes
 

@@ -59,6 +59,8 @@ del plan anterior: describe únicamente la petición actual.
 «Más cercano» solo cambia el tono: nueva_version=false, aunque se haya ofrecido
 otro enfoque. «Dale» acepta lo que se ofreció: true solo si la propuesta aceptada
 era explícitamente otra versión; false si era ajustar tono, longitud o destino.
+Si la oferta dice «otro enfoque más cercano», «dale» acepta OTRO ENFOQUE:
+nueva_version=true. En cambio, «más cercano» elige solo el tono: false.
 No conviertas una conversación social en una pregunta obligatoria sobre datos.
 Para una aclaración, pregunta solo por el dato que impide avanzar. No repitas
 «¿Quieres analizar mensajes o redactar un post?» ni encadenes la misma pregunta.

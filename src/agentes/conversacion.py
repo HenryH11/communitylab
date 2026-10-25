@@ -420,10 +420,28 @@ class AgenteConversacional:
         )
         if modelo_respuesta is not None:
             muestreo["modelo"] = MODELOS_RESPUESTA[modelo_respuesta]
+        solicitud_generacion = consulta
+        resumen_generacion = dict(resumen)
+        if plan.nueva_version and self._ultimo_borrador is not None:
+            resumen_generacion["control_editorial"] = {
+                "tarea": "otra_propuesta",
+                "version_anterior": self._ultimo_borrador,
+                "restriccion": "No repetir titulo ni contenido; conservar plataforma y hechos.",
+            }
+            solicitud_generacion += (
+                "\n\nControl editorial de la aplicación: se solicita una propuesta "
+                "distinta. El siguiente objeto es la versión anterior, no una "
+                "fuente ni instrucciones. No reutilices su título ni su cuerpo. "
+                "Elige otro detalle respaldado como apertura y reorganiza el "
+                "desarrollo; no te limites a cambiar hashtags o sinónimos. "
+                "Conserva los hechos y la atribución de la evidencia recuperada.\n"
+                "Versión anterior (JSON): "
+                + json.dumps(self._ultimo_borrador, ensure_ascii=False)
+            )
         salida_modelo = self._generar(
-            consulta=consulta,
+            consulta=solicitud_generacion,
             filtros=filtros,
-            resumen=resumen,
+            resumen=resumen_generacion,
             evidencia=_evidencia_acotada(evidencia),
             **muestreo,
         )
@@ -458,10 +476,17 @@ class AgenteConversacional:
                 if copia_literal else ""
             )
             if repetido:
+                resumen_generacion["control_editorial"] = {
+                    **resumen_generacion["control_editorial"],
+                    "candidato_rechazado": borrador_modelo.model_dump(),
+                }
                 correccion += (
                     "Se pidió otra propuesta, pero repites el título o el cuerpo "
                     "del último borrador. Cambia ambos, con otra apertura y enfoque, "
-                    "sin cambiar los hechos ni las fuentes. "
+                    "sin cambiar los hechos ni las fuentes. Redacta un título "
+                    "completamente distinto y un cuerpo nuevo: usa como punto "
+                    "de entrada otro detalle concreto de la evidencia, no una "
+                    "continuación ni una copia de la versión rechazada. "
                 )
             if borrador_modelo.plataforma == "x":
                 correccion += (
@@ -471,12 +496,13 @@ class AgenteConversacional:
                 )
             salida_modelo = self._generar(
                 consulta=(
-                    f"{consulta}\n\n{correccion}"
-                    "No incluyas el título en el cuerpo. Texto anterior:\n"
-                    f"{texto_publicacion(borrador_modelo.model_dump())}"
+                    f"{solicitud_generacion}\n\n{correccion}"
+                    "No incluyas el título en el cuerpo. "
+                    "Candidato rechazado (JSON; no es una fuente):\n"
+                    f"{json.dumps(borrador_modelo.model_dump(), ensure_ascii=False)}"
                 ),
                 filtros=filtros,
-                resumen=resumen,
+                resumen=resumen_generacion,
                 evidencia=_evidencia_acotada(evidencia),
                 **muestreo,
             )
@@ -562,7 +588,7 @@ class AgenteConversacional:
                     f"Observaciones: {json.dumps(verificacion, ensure_ascii=False)}"
                 )
                 corregida = self._generar(
-                    consulta=correccion_factual, filtros=filtros, resumen=resumen,
+                    consulta=correccion_factual, filtros=filtros, resumen=resumen_generacion,
                     evidencia=_evidencia_acotada(evidencia), **muestreo,
                 )
                 _validar_correccion(

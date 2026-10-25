@@ -71,7 +71,11 @@ def test_ui_prepara_publicaciones_actuales_y_del_historial(plataforma):
     assert len(enlaces) == (0 if plataforma == "mastodon" else 2)
     if plataforma != "mastodon":
         assert all(e.proto.url == enlace_publicacion(datos) for e in enlaces)
-        assert all(e.proto.icon == ":material/open_in_new:" for e in enlaces)
+        assert all(not e.proto.icon for e in enlaces)
+        assert all(NOMBRES_PLATAFORMA[plataforma] in e.proto.label for e in enlaces)
+        estilos = "\n".join(m.value for m in app.markdown)
+        assert f'_acciones_publicacion_logo_{plataforma}' in estilos
+        assert "data:image/svg+xml;base64," in estilos
     if plataforma in {"facebook", "telegram", "mastodon"}:
         assert len(app.text_input) == 2
         assert len({campo.key for campo in app.text_input}) == 2

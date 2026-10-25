@@ -213,29 +213,10 @@ ANIMACION = """
     const cover = root.querySelector('.st-key-inicio_portada');
     const main = root.closest('[data-testid="stMain"]');
     const cue = root.querySelector('.scroll-cue');
-    const cueKey = 'communitylab.inicio.guia-descartada';
-    let dismissed = window.clInicioCueDismissed === true;
-    try {
-        dismissed = dismissed || localStorage.getItem(cueKey) === '1';
-    } catch (error) {
-        console.warn('CommunityLab: no se pudo leer la preferencia de la guía.', error);
-    }
     const updateCue = () => {
-        if (!cue || !main || dismissed) return;
-        if (main.scrollTop < 120) {
-            cue.classList.add('is-visible');
-            return;
-        }
-        dismissed = true;
-        window.clInicioCueDismissed = true;
-        cue.classList.remove('is-visible');
-        try {
-            localStorage.setItem(cueKey, '1');
-        } catch (error) {
-            console.warn('CommunityLab: no se pudo guardar la preferencia de la guía.', error);
-        }
+        if (!cue || !main) return;
+        cue.classList.toggle('is-visible', main.scrollTop < 120);
     };
-    if (dismissed && cue) cue.classList.remove('is-visible');
     updateCue();
     if (main) main.addEventListener('scroll', updateCue, {passive: true});
     const sizeCover = () => {

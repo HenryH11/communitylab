@@ -65,7 +65,11 @@ class PlanConsulta(BaseModel):
     plataforma: PlataformaPublicacion | None = None
     nueva_version: bool = Field(
         default=False,
-        description="True solo si se pide otro enfoque o una propuesta distinta del último borrador.",
+        description=(
+            "True si pide otro enfoque o acepta una oferta de otro enfoque del "
+            "último borrador (por ejemplo, 'dale'). False si solo cambia tono, "
+            "longitud o plataforma; 'más cercano' por sí solo es cambio de tono."
+        ),
     )
     cantidad: int | None = Field(default=None, ge=1, le=1_000, strict=True)
     respuesta: str = Field(default="", max_length=1_200)

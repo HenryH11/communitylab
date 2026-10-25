@@ -50,7 +50,12 @@ class AnalisisMensaje(BaseModel):
     )
 
     tema_principal: TemaPrincipal = Field(
-        description="Categoría general y normalizada del tema principal."
+        description=(
+            "Objeto central, no contexto del curso: entrevistas laborales="
+            "empleabilidad; contacto o apoyo del mentor=mentoria; guardado "
+            "de respuestas en el aula=plataforma; reglas y fechas del reto="
+            "programa_hackathon. El tipo de pregunta no determina el tema."
+        )
     )
 
     subtema: str = Field(
@@ -63,7 +68,15 @@ class AnalisisMensaje(BaseModel):
     )
 
     tipo_detectado: TipoInteraccion = Field(
-        description="Clasificación semántica realizada por la IA."
+        description=(
+            "Función principal: propuesta de mejora, incluso con elogio o "
+            "interrogación=feedback; información, permiso o acceso ofrecido "
+            "por el curso=pregunta_programa; cómo implementar o configurar="
+            "pregunta_tecnica; reporte puntual de fallo, incluso propio="
+            "feedback; logro alcanzado, aprendizaje, transformación o trayectoria personal, "
+            "también desde un fracaso=testimonio; elogio "
+            "sin resultado concreto=comentario."
+        )
     )
 
     es_spam_detectado: bool = Field(

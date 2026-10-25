@@ -276,6 +276,20 @@ def render(*, modo_interno: bool = False) -> None:
                 )
                 st.altair_chart(chart_elegible, width="stretch")
 
+        with st.expander("Datos de las gráficas en texto"):
+            for titulo, datos, campo in (
+                ("Temas", df, "tema"),
+                ("Sentimientos (sin spam)", df_sentimiento, "sentimiento"),
+                ("Canales", df, "canal"),
+                ("Elegibilidad para contenido", df, "elegible"),
+            ):
+                st.markdown(f"**{titulo} · {len(datos)} mensajes**")
+                if datos.empty:
+                    st.write("Sin datos.")
+                else:
+                    for valor, cantidad in datos[campo].value_counts().items():
+                        st.write(f"{valor}: {cantidad} mensajes.")
+
         st.subheader("Detalle por mensaje")
         st.caption(
             "Vista de solo lectura. Edita y aprueba los activos en Plantillas."

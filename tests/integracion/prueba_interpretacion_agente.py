@@ -144,7 +144,8 @@ def test_seguimiento_editorial_real_no_repite_el_menu(consulta):
     assert plan.nueva_version == (consulta != "más cercano")
 
 
-def test_redaccion_real_aporta_otro_enfoque_sin_pegar_el_testimonio():
+@pytest.mark.parametrize("repeticion", range(3))
+def test_redaccion_real_aporta_otro_enfoque_sin_pegar_el_testimonio(monkeypatch, repeticion):
     texto = (
         "En el taller aprendí a limpiar datos con Python. Antes revisaba cada "
         "fila a mano y ahora uso un script para encontrar valores faltantes."
@@ -153,11 +154,23 @@ def test_redaccion_real_aporta_otro_enfoque_sin_pegar_el_testimonio():
         {"id": "ficticio-1", "autor": "Persona de prueba", "texto": texto,
          "sentimiento": "positivo", "tipo_detectado": "testimonio"},
     ])
+    candidatos = []
+    generar = agente._generar
+
+    def registrar(**kwargs):
+        salida = generar(**kwargs)
+        candidatos.append(salida.borrador.model_dump() if salida.borrador else None)
+        return salida
+
+    monkeypatch.setattr(agente, "_generar", registrar)
     primera = agente.consultar(
         "Crea una publicación para Instagram basada en este testimonio de Python. "
         "No copies el comentario: dale una apertura y un enfoque propios."
     )
-    segunda = agente.consultar("Algo nuevo, no lo mismo; usa otro enfoque.")
+    try:
+        segunda = agente.consultar("Algo nuevo, no lo mismo; usa otro enfoque.")
+    except ValueError as error:
+        pytest.fail(f"{error}\nCandidatos ficticios: {candidatos}")
     for salida in (primera, segunda):
         assert salida["modo"] == "borrador"
         assert salida["borrador"] is not None

@@ -6,6 +6,18 @@ from src.agentes.estado_agente import EstadoAgente
 from src.agentes.modelos import AnalisisMensaje
 from src.agentes.nodos.nodo_enrutador import determinar_rutas
 from src.agentes.entrega_resultados import preparar_entrega_resultados
+from src.agentes.prompts.analisis import template_analisis, template_analisis_lote
+from tests.casos_spam_regresion import CASOS
+
+
+def test_prompt_individual_y_lote_conservan_quejas_y_detectan_captacion():
+    sistema = template_analisis.messages[0].prompt.template
+    assert template_analisis_lote.messages[0].prompt.template == sistema
+    assert "Una queja no es captación" in sistema
+    for _, texto, esperado in CASOS:
+        if not esperado and texto.startswith(("Nos convocaron", "Ya me harté", "Ya me cansé")):
+            assert texto in sistema
+    assert "promoción no solicitada" in sistema
 
 
 @pytest.mark.parametrize(

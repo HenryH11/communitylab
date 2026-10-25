@@ -122,6 +122,21 @@ def test_frontend_vm_conserva_entorno_publico_sin_conexion_de_carga():
     assert "\n  communitylab-salida:" in frontend
 
 
+def test_compose_alinea_modelo_de_analisis_sin_cambiar_redaccion():
+    from src.agentes.configuracion_ia import MODELO_NVIDIA_ESTANDAR_POR_DEFECTO
+
+    for nombre in ("docker-compose.yml", "docker-compose.frontend.yml"):
+        compose = (RAIZ / nombre).read_text()
+        assert (
+            "COMMUNITYLAB_MODELO_NVIDIA_ESTANDAR=${COMMUNITYLAB_MODELO_NVIDIA_ESTANDAR:-"
+            + MODELO_NVIDIA_ESTANDAR_POR_DEFECTO + "}"
+        ) in compose
+        assert (
+            "COMMUNITYLAB_MODELO_NVIDIA=${COMMUNITYLAB_MODELO_NVIDIA:-"
+            "nvidia/nemotron-3.5-lightning-30b-a3b}"
+        ) in compose
+
+
 def test_backend_vm_exige_bind_explicito_y_entorno_escritor():
     backend = (RAIZ / "docker-compose.backend.yml").read_text()
     assert '${INGESTOR_BIND_IP:?' in backend

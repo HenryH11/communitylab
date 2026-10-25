@@ -5,27 +5,9 @@ import json
 from pathlib import Path
 
 import pytest
-import test_db_client
-
 from test_db_client import Conexion, cargar, db, documento, impedir_red
 
-pytestmark = [
-    pytest.mark.skipif(db is None, reason="requiere OCI y oracledb"),
-    pytest.mark.usefixtures("impedir_red"),
-]
-
-
-@pytest.fixture(autouse=True, params=["script", "servicio_http"])
-def escritor(request, monkeypatch, impedir_red):
-    if request.param == "servicio_http":
-        from src.services import ingest_server
-
-        monkeypatch.setattr(test_db_client, "db", ingest_server)
-        monkeypatch.setitem(globals(), "db", ingest_server)
-        monkeypatch.setattr(
-            ingest_server, "obtener_cliente_secretos",
-            lambda: pytest.fail("No se permite acceder a Vault"),
-        )
+pytestmark = pytest.mark.usefixtures("impedir_red")
 
 
 def test_lotes_a_b_repetir_b_conserva_textos_completos():
@@ -43,6 +25,7 @@ def test_lotes_a_b_repetir_b_conserva_textos_completos():
     for registro in a["registros"] + b["registros"]:
         assert con.filas[registro["id"]] == registro
     assert len(con.cargas) == 2
+    assert con.meta is not None
     assert con.meta["total"] == 4
     assert not any("DELETE" in sql for sql in con.operaciones)
 
@@ -118,6 +101,7 @@ def test_tabla_con_filas_sin_meta_no_adivina_contadores():
 def test_meta_total_incoherente_impide_carga():
     con = Conexion()
     cargar(documento("a"), con)
+    assert con.meta is not None
     con.meta["total"] = 90
     with pytest.raises(ValueError, match="metadatos"):
         cargar(documento("b"), con)

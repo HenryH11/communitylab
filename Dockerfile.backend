@@ -20,6 +20,7 @@ COPY --from=dependencias /opt/venv /opt/venv
 
 # Copiar exclusivamente el servicio de ingesta
 COPY src/services/ingest_server.py ./src/services/ingest_server.py
+COPY src/config/protocolo_db.py ./src/config/protocolo_db.py
 
 USER appuser
 

@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from src.agentes.conversacion import ESTILOS_REDACCION, AgenteConversacional
-from src.agentes.grafo import procesar_paquete_entrega
+from src.agentes.procesamiento import procesar_paquete_entrega
 from src.app import estilo_agente, fuente_agente, publicacion_redes, vista_ayuda, vista_inicio, vista_plantillas
 from src.app import tema as identidad
 from src.app.curaduria_oci import contexto_curaduria
@@ -104,7 +104,7 @@ def render(*, modo_interno: bool = False) -> None:
         with carga:
             with st.container(border=True):
                 st.subheader("Importar interacciones")
-                st.caption("Formato compatible: JSON con lotes e interacciones.")
+                st.caption("Formatos: lotes/interacciones o casos editoriales. No usa archivos de demostracion.")
                 archivo_subido = st.file_uploader(
                     "Selecciona el archivo JSON",
                     type=["json"],
@@ -113,7 +113,8 @@ def render(*, modo_interno: bool = False) -> None:
 
                 if archivo_subido is not None:
                     try:
-                        datos = json.load(archivo_subido)
+                        from src.app.entrada_interna import normalizar_entrada
+                        datos = normalizar_entrada(json.load(archivo_subido))
                         st.success("Archivo JSON cargado correctamente.")
                         filas = _interacciones_para_vista(datos)
                         if filas:
@@ -192,7 +193,9 @@ def render(*, modo_interno: bool = False) -> None:
                 st.markdown(
                     "1. Selecciona un archivo JSON.\n"
                     "2. Revisa la muestra de interacciones.\n"
-                    "3. Inicia el análisis con el pipeline de IA."
+                    "3. Comprueba el destino Oracle.\n"
+                    "4. Procesa con IA solo si el lote no esta procesado.\n"
+                    "5. Descarga, confirma y verifica la carga."
                 )
                 st.caption(
                     "El procesamiento analiza el lote y genera los activos "
@@ -884,23 +887,25 @@ def render(*, modo_interno: bool = False) -> None:
         else None
     )
 
-    if pagina_actual == "Inicio":
-        _render_inicio(resultado)
-    elif pagina_actual == "Agente":
-        _render_agente(resultado)
-    elif pagina_actual == "Análisis":
-        if MODO_INTERNO:
-            _render_analisis(resultado)
-        else:
-            from src.app.vista_analiticas import render as render_analiticas
-            render_analiticas()
-    elif pagina_actual == "Plantillas":
-        if not MODO_INTERNO:
-            from src.app.vista_plantillas_diarias import render as render_plantillas_diarias
-            render_plantillas_diarias()
-        elif resultado is None:
-            vista_plantillas.render()
-        else:
-            vista_plantillas.render(resultado, curaduria)
-    elif pagina_actual == "Ayuda":
-        vista_ayuda.render(ir_a=_navegar_a)
+    contenido = st.empty()
+    with contenido.container():
+        if pagina_actual == "Inicio":
+            _render_inicio(resultado)
+        elif pagina_actual == "Agente":
+            _render_agente(resultado)
+        elif pagina_actual == "Análisis":
+            if MODO_INTERNO:
+                _render_analisis(resultado)
+            else:
+                from src.app.vista_analiticas import render as render_analiticas
+                render_analiticas()
+        elif pagina_actual == "Plantillas":
+            if not MODO_INTERNO:
+                from src.app.vista_plantillas_diarias import render as render_plantillas_diarias
+                render_plantillas_diarias()
+            elif resultado is None:
+                vista_plantillas.render()
+            else:
+                vista_plantillas.render(resultado, curaduria)
+        elif pagina_actual == "Ayuda":
+            vista_ayuda.render(ir_a=_navegar_a)

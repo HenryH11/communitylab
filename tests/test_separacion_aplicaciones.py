@@ -64,5 +64,7 @@ def test_entrada_interna_habilita_datos_sin_variable(monkeypatch):
 
     assert not app.exception
     assert "Datos" in app.radio[0].options
-    assert len(app.get("file_uploader")) == 1
+    assert {u.key for u in app.get("file_uploader")} == {
+        "archivo_interacciones", "conjunto_para_oracle",
+    }
     assert any(s.value == "Importar interacciones" for s in app.subheader)

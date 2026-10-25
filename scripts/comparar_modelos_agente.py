@@ -20,7 +20,10 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.agentes.conversacion import ModoVerificacion
 
 RAIZ = Path(__file__).resolve().parents[1]
 if str(RAIZ) not in sys.path:
@@ -43,7 +46,7 @@ MODELOS_POR_DEFECTO = (
 )
 
 # (consulta, modo de verificación, plataforma esperada o None si es analítica)
-CASOS: tuple[tuple[str, str, str | None], ...] = (
+CASOS: tuple[tuple[str, ModoVerificacion, str | None], ...] = (
     ("¿Qué opina la comunidad sobre la mentoría y el aprendizaje?", "prompt_estricto", None),
     ("Dame los testimonios sobre empleabilidad", "prompt_estricto", None),
     ("¿Qué dudas técnicas tienen sobre LangGraph?", "prompt_estricto", None),

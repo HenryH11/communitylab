@@ -79,7 +79,9 @@ def test_antes_de_las_ocho_no_lee_ni_genera_y_requiere_zona():
 def test_horario_y_dia_del_catalogo_se_calculan_en_utc():
     assert diario.ZONA == timezone.utc
     assert diario.fecha_programada(datetime(2026, 10, 25, 12, 59, tzinfo=timezone.utc)) is None
-    assert diario.fecha_programada(datetime(2026, 10, 25, 13, tzinfo=timezone.utc)).isoformat() == "2026-10-25"
+    fecha = diario.fecha_programada(datetime(2026, 10, 25, 13, tzinfo=timezone.utc))
+    assert fecha is not None
+    assert fecha.isoformat() == "2026-10-25"
     assert diario.fecha_programada(datetime(2026, 10, 26, 0, tzinfo=timezone.utc)) is None
 
 

@@ -2,19 +2,18 @@
 
 import base64
 from copy import deepcopy
+import io
+import json
+import sys
+from types import ModuleType
 from unittest.mock import Mock, patch
 
 import pytest
 
-try:
-    from scripts import ingesta_db as db
-    from src.config import db_client as lector
-except ModuleNotFoundError as error:
-    if error.name not in {"oci", "oracledb"}:
-        raise
-    db = None
-
-pytestmark = pytest.mark.skipif(db is None, reason="requiere OCI y oracledb")
+pytest.importorskip("oci")
+pytest.importorskip("oracledb")
+from src.services import ingest_server as db
+from src.config import db_client as lector
 
 
 def documento(*ids, version="1.1", spam=1):
@@ -104,9 +103,11 @@ class Cursor:
                 if con.meta is not None else []
             )
         elif sql == db._SQL_CARGA:
+            assert parametros is not None
             huella = parametros["huella"]
             self.resultado = [(huella,)] if huella in con.cargas else []
         elif sql == db._SQL_REGISTRAR_CARGA:
+            assert parametros is not None
             con.cargas[parametros["huella"]] = deepcopy(parametros)
         elif sql == db._SQL_META:
             con.meta = deepcopy(parametros)
@@ -206,6 +207,7 @@ def test_conserva_otros_lotes_y_reintento_no_duplica():
     assert set(con.filas) == {"int-001", "int-002", "int-003"}
     assert cargar(doc, con)["retirados"] == 0
     assert lector.leer_conjunto(conexion=con)["total"] == 3
+    assert con.meta is not None
     assert con.meta["total_spam_excluido"] == 3
     assert len(con.cargas) == 2
 
@@ -216,8 +218,10 @@ def test_instantanea_vacia_confirmada_conserva_spam():
     doc = documento(spam=8)
     assert cargar(doc, con)["retirados"] == 0
     assert lector.leer_conjunto(conexion=con)["total"] == 1
+    assert con.meta is not None
     assert con.meta["total_spam_excluido"] == 9
     cargar(doc, con)
+    assert con.meta is not None
     assert con.meta["total_spam_excluido"] == 9
 
 
@@ -371,6 +375,7 @@ def test_lectura_sin_publicacion_o_con_total_inconsistente_falla():
     with pytest.raises(ValueError, match="metadatos"):
         lector.leer_conjunto(conexion=con)
     cargar(documento("int-001"), con)
+    assert con.meta is not None
     con.meta["total"] = 3
     with pytest.raises(ValueError, match="total"):
         lector.leer_conjunto(conexion=con)
@@ -495,6 +500,55 @@ def test_lector_exige_respuesta_de_vault():
     cliente.get_secret_bundle.return_value = None
     with pytest.raises(RuntimeError, match="Vault no devolvió"):
         lector.obtener_secreto_vault("secreto-ficticio", cliente=cliente)
+
+
+def test_escritor_exige_respuesta_de_vault():
+    cliente = Mock()
+    cliente.get_secret_bundle.return_value = None
+    with pytest.raises(RuntimeError, match="Vault no devolvió"):
+        db.obtener_secreto_vault("secreto-ficticio", cliente=cliente)
+
+
+def test_script_heredado_reutiliza_el_escritor():
+    from scripts import ingesta_db
+
+    assert ingesta_db.sincronizar_conjunto is db.sincronizar_conjunto
+    con = Conexion()
+    resultado = ingesta_db.sincronizar_conjunto(
+        documento("compatibilidad"), conexion=con, instantanea_completa=True,
+    )
+    assert resultado["total"] == 1
+    assert set(con.filas) == {"compatibilidad"}
+
+
+@pytest.mark.parametrize("cuerpo,error,codigo", [
+    (b"{}", None, 200),
+    (None, None, 400),
+    (b"{", None, 400),
+    (b"{}", ValueError("documento invalido"), 400),
+    (b"{}", RuntimeError("detalle privado"), 500),
+])
+def test_adaptador_functions_opcional(monkeypatch, cuerpo, error, codigo):
+    from scripts import ingesta_db
+
+    respuesta = Mock(side_effect=lambda ctx, **datos: datos)
+    fdk = ModuleType("fdk.response")
+    monkeypatch.setattr(fdk, "Response", respuesta, raising=False)
+    monkeypatch.setitem(sys.modules, "fdk.response", fdk)
+    cargar = Mock(return_value={"total": 1}, side_effect=error)
+    monkeypatch.setattr(ingesta_db, "sincronizar_conjunto", cargar)
+    resultado = ingesta_db.handler(
+        None, None if cuerpo is None else io.BytesIO(cuerpo),
+    )
+    assert resultado["status_code"] == codigo
+    assert resultado["headers"] == {"Content-Type": "application/json"}
+    if codigo == 500:
+        assert "detalle privado" not in resultado["response_data"]
+    elif codigo == 200:
+        assert json.loads(resultado["response_data"]) == {"total": 1}
+        cargar.assert_called_once_with({}, instantanea_completa=True)
+    if cuerpo is None or cuerpo == b"{":
+        cargar.assert_not_called()
 
 
 def test_lector_consulta_el_esquema_del_escritor():

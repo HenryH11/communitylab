@@ -10,11 +10,23 @@ El frontend se construye con `Dockerfile.frontend` y
 `requirements.frontend.txt`; el backend usa `Dockerfile.backend` y
 `requirements.backend.txt`. Para desarrollo local se conserva
 `pip install -r requirements.txt`, que incluye ambos manifiestos.
+La lógica de escritura reside únicamente en `src/services/ingest_server.py`.
+`scripts/ingesta_db.py` conserva los imports públicos y el adaptador opcional de
+Functions por compatibilidad; ya no mantiene otra copia de las transacciones.
+Functions requiere su propio paquete `fdk`, no incluido en el backend HTTP.
+`src/config/protocolo_db.py` define el contrato usado por el lector, el escritor
+y sus pruebas; ambas imágenes lo incluyen. Marketing no incorpora el escritor.
 La aplicación de Marketing escucha en el puerto 8501. Compose lee `.env`
 para interpolar solo las variables enumeradas en el servicio; no inyecta el
 archivo entero. Las claves nunca se incluyen en la imagen o Git.
 No publicar la app en Internet sin acordar los
 controles de acceso; publicar un puerto no configura las reglas de OCI.
+
+Inicio incorpora inclinaciones editoriales discretas (menos de un grado) en
+el ejemplo de conversación y las tarjetas exteriores de plantillas. La tarjeta
+central, la navegación y los controles conservan su alineación. Las inclinaciones
+solo se aplican por encima de 800 px y sin preferencia de movimiento reducido;
+usan la propiedad `rotate` para no interferir con las transiciones de aparición.
 
 ### Separación de Marketing y equipo técnico
 
@@ -67,8 +79,9 @@ El backend acumulativo queda disponible como perfil optativo:
 No publica el puerto 8000 en el host y expone `/health` y `/sincronizar`
 en la red puente de Compose. Marketing arranca independientemente de él:
 no tiene `depends_on`, variables de escritura ni `INGESTOR_URL`.
-La vista interna conserva su perfil y su puerto local; todavía no llama
-al endpoint de carga. No se añade carga de Oracle a Marketing.
+La vista interna conserva su perfil y su puerto local; permite comprobar el
+destino y cargar un Conjunto Consultable con confirmación explícita (ver la
+sección de carga interna más abajo). No se añade carga de Oracle a Marketing.
 
 El lector usa `DB_READ_*` y consulta las tablas de
 `rw_ingest_communitylab`, que requiere los permisos SELECT acordados por Cloud.
@@ -267,6 +280,35 @@ vacía significa que la lectura funcionó, no que exista un catálogo diario.
 No prueba permisos de escritura ni certifica que IAM los haya denegado.
 
 ## Activar Analisis y Plantillas en Marketing
+
+### Entrada interna y apertura de redes
+
+`src/app/app_interna.py` es la entrada vigente y delega en la interfaz compartida.
+Datos importa el procesador actual de `src.agentes.procesamiento`; no necesita
+los scripts de demostracion ni JSON antiguos. Acepta lotes/interacciones y casos
+editoriales usando el adaptador existente, sin enviar etiquetas propuestas como
+resultados. No borrar el modulo grafo: el procesador sigue usandolo internamente.
+Para un lote ya analizado, subir el Conjunto Consultable y no ejecutar IA otra vez.
+
+Las acciones de redes ya precargan texto mediante intents en X, Threads, Bluesky
+y WhatsApp; Mastodon requiere el servidor y Telegram un enlace. El usuario debe
+iniciar sesion si procede y confirmar en la red. LinkedIn, Instagram y Facebook
+no ofrecen en este flujo un enlace fiable para precargar texto libre: copiar y
+pegar sigue siendo necesario. Instagram requiere ademas imagen/video. Un enlace
+para compartir URL no equivale a una publicacion de texto precargada.
+No se implementan endpoints no documentados ni publicacion automatica: esta
+ultima requiere integracion oficial, permisos/cuentas y gestion de tokens aparte.
+
+### Navegacion
+
+Las paginas se renderizan dentro de un contenedor reemplazable para reducir
+restos de la vista anterior durante el rerun. El fondo oscuro del agente se
+activa solo cuando existe su lienzo. Los filtros de Analiticas se ejecutan en
+un fragmento: no vuelven a renderizar la cabecera ni el resto de la aplicacion.
+No se introduce un delay artificial. Las primeras lecturas de Oracle y OCI
+siguen dependiendo de la latencia de red; estos cambios no certifican un tiempo
+maximo de respuesta. Verificar cambios rapidos entre vistas y WebSocket estable
+despues del despliegue, sin enviar preguntas a modelos durante esa comprobacion.
 
 Analisis publico lee la misma captura de Oracle que el agente: muestra conteos
 de mensajes, canales, temas, sentimientos y tipos sin invocar IA. No necesita

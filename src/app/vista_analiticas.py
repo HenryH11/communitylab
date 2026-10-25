@@ -37,6 +37,7 @@ def distribucion(mensajes: tuple[dict, ...], campo: str) -> pd.DataFrame:
     )
 
 
+@st.fragment
 def render() -> None:
     st.header("Estado de las conversaciones de la comunidad")
     st.caption("Fuente: captura de Oracle compartida con el agente. No ejecuta IA.")
@@ -88,9 +89,9 @@ def render() -> None:
             st.bar_chart(tabla.set_index("Categoria")["Mensajes"], horizontal=True)
             st.dataframe(tabla, hide_index=True, width="stretch")
     with cruces:
-        fila = st.selectbox("Agrupar filas por", list(CAMPOS), format_func=CAMPOS.get)
+        fila = st.selectbox("Agrupar filas por", list(CAMPOS), format_func=lambda c: CAMPOS[c])
         opciones = [c for c in CAMPOS if c != fila]
-        columna = st.selectbox("Comparar columnas por", opciones, format_func=CAMPOS.get)
+        columna = st.selectbox("Comparar columnas por", opciones, format_func=lambda c: CAMPOS[c])
         tabla_cruce = pd.crosstab(
             pd.Series([categoria(m, fila) for m in mensajes], name=CAMPOS[fila]),
             pd.Series([categoria(m, columna) for m in mensajes], name=CAMPOS[columna]),

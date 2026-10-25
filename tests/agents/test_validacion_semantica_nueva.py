@@ -44,7 +44,7 @@ def test_muestra_nueva_cobertura_y_sin_reutilizar_textos():
     )
     anteriores.update(caso["texto"].casefold() for caso in fuente["casos"])
     prompts = "\n".join(
-        mensaje.prompt.template
+        mensaje.pretty_repr()
         for plantilla in (template_analisis, template_analisis_lote)
         for mensaje in plantilla.messages
     ).casefold()

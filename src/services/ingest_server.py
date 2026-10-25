@@ -22,6 +22,7 @@ from oci.auth.signers import (
 )
 from oci.secrets import SecretsClient
 import oracledb
+from src.config.protocolo_db import ConexionDB
 
 oracledb.defaults.fetch_lobs = False
 
@@ -136,6 +137,8 @@ def obtener_cliente_secretos() -> SecretsClient:
 def _descargar_secreto(cliente: SecretsClient, ocid_secreto: str) -> str:
     """Extrae y decodifica el contenido Base64 de un secreto en OCI Vault."""
     respuesta = cliente.get_secret_bundle(secret_id=ocid_secreto)
+    if respuesta is None:
+        raise RuntimeError("OCI Vault no devolvió el secreto solicitado")
     contenido_b64 = respuesta.data.secret_bundle_content.content
     secreto = base64.b64decode(contenido_b64, validate=True).decode("utf-8")
     if not secreto:
@@ -291,7 +294,7 @@ def _huella_lote(
 
 
 def _publicar_lote(
-    conexion: oracledb.Connection,
+    conexion: ConexionDB,
     documento: Mapping[str, Any],
     lote: list[dict[str, Any]],
 ) -> dict[str, str | int | bool]:
@@ -398,7 +401,7 @@ def _publicar_lote(
 def sincronizar_conjunto(
     documento: Mapping[str, Any],
     *,
-    conexion: oracledb.Connection | None = None,
+    conexion: ConexionDB | None = None,
     instantanea_completa: bool = False,
 ) -> dict[str, str | int | bool]:
     """Agrega un lote completo sin borrar otros lotes ni sobrescribir IDs.

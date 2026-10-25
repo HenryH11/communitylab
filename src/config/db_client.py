@@ -14,6 +14,7 @@ from typing import Any
 from oci.secrets import SecretsClient
 import oracledb
 from src.config.autenticacion_oci import configuracion_cliente
+from src.config.protocolo_db import ConexionDB
 
 USUARIO_PREDETERMINADO = "ro_query_communitylab"
 VERSION_CONJUNTO = "1.1"
@@ -165,7 +166,7 @@ def _leer_filas_con_texto(cursor) -> list[tuple]:
 
 def leer_conjunto(
     *,
-    conexion: oracledb.Connection | None = None,
+    conexion: ConexionDB | None = None,
 ) -> dict[str, Any]:
     """Lee filas y metadatos en una sola consulta consistente y sin commit.
 

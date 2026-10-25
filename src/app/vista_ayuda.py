@@ -171,7 +171,7 @@ SECCIONES = (
             ),
             (
                 "¿Cuándo se renuevan las plantillas?",
-                "La renovación está prevista todos los días a las 08:00, hora de Bogotá, "
+                "La renovación está prevista todos los días a las 13:00 UTC, "
                 "una vez que el equipo active el servicio programado. Cada contenido "
                 "nuevo sustituye al anterior. Si una plantilla falla, conserva su última "
                 "versión disponible con la fecha y un aviso; las demás sí se actualizan. "
@@ -183,6 +183,31 @@ SECCIONES = (
                 "Cada plantilla diaria responde a una petición predefinida sobre "
                 "la comunidad, no a cada mensaje individual. Si no hay evidencia "
                 "suficiente o falla la preparación, se muestra un aviso en esa plantilla.",
+            ),
+        ),
+    ),
+    (
+        "Pendientes y próximas integraciones",
+        ":material/pending_actions:",
+        (
+            (
+                "¿Qué falta para publicar mediante una integración oficial?",
+                "Pendiente. Hay que registrar la aplicación en cada red, obtener "
+                "los permisos y aprobaciones necesarios y conectar las cuentas con "
+                "autorización de su titular. También falta gestionar los tokens de "
+                "acceso de forma segura, su renovación y revocación. La disponibilidad, "
+                "los límites y los posibles costes dependen de cada plataforma. "
+                "Hoy solo puedes abrir la red o copiar el borrador y confirmar allí "
+                "la publicación; CommunityLab no tiene conectadas tus cuentas.",
+            ),
+            (
+                "¿Ya puedo crear usuarios y asignar permisos?",
+                "Pendiente. Faltan el registro o invitación de usuarios, el inicio "
+                "y cierre de sesión, la recuperación de acceso y los roles y permisos "
+                "por equipo. También quedan pendientes la vinculación de cuentas "
+                "sociales por usuario, el registro de acciones y la administración "
+                "de accesos. La sesión actual del navegador no sustituye una cuenta "
+                "ni un sistema de autenticación.",
             ),
         ),
     ),
@@ -256,13 +281,23 @@ ESTILO = """
     }
     .ayuda-paso-texto { color: var(--cl-tinta-suave); font-size: 0.92rem; min-height: 2.8rem; }
     .ayuda-bloque-pregunta {
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.75rem;
         font-family: var(--cl-texto);
         font-weight: 700;
         font-size: 1.02rem;
         color: var(--cl-tinta);
     }
-    [class*="st-key-ayuda_bloque_"] p { color: var(--cl-tinta-suave); }
+    [class*="st-key-ayuda_bloque_"] {
+        padding: 1.35rem;
+        margin-bottom: 0.75rem;
+    }
+    [class*="st-key-ayuda_bloque_"] p {
+        color: var(--cl-tinta-suave);
+        line-height: 1.7;
+    }
+    @media (max-width: 640px) {
+        [class*="st-key-ayuda_bloque_"] { padding: 1rem; }
+    }
 </style>
 """
 
@@ -293,7 +328,7 @@ def filtrar(secciones, busqueda: str):
 
 
 def _pasos(ir_a):
-    columnas = st.columns(len(PASOS))
+    columnas = st.columns(len(PASOS), gap="medium")
     for numero, (columna, (pagina, titulo, texto)) in enumerate(
         zip(columnas, PASOS), start=1
     ):
@@ -350,12 +385,11 @@ def render(ir_a=None):
 
 def _bloques(seccion, preguntas):
     """Cada pregunta como un bloque legible de un vistazo, en una cuadrícula."""
-    # Con cuatro preguntas, 2 × 2 evita una tarjeta huérfana en la segunda fila.
-    por_fila = 2 if len(preguntas) % 3 == 1 else 3
+    por_fila = 2
     for inicio in range(0, len(preguntas), por_fila):
         fila = preguntas[inicio : inicio + por_fila]
         for indice, (columna, (pregunta, respuesta)) in enumerate(
-            zip(st.columns(por_fila), fila), start=inicio
+            zip(st.columns(por_fila, gap="medium"), fila), start=inicio
         ):
             clave = f"ayuda_bloque_{_normalizar(seccion).replace(' ', '_')}_{indice}"
             with columna, st.container(border=True, key=clave, height="stretch"):

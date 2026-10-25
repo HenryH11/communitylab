@@ -2,6 +2,9 @@
 
 from pathlib import Path
 import re
+import shutil
+import subprocess
+import sys
 
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -87,6 +90,7 @@ def test_ingestor_optativo_no_bloquea_marketing_ni_publica_puerto():
 def test_backend_especializado_y_dependencias_locales_compatibles():
     backend = (RAIZ / "Dockerfile.backend").read_text()
     assert "COPY src/services/ingest_server.py ./src/services/ingest_server.py" in backend
+    assert "COPY src/config/protocolo_db.py ./src/config/protocolo_db.py" in backend
     assert "COPY src/ ./src/" not in backend
     assert "USER appuser" in backend
     assert "http://127.0.0.1:8000/health" in backend
@@ -94,6 +98,29 @@ def test_backend_especializado_y_dependencias_locales_compatibles():
     dependencias = (RAIZ / "requirements.txt").read_text()
     assert "-r requirements.frontend.txt" in dependencias
     assert "-r requirements.backend.txt" in dependencias
+
+
+def test_backend_importable_con_solo_los_archivos_de_su_imagen(tmp_path):
+    backend = (RAIZ / "Dockerfile.backend").read_text()
+    copias = re.findall(r"^COPY (src/\S+) (\./src/\S+)$", backend, re.MULTILINE)
+    assert copias
+    for origen, destino in copias:
+        ruta = tmp_path / destino
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(RAIZ / origen, ruta)
+    resultado = subprocess.run(
+        [
+            sys.executable, "-I", "-c",
+            "import sys; sys.path.insert(0, sys.argv[1]); "
+            "from src.services.ingest_server import IngestHandler; "
+            "from src.config.protocolo_db import ConexionDB; "
+            "print(IngestHandler.__name__)",
+            str(tmp_path),
+        ],
+        cwd=tmp_path, capture_output=True, text=True, timeout=30, check=False,
+    )
+    assert resultado.returncode == 0, resultado.stderr
+    assert resultado.stdout.strip() == "IngestHandler"
 
 
 def test_compose_referencia_archivos_existentes_y_declara_sus_volumenes():

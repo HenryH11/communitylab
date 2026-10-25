@@ -53,6 +53,8 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       # Solo este servicio recibe las variables de escritura.
+      - INGESTOR_DESTINO=${INGESTOR_DESTINO:-}
+      - INGESTOR_ENTORNO=${INGESTOR_ENTORNO:-}
       - DB_USER=${DB_USER:-rw_ingest_communitylab}
       - DB_DSN=${DB_DSN}
       - DB_PASSWORD_SECRET_OCID=${DB_PASSWORD_SECRET_OCID}
@@ -75,6 +77,8 @@ services:
     env_file:
       - path: .env.interno
         required: true
+    networks:
+      - communitylab-internal
     volumes:
       - communitylab-interno-salida:/app/salida
     security_opt:

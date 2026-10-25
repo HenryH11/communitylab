@@ -419,6 +419,55 @@ def sincronizar_conjunto(
             return _publicar_lote(conexion_activa, documento, lote)
 
 
+def comprobar_destino() -> dict[str, Any]:
+    """Comprueba Oracle con la identidad escritora sin exponer DSN ni secretos."""
+    nombre = os.environ.get("INGESTOR_DESTINO", "").strip()
+    entorno = os.environ.get("INGESTOR_ENTORNO", "").strip()
+    if not nombre or entorno not in ("demostracion", "produccion"):
+        raise ValueError("Configurar INGESTOR_DESTINO e INGESTOR_ENTORNO")
+    with obtener_conexion() as conexion:
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                "SELECT SYS_CONTEXT('USERENV', 'DB_NAME'), "
+                "SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA') FROM dual"
+            )
+            base, esquema = cursor.fetchone()
+            cursor.execute("SELECT COUNT(*) FROM conjunto_consultable")
+            total = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM conjunto_consultable_meta")
+            cursor.fetchone()
+            cursor.execute("SELECT COUNT(*) FROM conjunto_consultable_cargas")
+            cursor.fetchone()
+    identidad = f"{nombre}|{entorno}|{base}|{esquema}"
+    return {
+        "nombre": nombre, "entorno": entorno, "total": total,
+        "identidad": hashlib.sha256(identidad.encode()).hexdigest(),
+    }
+
+
+def verificar_conjunto(documento: Mapping[str, Any]) -> dict[str, Any]:
+    lote = _preparar_lote(documento)
+    faltantes, diferentes = [], []
+    with obtener_conexion() as conexion:
+        with conexion.cursor() as cursor:
+            for registro in lote:
+                cursor.execute(
+                    "SELECT canal, sentimiento, tema, tipo, contenido_textual, "
+                    "TO_CHAR(SYS_EXTRACT_UTC(fecha), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') "
+                    "FROM conjunto_consultable WHERE id = :id",
+                    {"id": registro["id"]},
+                )
+                fila = cursor.fetchone()
+                if fila is None:
+                    faltantes.append(registro["id"])
+                elif tuple(fila) != tuple(registro[c] for c in CAMPOS_CONJUNTO[1:]):
+                    diferentes.append(registro["id"])
+    return {
+        "verificado": not faltantes and not diferentes,
+        "comprobados": len(lote), "faltantes": faltantes, "diferentes": diferentes,
+    }
+
+
 class IngestHandler(BaseHTTPRequestHandler):
     """Manejador HTTP para los endpoints de salud y sincronización."""
 
@@ -427,12 +476,19 @@ class IngestHandler(BaseHTTPRequestHandler):
         if self.path == "/health":
             self._responder(200, {"status": "ok"})
             return
+        if self.path == "/destino":
+            try:
+                self._responder(200, comprobar_destino())
+            except Exception as error:
+                LOGGER.error("No se pudo comprobar Oracle (%s)", type(error).__name__)
+                self._responder(503, {"error": "No se pudo comprobar el destino Oracle"})
+            return
         self.send_response(404)
         self.end_headers()
 
     def do_POST(self) -> None:
         """Recibe el JSON enviado por HTTP y ejecuta la sincronización."""
-        if self.path != "/sincronizar":
+        if self.path not in ("/sincronizar", "/verificar"):
             self.send_response(404)
             self.end_headers()
             return
@@ -452,6 +508,16 @@ class IngestHandler(BaseHTTPRequestHandler):
         cuerpo = self.rfile.read(longitud)
         try:
             documento = json.loads(cuerpo.decode("utf-8"))
+            identidad = self.headers.get("X-CommunityLab-Destino")
+            if identidad is not None:
+                destino = comprobar_destino()
+                if identidad != destino["identidad"]:
+                    raise ValueError("El destino cambio; comprobarlo y confirmar nuevamente")
+                if self.headers.get("X-CommunityLab-Sintetico") == "true" and destino["entorno"] != "demostracion":
+                    raise ValueError("Los datos sinteticos requieren destino de demostracion")
+            if self.path == "/verificar":
+                self._responder(200, verificar_conjunto(documento))
+                return
             resultado = sincronizar_conjunto(
                 documento,
                 instantanea_completa=True,

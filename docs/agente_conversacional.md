@@ -5,6 +5,11 @@ resultados de Ciencia de Datos ya procesados, permite consultar y filtrar esos
 mensajes, y puede generar borradores de marketing basados en evidencia. No
 reemplaza el procesamiento por lotes de LangGraph ni publica en redes sociales.
 
+El recorrido de aceptación posterior a fusión y despliegue coordinado está en
+[aceptacion_funcional_agente.md](aceptacion_funcional_agente.md).
+Su estado inicial es preparado, no ejecutado; las pruebas locales no sustituyen
+la comprobación del navegador con los datos y la imagen realmente desplegados.
+
 ## Flujo
 
 1. Valida la entrada y llama al modelo solicitando temperatura 0 para obtener un

@@ -72,8 +72,9 @@ class AnalisisMensaje(BaseModel):
             "Función principal: propuesta de mejora, incluso con elogio o "
             "interrogación=feedback; información, permiso o acceso ofrecido "
             "por el curso=pregunta_programa; cómo implementar o configurar="
-            "pregunta_tecnica; relato propio con resultado e impacto, también "
-            "negativo, sin petición principal de cambio=testimonio; elogio "
+            "pregunta_tecnica; reporte puntual de fallo, incluso propio="
+            "feedback; logro alcanzado, aprendizaje, transformación o trayectoria personal, "
+            "también desde un fracaso=testimonio; elogio "
             "sin resultado concreto=comentario."
         )
     )

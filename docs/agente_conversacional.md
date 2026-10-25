@@ -164,15 +164,55 @@ sentimientos revisados se registran como observaciones, no como criterio de
 aprobación de este ajuste de tipos y temas. No se pasan etiquetas propuestas
 al analizador ni se modifican los 600 resultados históricos.
 
-La última ejecución obtuvo 30/34 tipos y 20/21 temas concordantes por lote;
+La evaluación anterior obtuvo 30/34 tipos y 20/21 temas concordantes por lote;
 individualmente, 31/34 tipos y 20/21 temas. Los 35 casos conservaron la marca
 de no spam en ambos modos; el control adicional de spam mantuvo 40/40 decisiones
-esperadas. **La regresión semántica sigue fallando**: quedan cinco casos por
-lote y cuatro individuales con diferencias. Entre ellos están la confirmación
-de una reserva, el acceso a un bucket, la práctica de entrevistas y relatos de
-experiencias negativas. Se mantienen visibles para revisión, sin corregir
-etiquetas mediante reglas por palabras ni debilitar expectativas para aprobar.
-Esto no estima la precisión de los 600: hay ejemplos cercanos en las
+esperadas. Esa versión dejó cinco casos por lote y cuatro individuales
+con diferencias.
+
+#### Cierre acotado de los pendientes
+
+Se acordó una frontera editorial explícita: un reporte puntual de fallo es
+feedback, incluso en primera persona; un logro alcanzado, aprendizaje,
+transformación o trayectoria personal puede ser testimonio. Un aprendizaje
+desarrollado a partir de un fracaso sigue siendo testimonio. Se corrigió un
+ejemplo contradictorio que clasificaba un fallo de despliegue como comentario.
+También se readjudicaron `syn-eval-0459` y `syn-eval-0495`, antes considerados
+testimonio, como feedback. **Estas dos readjudicaciones son un cambio de
+criterio acordado, no una mejora atribuible al modelo.**
+
+La prueba `test_pendientes_y_contrastes` selecciona únicamente los siete casos
+discrepantes de ambos modos, ocho controles existentes y cuatro contrastes
+adicionales: 19 textos. Se evalúan 19 tipos, 13 temas y 19 marcas de no spam
+por ejecución; los cuatro sentimientos adjudicados son solo observaciones.
+No se pasa ninguna etiqueta esperada al modelo.
+
+Con las mismas instrucciones finales, dos repeticiones por modo dieron:
+
+| Modelo NVIDIA | Lote, repetición 1 / 2 | Individual, repetición 1 / 2 |
+| --- | --- | --- |
+| `nvidia/nemotron-3.5-lightning-30b-a3b` | 17/19 y 16/19 | 18/19 y 18/19 |
+| `nvidia/nemotron-3.5-super-vl-120b-a12b` | 19/19 y 19/19 | 19/19 y 19/19 |
+
+Los conteos exigen coincidencia en todos los campos adjudicados de cada texto,
+excepto sentimiento. Las trazas confirmaron NVIDIA sin fallback a Gemini.
+La configuración local autorizada de análisis usa el segundo modelo, con el
+timeout existente de 15 segundos: repitió 76/76 evaluaciones concordantes y
+los controles de spam mantuvieron 40/40 decisiones esperadas.
+Los modelos de redacción no se cambiaron. No se actualizó la VM.
+
+Para repetir solo el cierre y los controles de spam:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests\integracion\prueba_semantica_regresion.py tests\integracion\prueba_spam_regresion.py -k "pendientes or quejas" -q -s
+```
+
+Los JSON de evaluación guardan texto, expectativa parcial, resultado y
+diferencias; un archivo de contexto separado registra el modelo configurado
+y las resoluciones de proveedor para detectar fallback. Usar un directorio
+temporal aislado para conservar evidencia si se ejecutan otras suites.
+La muestra completa de 35 no se volvió a ejecutar tras este ajuste.
+Este cierre no estima la precisión de los 600: hay ejemplos cercanos en las
 instrucciones, expectativas parciales, una sola revisión editorial y
 variabilidad del proveedor. No es una evaluación ciega ni una certificación.
 

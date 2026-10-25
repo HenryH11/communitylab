@@ -4,7 +4,9 @@ import json
 from pathlib import Path
 
 
-# Solo se exige un valor cuando el texto y las definiciones lo respaldan.
+# Los reportes de fallos son feedback según la frontera editorial acordada.
+# 0459 y 0495 eran testimonio en la evaluación anterior: es una readjudicación,
+# no una mejora atribuible al modelo.
 MUESTRA = {
     "0029": {"tipo_detectado": "feedback", "sentimiento": "muy_negativo"},
     "0065": {"tipo_detectado": "feedback", "sentimiento": "positivo"},
@@ -24,8 +26,8 @@ MUESTRA = {
     "0403": {"tipo_detectado": "feedback", "tema_principal": "empleabilidad"},
     "0406": {"tipo_detectado": "feedback"},
     "0423": {"tipo_detectado": "pregunta_programa"},
-    "0459": {"tipo_detectado": "testimonio", "tema_principal": "cloud_infraestructura"},
-    "0495": {"tipo_detectado": "testimonio", "tema_principal": "certificacion"},
+    "0459": {"tipo_detectado": "feedback", "tema_principal": "cloud_infraestructura"},
+    "0495": {"tipo_detectado": "feedback", "tema_principal": "certificacion"},
     "0497": {"tipo_detectado": "pregunta_programa"},
     "0511": {"tipo_detectado": "pregunta_programa", "tema_principal": "programa_hackathon"},
     "0513": {"tipo_detectado": "pregunta_programa", "tema_principal": "mentoria"},
@@ -54,6 +56,19 @@ CONTROLES = [
      {"tipo_detectado": "pregunta_tecnica", "tema_principal": "datos_ia"}),
 ]
 
+IDS_PENDIENTES = {"0106", "0369", "0383", "0403", "0459", "0495", "0513"}
+
+CONTRASTES_PENDIENTES = [
+    ("contraste_fallo", "Mi despliegue se interrumpe y tengo que reiniciar el servicio manualmente. ¿Le ocurre a alguien más?",
+     {"tipo_detectado": "feedback", "tema_principal": "cloud_infraestructura"}),
+    ("contraste_aprendizaje", "Tras perder mi primer despliegue, aprendí a configurar respaldos. Ahora los pruebo cada semana y recuperé mi proyecto sin ayuda.",
+     {"tipo_detectado": "testimonio", "tema_principal": "cloud_infraestructura"}),
+    ("contraste_confirmacion", "¿Dónde puedo consultar la confirmación de mi reserva del aula?",
+     {"tipo_detectado": "pregunta_programa"}),
+    ("contraste_correccion", "Las reservas del aula no indican dónde reunirnos; por favor incluyan la ubicación al confirmarlas.",
+     {"tipo_detectado": "feedback"}),
+]
+
 
 def casos_semanticos():
     archivo = Path(__file__).resolve().parents[1] / "src" / "datos" / "casos_conciliados_propuestos.json"
@@ -65,4 +80,15 @@ def casos_semanticos():
     ] + [
         (identificador, texto, {**esperado, "es_spam_detectado": False})
         for identificador, texto, esperado in CONTROLES
+    ]
+
+
+def casos_pendientes():
+    return [
+        caso for caso in casos_semanticos()
+        if caso[0].removeprefix("syn-eval-") in IDS_PENDIENTES
+        or caso[0].startswith("control_")
+    ] + [
+        (identificador, texto, {**esperado, "es_spam_detectado": False})
+        for identificador, texto, esperado in CONTRASTES_PENDIENTES
     ]

@@ -22,6 +22,12 @@ archivo entero. Las claves nunca se incluyen en la imagen o Git.
 No publicar la app en Internet sin acordar los
 controles de acceso; publicar un puerto no configura las reglas de OCI.
 
+Inicio incorpora inclinaciones editoriales discretas (menos de un grado) en
+el ejemplo de conversación y las tarjetas exteriores de plantillas. La tarjeta
+central, la navegación y los controles conservan su alineación. Las inclinaciones
+solo se aplican por encima de 800 px y sin preferencia de movimiento reducido;
+usan la propiedad `rotate` para no interferir con las transiciones de aparición.
+
 ### Separación de Marketing y equipo técnico
 
 - **Marketing:** `streamlit run src/app/app.py`. No incluye Datos ni la curaduría

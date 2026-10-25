@@ -93,6 +93,15 @@ def test_flecha_reaparece_al_volver_arriba_sin_descarte_permanente():
     assert "clInicioCueDismissed" not in ANIMACION
 
 
+def test_inclinaciones_sutiles_solo_en_escritorio_sin_movimiento_reducido():
+    from src.app.vista_inicio import ESTILO
+
+    assert "@media(min-width:801px) and (prefers-reduced-motion:no-preference)" in ESTILO
+    assert ".cards .card:first-child { rotate: -0.8deg; }" in ESTILO
+    assert ".cards .card:last-child { rotate: 0.8deg; }" in ESTILO
+    assert "rotate: -0.7deg;" in ESTILO
+
+
 def test_recorrido_entre_paginas_reutiliza_captura_y_no_pierde_chat(monkeypatch):
     from src.app import vista_plantillas_diarias
 

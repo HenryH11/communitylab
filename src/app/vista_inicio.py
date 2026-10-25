@@ -127,6 +127,14 @@ ESTILO = """
     border-top: 3px solid var(--cl-linea);
 }
 .cl-inicio .card:nth-child(2) { border-top-color: var(--cl-miel-oscura); }
+@media(min-width:801px) and (prefers-reduced-motion:no-preference) {
+    .cl-inicio .editorial-tilt {
+        rotate: -0.7deg;
+        box-shadow: 0 8px 22px rgb(67 47 19 / 6%);
+    }
+    .cl-inicio .cards .card:first-child { rotate: -0.8deg; }
+    .cl-inicio .cards .card:last-child { rotate: 0.8deg; }
+}
 @media(hover:hover) and (prefers-reduced-motion:no-preference) {
     .cl-inicio .card { transition: border-color .25s ease; }
     .cl-inicio .card:hover { border-color: var(--cl-miel-oscura); }
@@ -307,7 +315,7 @@ def render(*, ir_a: Callable[[str], None]) -> None:
               <p class="lead cl-reveal">Un agente para explorar lo que tu comunidad
               está contando, sin perder de vista de dónde viene.</p>
             </div>
-            <div class="panel chat" aria-label="Conversación ilustrativa">
+            <div class="panel chat editorial-tilt" aria-label="Conversación ilustrativa">
               <div class="label">Conversación ilustrativa</div>
               <div class="question cl-reveal">Necesitamos presentar CommunityLab.
               ¿Por dónde empezamos?</div>

@@ -30,6 +30,9 @@ def test_inicio_muestra_recorrido_ejemplos_y_footer_sin_consultar_base(monkeypat
     ):
         assert texto in html
     assert [e.label for e in app.expander] == ["Contacto", "Sobre tus datos"]
+    contacto = " ".join(b.value for b in app.expander[0].markdown)
+    assert "sitio web de CommunityLab" in contacto
+    assert "instalación" not in contacto
     assert "Datos" not in app.radio[0].options
     assert "catálogo de nueve" not in html
     assert "Tres formas de empezar" not in html

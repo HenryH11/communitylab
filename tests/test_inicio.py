@@ -85,6 +85,14 @@ def test_inicio_footer_usa_enlaces_discretos_y_portada_con_guia():
     assert app.radio[0].value == "Ayuda"
 
 
+def test_flecha_reaparece_al_volver_arriba_sin_descarte_permanente():
+    from src.app.vista_inicio import ANIMACION
+
+    assert "cue.classList.toggle('is-visible', main.scrollTop < 120)" in ANIMACION
+    assert "localStorage" not in ANIMACION
+    assert "clInicioCueDismissed" not in ANIMACION
+
+
 def test_ajustes_actuales_se_aplican_a_la_siguiente_pregunta(monkeypatch):
     from src.agentes.conversacion import AgenteConversacional
 

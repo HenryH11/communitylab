@@ -121,7 +121,7 @@ ESTILO = """
     }
     .st-key-gotico_controles [data-testid="stTooltipIcon"] * { color: var(--hueso) !important; }
     .st-key-gotico_controles [data-testid="stPopover"] button {
-        min-height: 2rem;
+        min-height: 44px;
         padding: 0.2rem 0.85rem;
         background: var(--nogal);
         border: 1px solid var(--linea);
@@ -167,13 +167,13 @@ ESTILO = """
     .st-key-agente_panel_datos [data-testid="stText"] * {
         color: var(--blanco) !important;
     }
-    .agente-info { width: 1.6rem; }
+    .agente-info { width: 2.75rem; }
     .agente-info summary {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 1.5rem;
-        height: 1.8rem;
+        width: 2.75rem;
+        height: 2.75rem;
         cursor: pointer;
         color: var(--blanco);
         font: 700 0.85rem var(--texto);
@@ -415,9 +415,9 @@ def cabecera(lema: str) -> str:
     return (
         '<div class="gotico-cabecera">'
         f"{EMBLEMA}"
-        '<p class="gotico-titulo">AGENTE COMMUNITYLAB</p>'
+        '<p class="gotico-titulo" role="heading" aria-level="1">AGENTE COMMUNITYLAB</p>'
         f'<p class="gotico-lema">{escape(lema)}</p>'
-        '<div class="gotico-ornamento">❧</div>'
+        '<div class="gotico-ornamento" aria-hidden="true">❧</div>'
         "</div>"
     )
 

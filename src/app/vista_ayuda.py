@@ -16,6 +16,29 @@ PASOS = (
 
 SECCIONES = (
     (
+        "Accesibilidad",
+        ":material/accessibility_new:",
+        (
+            (
+                "¿Cómo uso la aplicación con teclado o lector de pantalla?",
+                "Usa Tab y Mayús+Tab para recorrer los controles; el foco se marca "
+                "con un contorno. En la navegación principal, usa las flechas para "
+                "cambiar de sección. Enter o Espacio activa botones y paneles de "
+                "información. En Análisis, abre «Datos de las gráficas en texto» "
+                "para consultar los mismos conteos sin depender del color. "
+                "Puedes ampliar la página con el zoom del navegador.",
+            ),
+            (
+                "¿Necesito escuchar audio o ver animaciones?",
+                "No necesitas audio: las respuestas, avisos e instrucciones son "
+                "textuales. La aplicación respeta la preferencia de movimiento "
+                "reducido del sistema y conserva las funciones al desactivar "
+                "animaciones. Los botones de redes mantienen su nombre además "
+                "del logo.",
+            ),
+        ),
+    ),
+    (
         "Datos del agente",
         ":material/database:",
         (

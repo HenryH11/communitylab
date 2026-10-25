@@ -105,8 +105,13 @@ ESTILO_GLOBAL = f"""
         height: 3rem;
         color: var(--cl-header-logo);
     }}
+    .st-key-navegacion_principal {{
+        padding-top: 12px;
+        padding-bottom: 6px;
+    }}
     .st-key-navegacion_principal [role="radiogroup"] {{ gap: 6px; flex-wrap: wrap; }}
     .st-key-navegacion_principal label {{
+        min-height: 44px;
         border-radius: 6px;
         padding: 8px 16px;
         transition: background 0.2s ease;
@@ -166,6 +171,34 @@ ESTILO_GLOBAL = f"""
         max-width: 1440px;
         padding-bottom: 2rem;
         padding-top: 3.6rem;
+    }}
+    .stApp :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible {{
+        outline: 3px solid var(--cl-header-logo) !important;
+        outline-offset: 3px;
+        scroll-margin-block: 6rem;
+    }}
+    .stApp :is(button, summary, [data-testid="stLinkButton"] a) {{
+        min-height: 44px;
+    }}
+    .stApp :is(input, textarea) {{ font-size: 1rem; }}
+    @media (prefers-reduced-motion: reduce) {{
+        .stApp *, .stApp *::before, .stApp *::after {{
+            animation: none !important;
+            transition: none !important;
+            scroll-behavior: auto !important;
+        }}
+    }}
+    @media (forced-colors: active) {{
+        .stApp :is(button, summary, input, textarea, [data-testid="stLinkButton"] a),
+        .st-key-navegacion_principal label {{
+            border: 1px solid ButtonText !important;
+        }}
+        .st-key-navegacion_principal label:has(input:checked) {{
+            outline: 2px solid Highlight;
+        }}
+        .stApp :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible {{
+            outline-color: Highlight !important;
+        }}
     }}
 </style>
 """

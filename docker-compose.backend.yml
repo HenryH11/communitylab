@@ -10,6 +10,8 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - INGESTOR_PORT=8000
+      - INGESTOR_DESTINO=${INGESTOR_DESTINO:?Define un nombre reconocible del destino}
+      - INGESTOR_ENTORNO=${INGESTOR_ENTORNO:?Define demostracion o produccion}
       - DB_USER=${DB_USER:-rw_ingest_communitylab}
       - DB_DSN=${DB_DSN:?Define el DSN de escritura}
       - DB_PASSWORD_SECRET_OCID=${DB_PASSWORD_SECRET_OCID:?Define el OCID del secreto escritor}

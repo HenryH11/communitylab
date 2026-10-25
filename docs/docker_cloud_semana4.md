@@ -100,6 +100,53 @@ sin cambios. No combinar estos manifiestos con varios `-f` ni iniciar el
 Compose local en esas VM: los servicios tienen los mismos nombres y no son
 overrides para un despliegue conjunto.
 
+Usar [.env.example](../.env.example) como referencia de nombres, no copiar
+su contenido completo a ambas VM. En Marketing conservar claves IA, modelos,
+`DB_READ_*` y bucket; en el backend, únicamente su configuración de escritura
+y bind privado. Los valores vacíos de DSN y secreto deben completarlos con
+los valores autorizados de Cloud en archivos no versionados. Los nombres de
+usuario del ejemplo coinciden con los valores predeterminados de Compose;
+si Cloud provisionó otros, configurar los nombres reales explícitamente.
+No copiar claves entre equipos ni publicar el contenido del entorno.
+
+El backend recibe la contraseña mediante el OCID de su secreto en Vault:
+`DB_PASSWORD_SECRET_OCID` no admite un OCID de clave ni la contraseña en texto.
+El DSN debe ser el servicio TLS correcto de la base escritora, no solo una IP.
+La ACL, la ruta por Service Gateway y los permisos IAM son requisitos externos:
+ninguna variable de este ejemplo los crea o corrige.
+
+### Carga desde la pantalla interna
+
+En el backend configurar `INGESTOR_DESTINO` (nombre reconocible) e
+`INGESTOR_ENTORNO` (`demostracion` o `produccion`). La etiqueta no aísla datos:
+Cloud debe apuntar el DSN/usuario a la base o esquema realmente acordado.
+En el archivo privado `.env.interno` configurar `INGESTOR_URL` como URL base
+privada, sin `/sincronizar`; con Compose local:
+`http://communitylab-ingestor:8000`. No configurar esta URL en Marketing.
+Permitir el acceso únicamente desde el servidor interno autorizado; estos
+endpoints no incorporan autenticación HTTP y no deben exponerse públicamente.
+
+En Datos, comprobar Oracle antes de ejecutar IA. El resultado queda disponible
+para descargar como Conjunto Consultable; también se conserva por huella en
+`salida/ingesta` (volumen persistente del servicio interno). Descargar una copia
+antes de cerrar la sesión permite retomarla desde otro equipo.
+También se puede subir un Conjunto Consultable previamente generado para
+no repetir IA. Comprobar el destino, declarar si hay datos sintéticos y confirmar
+el lote antes de cargar. Los sintéticos se bloquean si el destino no es de
+demostración. `/destino` consulta Oracle y las tres tablas, mientras que
+`/health` solo comprueba el proceso HTTP; no certifica permisos de escritura.
+La escritura real sigue siendo transaccional en `/sincronizar`.
+El cliente fija la identidad comprobada del destino y pide nueva confirmación
+si cambia. `/verificar` compara cada ID y sus siete campos con Oracle.
+No verifica por sí mismo el contador histórico de spam ni los permisos IAM.
+
+Si hay timeout, el commit puede haberse realizado: usar “Verificar lote sin
+escribir” o reintentar exactamente el mismo documento. Los recibos evitan sumar
+spam otra vez. Nunca reprocesar IA para resolver un fallo de transporte.
+Un ID con contenido distinto requiere conciliación: no renombrar IDs durante
+el reintento ni sobrescribirlos. Esta preparación no despliega servicios ni
+carga automáticamente los 1.200 casos sintéticos.
+
 En la VM de Marketing:
 
 ```powershell

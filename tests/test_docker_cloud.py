@@ -153,3 +153,20 @@ def test_backend_vm_exige_bind_explicito_y_entorno_escritor():
         assert "cap_drop:\n      - ALL" in compose
         for archivo in re.findall(r"^\s+dockerfile:\s+(\S+)$", compose, re.MULTILINE):
             assert (RAIZ / archivo).is_file()
+
+
+def test_ejemplo_entorno_alinea_usuarios_y_deja_cloud_sin_inventar():
+    ejemplo = (RAIZ / ".env.example").read_text(encoding="utf-8")
+    variables = dict(re.findall(r"^([A-Z][A-Z0-9_]*)=(.*)$", ejemplo, re.MULTILINE))
+    for nombre, usuario, archivo in (
+        ("DB_USER", "rw_ingest_communitylab", "docker-compose.backend.yml"),
+        ("DB_READ_USER", "ro_query_communitylab", "docker-compose.frontend.yml"),
+    ):
+        assert variables[nombre] == usuario
+        assert "${" + nombre + ":-" + usuario + "}" in (RAIZ / archivo).read_text()
+    for nombre in (
+        "DB_DSN", "DB_PASSWORD_SECRET_OCID", "DB_READ_DSN",
+        "DB_READ_PASSWORD_SECRET_OCID", "INGESTOR_BIND_IP",
+    ):
+        assert variables[nombre] == ""
+    assert "INGESTOR_URL" not in variables

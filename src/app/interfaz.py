@@ -83,6 +83,22 @@ def render(*, modo_interno: bool = False) -> None:
             "Importa un lote JSON, revisa una muestra de las conversaciones y "
             "ejecuta el pipeline de análisis."
         )
+        from src.app.carga_oracle import render_carga, solicitar
+        from src.datos.conjunto_consultable import construir_conjunto_consultable
+
+        preparado = st.file_uploader(
+            "Conjunto Consultable ya procesado (sin repetir IA)", type=["json"],
+            key="conjunto_para_oracle",
+        )
+        if preparado is not None:
+            try:
+                documento = json.loads(preparado.getvalue())
+                if not isinstance(documento, dict) or not isinstance(documento.get("registros"), list):
+                    raise ValueError("Se requiere un Conjunto Consultable con registros")
+                render_carga(documento)
+            except (ValueError, TypeError) as error:
+                st.error(f"Conjunto invalido: {error}")
+            return
 
         carga, guia = st.columns([2, 1])
         with carga:
@@ -117,23 +133,40 @@ def render(*, modo_interno: bool = False) -> None:
                                 "de interacciones para mostrar."
                             )
 
+                        if st.button("Comprobar Oracle antes del procesamiento"):
+                            st.session_state.pop("destino_ingesta", None)
+                            try:
+                                st.session_state["destino_ingesta"] = solicitar("/destino")
+                                st.success("Destino Oracle disponible.")
+                            except (ValueError, RuntimeError) as error:
+                                st.error(str(error))
                         if st.button(
-                            "Procesar con IA (Gemini + LangGraph)",
+                            "Procesar con IA",
                             type="primary",
                             icon=":material/rocket_launch:",
                             key="procesar_lote",
+                            disabled=not st.session_state.get("destino_ingesta"),
                         ):
                             with st.spinner(
                                 "Procesando mensajes con inteligencia artificial..."
                             ):
                                 try:
+                                    st.session_state.pop("conjunto_para_carga", None)
                                     paquete = preparar_paquete_ia(
                                         datos,
-                                        fecha_referencia="2026-09-17T12:00:00Z",
+                                        fecha_referencia=datetime.now(timezone.utc).isoformat(),
                                         tamano_ciclo=20,
                                     )
                                     resultado = procesar_paquete_entrega(paquete)
                                     st.session_state["resultado"] = resultado
+                                    if resultado.get("ids_pendientes"):
+                                        raise ValueError("Quedan mensajes pendientes; no se habilita una carga parcial")
+                                    resultados = list(resultado["resultados_por_id"].values())
+                                    if any(r.get("errores") or r.get("fallos") for r in resultados):
+                                        raise ValueError("Hay analisis fallidos; no se habilita la carga")
+                                    st.session_state["conjunto_para_carga"] = construir_conjunto_consultable(
+                                        {"interacciones": resultados}, datos,
+                                    )
                                     st.session_state.pop("agente_conversacional", None)
                                     st.session_state.pop("historial_agente", None)
                                     st.success("Procesamiento completado.")
@@ -149,6 +182,9 @@ def render(*, modo_interno: bool = False) -> None:
                         )
                     except Exception as error:
                         st.error(f"Error al cargar el archivo: {error}")
+
+        if st.session_state.get("conjunto_para_carga") is not None:
+            render_carga(st.session_state["conjunto_para_carga"])
 
         with guia:
             with st.container(border=True):

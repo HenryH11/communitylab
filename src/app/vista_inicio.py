@@ -451,7 +451,7 @@ def render(*, ir_a: Callable[[str], None]) -> None:
             with contacto:
                 _html('<h3 class="footer-heading">Información y contacto</h3>')
                 with st.expander("Contacto"):
-                    st.write("Contacta al administrador de tu instalación de "
+                    st.write("Contacta al equipo que administra el sitio web de "
                              "CommunityLab para soporte y solicitudes sobre tus datos.")
                 with st.expander("Sobre tus datos"):
                     st.write("Los archivos adjuntos se usan en tu sesión y no se "

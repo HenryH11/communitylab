@@ -30,6 +30,9 @@ def test_inicio_muestra_recorrido_ejemplos_y_footer_sin_consultar_base(monkeypat
     ):
         assert texto in html
     assert [e.label for e in app.expander] == ["Contacto", "Sobre tus datos"]
+    contacto = " ".join(b.value for b in app.expander[0].markdown)
+    assert "sitio web de CommunityLab" in contacto
+    assert "instalación" not in contacto
     assert "Datos" not in app.radio[0].options
     assert "catálogo de nueve" not in html
     assert "Tres formas de empezar" not in html
@@ -62,6 +65,10 @@ def test_inicio_abre_agente_con_navegacion_real(monkeypatch):
     assert app.session_state["navegacion_principal"] == "Agente"
     assert app.radio[0].key == f"selector_navegacion_{app.session_state['navegacion_revision']}"
     assert app.chat_input
+    assert len(app.chat_input) == 1
+    assert not app.main.chat_input
+    assert not any(b.label == "Explorar Analíticas sin llamadas IA" for b in app.button)
+    assert "Análisis" in app.radio[0].options
     textos = " ".join(elemento.value for elemento in app.markdown)
     assert "Bienvenido. ¿Qué te gustaría descubrir hoy?" in textos
     assert "El archivo aún está vacío" not in textos

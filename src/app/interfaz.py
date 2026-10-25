@@ -847,7 +847,11 @@ def render(*, modo_interno: bool = False) -> None:
     elif pagina_actual == "Agente":
         _render_agente(resultado)
     elif pagina_actual == "Análisis":
-        _render_analisis(resultado)
+        if MODO_INTERNO:
+            _render_analisis(resultado)
+        else:
+            from src.app.vista_analiticas import render as render_analiticas
+            render_analiticas()
     elif pagina_actual == "Plantillas":
         if not MODO_INTERNO:
             from src.app.vista_plantillas_diarias import render as render_plantillas_diarias

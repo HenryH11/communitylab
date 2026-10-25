@@ -1,0 +1,158 @@
+{
+  "version": "1.0",
+  "protocolo": {
+    "origen": "24 mensajes sinteticos nuevos, escritos y adjudicados antes de ejecutar el modelo",
+    "alcance": "Validacion dirigida de fronteras; no muestra representativa ni evaluacion ciega",
+    "modos": ["lote", "individual"],
+    "repeticiones": 1,
+    "criterio": "Concordancia en todos los campos adjudicados; listas expresan alternativas admisibles, no etiquetas simultaneas",
+    "sentimiento": "No evaluado",
+    "regla": "No modificar prompt, textos ni expectativas despues de observar resultados en esta ronda"
+  },
+  "casos": [
+    {
+      "id": "nuevo-01", "grupo": "quejas_y_spam",
+      "texto": "Van tres solicitudes de devolución y nadie contesta. Necesito que el equipo publique un procedimiento claro para reclamar el cobro duplicado.",
+      "esperado": {"tipo_detectado": ["feedback"], "es_spam_detectado": [false]},
+      "justificacion": "Queja de un cobro y propuesta de mejora; el emisor no vende ni capta."
+    },
+    {
+      "id": "nuevo-02", "grupo": "quejas_y_spam",
+      "texto": "Una cuenta me pidió mi contraseña para activar una supuesta beca. No se la entreguen: ya denuncié ese mensaje.",
+      "esperado": {"es_spam_detectado": [false]},
+      "justificacion": "Denuncia una captación ajena, no solicita credenciales al lector."
+    },
+    {
+      "id": "nuevo-03", "grupo": "quejas_y_spam",
+      "texto": "¿La matrícula del siguiente ciclo se paga una sola vez o hay una mensualidad adicional?",
+      "esperado": {"tipo_detectado": ["pregunta_programa"], "tema_principal": ["programa_hackathon"], "es_spam_detectado": [false]},
+      "justificacion": "Consulta administrativa de costos, no una oferta comercial del emisor."
+    },
+    {
+      "id": "nuevo-04", "grupo": "quejas_y_spam",
+      "texto": "Qué agotador que cada aviso de tutoría tenga un enlace roto. Corrijan los enlaces antes de enviarlos.",
+      "esperado": {"tipo_detectado": ["feedback"], "es_spam_detectado": [false]},
+      "justificacion": "Critica avisos y pide corregirlos; no promociona enlaces."
+    },
+    {
+      "id": "nuevo-05", "grupo": "quejas_y_spam",
+      "texto": "Abandonen las clases y entren a mi grupo VIP de inversión: depositen hoy y les duplico el dinero en una semana.",
+      "esperado": {"es_spam_detectado": [true]},
+      "justificacion": "Captación comercial con promesa engañosa de rentabilidad."
+    },
+    {
+      "id": "nuevo-06", "grupo": "quejas_y_spam",
+      "texto": "Soy del soporte: para conservar tu plaza envíame por mensaje tu contraseña y el código de verificación. No consultes al equipo.",
+      "esperado": {"es_spam_detectado": [true]},
+      "justificacion": "Solicitud fraudulenta de credenciales y código bajo suplantación de soporte."
+    },
+    {
+      "id": "nuevo-07", "grupo": "quejas_y_spam",
+      "texto": "Vendo respuestas del examen final. Transfiéreme por privado y te aseguro aprobar sin estudiar.",
+      "esperado": {"es_spam_detectado": [true]},
+      "justificacion": "Venta no solicitada y captación para una oferta engañosa."
+    },
+    {
+      "id": "nuevo-08", "grupo": "quejas_y_spam",
+      "texto": "A quienes preguntan por empleo: compren mi paquete exclusivo y les garantizo contratación mañana. Escríbanme para pagar la reserva.",
+      "esperado": {"es_spam_detectado": [true]},
+      "justificacion": "Captación comercial con garantía infundada, aunque se presente como ayuda."
+    },
+    {
+      "id": "nuevo-09", "grupo": "fallos_y_testimonios",
+      "texto": "La exportación del aula descarga un archivo vacío y tuve que rehacer el informe. ¿También les ocurrió esta mañana?",
+      "esperado": {"tipo_detectado": ["feedback"], "tema_principal": ["plataforma"], "es_spam_detectado": [false]},
+      "justificacion": "Reporte puntual de fallo del aula con contraste entre pares, no aprendizaje desarrollado."
+    },
+    {
+      "id": "nuevo-10", "grupo": "fallos_y_testimonios",
+      "texto": "Mi entrenamiento termina sin guardar los pesos del modelo y pierdo todo el avance. Es frustrante tener que iniciarlo de nuevo.",
+      "esperado": {"tipo_detectado": ["feedback"], "tema_principal": ["datos_ia"], "es_spam_detectado": [false]},
+      "justificacion": "Incidencia de entrenamiento relatada en primera persona; no pide pasos técnicos."
+    },
+    {
+      "id": "nuevo-11", "grupo": "fallos_y_testimonios",
+      "texto": "Aprobé la certificación de redes después de dos intentos y hoy pude añadir la credencial a mi perfil. Estoy orgullosa de haber perseverado.",
+      "esperado": {"tipo_detectado": ["testimonio"], "tema_principal": ["certificacion"], "es_spam_detectado": [false]},
+      "justificacion": "Logro concreto alcanzado y trayectoria de preparación."
+    },
+    {
+      "id": "nuevo-12", "grupo": "fallos_y_testimonios",
+      "texto": "Antes no sabía explicar mi experiencia en una entrevista. Tras practicar con devoluciones, conseguí comunicar mis proyectos y recibí mi primera oferta laboral.",
+      "esperado": {"tipo_detectado": ["testimonio"], "tema_principal": ["empleabilidad"], "es_spam_detectado": [false]},
+      "justificacion": "Transformación personal con resultado laboral explícito."
+    },
+    {
+      "id": "nuevo-13", "grupo": "fallos_y_testimonios",
+      "texto": "Mi primer análisis confundía correlación con causalidad. Aprendí a contrastar hipótesis y ahora documento las limitaciones antes de presentar resultados.",
+      "esperado": {"tipo_detectado": ["testimonio"], "tema_principal": ["datos_ia"], "es_spam_detectado": [false]},
+      "justificacion": "Aprendizaje desarrollado desde un error, centrado en análisis de datos."
+    },
+    {
+      "id": "nuevo-14", "grupo": "fallos_y_testimonios",
+      "texto": "La página marca mi entrega como pendiente aunque tengo el comprobante de envío. Revisen la sincronización del estado.",
+      "esperado": {"tipo_detectado": ["feedback"], "tema_principal": ["plataforma"], "es_spam_detectado": [false]},
+      "justificacion": "Fallo de estado de la plataforma con petición correctiva."
+    },
+    {
+      "id": "nuevo-15", "grupo": "administrativas_y_tecnicas",
+      "texto": "¿Las cuentas de laboratorio incluyen permiso para crear una máquina virtual o hay que solicitar autorización al coordinador?",
+      "esperado": {"tipo_detectado": ["pregunta_programa"], "tema_principal": ["cloud_infraestructura"], "es_spam_detectado": [false]},
+      "justificacion": "Pregunta por permiso institucional sobre un recurso cloud, no por configuración."
+    },
+    {
+      "id": "nuevo-16", "grupo": "administrativas_y_tecnicas",
+      "texto": "¿Qué regla de entrada configuro en el firewall de mi instancia para que el servicio HTTPS sea accesible?",
+      "esperado": {"tipo_detectado": ["pregunta_tecnica"], "tema_principal": ["cloud_infraestructura"], "es_spam_detectado": [false]},
+      "justificacion": "Solicita una configuración técnica de red."
+    },
+    {
+      "id": "nuevo-17", "grupo": "administrativas_y_tecnicas",
+      "texto": "¿Puedo cambiar la fecha de mi examen de certificación o debo presentar una solicitud formal?",
+      "esperado": {"tipo_detectado": ["pregunta_programa"], "tema_principal": ["certificacion"], "es_spam_detectado": [false]},
+      "justificacion": "Procedimiento administrativo con tema específico de certificación."
+    },
+    {
+      "id": "nuevo-18", "grupo": "administrativas_y_tecnicas",
+      "texto": "¿Cómo evito que una división entre cero detenga el bucle de mi programa en Python?",
+      "esperado": {"tipo_detectado": ["pregunta_tecnica"], "tema_principal": ["programacion"], "es_spam_detectado": [false]},
+      "justificacion": "Control de excepciones del lenguaje, sin un problema específico de IA."
+    },
+    {
+      "id": "nuevo-19", "grupo": "administrativas_y_tecnicas",
+      "texto": "¿Con cuánta anticipación hay que reservar una reunión individual con la tutora?",
+      "esperado": {"tipo_detectado": ["pregunta_programa"], "tema_principal": ["mentoria"], "es_spam_detectado": [false]},
+      "justificacion": "Disponibilidad organizativa de tutoría, no implementación."
+    },
+    {
+      "id": "nuevo-20", "grupo": "administrativas_y_tecnicas",
+      "texto": "¿Cómo comparo precisión y recall cuando el conjunto de prueba tiene muy pocos positivos?",
+      "esperado": {"tipo_detectado": ["pregunta_tecnica"], "tema_principal": ["datos_ia"], "es_spam_detectado": [false]},
+      "justificacion": "Consulta técnica sobre evaluación de clasificación."
+    },
+    {
+      "id": "nuevo-21", "grupo": "ambiguos",
+      "texto": "Las revisiones del grupo me ayudan, aunque a veces no sé qué hacer con tantos comentarios.",
+      "esperado": {"tipo_detectado": ["comentario", "feedback"], "tema_principal": ["comunidad", "aprendizaje"], "es_spam_detectado": [false]},
+      "justificacion": "Puede leerse como valoración mixta o dificultad; el apoyo entre pares y su utilidad formativa compiten, sin un mentor explícito."
+    },
+    {
+      "id": "nuevo-22", "grupo": "ambiguos",
+      "texto": "Desde que participo en el grupo me siento más acompañada para estudiar.",
+      "esperado": {"tipo_detectado": ["comentario", "testimonio"], "tema_principal": ["comunidad", "aprendizaje"], "es_spam_detectado": [false]},
+      "justificacion": "El acompañamiento puede ser opinión o impacto personal; no hay logro ni actividad técnica específicos."
+    },
+    {
+      "id": "nuevo-23", "grupo": "ambiguos",
+      "texto": "La sesión sobre cómo presentar proyectos para buscar empleo estuvo interesante, pero se me hizo corta.",
+      "esperado": {"tipo_detectado": ["comentario", "feedback"], "tema_principal": ["empleabilidad"], "es_spam_detectado": [false]},
+      "justificacion": "La duración admite una observación o crítica implícita; la finalidad laboral sí está explícita."
+    },
+    {
+      "id": "nuevo-24", "grupo": "ambiguos",
+      "texto": "El material de la semana me dejó pensando; tal vez necesite más ejemplos.",
+      "esperado": {"tipo_detectado": ["comentario", "feedback"], "tema_principal": ["aprendizaje"], "es_spam_detectado": [false]},
+      "justificacion": "Reflexión personal o sugerencia tentativa; sin evidencia para asignar un dominio técnico."
+    }
+  ]
+}

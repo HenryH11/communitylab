@@ -216,6 +216,101 @@ Este cierre no estima la precisión de los 600: hay ejemplos cercanos en las
 instrucciones, expectativas parciales, una sola revisión editorial y
 variabilidad del proveedor. No es una evaluación ciega ni una certificación.
 
+#### Validación nueva con expectativas congeladas
+
+Después del cierre acotado se fijaron 24 mensajes sintéticos nuevos en
+[datos_validacion_semantica_nueva.json](../tests/datos_validacion_semantica_nueva.json),
+sin repetir literalmente textos de los 600, controles ni ejemplos previos.
+Se guardaron huellas SHA-256 de muestra, prompt y contrato antes de ejecutar.
+Las expectativas, instrucciones y contrato permanecieron sin cambios durante
+la ronda y después de conocer los resultados.
+
+La muestra contiene ocho casos de quejas y spam (cuatro positivos de spam),
+seis fallos o testimonios, seis preguntas administrativas o técnicas y cuatro
+ambiguos. Las alternativas aceptables de los ambiguos y sus justificaciones
+se fijaron de antemano; no se fuerza una única etiqueta en esas dimensiones.
+No se evalúa sentimiento. Las expectativas solo las lee el evaluador, nunca
+se envían al modelo.
+
+Una ejecución por modo con `nvidia/nemotron-3.5-super-vl-120b-a12b` dio:
+
+| Criterio adjudicado | Lote | Individual |
+| --- | --- | --- |
+| Casos concordantes en todos sus campos | 23/24 | 21/24 |
+| Tipo | 19/19 | 19/19 |
+| Tema | 16/17 | 14/17 |
+| Spam | 24/24 | 24/24 |
+| Casos ambiguos dentro de las alternativas previstas | 4/4 | 4/4 |
+
+Los casos ambiguos ya están incluidos en los totales, no son ocho aciertos
+adicionales. Los cuatro positivos de spam y los veinte negativos coincidieron
+en ambos modos. Las 27 resoluciones de proveedor confirmaron NVIDIA, sin
+fallback a Gemini; no hubo errores finales de ejecución o contrato.
+
+**La validación nueva no aprueba el criterio de coincidencia total.** Quedan
+estas diferencias, sin reajustar el prompt ni ampliar las alternativas:
+
+| ID | Modo | Tema esperado | Tema obtenido |
+| --- | --- | --- | --- |
+| nuevo-10 | Individual | datos_ia | cloud_infraestructura |
+| nuevo-13 | Lote e individual | datos_ia | aprendizaje |
+| nuevo-15 | Individual | cloud_infraestructura | plataforma |
+
+Corresponden al guardado de pesos durante entrenamiento, al aprendizaje de
+correlación/causalidad y al permiso para crear una máquina virtual.
+Una eventual corrección debe ser una ronda posterior, no sustituir estos
+resultados ni convertir esta muestra ya observada en una nueva prueba ciega.
+
+La prueba optativa genera un JSON por modo con expectativas, resultados,
+diferencias, huellas antes/después y trazas de proveedor:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests\integracion\prueba_validacion_semantica_nueva.py -q -s
+```
+
+Es una muestra dirigida y sintética, con una sola persona autora/adjudicadora,
+no una medición representativa, ciega o independiente. La disjunción comprobada
+es textual exacta, no novedad conceptual; dos modos tampoco son 48 textos
+independientes. Los 600 históricos no se reprocesaron y no se desplegó nada.
+
+#### Rendimiento de esa misma ronda
+
+Se agregaron los tiempos ya guardados, sin repetir llamadas a los proveedores.
+Son duraciones de llamadas de aplicación: incluyen cliente, red, validación y
+los reintentos que ocurran dentro; no son tiempo puro de inferencia ni latencia
+de la interfaz.
+
+| Medida | Lote | Individual secuencial |
+| --- | --- | --- |
+| Mensajes / llamadas de aplicación | 24 / 3 (10, 10 y 4) | 24 / 24 |
+| Tiempo acumulado | 16,41 s | 51,92 s |
+| Mediana por llamada | 5,43 s por lote | 1,24 s |
+| Media por llamada | 5,47 s por lote | 2,16 s |
+| Máximo por llamada | 8,72 s por lote | 18,89 s |
+| P95 observado por rango más próximo | 8,72 s por lote | 4,05 s |
+| Tiempo amortizado por mensaje | 0,68 s | 2,16 s |
+| Fallback a Gemini / errores finales | 0 / 0 | 0 / 0 |
+
+En esta ronda, completar los 24 textos por lote consumió 3,16 veces menos
+tiempo acumulado que hacerlo individualmente. Los 0,68 s amortizados no
+significan que cada mensaje de un lote reciba su respuesta en ese tiempo.
+Los percentiles se calculan con el elemento `ceil(p*n)` de las duraciones
+ordenadas; con solo tres lotes, el P95 coincide con el máximo y no es robusto.
+No deben interpretarse como un SLA.
+
+La salida original de pytest mostró un error de LLM y un reintento programado
+en modo individual, sin fallo final. La llamada más lenta fue `nuevo-18`
+(18,89 s), pero el informe original no guardaba los campos de los eventos de
+reintento: no se puede atribuirle ese evento ni afirmar su causa o espera
+exacta. El `intento=1` de la resolución final tampoco descarta reintentos
+internos del proveedor. No se observaron eventos de reintento por lote en esa
+salida. No se han reconstruido métricas de tokens ni coste.
+
+El evaluador ahora conserva, para próximas ejecuciones, eventos de fin/error
+del LLM y reintentos con ID, duración, tipo de error y espera cuando existan;
+no persiste mensajes de excepción en ese bloque. Este añadido no rellena
+retroactivamente los informes originales ni requiere repetir esta muestra.
+
 ### Metadatos ausentes
 
 La preparación de casos editoriales usa marcas reservadas

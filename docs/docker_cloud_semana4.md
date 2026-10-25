@@ -113,6 +113,17 @@ de escritura ni `INGESTOR_URL` y no requiere al ingestor para iniciar.
 Agregar una URL no conecta ninguna pantalla: actualmente la UI interna tampoco
 invoca `/sincronizar`.
 
+El valor predeterminado de `COMMUNITYLAB_MODELO_NVIDIA_ESTANDAR` en ambos
+Compose coincide con el de Python: `nvidia/nemotron-3.5-super-vl-120b-a12b`.
+Ese tier se usa para análisis individual y por lote, no para cambiar los
+modelos de redacción. Un valor explícito del entorno prevalece: revisar
+`.env` y, para la aplicación interna, su propio `.env.interno`; cambiar el
+predeterminado del Compose no reemplaza una configuración existente.
+El ajuste se validó con la muestra acotada documentada en
+[agente_conversacional.md](agente_conversacional.md), no con los 600.
+Puede tener mayor latencia y consumo de cuota. No implica que se haya
+reconstruido o actualizado ningún contenedor remoto.
+
 En la VM de ingesta, definir `INGESTOR_BIND_IP` con su IP privada real,
 `DB_DSN` y `DB_PASSWORD_SECRET_OCID` en su entorno propio:
 

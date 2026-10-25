@@ -17,7 +17,7 @@ def principal() -> int:
         logging.exception("No se pudo confirmar la actualización del catálogo diario")
         return 1
     if catalogo is None:
-        logging.info("Todavía no son las 08:00 de America/Bogota; no se genera contenido")
+        logging.info("Todavía no son las 13:00 UTC; no se genera contenido")
         return 0
     logging.info(
         "Catálogo confirmado en OCI: %s entradas, %s pendientes",

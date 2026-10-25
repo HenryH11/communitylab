@@ -687,6 +687,12 @@ def render(*, modo_interno: bool = False) -> None:
 
     def _render_agente(resultado):
         st.markdown(estilo_agente.ESTILO, unsafe_allow_html=True)
+        if not MODO_INTERNO:
+            st.button(
+                "Explorar Analíticas sin llamadas IA",
+                on_click=_navegar_a, args=("Análisis",),
+            )
+            st.caption("Los filtros y conteos de Analíticas no llaman modelos. El chat sí puede consumir cuota.")
         adjuntos = st.session_state.setdefault(CLAVE_ARCHIVOS, {})
         # Fuera de contenedores para que quede fija al pie, como en un chat de LLM.
         entrada = st.chat_input(

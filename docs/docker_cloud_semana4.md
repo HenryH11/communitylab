@@ -230,6 +230,17 @@ una nueva lectura. Una captura anterior se identifica como desactualizada si
 falla la lectura. Un error sin captura se muestra como error, no como cero.
 La pantalla interna conserva sus metricas del pipeline.
 
+La vista publica permite filtrar por tema, sentimiento, canal y tipo, y buscar
+texto/ID. Los filtros se combinan por interseccion. Resumen muestra porcentajes
+sobre el subconjunto seleccionado con denominador visible; Cruces compara dos
+dimensiones; Fuentes pagina mensajes, permite leer textos completos y descargar
+el subconjunto o el cruce en CSV. No interpreta causalidad ni inventa series
+temporales cuando faltan fechas. Desde Agente hay un acceso directo a esta vista:
+no modifica ni envia el chat o sus adjuntos. Los calculos no llaman modelos;
+el chat en lenguaje natural mantiene sus llamadas y posible consumo de cuota.
+No se afirma que Oracle o la infraestructura sean gratuitos, ni que estas
+clasificaciones sean una evaluacion de calidad del modelo sin etiquetas humanas.
+
 Plantillas publico lee `plantillas/catalogo_actual.json` del bucket. Cargar
 mensajes en Oracle NO genera este objeto. El generador ya existe y no debe
 ejecutarse dentro del servidor publico en respuesta a una visita.

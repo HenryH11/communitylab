@@ -88,6 +88,10 @@ Ultra queda fuera del selector hasta validarlo con el flujo actual.
 
 ## Criterio editorial de las publicaciones
 
+Los botones de destino muestran el logo local de cada red junto con su nombre;
+el control para copiar conserva el icono de portapapeles. Abrir una red no
+publica automaticamente ni conecta cuentas.
+
 El agente en vivo usa `src/agentes/prompts/conversacion.py`; el generador
 especializado de LinkedIn conserva su voz institucional sobria por separado.
 Una versión nueva puede cambiar el ángulo, la apertura y el cierre, no los
@@ -100,6 +104,8 @@ o enfoque. Si su título o cuerpo repite el último borrador de la sesión
 persiste la repetición, se rechaza sin guardar el turno. Los cambios de tono,
 longitud o plataforma no activan esta restricción. Es un control de repetición
 textual, no una garantía de diversidad semántica.
+Aceptar con «dale» una oferta explícita de otro enfoque también pide una nueva
+versión; «más cercano» por sí solo solicita un cambio de tono.
 
 El tono solicitado decide si encajan agradecimientos, reconocimiento o una
 invitación a conversar: no se imponen felicitaciones, emojis ni una pregunta

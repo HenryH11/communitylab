@@ -167,3 +167,45 @@ para sustituir esa validación. Este cambio no crea recursos ni prueba OCI real.
 
 Pendientes separados: integración de aprobación/guardado con SS, configuración
 final de proveedores por DS y prueba de extremo a extremo en la VM compartida.
+# Acceso local de solo lectura
+
+La VM conserva `OCI_AUTH_MODE=instance_principal`. Desde una máquina local
+se puede elegir explícitamente `OCI_AUTH_MODE=api_key`; no hay fallback
+automático entre identidades.
+
+Configura fuera del repositorio un perfil OCI con una clave propia registrada
+en IAM. No copies claves de la VM ni compartas claves privadas en el chat.
+El archivo de configuración del SDK debe incluir `user`, `fingerprint`,
+`tenancy`, `region` y `key_file` bajo el perfil elegido.
+
+En el entorno local:
+
+```dotenv
+OCI_AUTH_MODE=api_key
+OCI_CONFIG_FILE=C:\Users\TU_USUARIO\.oci\config
+OCI_PROFILE=COMMUNITYLAB_READ
+OCI_BUCKET_NAME=bkt-communitylab-marketing
+DB_READ_USER=USUARIO_SELECT
+DB_READ_DSN=CADENA_TLS_DE_CLOUD
+DB_READ_PASSWORD_SECRET_OCID=OCID_SECRETO_LECTURA
+```
+
+`OCI_CONFIG_FILE` prevalece sobre `OCI_CONFIG_DIR` (por defecto `~/.oci`).
+El perfil no concede permisos por su nombre: Cloud debe asignar únicamente
+lectura de objetos y el acceso necesario al secreto del usuario SELECT.
+El usuario Oracle debe tener SELECT sobre las tablas del conjunto, sin DML.
+Nunca configurar credenciales de escritura para Marketing.
+
+Verifica desde la raíz:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.comprobar_cloud_lectura
+```
+
+El comando solo lee la instantánea de Oracle y una muestra de hasta cinco
+objetos bajo `plantillas/`; no muestra los textos, claves o secretos ni sube
+objetos. Devuelve código 1 si falla cualquiera de los dos accesos. Una lista
+vacía significa que la lectura funcionó, no que exista un catálogo diario.
+No prueba permisos de escritura ni certifica que IAM los haya denegado.
+También se necesita conectividad de red hacia Oracle y OCI; un perfil válido
+no sustituye VPN, reglas de firewall o una ruta hacia un endpoint privado.

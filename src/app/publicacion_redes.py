@@ -1,5 +1,8 @@
 """Preparación de contenido para abrir redes sin publicar ni conectar cuentas."""
 
+import base64
+from functools import lru_cache
+from pathlib import Path
 import re
 from urllib.parse import urlencode, urlsplit
 
@@ -82,6 +85,24 @@ ESTILO_ACCIONES = """
 """
 
 
+@lru_cache(maxsize=1)
+def _estilo_logos() -> str:
+    reglas = []
+    for plataforma in REDES:
+        svg = (Path(__file__).parent / "assets" / "redes" / f"{plataforma}.svg").read_bytes()
+        imagen = "data:image/svg+xml;base64," + base64.b64encode(svg).decode("ascii")
+        reglas.append(
+            f'[class*="_acciones_publicacion_logo_{plataforma}"] '
+            '[data-testid="stLinkButton"] a::before {'
+            'content: ""; display: inline-block; width: 1.1rem; height: 1.1rem; '
+            'flex-shrink: 0; margin-inline-end: 0.45rem; background-color: currentColor; '
+            f'-webkit-mask: url("{imagen}") center / contain no-repeat; '
+            f'mask: url("{imagen}") center / contain no-repeat;'
+            '}'
+        )
+    return "<style>" + "\n".join(reglas) + "</style>"
+
+
 def validar_url(valor: str, *, servidor: bool = False) -> str:
     valor = valor.strip()
     mensaje = (
@@ -132,8 +153,9 @@ def enlace_publicacion(
 
 
 def render(publicacion: dict, *, clave: str = "publicacion") -> None:
-    st.markdown(ESTILO_ACCIONES, unsafe_allow_html=True)
-    with st.container(key=f"{clave}_acciones_publicacion"):
+    texto_publicacion(publicacion)
+    st.markdown(ESTILO_ACCIONES + _estilo_logos(), unsafe_allow_html=True)
+    with st.container(key=f"{clave}_acciones_publicacion_logo_{publicacion['plataforma']}"):
         _render_acciones(publicacion, clave=clave)
 
 
@@ -187,7 +209,6 @@ def _render_acciones(publicacion: dict, *, clave: str) -> None:
                 if plataforma in {"whatsapp", "telegram"}
                 else f"Preparar publicación en {nombre}"
             ), url,
-            icon=":material/open_in_new:",
             help="Abre el editor con el texto. Revisa y confirma allí.",
         )
         st.caption(
@@ -199,7 +220,6 @@ def _render_acciones(publicacion: dict, *, clave: str) -> None:
         st.link_button(
             "Compartir enlace en Facebook" if plataforma == "facebook" and enlace
             else f"Abrir {nombre}", url,
-            icon=":material/open_in_new:",
             help="Abre la red social; el texto no se pega automáticamente.",
         )
         instrucciones = {

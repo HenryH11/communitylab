@@ -129,3 +129,33 @@ def test_accesos_inicio_sincronizan_header_y_siguiente_interaccion(monkeypatch, 
         assert app.radio[0].value == "Agente"
         assert app.chat_input
         app.radio[0].set_value("Inicio").run()
+
+
+@pytest.mark.parametrize("error", [
+    "La publicación sigue conteniendo afirmaciones sin respaldo tras la corrección factual.",
+    "La nueva propuesta sigue repitiendo el título o el contenido anterior.",
+])
+def test_borrador_rechazado_muestra_error_sin_acciones_de_publicacion(monkeypatch, error):
+    from src.agentes.conversacion import AgenteConversacional
+    from src.app import publicacion_redes
+
+    monkeypatch.setattr(
+        fuente_agente, "leer_base",
+        Mock(side_effect=fuente_agente.FuenteNoDisponible(fuente_agente.NO_CONFIGURADA)),
+    )
+    monkeypatch.setattr(AgenteConversacional, "consultar", Mock(side_effect=ValueError(error)))
+    publicar = Mock()
+    monkeypatch.setattr(publicacion_redes, "render", publicar)
+    app = _inicio()
+    app.button(key="inicio_nav_agente").click().run()
+    app.toggle(key="modo_verificacion").set_value(True).run()
+    app.chat_input[0].set_value("Otra publicación").run()
+
+    for _ in range(2):
+        assert not app.exception
+        assert error in [aviso.value for aviso in app.warning]
+        assert app.session_state["historial_agente"][-1] == {
+            "role": "assistant", "error": error,
+        }
+        publicar.assert_not_called()
+        app.run()

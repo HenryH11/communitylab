@@ -1,9 +1,8 @@
 """Cliente para persistencia de datos en OCI.
 
 Gestiona la subida de activos de Marketing (objetos) en formato JSON
-hacia OCI Object Storage. La autenticación en OCI IAM se realiza a
-través de Instance Principals. Este módulo expone funciones silenciosas
-al orquestador del workflow.
+hacia OCI Object Storage. La autenticación usa Instance Principals o un perfil
+local seleccionado explícitamente. Los permisos efectivos dependen de OCI IAM.
 """
 
 import json
@@ -13,8 +12,8 @@ from functools import lru_cache
 from collections.abc import Mapping
 from typing import Any
 
-from oci.auth.signers import InstancePrincipalsSecurityTokenSigner
 from oci.object_storage import ObjectStorageClient
+from src.config.autenticacion_oci import configuracion_cliente
 
 
 BUCKET_PREDETERMINADO = "bkt-communitylab-marketing"
@@ -44,13 +43,10 @@ def nombre_objeto_activo(identificador: str, ruta: str, periodo: str) -> str:
 def obtener_cliente() -> tuple[ObjectStorageClient, str]:
     """Inicializa y almacena en caché el cliente y el namespace de OCI.
 
-    Consulta el servicio IMDSv2 para obtener el firmante mediante
-    Instance Principals y resuelve el namespace de forma dinámica. La
-    caché en memoria garantiza que la negociación se ejecute por única
-    vez para cada ejecución del programa.
+    Selecciona la identidad mediante OCI_AUTH_MODE y resuelve el namespace
+    de forma dinámica. La caché evita repetir la inicialización.
     """
-    signer = InstancePrincipalsSecurityTokenSigner()
-    cliente = ObjectStorageClient(config={}, signer=signer)
+    cliente = ObjectStorageClient(**configuracion_cliente())
     respuesta = cliente.get_namespace()
     if respuesta is None:
         raise RuntimeError("OCI no devolvió el namespace de Object Storage")

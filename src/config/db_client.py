@@ -1,9 +1,8 @@
 """Cliente de solo lectura para consultas en Oracle Autonomous Database.
 
 Gestiona la conexión TLS Thin hacia la base de datos INSUMOS para la
-recuperación del Conjunto Consultable. Para la autenticación en OCI IAM
-se obtienen credenciales desde OCI Vault y se realiza mediante Instance
-Principals.
+recuperación del Conjunto Consultable. Obtiene la contraseña desde OCI Vault
+usando Instance Principals o un perfil local seleccionado explícitamente.
 """
 
 import base64
@@ -12,9 +11,9 @@ import os
 import re
 from typing import Any
 
-from oci.auth.signers import InstancePrincipalsSecurityTokenSigner
 from oci.secrets import SecretsClient
 import oracledb
+from src.config.autenticacion_oci import configuracion_cliente
 
 USUARIO_PREDETERMINADO = "ro_query_communitylab"
 VERSION_CONJUNTO = "1.1"
@@ -49,12 +48,10 @@ ORDER BY d.id ASC
 def obtener_cliente_secretos() -> SecretsClient:
     """Inicializa y almacena en caché el cliente de secretos de OCI.
 
-    Consulta el servicio IMDSv2 para obtener el firmante mediante
-    Instance Principals. La caché en memoria garantiza que la
-    negociación se realice una única vez por ejecución del programa.
+    La identidad se selecciona con OCI_AUTH_MODE. La caché evita repetir
+    la inicialización por ejecución del programa.
     """
-    signer = InstancePrincipalsSecurityTokenSigner()
-    return SecretsClient(config={}, signer=signer)
+    return SecretsClient(**configuracion_cliente())
 
 
 def _descargar_secreto(cliente: SecretsClient, ocid_secreto: str) -> str:

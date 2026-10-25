@@ -1066,6 +1066,45 @@ def test_fallo_del_verificador_no_publica_y_estricto_no_lo_invoca():
     assert verificar.call_count == 1
 
 
+@pytest.mark.parametrize("defecto", ["copia", "repeticion"])
+def test_correccion_factual_no_reintroduce_copia_ni_borrador_anterior(defecto):
+    fuente = (
+        "En el taller aprendí a limpiar datos con Python. Antes revisaba cada "
+        "fila a mano y ahora uso un script para encontrar valores faltantes."
+    )
+    anterior = {
+        "plataforma": "instagram", "titulo": "Aprendizaje con Python",
+        "contenido": "Una persona relata su experiencia con un script.",
+        "hashtags": ["#Python", "#Datos", "#Comunidad"],
+    }
+    nuevo = {**anterior, "titulo": "Detectar lo que falta", "contenido": "Un script para explorar datos."}
+    corregido = {**nuevo, "contenido": fuente} if defecto == "copia" else anterior
+    generar = Mock(side_effect=[
+        {"respuesta": "Lista", "citas": ["ficticio"], "borrador": candidato}
+        for candidato in (anterior, nuevo, corregido)
+    ])
+    verificar = Mock(return_value={
+        "resumen": "Revisar", "afirmaciones": [
+            {"afirmacion": "Sin respaldo", "respaldada": False, "citas": []},
+        ],
+    })
+    planes = iter([
+        PlanConsulta(intencion="borrador", plataforma="instagram"),
+        PlanConsulta(intencion="borrador", plataforma="instagram", nueva_version=True),
+    ])
+    agente = AgenteConversacional(
+        [{"id": "ficticio", "texto": fuente}],
+        generador=generar, verificador=verificar, interprete=lambda **_: next(planes),
+    )
+    agente.consultar("Una publicación")
+    historial = agente.historial
+    with pytest.raises(ValueError, match="copiando|repitiendo"):
+        agente.consultar("Otra propuesta", modo_verificacion="verificacion_automatica")
+    assert generar.call_count == 3
+    assert verificar.call_count == 1
+    assert agente.historial == historial
+
+
 def test_mejores_comentarios_son_positivos_ordenados_y_con_cantidad():
     recibido = {}
 

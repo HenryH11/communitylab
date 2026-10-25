@@ -141,6 +141,7 @@ def test_seguimiento_editorial_real_no_repite_el_menu(consulta):
     assert plan.intencion == "borrador"
     assert plan.plataforma == "instagram"
     assert [t.casefold() for t in plan.terminos] == ["python"]
+    assert plan.nueva_version == (consulta != "más cercano")
 
 
 def test_redaccion_real_aporta_otro_enfoque_sin_pegar_el_testimonio():
@@ -165,3 +166,80 @@ def test_redaccion_real_aporta_otro_enfoque_sin_pegar_el_testimonio():
         assert texto.casefold() not in salida["borrador"]["contenido"].casefold()
     assert primera["borrador"]["contenido"] != segunda["borrador"]["contenido"]
     assert primera["borrador"]["titulo"] != segunda["borrador"]["titulo"]
+
+
+@pytest.mark.parametrize(
+    "textos",
+    [
+        [
+            "En el taller aprendí a detectar valores faltantes con un script de Python.",
+            "Con Python identifiqué filas duplicadas en mi archivo de gastos.",
+        ],
+        [
+            "La explicación de Python fue rápida. Necesito otro ejemplo de valores faltantes.",
+        ],
+    ],
+    ids=["aprendizajes-sin-beneficios-medidos", "dificultad-sin-exito"],
+)
+def test_redaccion_editorial_real_conserva_hechos_y_atribuciones(textos):
+    datos = [
+        {
+            "id": f"editorial-{i}", "autor": f"Persona ficticia {i}",
+            "texto": texto, "tema_principal": "Python",
+            "sentimiento": "positivo" if len(textos) > 1 else "negativo",
+            "tipo_detectado": "testimonio",
+        }
+        for i, texto in enumerate(textos, start=1)
+    ]
+    salida = AgenteConversacional(datos).consultar(
+        "Prepara una publicación sobria para Instagram sobre estos mensajes de Python. "
+        "Dale una apertura propia y mantén la atribución de cada experiencia.",
+        modo_verificacion="verificacion_automatica",
+        modelo_respuesta="super",
+    )
+    assert salida["modo"] == "borrador"
+    assert salida["borrador"]["plataforma"] == "instagram"
+    assert set(salida["citas"]) == {dato["id"] for dato in datos}
+    assert salida["verificacion"]["estado"] == "verificado", {
+        "borrador": salida["borrador"], "verificacion": salida["verificacion"],
+    }
+    afirmaciones = salida["verificacion"]["afirmaciones"]
+    assert afirmaciones
+    for afirmacion in afirmaciones:
+        assert afirmacion["respaldada"]
+        assert afirmacion["citas"]
+        assert set(afirmacion["citas"]) <= set(salida["citas"])
+
+
+@pytest.mark.parametrize("inventar_resultados", [False, True], ids=["invitacion", "beneficios-inventados"])
+def test_verificacion_editorial_real_no_confunde_invitacion_con_beneficio(inventar_resultados):
+    contenido = (
+        "Marta cuenta que identificó filas duplicadas con Python. "
+        "Si te ocurre algo similar, cuéntanos qué parte te gustaría explorar."
+    )
+    if inventar_resultados:
+        contenido += " Ahora ahorra dos horas al día. Ya adaptamos las clases."
+    resultado = AgenteConversacional([])._verificar(
+        borrador={
+            "plataforma": "instagram", "titulo": "Marta identifica duplicados",
+            "contenido": contenido, "hashtags": ["#Python", "#Datos", "#Aprendizaje"],
+        },
+        evidencia=[{
+            "id": "verificacion-editorial", "autor": "Marta",
+            "texto": "Con Python identifiqué filas duplicadas en mi archivo.",
+        }],
+    )
+    assert resultado.afirmaciones
+    if inventar_resultados:
+        sin_respaldo = " ".join(
+            afirmacion.afirmacion.casefold()
+            for afirmacion in resultado.afirmaciones if not afirmacion.respaldada
+        )
+        assert "horas" in sin_respaldo, resultado
+        assert "clases" in sin_respaldo, resultado
+    else:
+        assert all(afirmacion.respaldada for afirmacion in resultado.afirmaciones), resultado
+        assert all(
+            afirmacion.citas == ["verificacion-editorial"]
+            for afirmacion in resultado.afirmaciones
+        )

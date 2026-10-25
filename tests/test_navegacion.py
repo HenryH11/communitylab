@@ -53,7 +53,7 @@ def ir_a(app, pestana):
 
 def test_navegacion_interna_conserva_datos_sin_resultado_separado():
     app = crear_app()
-    assert tuple(app.radio(key=CLAVE_NAVEGACION).options) == PESTANAS_INTERNAS
+    assert tuple(app.radio[0].options) == PESTANAS_INTERNAS
 
 
 def test_cambiar_de_pestana_conserva_lote_y_aprobaciones():

@@ -1,5 +1,6 @@
 from pathlib import Path
 from unittest.mock import Mock
+import pytest
 
 from streamlit.testing.v1 import AppTest
 
@@ -29,7 +30,7 @@ def test_inicio_muestra_recorrido_ejemplos_y_footer_sin_consultar_base(monkeypat
     ):
         assert texto in html
     assert [e.label for e in app.expander] == ["Contacto", "Sobre tus datos"]
-    assert "Datos" not in app.radio(key="navegacion_principal").options
+    assert "Datos" not in app.radio[0].options
     assert "catálogo de nueve" not in html
     assert "Tres formas de empezar" not in html
     assert app.button(key="inicio_catalogo").label == "Explorar el catálogo ↗"
@@ -42,7 +43,7 @@ def test_inicio_navega_a_ayuda_sin_perder_estado():
     app.button(key="inicio_ayuda").click().run()
 
     assert not app.exception
-    assert app.radio(key="navegacion_principal").value == "Ayuda"
+    assert app.radio[0].value == "Ayuda"
     assert app.session_state["archivos_usuario"] == {
         "ejemplo.txt": {"texto": "prueba"}
     }
@@ -57,7 +58,9 @@ def test_inicio_abre_agente_con_navegacion_real(monkeypatch):
     app.button(key="inicio_nav_agente").click().run()
 
     assert not app.exception
-    assert app.radio(key="navegacion_principal").value == "Agente"
+    assert app.radio[0].value == "Agente"
+    assert app.session_state["navegacion_principal"] == "Agente"
+    assert app.radio[0].key == f"selector_navegacion_{app.session_state['navegacion_revision']}"
     assert app.chat_input
     textos = " ".join(elemento.value for elemento in app.markdown)
     assert "Bienvenido. ¿Qué te gustaría descubrir hoy?" in textos
@@ -79,7 +82,7 @@ def test_inicio_footer_usa_enlaces_discretos_y_portada_con_guia():
         assert app.button(key=f"inicio_footer_{pagina}").proto.type == "tertiary"
     app.button(key="inicio_footer_Ayuda").click().run()
     assert not app.exception
-    assert app.radio(key="navegacion_principal").value == "Ayuda"
+    assert app.radio[0].value == "Ayuda"
 
 
 def test_ajustes_actuales_se_aplican_a_la_siguiente_pregunta(monkeypatch):
@@ -108,3 +111,21 @@ def test_ajustes_actuales_se_aplican_a_la_siguiente_pregunta(monkeypatch):
         "Hola", modo_verificacion="verificacion_automatica",
         temperatura=0.65, top_p=0.9, modelo_respuesta="lightning",
     )
+
+
+@pytest.mark.parametrize("boton", ["inicio_nav_agente", "inicio_abrir_agente", "inicio_footer_Agente"])
+def test_accesos_inicio_sincronizan_header_y_siguiente_interaccion(monkeypatch, boton):
+    monkeypatch.setattr(
+        fuente_agente, "leer_base",
+        Mock(side_effect=fuente_agente.FuenteNoDisponible(fuente_agente.NO_CONFIGURADA)),
+    )
+    app = _inicio()
+    for _ in range(2):
+        app.button(key=boton).click().run()
+        assert not app.exception
+        assert app.radio[0].value == "Agente"
+        assert "navegacion_pendiente" not in app.session_state
+        app.toggle(key="modo_verificacion").set_value(True).run()
+        assert app.radio[0].value == "Agente"
+        assert app.chat_input
+        app.radio[0].set_value("Inicio").run()

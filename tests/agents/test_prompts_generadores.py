@@ -4,7 +4,9 @@ from src.agentes.modelos import (
 )
 from src.agentes.prompts.boletin import prompt_boletin as _prompt_boletin
 from src.agentes.prompts.caso_exito import prompt_caso_exito as _prompt_caso_exito
+from src.agentes.prompts.conversacion import prompt_conversacion
 from src.agentes.prompts.linkedin import prompt_linkedin as _prompt_linkedin
+from src.agentes.prompts.verificacion import prompt_verificacion
 from src.agentes.prompts.analisis import template_analisis as _template_analisis
 from src.agentes.prompts.preguntas_frecuentes import (
     prompt_preguntas_frecuentes as _prompt_preguntas_frecuentes,
@@ -25,6 +27,46 @@ def _contenido_usuario(prompt, **contexto) -> str:
     contenido = mensajes[-1].content
     assert isinstance(contenido, str)
     return contenido
+
+
+def test_conversacion_separa_estilo_editorial_de_beneficios_no_demostrados():
+    contexto = {
+        "consulta": "Otra versión sobria para Instagram",
+        "historial": "Publicación anterior",
+        "resumen": '{"intencion": "borrador", "plataforma": "instagram"}',
+        "evidencia": '[{"id": "real-1", "texto": "Detecté duplicados"}]',
+    }
+    sistema = _contenido_sistema(prompt_conversacion, **contexto)
+    usuario = _contenido_usuario(prompt_conversacion, **contexto)
+
+    assert "no impongas felicitaciones, emojis" in sistema
+    assert "No añadas «hoy» o «esta semana» sin respaldo temporal" in sistema
+    assert "no son evidencia para la respuesta" in sistema
+    assert "no copies nombres, hechos ni frases" in sistema
+    assert "no demuestra por sí" in sistema
+    assert "resultado compartido por otras" in sistema
+    assert "acciones institucionales supuestas" in sistema
+    assert "misma persona" in sistema
+    assert set(prompt_conversacion.input_variables) == set(contexto)
+    for valor in contexto.values():
+        assert valor in usuario
+    assert "Lucía" not in usuario
+
+
+def test_verificacion_distingue_reconocimiento_de_resultados_verificables():
+    contexto = {"borrador": "Gracias por compartirlo", "evidencia": "Testimonio"}
+    sistema = " ".join(_contenido_sistema(prompt_verificacion, **contexto).split())
+    usuario = _contenido_usuario(prompt_verificacion, **contexto)
+
+    assert "la selección sí necesita" in sistema
+    assert "No equivale a contratación" in sistema
+    assert "beneficios factuales" in sistema
+    assert "no los respalda por sí solo" in sistema
+    assert "Una mejora reportada debe conservar su atribución" in sistema
+    assert "una invitación condicional" in sistema
+    assert set(prompt_verificacion.input_variables) == set(contexto)
+    for valor in contexto.values():
+        assert valor in usuario
 
 
 def test_linkedin_incluye_few_shot_y_renderiza_contexto():

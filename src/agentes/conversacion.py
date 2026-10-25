@@ -26,6 +26,7 @@ from src.agentes.observabilidad import config_ejecucion
 from src.agentes.plataformas import PlataformaPublicacion, texto_publicacion
 from src.agentes.prompts.conversacion import prompt_conversacion
 from src.agentes.prompts.verificacion import prompt_verificacion
+from src.datos.metadatos import valor_publico
 
 
 MAX_MENSAJES = 50_000
@@ -230,6 +231,11 @@ def _extraer_mensajes(datos: object) -> list[dict]:
                 "elegible_contenido": elegible,
             }
         )
+        for campo in (
+            "autor", "canal", "origen", "fecha", "sentimiento",
+            "tema_principal", "subtema", "tipo_detectado",
+        ):
+            salida[-1][campo] = valor_publico(salida[-1][campo])
     return salida
 
 
@@ -250,6 +256,7 @@ class AgenteConversacional:
         self._interprete = interprete
         self._historial: list[dict[str, str]] = []
         self._ultimo_plan: PlanConsulta | None = None
+        self._ultimo_borrador: dict | None = None
         self._indexar()
 
     def actualizar_datos(self, datos_procesados: object) -> None:
@@ -425,11 +432,15 @@ class AgenteConversacional:
             borrador_modelo is not None
             and _copia_literal_sin_cita(borrador_modelo.contenido, evidencia)
         )
+        repetido = (
+            plan.nueva_version and borrador_modelo is not None
+            and _repite_borrador(borrador_modelo, self._ultimo_borrador)
+        )
         if (
             filtros.intencion == "borrador"
             and borrador_modelo is not None
             and (
-                copia_literal
+                copia_literal or repetido
                 or (
                     borrador_modelo.plataforma == "x"
                     and len(texto_publicacion(borrador_modelo.model_dump())) > LIMITE_CARACTERES_X
@@ -440,9 +451,18 @@ class AgenteConversacional:
                 "El cuerpo copia un testimonio completo. Reescribe con una "
                 "apertura y una estructura propias, sintetizando sus hechos en "
                 "tercera persona. No pegues el comentario ni añadas afirmaciones "
-                "factuales que no figuren en la evidencia. "
+                "factuales que no figuren en la evidencia. No uses una cita "
+                "literal en esta reescritura: condensa la experiencia en una "
+                "frase breve con vocabulario y orden propios, en lugar de "
+                "reproducir las oraciones de la fuente. "
                 if copia_literal else ""
             )
+            if repetido:
+                correccion += (
+                    "Se pidió otra propuesta, pero repites el título o el cuerpo "
+                    "del último borrador. Cambia ambos, con otra apertura y enfoque, "
+                    "sin cambiar los hechos ni las fuentes. "
+                )
             if borrador_modelo.plataforma == "x":
                 correccion += (
                     f"Reescribe este borrador para X en máximo {LIMITE_CARACTERES_X} "
@@ -459,6 +479,14 @@ class AgenteConversacional:
                 resumen=resumen,
                 evidencia=_evidencia_acotada(evidencia),
                 **muestreo,
+            )
+        if (
+            plan.nueva_version and salida_modelo.borrador is not None
+            and _repite_borrador(salida_modelo.borrador, self._ultimo_borrador)
+        ):
+            raise ValueError(
+                "La nueva propuesta sigue repitiendo el título o el contenido anterior. "
+                "No se guardó esta versión; pide otro enfoque."
             )
         if (
             salida_modelo.borrador is not None
@@ -524,6 +552,36 @@ class AgenteConversacional:
                 resultado_verificacion,
                 {mensaje["id"] for mensaje in evidencia},
             )
+            if verificacion["estado"] != "verificado":
+                correccion_factual = (
+                    f"{consulta}\n\nRevisión factual de la aplicación: corrige o elimina "
+                    "las afirmaciones sin respaldo. No añadas resultados, acciones ni "
+                    "beneficios nuevos. Conserva la plataforma y usa solo estas fuentes. "
+                    "Devuelve una publicación completa, no expliques la revisión.\n"
+                    f"Borrador a corregir: {json.dumps(borrador, ensure_ascii=False)}\n"
+                    f"Observaciones: {json.dumps(verificacion, ensure_ascii=False)}"
+                )
+                corregida = self._generar(
+                    consulta=correccion_factual, filtros=filtros, resumen=resumen,
+                    evidencia=_evidencia_acotada(evidencia), **muestreo,
+                )
+                _validar_correccion(
+                    corregida, filtros, evidencia,
+                    self._ultimo_borrador if plan.nueva_version else None,
+                )
+                assert corregida.borrador is not None
+                borrador = corregida.borrador.model_dump()
+                verificacion = _preparar_verificacion(
+                    self._verificar(borrador=borrador, evidencia=_evidencia_acotada(evidencia)),
+                    ids_evidencia,
+                )
+                if verificacion["estado"] != "verificado":
+                    raise ValueError(
+                        "La publicación sigue conteniendo afirmaciones sin respaldo "
+                        "tras la corrección factual. No se guardó ni habilitó para publicar."
+                    )
+                salida_modelo = corregida
+                respuesta = corregida.respuesta
         salida = {
             "respuesta": respuesta,
             "citas": salida_modelo.citas,
@@ -539,6 +597,8 @@ class AgenteConversacional:
                 grupo.model_dump() for grupo in salida_modelo.grupos_preguntas
             ]
         self._guardar_turno(consulta, respuesta, borrador)
+        if borrador is not None:
+            self._ultimo_borrador = dict(borrador)
         return salida
 
     def _interpretar(self, consulta: str, hoy: date) -> PlanConsulta:
@@ -831,6 +891,38 @@ def _presentar_preguntas(grupos: list[GrupoPregunta], ids_evidencia: set[str]) -
         + "\n\nEste resumen identifica preguntas; no propone respuestas sin contrastarlas "
         "por separado con fuentes."
     )
+
+
+def _repite_borrador(borrador: BorradorMarketing, anterior: dict | None) -> bool:
+    if anterior is None:
+        return False
+    return any(
+        " ".join(_normalizar(getattr(borrador, campo)).split())
+        == " ".join(_normalizar(anterior[campo]).split())
+        for campo in ("titulo", "contenido")
+    )
+
+
+def _validar_correccion(
+    salida: SalidaConversacional,
+    filtros: FiltrosConsulta,
+    evidencia: list[dict],
+    anterior: dict | None,
+) -> None:
+    borrador = salida.borrador
+    if borrador is None:
+        raise ValueError("La corrección factual no produjo una publicación; no se guardó.")
+    if borrador.plataforma != filtros.plataforma:
+        raise ValueError("La plataforma de la corrección no coincide con la solicitud.")
+    ids = {mensaje["id"] for mensaje in evidencia}
+    if not salida.citas or any(cita not in ids for cita in salida.citas):
+        raise ValueError("Las citas de la corrección no corresponden a la evidencia.")
+    if _copia_literal_sin_cita(borrador.contenido, evidencia):
+        raise ValueError("La corrección sigue copiando un testimonio completo.")
+    if borrador.plataforma == "x" and len(texto_publicacion(borrador.model_dump())) > LIMITE_CARACTERES_X:
+        raise ValueError("La corrección para X sigue superando 280 caracteres con hashtags.")
+    if _repite_borrador(borrador, anterior):
+        raise ValueError("La corrección sigue repitiendo el título o el contenido anterior.")
 
 
 def _evidencia_acotada(mensajes: list[dict]) -> list[dict]:

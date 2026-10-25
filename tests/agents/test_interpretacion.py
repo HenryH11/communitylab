@@ -36,6 +36,21 @@ def test_filtros_alternativos_limpian_espacios_y_duplicados():
     assert plan.tipos_detectados == ["pregunta_tecnica", "pregunta_programa"]
 
 
+@pytest.mark.parametrize("intencion", ["consulta", "conversacion", "aclaracion", "fuera_de_alcance"])
+def test_nueva_version_solo_se_admite_en_borradores(intencion):
+    with pytest.raises(ValidationError, match="Una nueva versión"):
+        PlanConsulta.model_validate({
+            "intencion": intencion, "nueva_version": True, "respuesta": "Respuesta",
+        })
+
+
+def test_nueva_version_no_se_activa_para_ediciones_por_defecto():
+    assert not PlanConsulta(intencion="borrador", plataforma="instagram").nueva_version
+    assert PlanConsulta(
+        intencion="borrador", plataforma="instagram", nueva_version=True,
+    ).nueva_version
+
+
 def mensajes():
     return [
         {
@@ -215,7 +230,10 @@ def test_modelo_elegido_solo_se_envia_a_generacion(seleccion):
     }
     verificar = Mock()
     verificar.invoke.return_value = {
-        "afirmaciones": [], "resumen": "Revisión del borrador.",
+        "afirmaciones": [
+            {"afirmacion": "Contenido", "respaldada": True, "citas": ["1"]},
+        ],
+        "resumen": "Revisión del borrador.",
     }
 
     def cadena(proveedor, temperatura=None, top_p=None, modelo_id=None):

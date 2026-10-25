@@ -50,6 +50,7 @@
                 },
                 "autor": {
                     "type": "string",
+                    "description": "Autor real o marca reservada __communitylab_ausente__:autor; la marca no es identidad y se retira del contexto editorial.",
                     "minLength": 1,
                     "pattern": "\\S"
                 },
@@ -59,15 +60,19 @@
                     "pattern": "\\S"
                 },
                 "tipo": {
-                    "type": "string",
+                    "type": [
+                        "string",
+                        "null"
+                    ],
                     "enum": [
+                        null,
                         "testimonio",
                         "pregunta_tecnica",
                         "pregunta_programa",
                         "comentario",
                         "feedback"
                     ],
-                    "description": "Clasificación de origen acordada con DA; pregunta_programa no implica elegibilidad automática para FAQ."
+                    "description": "Clasificación de origen o null si no existe. No importar etiquetas propuestas como clasificación real; null no aporta puntos de tipo."
                 },
                 "texto": {
                     "type": "string",
@@ -75,9 +80,12 @@
                     "minLength": 1
                 },
                 "fecha": {
-                    "type": "string",
+                    "type": [
+                        "string",
+                        "null"
+                    ],
                     "format": "date-time",
-                    "description": "Fecha original provista por la entrada, ISO 8601 con segundos y zona horaria; DA no inventa metadatos."
+                    "description": "Fecha original ISO 8601 con zona o null si es desconocida. Sin fecha no hay puntos de frescura ni coincidencias en filtros temporales."
                 },
                 "idioma": {
                     "type": "string",

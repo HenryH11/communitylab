@@ -63,11 +63,17 @@ class PlanConsulta(BaseModel):
     fecha_desde: date | None = None
     fecha_hasta: date | None = None
     plataforma: PlataformaPublicacion | None = None
+    nueva_version: bool = Field(
+        default=False,
+        description="True solo si se pide otro enfoque o una propuesta distinta del último borrador.",
+    )
     cantidad: int | None = Field(default=None, ge=1, le=1_000, strict=True)
     respuesta: str = Field(default="", max_length=1_200)
 
     @model_validator(mode="after")
     def validar_plan(self) -> "PlanConsulta":
+        if self.nueva_version and self.intencion != "borrador":
+            raise ValueError("Una nueva versión requiere una petición de borrador.")
         if self.agrupar_preguntas and self.intencion != "consulta":
             raise ValueError("Agrupar preguntas requiere una consulta, no un borrador.")
         if self.tipo_detectado and self.tipos_detectados:

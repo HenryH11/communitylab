@@ -52,6 +52,13 @@ un referente claro. Resuelve ese referente y continúa la tarea; no pidas otra
 vez tema, plataforma o intención que ya están claros.
 Para «algo nuevo» tras un post, conserva sus fuentes y destino y encamina a
 borrador: se pide otro enfoque editorial, no inventar nuevos hechos.
+En ese caso marca nueva_version=true, igual que «otra propuesta» o «no lo mismo»
+con un borrador previo. Para un simple cambio de plataforma, longitud o tono,
+o una petición independiente, nueva_version=false. No heredes este indicador
+del plan anterior: describe únicamente la petición actual.
+«Más cercano» solo cambia el tono: nueva_version=false, aunque se haya ofrecido
+otro enfoque. «Dale» acepta lo que se ofreció: true solo si la propuesta aceptada
+era explícitamente otra versión; false si era ajustar tono, longitud o destino.
 No conviertas una conversación social en una pregunta obligatoria sobre datos.
 Para una aclaración, pregunta solo por el dato que impide avanzar. No repitas
 «¿Quieres analizar mensajes o redactar un post?» ni encadenes la misma pregunta.
@@ -169,7 +176,39 @@ En estos modos tipos_detectados queda vacío.
             "intencion": "borrador", "terminos": ["Python"], "sentimiento": None,
             "tipo_detectado": None, "tipos_detectados": [], "canal": None,
             "fecha_desde": None, "fecha_hasta": None, "plataforma": "instagram",
-            "cantidad": None, "respuesta": "",
+            "cantidad": None, "respuesta": "", "nueva_version": True,
+        })),
+        HumanMessage(content=(
+            "Historial: usuario «Un post para Instagram sobre Python»; "
+            "asistente entrega el post y ofrece otro enfoque más cercano.\n"
+            "Petición: más cercano"
+        )),
+        AIMessage(content=json.dumps({
+            "intencion": "borrador", "terminos": ["Python"], "sentimiento": None,
+            "tipo_detectado": None, "tipos_detectados": [], "canal": None,
+            "fecha_desde": None, "fecha_hasta": None, "plataforma": "instagram",
+            "cantidad": None, "respuesta": "", "nueva_version": False,
+        })),
+        HumanMessage(content=(
+            "Historial: usuario pide un post de Instagram sobre Python; "
+            "asistente entrega el post y ofrece «Puedo reformularlo con un "
+            "ángulo distinto».\nPetición: dale"
+        )),
+        AIMessage(content=json.dumps({
+            "intencion": "borrador", "terminos": ["Python"], "sentimiento": None,
+            "tipo_detectado": None, "tipos_detectados": [], "canal": None,
+            "fecha_desde": None, "fecha_hasta": None, "plataforma": "instagram",
+            "cantidad": None, "respuesta": "", "nueva_version": True,
+        })),
+        HumanMessage(content=(
+            "Historial: usuario pide un post de Instagram sobre Python; "
+            "asistente entrega el post y ofrece «Puedo acortarlo».\nPetición: dale"
+        )),
+        AIMessage(content=json.dumps({
+            "intencion": "borrador", "terminos": ["Python"], "sentimiento": None,
+            "tipo_detectado": None, "tipos_detectados": [], "canal": None,
+            "fecha_desde": None, "fecha_hasta": None, "plataforma": "instagram",
+            "cantidad": None, "respuesta": "", "nueva_version": False,
         })),
         HumanMessage(content=(
             "Historial: usuario «hazlo como ese»; asistente «¿Qué texto quieres "

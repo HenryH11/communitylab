@@ -362,8 +362,8 @@ def test_ui_controles_compactos_conservan_valores_y_archivos(monkeypatch):
     assert not app.exception
     assert app.session_state["archivos_usuario"] == {}
     assert app.selectbox(key="agente_modelo").value == "lightning"
-    app.radio(key="navegacion_principal").set_value("Inicio").run()
-    app.radio(key="navegacion_principal").set_value("Agente").run()
+    app.radio[0].set_value("Inicio").run()
+    app.radio[0].set_value("Agente").run()
     assert not app.exception
     assert app.selectbox(key="agente_modelo").value == "lightning"
     assert app.number_input(key="agente_temperatura").value == 0.65

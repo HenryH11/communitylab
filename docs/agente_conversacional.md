@@ -28,9 +28,11 @@ reemplaza el procesamiento por lotes de LangGraph ni publica en redes sociales.
    estructurados.
 7. El usuario de la sesión elige el modo para cada consulta de borrador:
    `prompt_estricto` no ejecuta una revisión separada;
-   `verificacion_automatica` agrega una llamada que revisa afirmaciones
-   factuales y devuelve el resumen,
-   respaldo e IDs de fuente para mostrarlos en la interfaz.
+   `verificacion_automatica` revisa afirmaciones factuales y devuelve el resumen,
+   respaldo e IDs de fuente para mostrarlos en la interfaz. Si hay afirmaciones
+   sin respaldo, intenta una única corrección con la misma evidencia y verifica
+   de nuevo. Si sigue sin respaldo, faltan afirmaciones verificables o las citas
+   no son válidas, lanza un error sin guardar ni habilitar ese borrador.
 
 Cada turno requiere una llamada de interpretación. Las consultas sin
 coincidencias no llaman al generador, y las interacciones de conversación,
@@ -83,6 +85,66 @@ globales ni el historial. El intérprete y el verificador siguen sus propias
 configuraciones. Se conserva el respaldo operativo a Gemini. Omitir el
 parámetro mantiene el proveedor y enrutamiento configurados (por ejemplo, CLI).
 Ultra queda fuera del selector hasta validarlo con el flujo actual.
+
+## Criterio editorial de las publicaciones
+
+El agente en vivo usa `src/agentes/prompts/conversacion.py`; el generador
+especializado de LinkedIn conserva su voz institucional sobria por separado.
+Una versión nueva puede cambiar el ángulo, la apertura y el cierre, no los
+hechos ni la atribución de cada experiencia. Los ejemplos editoriales del
+prompt son ficticios y no forman parte de las fuentes recuperadas.
+
+El plan marca `nueva_version` solo ante una petición explícita de otra propuesta
+o enfoque. Si su título o cuerpo repite el último borrador de la sesión
+(ignorando mayúsculas, tildes y espacios), se solicita una reescritura. Si
+persiste la repetición, se rechaza sin guardar el turno. Los cambios de tono,
+longitud o plataforma no activan esta restricción. Es un control de repetición
+textual, no una garantía de diversidad semántica.
+
+El tono solicitado decide si encajan agradecimientos, reconocimiento o una
+invitación a conversar: no se imponen felicitaciones, emojis ni una pregunta
+final en cada publicación. Una dificultad no se presenta como un éxito.
+Tampoco se afirma que el equipo ya esté adaptando clases o preparando contenidos
+en respuesta a una solicitud sin evidencia de ese trabajo; una sugerencia no
+se convierte en un anuncio ni un compromiso institucional.
+Usar un script o detectar duplicados no demuestra por sí solo ahorro de tiempo,
+productividad ni calidad. Una mejora reportada conserva su atribución y no se
+convierte en un resultado medido o compartido por otras personas.
+El modo Verificado revisa también esos beneficios y los hechos implícitos en
+reconocimientos; no trata una felicitación como prueba del logro mencionado.
+Estas instrucciones reducen riesgos, pero no sustituyen la revisión editorial
+ni garantizan que cada publicación sea correcta.
+
+### Metadatos ausentes
+
+La preparación de casos editoriales usa marcas reservadas
+`__communitylab_ausente__:autor` (y equivalentes para canal, origen e idioma).
+No son nombres reales: se retiran de los metadatos antes del análisis, de la
+generación y del índice conversacional, y no se muestran como autores en las
+fuentes del chat. Un alias real como `user1` se conserva; no se intenta adivinar
+si un nombre real parece un placeholder. El texto del mensaje y los IDs de
+trazabilidad no se sustituyen.
+
+Una fecha desconocida se mantiene como `null`, sin puntos de frescura ni
+coincidencias en filtros temporales. El contrato intermedio admite ahora
+`fecha: null` y `tipo: null`; no admite fechas falsas o cadenas como
+«desconocida». Un tipo ausente aporta cero puntos de tipo y se registra en las
+advertencias; no se reemplaza por `tipo_propuesto`.
+
+Preparación local, sin llamadas de análisis ni escritura en Oracle/OCI:
+
+```powershell
+python -m src.datos.casos_editoriales --entrada src\datos\casos_conciliados_propuestos.json --salida salida\datos\casos_editoriales --fecha-referencia 2026-10-24T00:00:00Z
+```
+
+La salida debe ser una carpeta nueva. Contiene entrada adaptada, paquete y plan
+para análisis, no un resultado de capa 2. La fecha de referencia solo sirve para
+puntuar fechas reales, no se asigna a mensajes sin fecha. Las etiquetas
+propuestas se mantienen fuera de esa entrada y siguen en el archivo original.
+La fuente de 600 casos sintéticos forma parte del repositorio en
+`src/datos/casos_conciliados_propuestos.json`. El paquete derivado se genera
+dentro de `salida/datos/casos_editoriales`, excluido de Git como las demás
+salidas reproducibles; no depende de Descargas ni de archivos de sesión.
 
 ## Uso desde la terminal
 

@@ -1,4 +1,5 @@
 import json
+from src.datos.metadatos import valor_publico
 
 from src.agentes.cadenas import cadena_analisis, cadena_analisis_lote
 from src.agentes.modelos import AnalisisLote, AnalisisMensaje
@@ -17,9 +18,9 @@ from src.agentes.configuracion_ia import (
 
 def _entrada_analisis(estado: EstadoAgente) -> dict:
     return {
-        "origen": estado.get("origen", ""),
-        "canal": estado.get("canal", ""),
-        "idioma": estado.get("idioma", "es"),
+        "origen": valor_publico(estado.get("origen", "")),
+        "canal": valor_publico(estado.get("canal", "")),
+        "idioma": valor_publico(estado.get("idioma", "es")),
         "texto": estado["texto"],
     }
 

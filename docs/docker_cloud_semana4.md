@@ -92,6 +92,51 @@ en una VM no bastan para afirmar ese aislamiento.
 incluso cuando las credenciales están en subcarpetas. No reemplaza una revisión
 de secretos: no colocar credenciales en el código ni en archivos de configuración.
 
+### Manifiestos separados para dos VM
+
+Se incorporan `docker-compose.frontend.yml` y `docker-compose.backend.yml`
+como alternativas independientes. El `docker-compose.yml` local se conserva
+sin cambios. No combinar estos manifiestos con varios `-f` ni iniciar el
+Compose local en esas VM: los servicios tienen los mismos nombres y no son
+overrides para un despliegue conjunto.
+
+En la VM de Marketing:
+
+```powershell
+docker compose -f docker-compose.frontend.yml config --quiet
+docker compose -f docker-compose.frontend.yml up --build -d
+```
+
+Conservar sus claves de generación, `DB_READ_*` y bucket de lectura. Este
+manifiesto mantiene los ajustes actuales del agente, no recibe credenciales
+de escritura ni `INGESTOR_URL` y no requiere al ingestor para iniciar.
+Agregar una URL no conecta ninguna pantalla: actualmente la UI interna tampoco
+invoca `/sincronizar`.
+
+En la VM de ingesta, definir `INGESTOR_BIND_IP` con su IP privada real,
+`DB_DSN` y `DB_PASSWORD_SECRET_OCID` en su entorno propio:
+
+```powershell
+docker compose -f docker-compose.backend.yml config --quiet
+docker compose -f docker-compose.backend.yml up --build -d
+```
+
+El backend publica `${INGESTOR_BIND_IP}:8000:8000`, no `8000:8000`. Compose
+rechaza una IP vacía, pero **no valida que sea privada**: Cloud debe verificar
+que corresponde a una interfaz privada de la VM, no a `0.0.0.0` ni una IP
+pública. La comprobación de salud de la imagen permanece local al contenedor.
+No imprimir `config` completo en logs compartidos: puede mostrar valores
+interpolados del entorno.
+
+Estos archivos no crean VM, reglas de red, IAM ni autenticación del endpoint.
+Antes de iniciar el backend, Cloud debe restringir TCP 8000 al ejecutor interno
+autorizado mediante NSG/listas de seguridad y firewall, **excluir Marketing**
+y acordar autenticación del llamador. No abrirlo a toda la VCN por ser privada.
+Las VM deben usar identidades distintas: Marketing solo lee su secreto y
+catálogo, sin acceso al secreto escritor. Verificar desde Marketing la
+denegación de carga y de acceso a ese secreto. Dos VM por sí solas no demuestran
+que esas políticas estén bien aplicadas.
+
 ## Validación y límites
 
 Validación local realizada en AMD64:

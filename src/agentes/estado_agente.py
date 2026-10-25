@@ -22,7 +22,7 @@ class EstadoAgente(TypedDict, total=False):
     texto: Required[str]
 
     # Clasificación proveniente de Datos
-    tipo_original: str
+    tipo_original: str | None
 
     # Relevancia calculada por el equipo de Datos
     score_relevancia: float | None

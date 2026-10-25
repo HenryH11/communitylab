@@ -28,6 +28,11 @@ central, la navegación y los controles conservan su alineación. Las inclinacio
 solo se aplican por encima de 800 px y sin preferencia de movimiento reducido;
 usan la propiedad `rotate` para no interferir con las transiciones de aparición.
 
+El Agente fija explícitamente su entrada en la zona inferior de Streamlit,
+incluso cuando la vista se renderiza dentro del contenedor de navegación.
+El historial permanece encima y el aviso de cuota de Analíticas usa contraste
+claro sobre el fondo oscuro. La posición se comprueba al entrar desde Inicio.
+
 ### Separación de Marketing y equipo técnico
 
 - **Marketing:** `streamlit run src/app/app.py`. No incluye Datos ni la curaduría

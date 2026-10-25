@@ -62,6 +62,8 @@ def test_inicio_abre_agente_con_navegacion_real(monkeypatch):
     assert app.session_state["navegacion_principal"] == "Agente"
     assert app.radio[0].key == f"selector_navegacion_{app.session_state['navegacion_revision']}"
     assert app.chat_input
+    assert len(app.chat_input) == 1
+    assert not app.main.chat_input
     textos = " ".join(elemento.value for elemento in app.markdown)
     assert "Bienvenido. ¿Qué te gustaría descubrir hoy?" in textos
     assert "El archivo aún está vacío" not in textos

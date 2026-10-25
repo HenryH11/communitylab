@@ -463,6 +463,24 @@ texto libre. El mecanismo oficial de Telegram necesita un enlace junto al texto;
 sin enlace se ofrece copiar el mensaje y abrir Telegram. LinkedIn e Instagram
 conservan copia manual. Ninguna acción publica automáticamente ni conecta cuentas.
 
+### Pendientes: integración oficial y usuarios
+
+- Registrar aplicaciones en las redes elegidas y tramitar los permisos,
+  aprobaciones y límites de sus APIs. Evaluar costes antes de activarlas:
+  no se promete que la publicación mediante API sea gratuita.
+- Implementar la autorización del titular de cada cuenta, con OAuth cuando
+  corresponda, almacenamiento seguro de tokens, renovación, revocación y
+  desconexión de cuentas. Nunca pedir tokens en el chat ni guardarlos en Git.
+- Crear registro o invitaciones, inicio y cierre de sesión, recuperación de
+  acceso, roles y permisos por equipo, y administración de usuarios.
+- Asociar las cuentas sociales a usuarios autorizados, registrar acciones y
+  exigir revisión y confirmación antes de publicar.
+
+Todo lo anterior está pendiente, no implementado. La sesión del navegador no
+es una cuenta de usuario ni proporciona autenticación. Las acciones actuales
+de copiar y abrir redes se mantienen sin solicitar permisos ni tokens.
+La página de Ayuda presenta estas limitaciones como pendientes buscables.
+
 TikTok y YouTube quedan pendientes del trabajo de integración multimedia:
 no son destinos del contrato de texto y el intérprete debe explicar el límite
 sin prometer generación, subida ni publicación de imágenes o videos.
@@ -470,7 +488,7 @@ sin prometer generación, subida ni publicación de imágenes o videos.
 ### Reutilización para Plantillas diarias
 
 `python -m scripts.generar_plantillas_diarias` ejecuta nueve peticiones
-predefinidas a partir de las 08:00 de Bogotá. Usa una captura de la base y
+predefinidas a partir de las 13:00 UTC. Usa una captura de la base y
 una conversación nueva por plantilla, sin datos adjuntos ni historial de
 usuarios. Los posts pasan por verificación; análisis y newsletter se guardan
 como texto con citas. El catálogo se almacena automáticamente para revisión

@@ -56,9 +56,6 @@ ESTILO = """
         color: var(--blanco);
     }
     .st-key-gotico_lienzo strong { font-weight: 700; }
-    .st-key-agente_acceso_analiticas [data-testid="stCaptionContainer"] p {
-        color: var(--hueso);
-    }
 
     .gotico-cabecera {
         text-align: center;

@@ -30,8 +30,8 @@ usan la propiedad `rotate` para no interferir con las transiciones de aparición
 
 El Agente fija explícitamente su entrada en la zona inferior de Streamlit,
 incluso cuando la vista se renderiza dentro del contenedor de navegación.
-El historial permanece encima y el aviso de cuota de Analíticas usa contraste
-claro sobre el fondo oscuro. La posición se comprueba al entrar desde Inicio.
+El historial permanece encima. Análisis se abre desde la navegación principal,
+sin un acceso duplicado en el chat. La posición se comprueba al entrar desde Inicio.
 
 ### Separación de Marketing y equipo técnico
 

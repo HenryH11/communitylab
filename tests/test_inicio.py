@@ -64,6 +64,8 @@ def test_inicio_abre_agente_con_navegacion_real(monkeypatch):
     assert app.chat_input
     assert len(app.chat_input) == 1
     assert not app.main.chat_input
+    assert not any(b.label == "Explorar Analíticas sin llamadas IA" for b in app.button)
+    assert "Análisis" in app.radio[0].options
     textos = " ".join(elemento.value for elemento in app.markdown)
     assert "Bienvenido. ¿Qué te gustaría descubrir hoy?" in textos
     assert "El archivo aún está vacío" not in textos

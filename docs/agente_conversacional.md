@@ -92,6 +92,19 @@ Los botones de destino muestran el logo local de cada red junto con su nombre;
 el control para copiar conserva el icono de portapapeles. Abrir una red no
 publica automaticamente ni conecta cuentas.
 
+### Accesibilidad de la interfaz
+
+La navegación conserva controles nativos de teclado y un foco visible, separado
+de la línea del encabezado. Los controles principales tienen objetivos de al
+menos 44 px y los paneles de información conservan nombres accesibles. El agente
+expone un encabezado para lectores de pantalla y oculta adornos decorativos.
+Se respetan movimiento reducido y colores forzados del sistema. Las gráficas
+de Análisis ofrecen los mismos conteos en texto, con la misma exclusión de spam
+para sentimiento; no es necesario escuchar audio ni distinguir colores para
+consultarlos. Ayuda incluye instrucciones de teclado. Estas mejoras no
+constituyen una certificación WCAG ni sustituyen pruebas con tecnologías de
+asistencia y personas usuarias.
+
 El agente en vivo usa `src/agentes/prompts/conversacion.py`; el generador
 especializado de LinkedIn conserva su voz institucional sobria por separado.
 Una versión nueva puede cambiar el ángulo, la apertura y el cierre, no los
@@ -106,6 +119,10 @@ longitud o plataforma no activan esta restricción. Es un control de repetición
 textual, no una garantía de diversidad semántica.
 Aceptar con «dale» una oferta explícita de otro enfoque también pide una nueva
 versión; «más cercano» por sí solo solicita un cambio de tono.
+La generación de otra propuesta recibe el último borrador completo en JSON
+como referencia que no debe repetir, sin depender del historial truncado.
+El único reintento incluye también el candidato rechazado, con título y cuerpo.
+Estos controles no modifican el texto original guardado como petición del usuario.
 
 El tono solicitado decide si encajan agradecimientos, reconocimiento o una
 invitación a conversar: no se imponen felicitaciones, emojis ni una pregunta
@@ -120,6 +137,44 @@ El modo Verificado revisa también esos beneficios y los hechos implícitos en
 reconocimientos; no trata una felicitación como prueba del logro mencionado.
 Estas instrucciones reducen riesgos, pero no sustituyen la revisión editorial
 ni garantizan que cada publicación sea correcta.
+
+### Detección de spam en capa 2
+
+El analizador de capa 2 distingue quejas y solicitudes de apoyo de captación
+comercial: relatar una convocatoria no significa convocar, y advertir contra
+una estafa no significa promoverla. Se conservan los controles positivos de
+promoción no solicitada y ofertas engañosas, incluso si se presentan como
+ayuda. La evaluación optativa `tests/integracion/prueba_spam_regresion.py`
+comprueba ejemplos originales y variantes, individualmente y por lote.
+Los resultados ya guardados no cambian al modificar estas instrucciones;
+cualquier corrección de las marcas antiguas debe versionarse por separado.
+
+### Tipos y temas: evaluación editorial acotada
+
+El analizador y las descripciones del contrato distinguen pedir información
+existente de proponer una mejora, acceso institucional de configuración técnica,
+y elogios de experiencias con resultado. El tema se determina por el objeto
+central, no por mencionar el curso: una entrevista laboral sigue siendo
+empleabilidad y contactar al mentor sigue siendo mentoria.
+
+La evaluación optativa [prueba_semantica_regresion.py](../tests/integracion/prueba_semantica_regresion.py)
+usa 27 mensajes revisados y ocho controles adicionales. Solo exige campos
+adjudicados: 34 tipos, 21 temas y 35 marcas de no spam por modo. Los nueve
+sentimientos revisados se registran como observaciones, no como criterio de
+aprobación de este ajuste de tipos y temas. No se pasan etiquetas propuestas
+al analizador ni se modifican los 600 resultados históricos.
+
+La última ejecución obtuvo 30/34 tipos y 20/21 temas concordantes por lote;
+individualmente, 31/34 tipos y 20/21 temas. Los 35 casos conservaron la marca
+de no spam en ambos modos; el control adicional de spam mantuvo 40/40 decisiones
+esperadas. **La regresión semántica sigue fallando**: quedan cinco casos por
+lote y cuatro individuales con diferencias. Entre ellos están la confirmación
+de una reserva, el acceso a un bucket, la práctica de entrevistas y relatos de
+experiencias negativas. Se mantienen visibles para revisión, sin corregir
+etiquetas mediante reglas por palabras ni debilitar expectativas para aprobar.
+Esto no estima la precisión de los 600: hay ejemplos cercanos en las
+instrucciones, expectativas parciales, una sola revisión editorial y
+variabilidad del proveedor. No es una evaluación ciega ni una certificación.
 
 ### Metadatos ausentes
 

@@ -247,20 +247,21 @@ Procedimiento para Cloud (desde la raiz del checkout aprobado):
 4. Confirmar con el propietario el uso y cuota de las claves NVIDIA/Gemini.
    Configurar las claves y `DB_READ_*`, `OCI_BUCKET_NAME` e identidad OCI
    exclusivamente en el entorno privado autorizado del ejecutor.
-5. Despues de las 08:00 America/Bogota, ejecutar una primera pasada:
+5. Despues de las 13:00 UTC, ejecutar una primera pasada:
    `python -m scripts.generar_plantillas_diarias`.
    Este comando consume IA y escribe el catalogo; requiere autorizacion.
-   Salida 0: ejecucion sin fallos (antes de las 08:00 no genera).
+   Salida 0: ejecucion sin fallos (antes de las 13:00 UTC no genera).
    Salida 1: error de actualizacion/persistencia; salida 2: catalogo con
    plantillas fallidas. Revisar logs privados, sin publicar claves o textos.
 6. Leer el catalogo desde la identidad de Marketing y comprobar entradas,
    fechas y fallos. Un HTTP 200 de Streamlit o listar el bucket no prueba que
    exista el catalogo. En la web pulsar "Actualizar catalogo": la cache dura
    45 segundos. La lectura no genera contenido ni consume cuota.
-7. Programar el mismo comando a las 13:00 UTC (08:00 Bogota), sin ejecuciones
+7. Programar el mismo comando a las 13:00 UTC, sin ejecuciones
    concurrentes. Reintentar tras corregir errores: se conservan los exitos del
    dia y las versiones anteriores de las plantillas fallidas. La renovacion
    diaria se programa externamente; no hay un scheduler integrado en la web.
+   Fechas de catalogo, agrupacion diaria y avisos de antiguedad usan UTC.
 
 Aceptacion: abrir Analisis en una sesion nueva sin importar archivos, comparar
 los conteos contra Oracle y revisar el aviso de fuente/fecha. Abrir Agente y

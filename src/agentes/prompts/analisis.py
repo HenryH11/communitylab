@@ -727,6 +727,61 @@ y no cumpla mejor la definición de testimonio, pregunta o feedback.
 
 # CASOS DE REFERENCIA
 
+## Resolver mensajes con varias funciones
+
+Determina qué respuesta o acción pide la persona, no solo la emoción o la
+presencia de signos de interrogación:
+- Si pide un dato existente (dónde, cuándo, requisitos, permiso, quién da
+  acceso), es pregunta_programa aunque incluya una queja o entusiasmo.
+- Si propone modificar algo (agregar, corregir, publicar, ampliar, guardar),
+  es feedback, aunque lo formule como «¿podrían...?». Pedir añadir otra ronda
+  no pregunta si ya existe una ronda.
+- Si pregunta cómo implementar, depurar o configurar una solución, es
+  pregunta_tecnica. Preguntar si el curso proporciona un bucket es acceso
+  institucional, no configuración técnica.
+- Una experiencia con un resultado concreto y sin una petición principal de
+  cambio puede ser testimonio, también si el resultado fue negativo.
+  Pero «me encantó» por sí solo no describe un resultado ni transformación.
+- Un fallo descrito para señalar qué debe mejorar es feedback, no comentario
+  genérico. Un elogio sin experiencia con impacto es comentario.
+No conviertas toda primera persona en testimonio, toda queja en feedback ni
+toda pregunta con vocabulario tecnológico en pregunta_tecnica.
+
+Ejemplos de contraste:
+- «Me gustó la práctica. ¿Podrían añadir pistas opcionales?»:
+  feedback; aprendizaje. No hay un resultado personal concreto.
+- «Estoy motivado con el reto. ¿Dónde publican las fechas de las etapas?»:
+  pregunta_programa; programa_hackathon.
+- «Me confunden los avisos. ¿Dónde están los acuerdos del grupo?»:
+  pregunta_programa; programa_hackathon. Se pide localizar información.
+- «La reserva es confusa. ¿Pueden mandar una confirmación con lugar y horario?»:
+  feedback. Se solicita una mejora, no localizar una confirmación existente.
+- «El curso ofrece mentoría para organizar mi estudio?»:
+  pregunta_programa; mentoria.
+- «¿Cómo monto un volumen para mi contenedor?»:
+  pregunta_tecnica; cloud_infraestructura.
+- «¿Está permitido reutilizar la entrega del módulo anterior en este reto?»:
+  pregunta_programa; programa_hackathon.
+- «Probé cámara y navegador para el examen; funcionaron y me quedé tranquilo»:
+  testimonio. Hay una comprobación propia con resultado y efecto expresado.
+
+## Elegir el tema por el objeto de la petición
+
+El tipo NO decide el tema: pregunta_programa puede tener tema certificacion,
+mentoria o empleabilidad. «En el programa» y «en el curso» suelen ser contexto,
+no una razón para elegir programa_hackathon.
+- Requisitos, resultados y acceso a un examen de certificación: certificacion.
+- Solicitar o contactar al mentor: mentoria, no comunidad solo por mencionar
+  un canal. No infieras mentoria de cualquier revisión entre pares.
+- Práctica o simulacro de entrevista laboral: empleabilidad, aunque incluya
+  aprender, practicar o pedir una ronda adicional.
+- Guardado automático de respuestas en el aula: plataforma, no infraestructura
+  solo por mencionar almacenamiento.
+- Fechas de etapas, condiciones de entrega, permisos de reutilizar trabajos o
+  reglas del reto: programa_hackathon, no programacion por mencionar módulos.
+No asignes un tema específico sin evidencia suficiente: conserva la
+independencia de las dimensiones y las definiciones anteriores.
+
 Los siguientes casos sirven para aclarar fronteras semánticas.
 No los copies ni clasifiques mediante palabras clave.
 
@@ -949,6 +1004,21 @@ Antes de responder, comprueba mentalmente:
 7. ¿Estoy distinguiendo una experiencia con impacto concreto de un simple elogio?
 8. ¿La detección de spam considera la intención completa
    y el motivo_spam es consistente con es_spam_detectado?
+
+Antes de devolver el resultado, revisa especialmente estas fronteras:
+- Elogio seguido de una propuesta concreta de mejora: feedback. No basta
+  haber participado para convertirlo en testimonio.
+- Describir que un modelo falla al detectar una clase y expresar frustración
+  es feedback sobre su rendimiento; no es un logro ni un elogio.
+- Solicitar una confirmación que falta o una función nueva es feedback.
+  Preguntar dónde consultar información existente es pregunta_programa.
+- Acceso que proporciona el curso: pregunta_programa. Instrucciones de
+  configuración del recurso: pregunta_tecnica.
+- Entrevista laboral y rondas de práctica de entrevista: empleabilidad.
+  El contexto «en el programa» no desplaza ese objeto concreto.
+- Contactar o solicitar apoyo de un mentor: mentoria. No lo conviertas en
+  empleabilidad sin una petición centrada en trabajo o carrera.
+Aplica estas distinciones por intención, nunca como coincidencias de palabras.
 
 No inventes información y no utilices una dimensión para deducir
 automáticamente otra.

@@ -899,12 +899,14 @@ def test_cadena_de_ediciones_conserva_la_plataforma_x():
 
 def test_nueva_propuesta_repetida_se_reescribe_sin_cambiar_fuentes():
     llamadas = []
+    controles = []
     generar = _generador_borrador(["Primero", "Primero", "Otro enfoque"], llamadas)
     contador = 0
 
     def generador(**kwargs):
         nonlocal contador
         contador += 1
+        controles.append(kwargs["resumen"].get("control_editorial"))
         salida = generar(**kwargs)
         if contador == 3:
             assert salida.borrador is not None
@@ -922,9 +924,19 @@ def test_nueva_propuesta_repetida_se_reescribe_sin_cambiar_fuentes():
     salida = agente.consultar("Otra propuesta")
     assert len(llamadas) == 3
     assert "repites el título o el cuerpo" in llamadas[-1]["consulta"]
+    assert "Versión anterior (JSON)" in llamadas[1]["consulta"]
+    assert "Versión anterior (JSON)" not in llamadas[0]["consulta"]
+    assert '"titulo":' in llamadas[-1]["consulta"]
+    assert "Candidato rechazado (JSON" in llamadas[-1]["consulta"]
     assert llamadas[-1]["ids"] == llamadas[-2]["ids"]
     assert salida["borrador"]["contenido"] == "Otro enfoque"
     assert len(agente.historial) == 4
+    assert agente.historial[-2]["contenido"] == "Otra propuesta"
+    assert controles[0] is None
+    assert controles[1]["version_anterior"]["contenido"] == "Primero"
+    assert "candidato_rechazado" not in controles[1]
+    assert controles[2]["candidato_rechazado"]["contenido"] == "Primero"
+    assert "control_editorial" not in salida["resumen"]
 
 
 @pytest.mark.parametrize("repite", ["titulo", "contenido"])

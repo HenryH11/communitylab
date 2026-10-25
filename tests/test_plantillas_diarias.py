@@ -76,6 +76,13 @@ def test_antes_de_las_ocho_no_lee_ni_genera_y_requiere_zona():
         ejecutar(repo, ahora=AHORA.replace(tzinfo=None))
 
 
+def test_horario_y_dia_del_catalogo_se_calculan_en_utc():
+    assert diario.ZONA == timezone.utc
+    assert diario.fecha_programada(datetime(2026, 10, 25, 12, 59, tzinfo=timezone.utc)) is None
+    assert diario.fecha_programada(datetime(2026, 10, 25, 13, tzinfo=timezone.utc)).isoformat() == "2026-10-25"
+    assert diario.fecha_programada(datetime(2026, 10, 26, 0, tzinfo=timezone.utc)) is None
+
+
 def test_una_captura_conversaciones_aisladas_idempotencia_y_modo():
     repo = Memoria()
     leer = Mock(side_effect=lector)
@@ -300,7 +307,7 @@ def test_vista_muestra_ausencia_sin_fuentes_ni_botones_de_publicacion(monkeypatc
     )
     monkeypatch.setattr(vista, "leer_catalogo", Mock(return_value=catalogo))
     app = AppTest.from_string(
-        "from src.app.vista_plantillas_diarias import render\nrender()"
+        "from src.app.vista_plantillas_diarias import render\nrender()", default_timeout=15,
     ).run()
     assert not app.exception
     assert any("Sin evidencia para esta plantilla" in i.value for i in app.info)

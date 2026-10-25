@@ -20,7 +20,7 @@ def leer_catalogo() -> CatalogoDiario | None:
 def render():
     st.subheader("Contenido del día")
     st.caption(
-        "Renovación diaria prevista: 08:00 · Bogotá. "
+        "Renovación diaria prevista: 13:00 UTC. "
         "Revisa el contenido y confirma la publicación en cada red."
     )
     if st.button("Actualizar catálogo", key="actualizar_catalogo_diario"):
@@ -39,7 +39,7 @@ def render():
         return
     ahora = datetime.now(timezone.utc).astimezone(ZONA)
     st.caption(
-        f"Último intento: {catalogo.intentado_en.astimezone(ZONA):%d/%m/%Y %H:%M} · Bogotá"
+        f"Último intento: {catalogo.intentado_en.astimezone(ZONA):%d/%m/%Y %H:%M} UTC"
     )
     if catalogo.intentado_en.astimezone(ZONA).date() < ahora.date():
         st.warning("El catálogo todavía no se ha actualizado hoy. Comprueba la fecha de cada contenido.")
@@ -56,7 +56,7 @@ def render():
                 st.info("Todavía no hay contenido preparado para esta plantilla.")
                 continue
             fecha = entrada.generado_en.astimezone(ZONA)
-            st.caption(f"Generado el {fecha:%d/%m/%Y a las %H:%M} · Preparado para revisión")
+            st.caption(f"Generado el {fecha:%d/%m/%Y a las %H:%M} UTC · Preparado para revisión")
             if fecha.date() < ahora.date():
                 st.warning(f"Contenido anterior: corresponde al {fecha:%d/%m/%Y}, no a hoy.")
             salida = entrada.salida

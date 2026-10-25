@@ -4,7 +4,6 @@ from datetime import datetime, time, timezone
 from collections.abc import Callable, Mapping
 import logging
 from typing import Literal
-from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -13,8 +12,8 @@ from src.agentes.plataformas import PlataformaPublicacion
 from src.app.fuente_agente import adaptar_conjunto, leer_base
 
 
-ZONA = ZoneInfo("America/Bogota")
-HORA = time(8)
+ZONA = timezone.utc
+HORA = time(13)
 OBJETO = "plantillas/catalogo_actual.json"
 _log = logging.getLogger(__name__)
 

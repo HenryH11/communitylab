@@ -265,5 +265,66 @@ objetos bajo `plantillas/`; no muestra los textos, claves o secretos ni sube
 objetos. Devuelve código 1 si falla cualquiera de los dos accesos. Una lista
 vacía significa que la lectura funcionó, no que exista un catálogo diario.
 No prueba permisos de escritura ni certifica que IAM los haya denegado.
+
+## Activar Analisis y Plantillas en Marketing
+
+Analisis publico lee la misma captura de Oracle que el agente: muestra conteos
+de mensajes, canales, temas, sentimientos y tipos sin invocar IA. No necesita
+un lote procesado en la sesion interna. No muestra metricas de activos o
+elegibilidad, porque el Conjunto Consultable no contiene esos datos.
+La captura se comparte en la sesion y dura una hora; "Actualizar datos" fuerza
+una nueva lectura. Una captura anterior se identifica como desactualizada si
+falla la lectura. Un error sin captura se muestra como error, no como cero.
+La pantalla interna conserva sus metricas del pipeline.
+
+La vista publica permite filtrar por tema, sentimiento, canal y tipo, y buscar
+texto/ID. Los filtros se combinan por interseccion. Resumen muestra porcentajes
+sobre el subconjunto seleccionado con denominador visible; Cruces compara dos
+dimensiones; Fuentes pagina mensajes, permite leer textos completos y descargar
+el subconjunto o el cruce en CSV. No interpreta causalidad ni inventa series
+temporales cuando faltan fechas. Desde Agente hay un acceso directo a esta vista:
+no modifica ni envia el chat o sus adjuntos. Los calculos no llaman modelos;
+el chat en lenguaje natural mantiene sus llamadas y posible consumo de cuota.
+No se afirma que Oracle o la infraestructura sean gratuitos, ni que estas
+clasificaciones sean una evaluacion de calidad del modelo sin etiquetas humanas.
+
+Plantillas publico lee `plantillas/catalogo_actual.json` del bucket. Cargar
+mensajes en Oracle NO genera este objeto. El generador ya existe y no debe
+ejecutarse dentro del servidor publico en respuesta a una visita.
+
+Procedimiento para Cloud (desde la raiz del checkout aprobado):
+
+1. Desplegar la imagen construida con el commit aprobado, registrar el SHA y
+   conservar la imagen anterior para rollback. No copiar archivos sueltos.
+2. Verificar la lectura de Oracle y bucket desde el contenedor de Marketing:
+   `python -m scripts.comprobar_cloud_lectura`. Esto no crea el catalogo.
+3. Acordar una identidad/ejecutor separado con lectura de Oracle, acceso al
+   secreto lector y lectura/escritura del objeto del catalogo. Marketing debe
+   conservar solo lectura de ese objeto y sus permisos de guardado de activos.
+   No reutilizar el secreto escritor de ingesta ni abrirle el puerto 8000.
+4. Confirmar con el propietario el uso y cuota de las claves NVIDIA/Gemini.
+   Configurar las claves y `DB_READ_*`, `OCI_BUCKET_NAME` e identidad OCI
+   exclusivamente en el entorno privado autorizado del ejecutor.
+5. Despues de las 13:00 UTC, ejecutar una primera pasada:
+   `python -m scripts.generar_plantillas_diarias`.
+   Este comando consume IA y escribe el catalogo; requiere autorizacion.
+   Salida 0: ejecucion sin fallos (antes de las 13:00 UTC no genera).
+   Salida 1: error de actualizacion/persistencia; salida 2: catalogo con
+   plantillas fallidas. Revisar logs privados, sin publicar claves o textos.
+6. Leer el catalogo desde la identidad de Marketing y comprobar entradas,
+   fechas y fallos. Un HTTP 200 de Streamlit o listar el bucket no prueba que
+   exista el catalogo. En la web pulsar "Actualizar catalogo": la cache dura
+   45 segundos. La lectura no genera contenido ni consume cuota.
+7. Programar el mismo comando a las 13:00 UTC, sin ejecuciones
+   concurrentes. Reintentar tras corregir errores: se conservan los exitos del
+   dia y las versiones anteriores de las plantillas fallidas. La renovacion
+   diaria se programa externamente; no hay un scheduler integrado en la web.
+   Fechas de catalogo, agrupacion diaria y avisos de antiguedad usan UTC.
+
+Aceptacion: abrir Analisis en una sesion nueva sin importar archivos, comparar
+los conteos contra Oracle y revisar el aviso de fuente/fecha. Abrir Agente y
+contrastar el conteo de la misma captura. Abrir Plantillas, revisar fuentes,
+fecha y estados de cada entrada sin publicar en redes. Registrar SHA, hora y
+resultados; no declarar exito si falla Oracle o faltan entradas del catalogo.
 También se necesita conectividad de red hacia Oracle y OCI; un perfil válido
 no sustituye VPN, reglas de firewall o una ruta hacia un endpoint privado.

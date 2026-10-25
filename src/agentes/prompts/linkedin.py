@@ -43,6 +43,9 @@ No incluyas:
 # FUENTE DE VERDAD
 
 El mensaje original es la única fuente para afirmar hechos.
+Si no hay autor, atribuye a una persona de la comunidad sin inventar un nombre.
+No uses un campo vacío como nombre ni unas mensajes sin identidad como si
+pertenecieran a la misma persona.
 
 Los campos:
 

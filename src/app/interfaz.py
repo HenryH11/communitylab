@@ -13,6 +13,7 @@ from src.app import tema as identidad
 from src.app.curaduria_oci import contexto_curaduria
 from src.app.errores_agente import explicar_error
 from src.datos.entrega_ia import preparar_paquete_ia
+from src.datos.metadatos import valor_publico
 
 def render(*, modo_interno: bool = False) -> None:
     st.set_page_config(
@@ -37,7 +38,7 @@ def render(*, modo_interno: bool = False) -> None:
         if pagina not in PAGINAS:
             st.error("Esta sección no está disponible en esta aplicación.")
             return
-        st.session_state[CLAVE_NAVEGACION] = pagina
+        st.session_state["navegacion_pendiente"] = pagina
 
 
     def _interacciones_para_vista(datos):
@@ -423,8 +424,8 @@ def render(*, modo_interno: bool = False) -> None:
             fuente = resultados.get(cita, {})
             st.markdown(
                 f"**{cita}** · "
-                f"{fuente.get('autor', 'Autor desconocido')} · "
-                f"{fuente.get('canal', 'Canal desconocido')}"
+                f"{valor_publico(fuente.get('autor')) or 'Autor desconocido'} · "
+                f"{valor_publico(fuente.get('canal')) or 'Canal desconocido'}"
             )
             st.write(fuente.get("texto", ""))
 
@@ -578,6 +579,7 @@ def render(*, modo_interno: bool = False) -> None:
                     "Seleccionado: Verificado." if verificacion else "Seleccionado: Estricto.",
                     "Estricto: redacta con las fuentes, sin revisión adicional.",
                     "Verificado: contrasta las afirmaciones con las fuentes; tarda más y consume más cuota.",
+                    "Si detecta hechos sin respaldo, corrige una vez y revisa de nuevo. Si persisten, bloquea el borrador.",
                     "Ambos usan evidencia. La verificación no garantiza exactitud.",
                 ], derecha=True))
 
@@ -786,17 +788,35 @@ def render(*, modo_interno: bool = False) -> None:
         if clave in st.session_state:
             st.session_state[clave] = st.session_state[clave]
 
+    destino = st.session_state.pop("navegacion_pendiente", None)
+    if destino is not None:
+        st.session_state[CLAVE_NAVEGACION] = destino
     if st.session_state.get(CLAVE_NAVEGACION) not in (None, *PAGINAS):
         st.warning("Esta sección no está disponible en esta aplicación.")
         st.session_state[CLAVE_NAVEGACION] = "Inicio"
 
-    pagina_actual = st.radio(
-        "Navegación principal",
-        PAGINAS,
-        horizontal=True,
-        key=CLAVE_NAVEGACION,
-        label_visibility="collapsed",
-    )
+    pagina = st.session_state.setdefault(CLAVE_NAVEGACION, "Inicio")
+    revision = st.session_state.get("navegacion_revision", 0)
+    clave_selector = f"selector_navegacion_{revision}"
+    if st.session_state.get(clave_selector, pagina) != pagina:
+        # Remonta el selector cuando la navegación viene de un botón, no del radio.
+        revision += 1
+        st.session_state["navegacion_revision"] = revision
+        clave_selector = f"selector_navegacion_{revision}"
+
+    def _sincronizar_navegacion():
+        st.session_state[CLAVE_NAVEGACION] = st.session_state[clave_selector]
+
+    with st.container(key=CLAVE_NAVEGACION):
+        pagina_actual = st.radio(
+            "Navegación principal",
+            PAGINAS,
+            horizontal=True,
+            index=PAGINAS.index(pagina),
+            key=clave_selector,
+            on_change=_sincronizar_navegacion,
+            label_visibility="collapsed",
+        )
 
     if MODO_INTERNO and pagina_actual == "Datos":
         _render_datos()

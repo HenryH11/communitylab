@@ -19,8 +19,8 @@ def test_marketing_no_habilita_datos_por_variable_ni_estado(monkeypatch, valor):
     app.run()
 
     assert not app.exception
-    assert "Datos" not in app.radio(key="navegacion_principal").options
-    assert app.radio(key="navegacion_principal").value == "Inicio"
+    assert "Datos" not in app.radio[0].options
+    assert app.radio[0].value == "Inicio"
     assert app.warning
     assert not app.get("file_uploader")
     assert not any(b.key == "procesar_lote" for b in app.button)
@@ -63,6 +63,6 @@ def test_entrada_interna_habilita_datos_sin_variable(monkeypatch):
     app.run()
 
     assert not app.exception
-    assert "Datos" in app.radio(key="navegacion_principal").options
+    assert "Datos" in app.radio[0].options
     assert len(app.get("file_uploader")) == 1
     assert any(s.value == "Importar interacciones" for s in app.subheader)

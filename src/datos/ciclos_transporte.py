@@ -55,14 +55,18 @@ def _interaccion_para_entrega(interaccion: dict, *, permitir_texto_vacio: bool =
             f"({', '.join(_CAMPOS_CONTRATO_NELSON)}): faltan {', '.join(faltantes)}"
         )
     for campo in _CAMPOS_CONTRATO_NELSON:
+        if campo in ("fecha", "tipo") and interaccion[campo] is None:
+            continue
         _validar_cadena(
             interaccion, campo, "interaccion", vacia=campo == "texto" and permitir_texto_vacio
         )
-    if interaccion["tipo"] not in TIPOS:
+    if interaccion["tipo"] is not None and interaccion["tipo"] not in TIPOS:
         raise ValueError("Tipo no admitido en la entrega")
     if interaccion["id"] != interaccion["id"].strip():
         raise ValueError("ID con espacios exteriores")
     fecha = interaccion["fecha"]
+    if fecha is None:
+        return {campo: interaccion[campo] for campo in _CAMPOS_CONTRATO_NELSON}
     if not re.fullmatch(
         r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)",
         fecha,

@@ -58,9 +58,13 @@
                     ]
                 },
                 "tipo": {
-                    "type": "string",
+                    "type": [
+                        "string",
+                        "null"
+                    ],
                     "description": "Clasificación de origen acordada con DA; pregunta_programa no implica elegibilidad automática para FAQ.",
                     "enum": [
+                        null,
                         "testimonio",
                         "pregunta_tecnica",
                         "pregunta_programa",

@@ -180,12 +180,14 @@ def _invocar_generador_con_fallback(
 
 
 def _contexto(estado: EstadoAgente) -> dict:
+    from src.datos.metadatos import valor_publico
+
     return {
-        "autor": estado.get("autor") or "Anónimo",
+        "autor": valor_publico(estado.get("autor")),
         "texto": estado["texto"],
-        "tema_principal": estado.get("tema_principal") or "",
-        "subtema": estado.get("subtema") or "",
-        "tipo_detectado": estado.get("tipo_detectado") or "",
+        "tema_principal": valor_publico(estado.get("tema_principal")),
+        "subtema": valor_publico(estado.get("subtema")),
+        "tipo_detectado": valor_publico(estado.get("tipo_detectado")),
     }
 
 

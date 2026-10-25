@@ -86,8 +86,10 @@ SECCIONES = (
                 "Con Verificar borradores apagado, no se hace "
                 "una revisión separada del borrador. Encendido, revisa cada "
                 "afirmación de los borradores contra los mensajes de la comunidad y "
-                "muestra cuáles están respaldadas. Es más confiable, pero tarda más "
-                "y consume más cuota.",
+                "muestra cuáles están respaldadas. Si detecta hechos sin respaldo, "
+                "intenta corregirlos una vez y vuelve a revisar; si persisten, no "
+                "muestra el borrador ni habilita sus acciones de publicación. "
+                "Tarda más y consume más cuota; no sustituye la revisión editorial.",
             ),
             (
                 "¿Para qué sirve el botón Redacción?",

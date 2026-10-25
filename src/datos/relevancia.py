@@ -160,6 +160,8 @@ def puntuar_interaccion(interaccion, configuracion, fecha_referencia):
     es_programa = interaccion["tipo"] == "pregunta_programa"
     motivos = []
     advertencias = []
+    if interaccion["tipo"] is None:
+        advertencias.append("sin_tipo")
     if pregunta and programa and not es_programa:
         advertencias.append("pregunta_no_etiquetada")
     if len(texto) < configuracion.caracteres_minimos:
@@ -180,7 +182,7 @@ def puntuar_interaccion(interaccion, configuracion, fecha_referencia):
             advertencias.append("fecha_invalida")
     bonus = configuracion.puntos_por_pregunta_completa if pregunta and programa and es_programa else 0
     desglose = {
-        "tipo": configuracion.puntos_por_tipo[interaccion["tipo"]],
+        "tipo": 0 if interaccion["tipo"] is None else configuracion.puntos_por_tipo[interaccion["tipo"]],
         "longitud": min(len(palabras), 20) * configuracion.puntos_por_longitud // 20,
         "palabras_clave": min(len(encontradas) * configuracion.puntos_por_palabra, configuracion.maximo_palabras),
         "frescura": frescura,

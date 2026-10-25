@@ -37,6 +37,8 @@ de generación.
 # FUENTE DE VERDAD
 
 El mensaje original es la única fuente para afirmar hechos.
+Si no hay autor, atribuye a una persona sin inventar nombres. Un campo vacío
+no es un nombre ni demuestra que mensajes distintos sean de la misma persona.
 
 Los campos:
 

@@ -99,12 +99,12 @@ def validar_y_limpiar(datos):
             ubicacion = f"{ruta}.interacciones[{numero}]"
             if not isinstance(mensaje, dict):
                 raise ValueError(f"{ubicacion}: se esperaba un objeto")
-            for campo in ("autor", "canal", "tipo", "texto"):
+            for campo in ("autor", "canal", "texto"):
                 _cadena(mensaje, campo, ubicacion, vacia=campo == "texto")
-            if mensaje["tipo"] not in TIPOS:
+            if "tipo" not in mensaje or (mensaje["tipo"] is not None and mensaje["tipo"] not in TIPOS):
                 raise ValueError(f"{ubicacion}.tipo: valor no admitido")
             for campo in ("id", "fecha", "idioma"):
-                if campo in mensaje:
+                if campo in mensaje and not (campo == "fecha" and mensaje[campo] is None):
                     _cadena(mensaje, campo, ubicacion)
             for campo in ("autor", "canal", "texto"):
                 mensaje[campo] = limpiar_texto(mensaje[campo])

@@ -1,6 +1,6 @@
 from datetime import date
 from typing import Callable, cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -431,7 +431,7 @@ def test_afirmaciones_no_respaldadas_o_ids_ajenos_exigen_revision():
             ),
         )
 
-    salida = AgenteConversacional(
+    agente = AgenteConversacional(
         crear_mensajes(),
         generador=generar,
         verificador=lambda **_kwargs: {
@@ -444,14 +444,13 @@ def test_afirmaciones_no_respaldadas_o_ids_ajenos_exigen_revision():
                 }
             ],
         },
-    ).consultar(
-        "Crea un post para LinkedIn sobre Python",
-        modo_verificacion="verificacion_automatica",
     )
-
-    assert salida["verificacion"]["estado"] == "requiere_revision"
-    assert salida["verificacion"]["afirmaciones"][0]["respaldada"] is False
-    assert salida["verificacion"]["afirmaciones"][0]["citas"] == []
+    with pytest.raises(ValueError, match="sin respaldo"):
+        agente.consultar(
+            "Crea un post para LinkedIn sobre Python",
+            modo_verificacion="verificacion_automatica",
+        )
+    assert agente.historial == []
 
 
 def test_modo_verificacion_invalido_se_rechaza_antes_de_generar():
@@ -896,6 +895,175 @@ def test_cadena_de_ediciones_conserva_la_plataforma_x():
     assert primera["borrador"]["plataforma"] == "x"
     assert segunda["borrador"]["plataforma"] == "x"
     assert segunda["total_coincidencias"] == 2
+
+
+def test_nueva_propuesta_repetida_se_reescribe_sin_cambiar_fuentes():
+    llamadas = []
+    generar = _generador_borrador(["Primero", "Primero", "Otro enfoque"], llamadas)
+    contador = 0
+
+    def generador(**kwargs):
+        nonlocal contador
+        contador += 1
+        salida = generar(**kwargs)
+        if contador == 3:
+            assert salida.borrador is not None
+            salida.borrador.titulo = "Otro título"
+        return salida
+
+    planes = iter([
+        PlanConsulta(intencion="borrador", plataforma="instagram"),
+        PlanConsulta(intencion="borrador", plataforma="instagram", nueva_version=True),
+    ])
+    agente = AgenteConversacional(
+        crear_mensajes(), generador=generador, interprete=lambda **_: next(planes),
+    )
+    agente.consultar("Una publicación")
+    salida = agente.consultar("Otra propuesta")
+    assert len(llamadas) == 3
+    assert "repites el título o el cuerpo" in llamadas[-1]["consulta"]
+    assert llamadas[-1]["ids"] == llamadas[-2]["ids"]
+    assert salida["borrador"]["contenido"] == "Otro enfoque"
+    assert len(agente.historial) == 4
+
+
+@pytest.mark.parametrize("repite", ["titulo", "contenido"])
+def test_repeticion_persistente_no_guarda_turno(repite):
+    generar = Mock(side_effect=[
+        {
+            "respuesta": "Lista", "citas": ["msg-1"],
+            "borrador": {
+                "plataforma": "instagram", "titulo": "Original", "contenido": "Texto original",
+                "hashtags": ["#Uno", "#Dos", "#Tres"],
+            },
+        },
+        *[{
+            "respuesta": "Otra", "citas": ["msg-1"],
+            "borrador": {
+                "plataforma": "instagram",
+                "titulo": "ORIGINAL" if repite == "titulo" else "Otro título",
+                "contenido": " TEXTO   ORIGINAL " if repite == "contenido" else "Otro texto",
+                "hashtags": ["#Uno", "#Dos", "#Tres"],
+            },
+        }] * 2,
+    ])
+    planes = iter([
+        PlanConsulta(intencion="borrador", plataforma="instagram"),
+        PlanConsulta(intencion="borrador", plataforma="instagram", nueva_version=True),
+    ])
+    agente = AgenteConversacional(
+        crear_mensajes(), generador=generar, interprete=lambda **_: next(planes),
+    )
+    agente.consultar("Un post")
+    historial = agente.historial
+    with pytest.raises(ValueError, match="sigue repitiendo"):
+        agente.consultar("Algo nuevo")
+    assert agente.historial == historial
+    assert generar.call_count == 3
+
+
+def test_verificado_corrige_y_reverifica_solo_la_version_final():
+    generar = Mock(side_effect=[
+        {
+            "respuesta": "Lista", "citas": ["msg-1"],
+            "borrador": {
+                "plataforma": "linkedin", "titulo": "Productividad",
+                "contenido": "Ahora ahorra dos horas diarias.",
+                "hashtags": ["#Python", "#Datos", "#Comunidad"],
+            },
+        },
+        {
+            "respuesta": "Publicación preparada", "citas": ["msg-1"],
+            "borrador": {
+                "plataforma": "linkedin", "titulo": "Aprender Python",
+                "contenido": "Una persona cuenta que aprendió Python.",
+                "hashtags": ["#Python", "#Datos", "#Comunidad"],
+            },
+        },
+    ])
+    verificar = Mock(side_effect=[
+        {"resumen": "No hay medición de tiempo", "afirmaciones": [
+            {"afirmacion": "Ahorra dos horas", "respaldada": False, "citas": []},
+        ]},
+        {"resumen": "Respaldado", "afirmaciones": [
+            {"afirmacion": "Aprendió Python", "respaldada": True, "citas": ["msg-1"]},
+        ]},
+    ])
+    agente = AgenteConversacional(crear_mensajes(), generador=generar, verificador=verificar)
+    salida = agente.consultar(
+        "Crea un post para LinkedIn sobre Python", modo_verificacion="verificacion_automatica",
+    )
+    assert generar.call_count == verificar.call_count == 2
+    assert generar.call_args_list[0].kwargs["evidencia"] == generar.call_args_list[1].kwargs["evidencia"]
+    assert salida["verificacion"]["estado"] == "verificado"
+    assert salida["borrador"]["contenido"] == "Una persona cuenta que aprendió Python."
+    assert "dos horas" not in agente.historial[-1]["contenido"]
+
+
+@pytest.mark.parametrize("defecto", ["plataforma", "citas", "longitud", "ausente"])
+def test_correccion_factual_no_elude_validaciones(defecto):
+    borrador = {
+        "plataforma": "x", "titulo": "Python", "contenido": "Aprendió Python.",
+        "hashtags": ["#Python", "#Datos", "#Comunidad"],
+    }
+    corregido = dict(borrador)
+    citas = ["msg-1"]
+    if defecto == "plataforma":
+        corregido["plataforma"] = "instagram"
+    elif defecto == "citas":
+        citas = ["ajena"]
+    elif defecto == "longitud":
+        corregido["contenido"] = "x" * 400
+    generar = Mock(side_effect=[
+        {"respuesta": "Lista", "citas": ["msg-1"], "borrador": borrador},
+        {"respuesta": "Corregida", "citas": citas, "borrador": None if defecto == "ausente" else corregido},
+    ])
+    verificar = Mock(return_value={
+        "resumen": "Revisar", "afirmaciones": [
+            {"afirmacion": "No respaldada", "respaldada": False, "citas": []},
+        ],
+    })
+    agente = AgenteConversacional(
+        crear_mensajes(), generador=generar, verificador=verificar,
+        interprete=lambda **_: PlanConsulta(intencion="borrador", plataforma="x"),
+    )
+    with pytest.raises(ValueError):
+        agente.consultar("Un post", modo_verificacion="verificacion_automatica")
+    assert generar.call_count == 2
+    assert verificar.call_count == 1
+    assert agente.historial == []
+
+
+@pytest.mark.parametrize("afirmaciones", [
+    [],
+    [{"afirmacion": "Aprendió Python", "respaldada": True, "citas": ["ajena"]}],
+])
+def test_verificacion_incompleta_persistente_bloquea_el_borrador(afirmaciones):
+    generar = Mock(side_effect=_generador_borrador(["Una experiencia con Python."] * 2, []))
+    verificar = Mock(return_value={"resumen": "Revisión", "afirmaciones": afirmaciones})
+    agente = AgenteConversacional(
+        crear_mensajes(), generador=generar, verificador=verificar,
+        interprete=lambda **_: PlanConsulta(intencion="borrador", plataforma="instagram"),
+    )
+    with pytest.raises(ValueError, match="sin respaldo"):
+        agente.consultar("Un post", modo_verificacion="verificacion_automatica")
+    assert generar.call_count == verificar.call_count == 2
+    assert agente.historial == []
+
+
+def test_fallo_del_verificador_no_publica_y_estricto_no_lo_invoca():
+    generar = _generador_borrador(["Una experiencia con Python."] * 2, [])
+    verificar = Mock(side_effect=RuntimeError("Verificador no disponible"))
+    agente = AgenteConversacional(
+        crear_mensajes(), generador=generar, verificador=verificar,
+        interprete=lambda **_: PlanConsulta(intencion="borrador", plataforma="instagram"),
+    )
+    with pytest.raises(RuntimeError, match="no disponible"):
+        agente.consultar("Un post", modo_verificacion="verificacion_automatica")
+    assert agente.historial == []
+    salida = agente.consultar("Un post", modo_verificacion="prompt_estricto")
+    assert salida["verificacion"]["estado"] == "no_verificado"
+    assert verificar.call_count == 1
 
 
 def test_mejores_comentarios_son_positivos_ordenados_y_con_cantidad():

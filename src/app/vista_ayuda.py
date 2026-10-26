@@ -176,7 +176,10 @@ SECCIONES = (
                 "nuevo sustituye al anterior. Si una plantilla falla, conserva su última "
                 "versión disponible con la fecha y un aviso; las demás sí se actualizan. "
                 "La página comprueba el catálogo cada minuto mientras está abierta y "
-                "también puedes pulsar Actualizar catálogo.",
+                "también puedes pulsar Volver a cargar catálogo para consultar las "
+                "versiones publicadas; ese botón no genera las plantillas pendientes. "
+                "Las fechas se muestran en la zona horaria de tu navegador, indicando "
+                "su nombre y desfase respecto de UTC.",
             ),
             (
                 "¿Por qué no veo un borrador para cada mensaje?",

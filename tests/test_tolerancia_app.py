@@ -77,7 +77,10 @@ def test_errores_se_muestran_en_pantalla(arbol):
 
 def test_agente_tiene_chat_conectado_al_backend_y_verificacion(arbol):
     assert llamadas(arbol, "st", "chat_message")
-    assert llamadas(arbol, "st", "chat_input")
+    assert any(
+        isinstance(nodo, ast.Call) and ast.unparse(nodo.func) == "st.bottom.chat_input"
+        for nodo in ast.walk(arbol)
+    )
     assert llamadas(arbol, "st", "toggle")
 
     consultas = [

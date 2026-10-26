@@ -360,13 +360,26 @@ Procedimiento para Cloud (desde la raiz del checkout aprobado):
    plantillas fallidas. Revisar logs privados, sin publicar claves o textos.
 6. Leer el catalogo desde la identidad de Marketing y comprobar entradas,
    fechas y fallos. Un HTTP 200 de Streamlit o listar el bucket no prueba que
-   exista el catalogo. En la web pulsar "Actualizar catalogo": la cache dura
-   45 segundos. La lectura no genera contenido ni consume cuota.
+   exista el catalogo. En la web pulsar "Volver a cargar catálogo": solicita una
+   lectura nueva para esa sesión, sin invalidar la caché de otros visitantes.
+   La caché dura 45 segundos y conserva como máximo 32 entradas; la vista consulta
+   cada minuto. No genera contenido ni reintenta pendientes. Si la lectura falla,
+   muestra el error y conserva el último catálogo visible de la sesión con un aviso.
 7. Programar el mismo comando a las 13:00 UTC, sin ejecuciones
    concurrentes. Reintentar tras corregir errores: se conservan los exitos del
    dia y las versiones anteriores de las plantillas fallidas. La renovacion
    diaria se programa externamente; no hay un scheduler integrado en la web.
-   Fechas de catalogo, agrupacion diaria y avisos de antiguedad usan UTC.
+   Fechas almacenadas, agrupación diaria y avisos de antigüedad usan UTC.
+   Las fechas visibles de Plantillas y Análisis se convierten a la zona IANA del
+   navegador con su desfase UTC; si no está disponible, se muestran en UTC.
+
+Plantillas presenta tarjetas filtrables y una selección con editor, vista previa,
+descarga de texto y acciones de apertura compatibles. Las adaptaciones son locales
+a la vista y no escriben en OCI ni reciben automáticamente la verificación del
+original. Al editar se muestra un aviso de revisión; las fuentes y el resultado
+de verificación se identifican como pertenecientes al original. Una nueva versión
+del catálogo inicia un editor nuevo, sin mezclar las fuentes de versiones distintas.
+No es un editor colaborativo ni un guardado permanente de borradores personales.
 
 Aceptacion: abrir Analisis en una sesion nueva sin importar archivos, comparar
 los conteos contra Oracle y revisar el aviso de fuente/fecha. Abrir Agente y

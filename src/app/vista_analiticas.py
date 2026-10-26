@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from src.app import fuente_agente
+from src.app.horas import fecha_local, zona_usuario
 
 CAMPOS = {
     "tema_principal": "Tema", "sentimiento": "Sentimiento",
@@ -40,7 +41,6 @@ def distribucion(mensajes: tuple[dict, ...], campo: str) -> pd.DataFrame:
 @st.fragment
 def render() -> None:
     st.header("Estado de las conversaciones de la comunidad")
-    st.caption("Fuente: captura de Oracle compartida con el agente. No ejecuta IA.")
     forzar = st.button("Actualizar datos", key="actualizar_analiticas_oracle")
     try:
         captura = fuente_agente.obtener_captura(st.session_state, forzar=forzar)
@@ -50,7 +50,7 @@ def render() -> None:
     if captura.desactualizada:
         st.warning(captura.aviso)
         st.caption("Se muestra la ultima captura disponible, no una lectura actual.")
-    st.caption(f"Captura: {captura.capturada_en:%d/%m/%Y %H:%M} UTC")
+    st.caption(f"Actualizado: {fecha_local(captura.capturada_en, zona_usuario())}")
     mensajes = captura.mensajes
     if not mensajes:
         st.info("Oracle no contiene mensajes consultables en esta captura.")
@@ -67,7 +67,7 @@ def render() -> None:
     busqueda = st.text_input("Buscar texto o ID", key="analiticas_busqueda")
     base = mensajes
     mensajes = filtrar(base, filtros, busqueda)
-    st.caption(f"Seleccion: {len(mensajes)} de {len(base)} mensajes de la captura. Filtros combinados por interseccion.")
+    st.caption(f"{len(mensajes)} de {len(base)} mensajes")
     if not mensajes:
         st.info("No hay mensajes que coincidan con estos filtros.")
         return
@@ -76,8 +76,7 @@ def render() -> None:
     canales.metric("Canales identificados", len({m["canal"] for m in mensajes if m.get("canal")}))
     temas.metric("Temas identificados", len({m["tema_principal"] for m in mensajes if m.get("tema_principal")}))
     st.caption(
-        "Los registros consultables excluyen spam. Esta captura no incluye activos "
-        "generados ni elegibilidad para contenido; no se infieren esas metricas."
+        "Los mensajes mostrados excluyen spam."
     )
     resumen, cruces, fuentes = st.tabs(["Resumen", "Cruces", "Fuentes"])
     with resumen:
@@ -96,13 +95,12 @@ def render() -> None:
             pd.Series([categoria(m, fila) for m in mensajes], name=CAMPOS[fila]),
             pd.Series([categoria(m, columna) for m in mensajes], name=CAMPOS[columna]),
         )
-        st.caption("Conteos exactos del subconjunto seleccionado; no implican causalidad ni tendencias temporales.")
         st.dataframe(tabla_cruce, width="stretch")
         st.download_button("Descargar cruce CSV", tabla_cruce.to_csv().encode("utf-8-sig"),
                            file_name="cruce_comunidad.csv", mime="text/csv")
     with fuentes:
         sin_fecha = sum(not m.get("fecha") for m in mensajes)
-        st.caption(f"{len(mensajes)} fuentes seleccionadas; {sin_fecha} sin fecha. No se inventan fechas ni tendencias.")
+        st.caption(f"{len(mensajes)} fuentes seleccionadas · {sin_fecha} sin fecha")
         ordenados = sorted(mensajes, key=lambda m: m["id"])
         tabla_fuentes = pd.DataFrame(ordenados).reindex(columns=[
             "id", "texto", "canal", "sentimiento", "tema_principal", "tipo_detectado", "fecha",

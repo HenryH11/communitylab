@@ -333,9 +333,12 @@ def test_vista_publica_lee_oci_sin_lote_ni_generacion(monkeypatch):
     app.run()
     assert not app.exception
     assert any("Contenido anterior" in w.value for w in app.warning)
+    assert len(app.get("link_button")) == 1
+    assert app.text_area
+    app.button(key="abrir_diaria_instagram").click().run()
+    assert not app.exception
     assert any("No se pudo renovar" in w.value for w in app.warning)
-    assert len(app.get("link_button")) == 2
-    assert not app.text_area
+    assert len(app.get("link_button")) == 1
     assert not any(b.label == "Guardar aprobados en OCI" for b in app.button)
 
 
@@ -353,6 +356,99 @@ def test_vista_distingue_ausencia_y_fallo_oci(monkeypatch, error):
         assert app.error and not app.info
     else:
         assert any("primer catálogo" in i.value for i in app.info)
+
+
+def test_recargar_con_fallo_conserva_catalogo_y_edicion_sin_generar(monkeypatch):
+    from src.app import vista_plantillas_diarias as vista
+
+    repo = Memoria()
+    ejecutar(repo)
+    original = deepcopy(repo.catalogo)
+    leer = Mock(return_value=repo.catalogo)
+    monkeypatch.setattr(vista, "leer_catalogo", leer)
+    generar = Mock(side_effect=AssertionError("La web no genera contenido"))
+    monkeypatch.setattr(diario.AgenteConversacional, "consultar", generar)
+    app = AppTest.from_string(
+        "from src.app.vista_plantillas_diarias import render\nrender()", default_timeout=15,
+    ).run()
+    app.text_area[0].set_value("Mi versión revisada.").run()
+    assert any("Adaptación sin verificar" in w.value for w in app.warning)
+    assert repo.catalogo == original
+    leer.side_effect = RuntimeError("fallo de lectura")
+    app.button(key="actualizar_catalogo_diario").click().run()
+    assert not app.exception
+    assert app.error
+    assert any("último catálogo" in w.value for w in app.warning)
+    assert app.text_area[0].value == "Mi versión revisada."
+    assert leer.call_args.args[0]
+    leer.side_effect = None
+    app.button(key="actualizar_catalogo_diario").click().run()
+    assert not app.exception
+    assert not app.error
+    assert app.text_area[0].value == "Mi versión revisada."
+    generar.assert_not_called()
+
+
+def test_informes_tienen_editor_y_no_publicacion_social(monkeypatch):
+    from src.app import vista_plantillas_diarias as vista
+
+    catalogo = diario.CatalogoDiario(
+        intentado_en=AHORA, entradas={"boletin": diario.EntradaDiaria(
+            nombre="Boletín", prompt="Boletín", generado_en=AHORA,
+            salida={"respuesta": "## Titular\n\nSíntesis.", "citas": ["m1"], "borrador": None},
+        )},
+    )
+    monkeypatch.setattr(vista, "leer_catalogo", Mock(return_value=catalogo))
+    app = AppTest.from_string(
+        "from src.app.vista_plantillas_diarias import render\nrender()", default_timeout=15,
+    ).run()
+    assert not app.exception
+    assert app.text_area[0].value == "## Titular\n\nSíntesis."
+    assert not app.get("link_button")
+    app.button(key="abrir_diaria_insight_mejora").click().run()
+    assert not app.exception
+    assert any("Todavía no hay contenido" in i.value for i in app.info)
+    assert not app.text_area
+
+
+def test_editor_vacio_no_rompe_la_pagina_ni_abre_una_red(monkeypatch):
+    from src.app import vista_plantillas_diarias as vista
+
+    repo = Memoria()
+    ejecutar(repo)
+    monkeypatch.setattr(vista, "leer_catalogo", Mock(return_value=repo.catalogo))
+    app = AppTest.from_string(
+        "from src.app.vista_plantillas_diarias import render\nrender()", default_timeout=15,
+    ).run()
+    next(t for t in app.text_input if t.label == "Título").set_value("").run()
+    app.text_area[0].set_value("").run()
+    assert not app.exception
+    assert not app.get("link_button")
+    assert any("Escribe contenido" in i.value for i in app.info)
+
+
+def test_recarga_real_de_cache_no_invalida_otras_sesiones(monkeypatch):
+    from src.app import vista_plantillas_diarias as vista
+
+    repo = Memoria()
+    ejecutar(repo)
+    leer = Mock(return_value=(repo.catalogo, "etag"))
+    monkeypatch.setattr(vista.RepositorioCatalogo, "desde_entorno", Mock(return_value=Mock(leer=leer)))
+    vista.leer_catalogo.clear()
+    try:
+        app = AppTest.from_string(
+            "from src.app.vista_plantillas_diarias import render\nrender()", default_timeout=15,
+        ).run()
+        assert not app.exception
+        assert leer.call_count == 1
+        app.button(key="actualizar_catalogo_diario").click().run()
+        assert not app.exception
+        assert leer.call_count == 2
+        # La entrada compartida original sigue disponible para otros visitantes.
+        assert vista.leer_catalogo() == repo.catalogo
+        assert leer.call_count == 2
+    finally:
+        vista.leer_catalogo.clear()
 
 
 @pytest.mark.parametrize(("fallos", "codigo"), [({}, 0), ({"linkedin": "Pendiente"}, 2)])

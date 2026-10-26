@@ -47,6 +47,7 @@ def test_pantalla_oracle_muestra_conteos_y_actualiza_sin_ia():
         assert [m.value for m in pantalla.metric] == ["3", "1", "1"]
         assert len(pantalla.dataframe) == 6
         assert not pantalla.error
+        assert not any("IA" in c.value or "elegibilidad" in c.value for c in pantalla.caption)
         assert leer.call_args.kwargs["forzar"] is False
         pantalla.button[0].click().run()
         assert leer.call_args.kwargs["forzar"] is True

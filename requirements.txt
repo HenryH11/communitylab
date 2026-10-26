@@ -1,1 +1,3 @@
-# Librerías iniciales del proyecto (se añadirán en la Semana 0 [14-20 Septiembre 2026]).
+# Entorno local completo; las imagenes usan sus manifiestos especializados.
+-r requirements.frontend.txt
+-r requirements.backend.txt

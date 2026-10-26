@@ -1,0 +1,101 @@
+"""Pruebas del conector OCI sin tocar el bucket real."""
+
+from typing import Any, Mapping, cast
+
+import json
+import unittest
+from typing import get_args
+from unittest.mock import Mock, patch
+
+# Omitir solo cuando falta OCI, sin esconder dependencias o imports rotos.
+try:
+    import oci
+except ModuleNotFoundError as error:
+    if error.name != "oci":
+        raise
+    raise unittest.SkipTest("SDK de OCI no instalado") from error
+
+from src.agentes.estado_agente import Ruta
+from src.config.oci_client import nombre_objeto_activo, subir_json
+
+
+class PruebasPersistenciaOCI(unittest.TestCase):
+    def test_rutas_del_grafo_conservan_el_activo_al_guardar(self):
+        for ruta in get_args(Ruta):
+            with self.subTest(ruta=ruta):
+                cliente = Mock()
+                cliente.put_object.return_value.headers = {"etag": "etag-prueba"}
+                activo = {
+                    "id_interaccion": "int-006",
+                    "tipo": ruta,
+                    "contenido": {"texto": "Mejorar la documentación ✅"},
+                }
+                nombre = nombre_objeto_activo("int-006", ruta, "2026-semana-03")
+
+                resultado = subir_json(
+                    activo, nombre, cliente=cliente, namespace="namespace-prueba"
+                )
+
+                cliente.put_object.assert_called_once()
+                parametros = cliente.put_object.call_args.kwargs
+                self.assertEqual(
+                    parametros["object_name"],
+                    f"activos/2026-semana-03/{ruta}/int-006.json",
+                )
+                self.assertEqual(
+                    json.loads(parametros["put_object_body"].decode("utf-8")), activo
+                )
+                self.assertEqual(resultado["object_name"], nombre)
+
+    def test_subida_conserva_unicode_y_devuelve_ubicacion(self):
+        cliente = Mock()
+        cliente.put_object.return_value.headers = {"etag": "abc123"}
+        documento = {"id": "int-022", "texto": "¡Qué útil! 👩‍💻"}
+
+        resultado = subir_json(
+            documento,
+            nombre_objeto_activo("int-022", "linkedin", "2026-semana-02"),
+            cliente=cliente,
+            namespace="namespace-prueba",
+            bucket="bucket-prueba",
+        )
+
+        parametros = cliente.put_object.call_args.kwargs
+        self.assertEqual(json.loads(parametros["put_object_body"]), documento)
+        self.assertIn("¡Qué útil! 👩‍💻".encode(), parametros["put_object_body"])
+        self.assertEqual(parametros["content_type"], "application/json; charset=utf-8")
+        self.assertEqual(parametros["object_name"], "activos/2026-semana-02/linkedin/int-022.json")
+        self.assertEqual(resultado["etag"], "abc123")
+        self.assertEqual(resultado["bucket"], "bucket-prueba")
+
+    def test_rechaza_datos_invalidos_antes_de_subir(self):
+        cliente = Mock()
+        for documento in ([], {"valor": float("nan")}, {"valor": object()}):
+            with self.subTest(documento=documento), self.assertRaises((TypeError, ValueError)):
+                subir_json(cast(Mapping[str, Any], documento), "activos/prueba.json", cliente=cliente, namespace="prueba")
+        cliente.put_object.assert_not_called()
+
+    def test_ruta_no_admite_separadores_en_id(self):
+        with self.assertRaises(ValueError):
+            nombre_objeto_activo("../otro", "linkedin", "2026-semana-02")
+
+    def test_error_de_subida_se_propaga_sin_confirmacion_falsa(self):
+        cliente = Mock()
+        cliente.put_object.side_effect = RuntimeError("subida fallida")
+        with self.assertRaisesRegex(RuntimeError, "subida fallida"):
+            subir_json({"id": "int-022"}, "activos/int-022.json", cliente=cliente, namespace="prueba")
+
+    @patch("src.config.oci_client.obtener_cliente")
+    def test_usa_cliente_y_bucket_del_entorno(self, obtener_cliente):
+        cliente = Mock()
+        cliente.put_object.return_value.headers = {}
+        obtener_cliente.return_value = cliente, "namespace-real"
+        with patch.dict("os.environ", {"OCI_BUCKET_NAME": "bkt-communitylab-marketing"}):
+            resultado = subir_json({"id": "int-022"}, "processed/int-022.json")
+        obtener_cliente.assert_called_once_with()
+        self.assertEqual(resultado["bucket"], "bkt-communitylab-marketing")
+        self.assertEqual(cliente.put_object.call_args.kwargs["namespace_name"], "namespace-real")
+
+
+if __name__ == "__main__":
+    unittest.main()

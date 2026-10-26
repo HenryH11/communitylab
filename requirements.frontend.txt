@@ -1,0 +1,18 @@
+# Dependencias del Agente, Interfaz y Consulta (Solo Lectura)
+langchain>=0.3
+langchain-core>=0.3
+langchain-google-genai>=2.0
+langchain-openai>=0.3
+langgraph>=0.2
+pydantic>=2.7
+python-dotenv>=1.0
+
+# Testing y Utilidades
+pytest>=8,<10
+oci
+streamlit>=1.65
+pandas
+altair
+jsonschema[format-nongpl]>=4.18,<5
+oracledb
+tzdata>=2024.1

@@ -1,5 +1,8 @@
 """
-Módulo para validar la conexión y subida de archivos a OCI Object Storage.
+Prueba manual de conexión y subida de archivos a OCI Object Storage.
+
+Ejecutar con ``python -m scripts.probar_oci_storage``. Requiere el SDK y un
+perfil OCI local; escribe un objeto de prueba en el bucket configurado.
 
 Consulta los metadatos del bucket y carga los objetos, manejando la
 configuración a través de variables de entorno y emitiendo errores estándar.
@@ -21,9 +24,11 @@ def get_oci_client(profile_name: str) -> tuple[ObjectStorageClient, str]:
     oci.config.validate_config(config)
 
     client = ObjectStorageClient(config)
-    namespace = client.get_namespace().data
+    respuesta = client.get_namespace()
+    if respuesta is None:
+        raise RuntimeError("OCI no devolvió el namespace de Object Storage.")
 
-    return client, namespace
+    return client, respuesta.data
 
 
 def display_bucket_info(
@@ -34,10 +39,13 @@ def display_bucket_info(
     """
     Consulta e imprime los metadatos del bucket para confirmar la conexión.
     """
-    bucket = client.get_bucket(
+    respuesta = client.get_bucket(
         namespace_name=namespace,
         bucket_name=bucket_name,
-    ).data
+    )
+    if respuesta is None:
+        raise RuntimeError(f"OCI no devolvió los metadatos del bucket {bucket_name}.")
+    bucket = respuesta.data
 
     print("Conexión exitosa con OCI Object Storage.")
     print(f"Bucket: {bucket.name} (Nivel: {bucket.storage_tier})")
@@ -71,7 +79,7 @@ def main() -> int:
     Orquesta la configuración, la verificación del bucket y la subida del archivo.
     Retorna 0 en caso de éxito, o 1 en caso de captura de error.
     """
-    bucket_name = os.getenv("OCI_BUCKET_NAME", "communitylab-activos-marketing")
+    bucket_name = os.getenv("OCI_BUCKET_NAME", "bkt-communitylab-marketing")
     profile_name = os.getenv("OCI_PROFILE", "DEFAULT")
 
     target_object = "activos/2026-semana-00/prueba-inicial.json"

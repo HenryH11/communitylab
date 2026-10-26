@@ -1,0 +1,22 @@
+services:
+  communitylab-ingestor:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: localhost/communitylab-backend:latest
+    container_name: communitylab-ingestor
+    ports:
+      - "${INGESTOR_BIND_IP:?Define la IP privada de la VM de ingesta}:8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - INGESTOR_PORT=8000
+      - INGESTOR_DESTINO=${INGESTOR_DESTINO:?Define un nombre reconocible del destino}
+      - INGESTOR_ENTORNO=${INGESTOR_ENTORNO:?Define demostracion o produccion}
+      - DB_USER=${DB_USER:-rw_ingest_communitylab}
+      - DB_DSN=${DB_DSN:?Define el DSN de escritura}
+      - DB_PASSWORD_SECRET_OCID=${DB_PASSWORD_SECRET_OCID:?Define el OCID del secreto escritor}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped

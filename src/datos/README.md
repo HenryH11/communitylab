@@ -1,5 +1,24 @@
 # Sub-equipo 3 — Ingesta y Procesamiento de Datos
 
+## Casos editoriales sintéticos
+
+[`casos_conciliados_propuestos.json`](casos_conciliados_propuestos.json) contiene
+600 casos sintéticos: 200 feedback, 200 testimonios y 200 preguntas del programa,
+según sus **etiquetas propuestas**. Su revisión no está congelada y el archivo
+indica `usar_para_resultados_oficiales: false`. No son 600 mensajes reales de
+usuarios ni sustituyen los 23 ejemplos del conjunto base.
+
+Para preparar los estados localmente, sin análisis externo ni escrituras cloud:
+
+```powershell
+python -m src.datos.casos_editoriales --entrada src\datos\casos_conciliados_propuestos.json --salida salida\datos\casos_editoriales --fecha-referencia 2026-10-24T00:00:00Z
+```
+
+El destino debe ser nuevo. Produce entrada adaptada, paquete y resumen dentro
+del proyecto; las salidas son regenerables y no se versionan. No asigna fechas
+ni clasificaciones inventadas, no usa las etiquetas propuestas como resultados
+y no ejecuta la capa 2. Véase [metadatos ausentes](../../docs/agente_conversacional.md#metadatos-ausentes).
+
 ## Actualización de Jhonattan (17 de septiembre de 2026)
 
 La selección de relevancia está implementada en `ingesta.py` y `relevancia.py`.
@@ -152,6 +171,11 @@ Andá directo a tu sección si no te interesa el resto.
   (`r/programacion`, en español), vía RSS/Atom público, sin necesitar clave API
   ni inicio de sesión. Es una mejora opcional (el producto mínimo viable ya está cubierto con el
   conjunto de datos simulado).
+
+- **`conjunto_consultable.py`** — índice limpio de las salidas del MVP para el
+  agente en vivo (Semana 5.1, subfase A): un registro por interacción con `id`,
+  `canal`, `sentimiento`, `tema`, `tipo`, `contenido_textual` y `fecha`. Formato y
+  decisiones en [`../../docs/conjunto_consultable.md`](../../docs/conjunto_consultable.md).
 
 Las pruebas viven en `../../tests/` y la documentación de fuentes de datos en
 [`../../docs/fuentes_de_datos_acceso.md`](../../docs/fuentes_de_datos_acceso.md).

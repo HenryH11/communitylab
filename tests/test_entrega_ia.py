@@ -12,9 +12,11 @@ from unittest import mock
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 from src.datos.entrega_ia import construir_plan_procesamiento, preparar_entrega, preparar_paquete_ia
-from src.datos.ingesta import construir_estados_agente, construir_ciclos, guardar_ciclos, principal
+from src.datos.ingesta import construir_estados_agente, principal
+from src.datos.ciclos_transporte import construir_ciclos, guardar_ciclos
 from src.datos.ingesta_reddit import parsear_entradas_atom, transformar_entrada, comentario_fue_eliminado, construir_lote
 from src.datos.relevancia import ConfiguracionRelevancia
+from src.agentes.configuracion_ia import obtener_modelo_nvidia_id
 from test_ingesta_reddit import EJEMPLO_COMENTARIOS
 from test_procesamiento_datos import FECHA, lote, mensaje
 
@@ -123,7 +125,7 @@ class EntregaTests(unittest.TestCase):
         datos = json.loads((RAIZ / "src/datos/mensajes_comunidad_simulados.json").read_text(encoding="utf-8"))
         paquete = preparar_paquete_ia(datos, fecha_referencia=FECHA)
         self.assertEqual(len(paquete["estados"]), 23)
-        self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 14)
+        self.assertEqual(paquete["informe"]["resumen"]["seleccionadas"], 19)
         informe = paquete["informe"]
         self.assertEqual(informe["version_criterio"], "1.0-propuesta")
         self.assertEqual(
@@ -137,12 +139,10 @@ class EntregaTests(unittest.TestCase):
         self.assertEqual(
             informe["modelo_ia"],
             {
-                "proveedor": "Google Gemini",
-                "identificador_modelo": "gemini-3.5-flash-lite",
-                "max_retries": 6,
-                "solicitudes_por_segundo": 0.2,
-                "intervalo_revision_limitador_segundos": 0.1,
-                "tamano_maximo_limitador": 1,
+                "proveedor": "NVIDIA NIM",
+                "identificador_modelo": obtener_modelo_nvidia_id(),
+                "base_url": "https://integrate.api.nvidia.com/v1",
+                "max_retries": 0,
             },
         )
         huellas_prompts = informe["prompts_ia"]
@@ -197,7 +197,7 @@ class EntregaTests(unittest.TestCase):
     def test_plan_rechaza_ids_y_tamanos_invalidos(self):
         for tamano in (9, 31, True, "20", 0):
             with self.assertRaises(ValueError):
-                construir_plan_procesamiento([], tamano)
+                construir_plan_procesamiento([], tamano)  # pyright: ignore[reportArgumentType]
         for estados in ([{}], [{"id": " x "}], [{"id": "x"}, {"id": "x"}]):
             with self.assertRaises(ValueError):
                 construir_plan_procesamiento(estados)

@@ -1,39 +1,56 @@
-"""Cliente de persistencia JSON en OCI Object Storage (Semana 2).
+"""Cliente para persistencia de datos en OCI.
 
-La integración con el cierre del workflow se realizará en Semana 3. Este módulo
-no imprime credenciales ni escribe archivos locales.
+Gestiona la subida de activos de Marketing (objetos) en formato JSON
+hacia OCI Object Storage. La autenticación usa Instance Principals o un perfil
+local seleccionado explícitamente. Los permisos efectivos dependen de OCI IAM.
 """
 
 import json
 import os
 import re
+from functools import lru_cache
 from collections.abc import Mapping
 from typing import Any
 
-import oci
+from oci.object_storage import ObjectStorageClient
+from src.config.autenticacion_oci import configuracion_cliente
 
 
-BUCKET_PREDETERMINADO = "communitylab-activos-marketing"
-RUTAS_ACTIVO = frozenset({"linkedin", "boletin", "preguntas_frecuentes", "caso_exito"})
+BUCKET_PREDETERMINADO = "bkt-communitylab-marketing"
+RUTAS_ACTIVO = frozenset({
+    "linkedin",
+    "boletin",
+    "preguntas_frecuentes",
+    "caso_exito",
+    "insight_mejora",
+})
 _SEGMENTO = re.compile(r"[A-Za-z0-9_-]+\Z")
 
 
 def nombre_objeto_activo(identificador: str, ruta: str, periodo: str) -> str:
-    """Construye una clave estable, sin separadores aportados por la entrada."""
+    """Construye una clave segura y sanitizada para el activo."""
     for nombre, valor in (("id", identificador), ("periodo", periodo)):
         if not isinstance(valor, str) or not _SEGMENTO.fullmatch(valor):
-            raise ValueError(f"{nombre} debe contener solo letras, números, _ o -")
+            raise ValueError(
+                f"{nombre} debe contener solo letras, números, _ o -"
+            )
     if ruta not in RUTAS_ACTIVO:
         raise ValueError("ruta de activo no admitida")
-    return f"assets/{periodo}/{ruta}/{identificador}.json"
+    return f"activos/{periodo}/{ruta}/{identificador}.json"
 
 
-def crear_cliente(perfil: str | None = None) -> tuple[Any, str]:
-    """Carga un perfil OCI local y obtiene el namespace de Object Storage."""
-    configuracion = oci.config.from_file(profile_name=perfil or os.getenv("OCI_PROFILE", "DEFAULT"))
-    oci.config.validate_config(configuracion)
-    cliente = oci.object_storage.ObjectStorageClient(configuracion)
-    namespace = cliente.get_namespace().data
+@lru_cache(maxsize=1)
+def obtener_cliente() -> tuple[ObjectStorageClient, str]:
+    """Inicializa y almacena en caché el cliente y el namespace de OCI.
+
+    Selecciona la identidad mediante OCI_AUTH_MODE y resuelve el namespace
+    de forma dinámica. La caché evita repetir la inicialización.
+    """
+    cliente = ObjectStorageClient(**configuracion_cliente())
+    respuesta = cliente.get_namespace()
+    if respuesta is None:
+        raise RuntimeError("OCI no devolvió el namespace de Object Storage")
+    namespace = respuesta.data
     return cliente, namespace
 
 
@@ -41,31 +58,43 @@ def subir_json(
     documento: Mapping[str, Any],
     nombre_objeto: str,
     *,
-    cliente: Any | None = None,
+    cliente: ObjectStorageClient | None = None,
     namespace: str | None = None,
     bucket: str | None = None,
-    perfil: str | None = None,
 ) -> dict[str, str | None]:
     """Serializa y sube un documento; devuelve ubicación y ETag de OCI.
 
-    Para pruebas se inyectan ``cliente`` y ``namespace``. En uso real se leen
-    las credenciales del perfil local. Los errores del SDK se propagan al
-    llamador, que decidirá cómo mostrarlos o reintentarlos.
+    Reutiliza por defecto la instancia de cliente y namespace en memoria
+    gestionada por ``obtener_cliente()``. Permite inyectar ``cliente`` y
+    ``namespace`` para pruebas unitarias o aislamiento de dependencias.
+    Los errores del SDK se propagan al llamador, el cual decidirá cómo
+    mostrarlos o reintentarlos.
     """
     if not isinstance(documento, Mapping):
         raise TypeError("documento debe ser un diccionario JSON")
-    if not isinstance(nombre_objeto, str) or not nombre_objeto.strip() or nombre_objeto.startswith("/"):
+    if (
+        not isinstance(nombre_objeto, str)
+        or not nombre_objeto.strip()
+        or nombre_objeto.startswith("/")
+    ):
         raise ValueError("nombre_objeto debe ser una ruta relativa no vacía")
     if cliente is None:
-        cliente, namespace = crear_cliente(perfil)
+        cliente, namespace = obtener_cliente()
     elif not isinstance(namespace, str) or not namespace.strip():
         raise ValueError("namespace es obligatorio al inyectar un cliente")
 
-    bucket_efectivo = bucket or os.getenv("OCI_BUCKET_NAME", BUCKET_PREDETERMINADO)
+    bucket_efectivo = (
+        bucket
+        or os.getenv("OCI_BUCKET_NAME", BUCKET_PREDETERMINADO)
+    )
     if not isinstance(bucket_efectivo, str) or not bucket_efectivo.strip():
         raise ValueError("bucket debe ser un nombre no vacío")
 
-    cuerpo = json.dumps(documento, ensure_ascii=False, allow_nan=False).encode("utf-8")
+    cuerpo = json.dumps(
+        documento,
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
     respuesta = cliente.put_object(
         namespace_name=namespace,
         bucket_name=bucket_efectivo,
@@ -73,9 +102,10 @@ def subir_json(
         put_object_body=cuerpo,
         content_type="application/json; charset=utf-8",
     )
+    encabezados = respuesta.headers if respuesta is not None else None
     return {
         "bucket": bucket_efectivo,
         "namespace": namespace,
         "object_name": nombre_objeto,
-        "etag": respuesta.headers.get("etag") if respuesta.headers else None,
+        "etag": encabezados.get("etag") if encabezados else None,
     }

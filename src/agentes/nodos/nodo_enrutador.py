@@ -1,10 +1,31 @@
-from src.agentes.estado_agente import EstadoAgente
+from typing import TypedDict
+
+from src.agentes.configuracion_ia import (
+    TIER_RAPIDO,
+    TIER_RAZONAMIENTO,
+    obtener_tier_por_ruta,
+)
+from src.agentes.estado_agente import EstadoAgente, Ruta
 
 
 UMBRAL_RELEVANCIA = 40
 
 
-def determinar_rutas(estado: EstadoAgente) -> dict:
+class ResultadoRutas(TypedDict):
+    rutas: list[Ruta]
+    tier_modelo: str
+
+
+def clasificar_tier_rutas(rutas: list[Ruta]) -> str:
+    """Determina el tier de mayor exigencia entre las rutas seleccionadas."""
+    if any(obtener_tier_por_ruta(r) == TIER_RAZONAMIENTO for r in rutas):
+        return TIER_RAZONAMIENTO
+    if any(obtener_tier_por_ruta(r) == TIER_RAPIDO for r in rutas):
+        return TIER_RAPIDO
+    return TIER_RAPIDO
+
+
+def determinar_rutas(state: EstadoAgente) -> ResultadoRutas:
     """
     Determina qué activos puede generar una interacción
     a partir del análisis semántico y de las decisiones
@@ -12,15 +33,22 @@ def determinar_rutas(estado: EstadoAgente) -> dict:
 
     Puede devolver varias rutas para un mismo mensaje.
     """
+    # DS bloquea la transformación de spam antes de evaluar
+    # las rutas o elegibilidades provenientes de Data.
+    if state.get("es_spam_detectado") is True:
+        return {
+            "rutas": [],
+            "tier_modelo": TIER_RAPIDO,
+        }
 
-    rutas = []
+    rutas: list[Ruta] = []
 
-    tipo = estado.get("tipo_detectado")
-    sentimiento = estado.get("sentimiento")
+    tipo = state.get("tipo_detectado")
+    sentimiento = state.get("sentimiento")
 
-    elegible_contenido = estado.get("elegible_contenido")
-    elegible_faq = estado.get("elegible_faq", False)
-    puntaje = estado.get("score_relevancia")
+    elegible_contenido = state.get("elegible_contenido")
+    elegible_faq = state.get("elegible_faq", False)
+    puntaje = state.get("score_relevancia")
 
     # Las preguntas del programa utilizan una elegibilidad específica
     # definida por Data. No dependen de la ruta general de contenido.
@@ -28,20 +56,30 @@ def determinar_rutas(estado: EstadoAgente) -> dict:
         if elegible_faq:
             rutas.append("preguntas_frecuentes")
 
-        return {"rutas": rutas}
+        return {
+            "rutas": rutas,
+            "tier_modelo": clasificar_tier_rutas(rutas),
+        }
 
     # Para el resto de activos se mantiene elegible_contenido.
     if elegible_contenido is False:
-        return {"rutas": []}
+        return {
+            "rutas": [],
+            "tier_modelo": TIER_RAPIDO,
+        }
 
     # Estados antiguos sin la decisión por ID conservan
     # el umbral de respaldo.
     if (
         elegible_contenido is None
-        and puntaje is not None
+        and isinstance(puntaje, (int, float))
+        and not isinstance(puntaje, bool)
         and puntaje < UMBRAL_RELEVANCIA
     ):
-        return {"rutas": []}
+        return {
+            "rutas": [],
+            "tier_modelo": TIER_RAPIDO,
+        }
 
     # Una pregunta técnica relevante puede alimentar
     # las preguntas frecuentes.
@@ -57,9 +95,13 @@ def determinar_rutas(estado: EstadoAgente) -> dict:
         rutas.append("caso_exito")
         rutas.append("boletin")
 
-        if sentimiento in {"positivo", "muy_positivo"}:
+        if (
+            isinstance(sentimiento, str)
+            and sentimiento in {"positivo", "muy_positivo"}
+        ):
             rutas.append("linkedin")
 
     return {
-        "rutas": rutas
+        "rutas": rutas,
+        "tier_modelo": clasificar_tier_rutas(rutas),
     }

@@ -1,0 +1,34 @@
+{
+    "version": "1.1",
+    "campos": [
+        "id",
+        "canal",
+        "sentimiento",
+        "tema",
+        "tipo",
+        "contenido_textual",
+        "fecha"
+    ],
+    "total": 2,
+    "total_spam_excluido": 0,
+    "registros": [
+        {
+            "id": "ce-ret-b-001",
+            "canal": "prueba_ce",
+            "sentimiento": "positivo",
+            "tema": "validacion_tecnica",
+            "tipo": "feedback",
+            "contenido_textual": "DATO FICTICIO DE PRUEBA CE, lote B. Este registro tiene un identificador diferente de los del lote A. Al incorporarlo, los mensajes anteriores deben seguir disponibles y conservar su texto original. Incluye caracteres Unicode: acción, conexión, ñ y ✅.\nEsta línea también debe conservarse sin recortes.",
+            "fecha": "2026-10-24T11:00:00Z"
+        },
+        {
+            "id": "ce-ret-b-002",
+            "canal": "prueba_ce",
+            "sentimiento": "neutral",
+            "tema": "validacion_tecnica",
+            "tipo": "comentario",
+            "contenido_textual": "DATO FICTICIO DE PRUEBA CE, lote B. Al reenviar este mismo lote no deberían aparecer filas duplicadas.",
+            "fecha": "2026-10-24T11:01:00Z"
+        }
+    ]
+}

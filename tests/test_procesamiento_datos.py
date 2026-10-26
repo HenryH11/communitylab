@@ -8,22 +8,16 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from typing import cast
 import unittest
 from unittest import mock
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 
-from src.datos.ingesta import (
-    construir_ciclos,
-    construir_estado_agente,
-    construir_estados_agente,
-    contar_caracteres_no_ascii,
-    estimar_tokens,
-    guardar_ciclos,
-    limpiar_texto,
-    procesar_datos,
-)
+from src.datos.ciclos_transporte import construir_ciclos, guardar_ciclos
+from src.datos.ingesta import construir_estado_agente, construir_estados_agente, procesar_datos
+from src.datos.limpieza import contar_caracteres_no_ascii, detectar_mojibake, estimar_tokens, limpiar_texto, reparar_mojibake
 from src.datos.relevancia import (
     ConfiguracionRelevancia,
     es_pregunta_completa,
@@ -161,7 +155,7 @@ class PruebasSeleccion(unittest.TestCase):
     def test_rechaza_esquemas_invalidos_con_ubicacion(self):
         for campo, valor in (("autor", None), ("texto", 25), ("tipo", "desconocido"), ("fecha", []), ("id", "")):
             with self.subTest(campo=campo), self.assertRaisesRegex(ValueError, r"lotes\[0\].interacciones\[0\]"):
-                procesar(lote(mensaje(**{campo: valor})))
+                procesar(lote(mensaje(**{campo: valor})))  # pyright: ignore[reportArgumentType]
         for entrada in ([], {"lotes": {}}, {"lotes": [None]}, lote(None), {"lotes": [], "interacciones": []}):
             with self.subTest(entrada=entrada), self.assertRaises(ValueError):
                 procesar(entrada)
@@ -169,7 +163,7 @@ class PruebasSeleccion(unittest.TestCase):
     def test_rechaza_configuracion_invalida(self):
         for opciones in ({"maximo_por_lote": 0}, {"maximo_por_lote": True}, {"puntaje_minimo": -1}, {"caracteres_minimos": 0}, {"puntos_por_longitud": 200}, {"puntos_por_tipo": {}}, {"palabras_clave": "python"}, {"dias_de_frescura": 1.5}):
             with self.subTest(opciones=opciones), self.assertRaises(ValueError):
-                ConfiguracionRelevancia(**opciones)
+                ConfiguracionRelevancia(**opciones)  # pyright: ignore[reportArgumentType]
 
 
 class PruebasMapeoEstadoAgente(unittest.TestCase):
@@ -188,7 +182,7 @@ class PruebasMapeoEstadoAgente(unittest.TestCase):
         self.assertNotIn("id", estado)
         self.assertNotIn("idioma", estado)
         self.assertEqual(interaccion["tipo"], "comentario")
-        self.assertEqual(estado["tipo_original"], "comentario")
+        self.assertEqual(estado.get("tipo_original"), "comentario")
 
     def test_construir_estados_agente_aplana_lotes_seleccionados_en_orden_de_puntaje(self):
         entrada = lote(
@@ -235,7 +229,7 @@ class PruebasCiclos(unittest.TestCase):
         salida, _ = procesar(lote(mensaje()))
         for tamano in (0, -1, 1, 9, 31, "10", 1.5, True):
             with self.subTest(tamano=tamano), self.assertRaises(ValueError):
-                construir_ciclos(salida, tamano)
+                construir_ciclos(salida, cast(int, tamano))
 
     def test_construir_ciclos_respeta_envoltorio_de_lotes(self):
         entrada = {"metadata": {}, "lotes": [lote(mensaje("uno"), mensaje("dos", autor="Otro"))]}
@@ -514,14 +508,56 @@ class PruebasRendimiento(unittest.TestCase):
                 self.assertNotIn("tiempo", clave)
 
     def test_detecta_alerta_si_la_limpieza_pierde_caracteres_especiales(self):
-        """Simula una regresiÃ³n futura en `limpiar_texto` (que empiece a tirar
-        tildes/emoji) para confirmar que el log de rendimiento la detectarÃ­a."""
+        """Simula una regresión futura en `limpiar_texto` (que empiece a tirar
+        tildes/emoji) para confirmar que el log de rendimiento la detectaría."""
         entrada = lote(mensaje("uno", texto="Gracias por la ayuda con el código, mentores"))
         limpiador_con_bug = lambda texto: texto.encode("ascii", errors="ignore").decode("ascii")
         with mock.patch("src.datos.ingesta.limpiar_texto", side_effect=limpiador_con_bug):
             _, informe = procesar(entrada)
         self.assertEqual(informe["rendimiento"]["lotes_con_alerta_caracteres"], [0])
         self.assertFalse(informe["rendimiento"]["lotes"][0]["caracteres_especiales_preservados"])
+
+
+class PruebasRobustezLimpiezaYTransporte(unittest.TestCase):
+    """Pruebas de modularización, detección/reparación de mojibake y transporte."""
+
+    def test_detectar_mojibake_encuentra_patrones_danados(self):
+        # UTF-8 mal decodificado como latin-1/cp1252:
+        # pÃ©sima = p\u00c3\u00a9sima, Â¿CÃ³mo = \u00c2\u00bfC\u00c3\u00b3mo
+        self.assertTrue(detectar_mojibake("p\u00c3\u00a9sima conexi\u00c3\u00b3n"))
+        self.assertTrue(detectar_mojibake("\u00c2\u00bfC\u00c3\u00b3mo est\u00c3\u00a1s?"))
+        self.assertTrue(detectar_mojibake("ma\u00c3\u00b1ana"))
+
+    def test_detectar_mojibake_sin_falsos_positivos_en_espanol_valido(self):
+        self.assertFalse(detectar_mojibake("pésima conexión"))
+        self.assertFalse(detectar_mojibake("¿Cómo estás?"))
+        self.assertFalse(detectar_mojibake("mañana por la tarde"))
+        self.assertFalse(detectar_mojibake("¡Hola a todos! Feliz año 🚀"))
+        self.assertFalse(detectar_mojibake("texto normal sin acentos"))
+
+    def test_reparar_mojibake_recupera_texto_original(self):
+        self.assertEqual(reparar_mojibake("p\u00c3\u00a9sima conexi\u00c3\u00b3n"), "pésima conexión")
+        self.assertEqual(reparar_mojibake("\u00c2\u00bfC\u00c3\u00b3mo est\u00c3\u00a1s?"), "¿Cómo estás?")
+        self.assertEqual(reparar_mojibake("ma\u00c3\u00b1ana"), "mañana")
+
+    def test_reparar_mojibake_con_emojis_y_texto_mixto(self):
+        # Cuando coexisten secuencias rotas y emojis UTF-8 válidos
+        texto_mixto = "p\u00c3\u00a9sima conexi\u00c3\u00b3n 🚀 y ma\u00c3\u00b1ana 👨‍💻"
+        reparado = reparar_mojibake(texto_mixto)
+        self.assertEqual(reparado, "pésima conexión 🚀 y mañana 👨‍💻")
+
+    def test_limpiar_texto_repara_mojibake_automaticamente(self):
+        texto_sucio = "<p>p\u00c3\u00a9sima conexi\u00c3\u00b3n con el servidor</p>"
+        self.assertEqual(limpiar_texto(texto_sucio), "pésima conexión con el servidor")
+
+    def test_importacion_directa_desde_submodulos_especializados(self):
+        from src.datos.limpieza import limpiar_texto as limpiar_sub, reparar_mojibake as reparar_sub
+        from src.datos.ciclos_transporte import validar_tamano_ciclo as validar_ciclo_sub
+
+        self.assertEqual(limpiar_sub("<b>hola</b>"), "hola")
+        self.assertEqual(reparar_sub("\u00c3\u00a9"), "é")
+        with self.assertRaises(ValueError):
+            validar_ciclo_sub(5)
 
 
 if __name__ == "__main__":

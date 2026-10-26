@@ -1,6 +1,6 @@
 # 🚀 CommunityLab — Motor Inteligente de Transformación y Distribución SaaS
 
-> **Producto Mínimo Viable (MVP) — Versión Final de Producción (Semana 5.1)**
+> **Producto Mínimo Viable (MVP) — Versión Final de Producción (Semana 5)**
 > **Proyecto Oficial de Graduación — Equipo 39 (EnhanceIA Studio - EIAS)**
 > *Programa Oficial Oracle Next Education (ONE) G10 - LATAM & No Country*
 

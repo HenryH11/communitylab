@@ -1,7 +1,7 @@
 # Conjunto Consultable · Semana 5.1, subfase A
 
 Responsable: Data Analyst (Gustavo Vásquez, Jhonattan Benavides). Fecha: 15 de octubre de 2026;
-actualizado el 19 de octubre (spam del contrato v1.4 y Autonomous DB).
+actualizado el 27 de octubre (autor nullable y contrato consultable 1.2).
 
 ## Para qué sirve
 
@@ -24,8 +24,8 @@ escribe en OCI: solo transforma una entrega de DS en el índice.
 
 ```json
 {
-  "version": "1.1",
-  "campos": ["id", "canal", "sentimiento", "tema", "tipo", "contenido_textual", "fecha"],
+  "version": "1.2",
+  "campos": ["id", "canal", "sentimiento", "tema", "tipo", "contenido_textual", "fecha", "autor"],
   "total": 23,
   "total_spam_excluido": 0,
   "registros": [
@@ -36,7 +36,8 @@ escribe en OCI: solo transforma una entrega de DS en el índice.
       "tema": "empleabilidad",
       "tipo": "testimonio",
       "contenido_textual": "Comunidad, gracias a este programa conseguí mi primer trabajo…",
-      "fecha": "2026-09-10T14:32:00Z"
+      "fecha": "2026-09-10T14:32:00Z",
+      "autor": "María Gómez"
     }
   ]
 }
@@ -53,15 +54,29 @@ python -m src.datos.conjunto_consultable `
 
 ## Decisiones
 
-### 1. Siete campos, con el nombre de texto actualizado por Cloud
+### 1. Ocho campos, con autor nullable
 
-Son los campos estrictos que pide la Matriz: `id, canal, sentimiento, tema,
-tipo, contenido_textual, fecha`. `tema` sale de `tema_principal` y `tipo` de
+El contrato 1.2 contiene `id, canal, sentimiento, tema,
+tipo, contenido_textual, fecha, autor`. `tema` sale de `tema_principal` y `tipo` de
 `tipo_detectado`. Cloud confirmó `contenido_textual` en lugar de
 `contenido_corto`. Se mantienen los demás nombres de la Matriz para que las
 herramientas de DS y la documentación hablen el mismo idioma. No se agregan
 `subtema` ni `rutas` hasta que DS los pida: cada campo extra es contrato que hay
 que mantener.
+
+`autor` es `VARCHAR2(100 CHAR)` nullable, igual que `fecha` admite ausencia.
+Se toma de la entrega DS o de la entrada unida por ID; las marcas técnicas de
+ausencia y texto vacío se convierten en null. No se inventan nombres ni se
+usan IDs como nombres. El resto de los campos son obligatorios; el ingestor
+valida los tamaños VARCHAR2 comunicados por Cloud antes de abrir conexión.
+
+Los lectores actuales seleccionan `autor` de Oracle incluso cuando los
+metadatos almacenados siguen en 1.0/1.1 y proyectan el conjunto como 1.2.
+El ingestor acepta documentos 1.0/1.1 de siete campos para reintentos, sin
+borrar autores existentes ni modificar sus huellas históricas. Los documentos
+nuevos 1.2 requieren los ocho campos, aunque autor pueda ser null. Un autor
+distinto en un ID existente se trata como conflicto; no actualiza ni completa
+filas existentes automáticamente.
 
 ### 2. `contenido_textual` = texto completo (nombre confirmado)
 
@@ -75,7 +90,7 @@ que mantener.
 - **Almacenamiento:** Marco confirmó el nombre `contenido_textual` al actualizar
   la tabla para CLOB. El JSON, el SQL y el adaptador usan ese nombre.
   No se aplica ninguna migración de tabla aquí; falta la prueba real de integración.
-- **Compatibilidad:** se mantienen los siete campos y la versión 1.1. Los
+- **Compatibilidad de texto completo:** los
   consumidores no deben asumir que el texto tiene un máximo de 160 caracteres.
   El campo anterior no se acepta en cargas DB: regenerar los documentos antiguos
   y desplegar productores y consumidores coordinadamente con la columna CLOB.
@@ -148,7 +163,7 @@ de `src/datos`. Una misma entrega produce siempre el mismo archivo.
 
 ## Por coordinar
 
-- **DS (Arnold):** confirmar que los 7 campos alcanzan para las 3
+- **DS (Arnold):** confirmar que los campos alcanzan para las 3
   herramientas, y si se agrega `fecha` al contrato v1.3.
 - **CE (Renato, Marco):** la tabla de la Autonomous DB, cómo se cargan los
   registros y en qué momento se genera el índice (después de cada

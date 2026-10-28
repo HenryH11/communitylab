@@ -18,6 +18,102 @@ from src.agentes.conversacion import (
 )
 from src.agentes.interpretacion import PlanConsulta
 
+pytestmark = pytest.mark.usefixtures("verificacion_analitica_simulada")
+
+
+@pytest.mark.parametrize("cantidad", [100, 1200])
+@pytest.mark.parametrize("cantidad_explicita", [True, False])
+def test_listado_solicitado_envia_toda_la_cantidad_sin_tope_de_20(cantidad, cantidad_explicita):
+    mensajes = [
+        {"id": f"m-{i}", "texto": f"Mensaje {i}", "autor": f"Persona {i}"}
+        for i in range(cantidad)
+    ]
+
+    generar = Mock(side_effect=AssertionError("Un listado literal no necesita redactor"))
+    agente = AgenteConversacional(
+        mensajes, generador=generar,
+        interprete=lambda **_: PlanConsulta(
+            intencion="consulta", cantidad=cantidad if cantidad_explicita else None,
+            campos_listado=["id", "contenido_textual"],
+        ),
+    )
+    salida = agente.consultar(f"Lista {cantidad} mensajes" if cantidad_explicita else "Lista todos los mensajes")
+    assert len(salida["registros"]) == cantidad
+    assert len(salida["citas"]) == cantidad
+    assert salida["resumen"]["mensajes_enviados_al_modelo"] == 0
+    generar.assert_not_called()
+    if cantidad == 1200:
+        assert len(salida["respuesta"]) > 4000
+
+
+def test_listar_100_autores_unicos_sin_redactar_ni_inventar_nombres():
+    mensajes = [
+        {"id": f"m-{i}", "texto": "Texto completo " * 100, "autor": f"Persona {i}"}
+        for i in range(120)
+    ]
+    mensajes += [
+        {"id": "duplicado", "texto": "Otro mensaje", "autor": "Persona 0"},
+        {"id": "sin-autor", "texto": "Mensaje sin nombre", "autor": None},
+    ]
+    generador = Mock(side_effect=AssertionError("Un listado de autores no necesita redactor"))
+    agente = AgenteConversacional(
+        mensajes, generador=generador,
+        interprete=lambda **_: PlanConsulta(
+            intencion="consulta", listar_autores=True, cantidad=100,
+        ),
+    )
+    salida = agente.consultar("Dame 100 nombres de la base")
+    assert len(salida["autores"]) == 100
+    assert len(salida["citas"]) == 100
+    assert salida["autores"][0] == "Persona 0"
+    assert salida["resumen"]["total_autores"] == 120
+    assert salida["resumen"]["mensajes_sin_autor"] == 1
+    assert salida["resumen"]["mensajes_enviados_al_modelo"] == 0
+    assert salida["total_coincidencias"] == 122
+    generador.assert_not_called()
+
+
+@pytest.mark.parametrize("cantidad", [None, 100])
+def test_listado_autores_aplica_filtros_y_deduplica_nombres(cantidad):
+    generador = Mock()
+    agente = AgenteConversacional(
+        [
+            {"id": "a", "texto": "Primero", "autor": " Ana ", "canal": "Discord"},
+            {"id": "b", "texto": "Segundo", "autor": "ana", "canal": "Discord"},
+            {"id": "c", "texto": "Tercero", "autor": "José", "canal": "Discord"},
+            {"id": "d", "texto": "Cuarto", "autor": "Otro", "canal": "Telegram"},
+            {"id": "e", "texto": "Quinto", "autor": None, "canal": "Discord"},
+        ],
+        generador=generador,
+        interprete=lambda **_: PlanConsulta(
+            intencion="consulta", listar_autores=True, canal="Discord", cantidad=cantidad,
+        ),
+    )
+    salida = agente.consultar("Lista los nombres de Discord")
+    assert salida["autores"] == ["Ana", "José"]
+    assert salida["citas"] == ["a", "c"]
+    assert salida["resumen"]["total_autores"] == 2
+    assert salida["resumen"]["mensajes_sin_autor"] == 1
+    assert salida["total_coincidencias"] == 4
+    if cantidad:
+        assert "Pediste 100" in salida["respuesta"]
+    generador.assert_not_called()
+
+
+def test_listado_sin_autores_no_utiliza_ids_como_nombres():
+    generador = Mock()
+    agente = AgenteConversacional(
+        [{"id": "sin-autor", "texto": "Un mensaje", "autor": None}],
+        generador=generador,
+        interprete=lambda **_: PlanConsulta(intencion="consulta", listar_autores=True),
+    )
+    salida = agente.consultar("Lista todos los nombres")
+    assert salida["autores"] == []
+    assert salida["citas"] == []
+    assert salida["resumen"]["mensajes_sin_autor"] == 1
+    assert "no tienen autor registrado" in salida["respuesta"]
+    generador.assert_not_called()
+
 
 @pytest.fixture(autouse=True)
 def interprete_simulado(monkeypatch):
@@ -192,7 +288,7 @@ def test_agregados_incluyen_todas_las_coincidencias_no_solo_el_contexto_top():
 
     salida = AgenteConversacional(mensajes, generador=generador).consultar("Python")
 
-    assert len(recibidos["evidencia"]) == 8
+    assert len(recibidos["evidencia"]) == 12
     assert recibidos["resumen"]["total_coincidencias"] == 12
     assert recibidos["resumen"]["porcentaje_temas"]["programacion"] == 100.0
     assert salida["total_coincidencias"] == 12
@@ -492,7 +588,8 @@ def _salida_borrador() -> SalidaConversacional:
 def test_creatividad_solo_se_aplica_a_borradores(consulta, esperado):
     llamadas = []
 
-    def cadena_falsa(proveedor, temperatura=None, top_p=None):
+    def cadena_falsa(proveedor, temperatura=None, top_p=None, *, max_tokens):
+        assert max_tokens == 4096
         llamadas.append((proveedor, temperatura, top_p))
         cadena = MagicMock()
         cadena.invoke.return_value = (

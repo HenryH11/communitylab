@@ -10,6 +10,8 @@ from src.agentes.interpretacion import ErrorInterpretacion, PlanConsulta
 from src.app.errores_agente import explicar_error
 from src.agentes.plataformas import NOMBRES_PLATAFORMA
 
+pytestmark = pytest.mark.usefixtures("verificacion_analitica_simulada")
+
 
 EJEMPLO = (
     "hola como estas? podrias hacer un post de linkedin que consideres "
@@ -236,7 +238,8 @@ def test_modelo_elegido_solo_se_envia_a_generacion(seleccion):
         "resumen": "Revisión del borrador.",
     }
 
-    def cadena(proveedor, temperatura=None, top_p=None, modelo_id=None):
+    def cadena(proveedor, temperatura=None, top_p=None, modelo_id=None, *, max_tokens):
+        assert max_tokens == 4096
         return generar
 
     with (
@@ -253,7 +256,7 @@ def test_modelo_elegido_solo_se_envia_a_generacion(seleccion):
             modo_verificacion="verificacion_automatica",
         )
 
-    assert obtener.call_args.kwargs == {"modelo_id": MODELOS_RESPUESTA[seleccion]}
+    assert obtener.call_args.kwargs == {"modelo_id": MODELOS_RESPUESTA[seleccion], "max_tokens": 4096}
     assert revision.call_args.args == ("gemini",)
     assert "modelo" not in interpretar.call_args.kwargs
 
@@ -309,7 +312,8 @@ def test_redireccion_preserva_plan_para_retomar_y_no_busca_fuera_de_alcance():
         {"intencion": "borrador"},
         {"intencion": "consulta", "cantidad": -1},
         {"intencion": "consulta", "cantidad": True},
-        {"intencion": "consulta", "cantidad": 1001},
+        {"intencion": "borrador", "plataforma": "linkedin", "listar_autores": True},
+        {"intencion": "consulta", "agrupar_preguntas": True, "listar_autores": True},
         {"intencion": "consulta", "fecha_desde": "2026-10-24", "fecha_hasta": "2026-10-20"},
         {"intencion": "consulta", "sentimiento": "increíble"},
         {"intencion": "consulta", "terminos": [" "]},
@@ -353,6 +357,7 @@ def test_cadena_interpretacion_usa_esquema_y_temperatura_cero(proveedor):
         assert modelo.call_args.args == (PlanConsulta,)
         assert modelo.call_args.kwargs == {
             "proveedor": proveedor, "ruta": "conversacion", "temperatura": 0.0,
+            "max_tokens": 4096,
             "modelo": "nvidia/nemotron-3.5-super-vl-120b-a12b" if proveedor == "nvidia_nim" else None,
         }
     finally:
@@ -403,7 +408,7 @@ def test_interprete_nvidia_conserva_fallback_a_gemini():
         patch.object(interpretacion, "obtener_proveedor_generacion", return_value="nvidia_nim"),
         patch.object(
             interpretacion, "_obtener_cadena_interpretacion",
-            side_effect=lambda proveedor: primario if proveedor == "nvidia_nim" else respaldo,
+            side_effect=lambda proveedor, **_: primario if proveedor == "nvidia_nim" else respaldo,
         ),
         patch("src.agentes.reintentos.time.sleep"),
     ):

@@ -1,5 +1,46 @@
 # Ajuste CE del cliente de DB: propuesta para revisión de Marco
 
+> Actualización 2026-10-27: el contrato vigente es 1.2, con ocho campos y
+> `autor` nullable (máximo 100 caracteres). El servicio actual hace cargas
+> acumulativas, no retira registros ni sobrescribe IDs en conflicto. Los
+> documentos 1.0/1.1 siguen admitidos para reintentos sin perder el autor ya
+> almacenado. La lectura selecciona `autor` y proyecta el contrato 1.2.
+> Las secciones siguientes registran la propuesta histórica de instantánea;
+> para operación vigente ver [Conjunto Consultable](conjunto_consultable.md)
+> y [manual de código](manual_lectura_codigo.md). No se ha ejecutado DDL ni
+> escritura en Oracle como parte de esta actualización local.
+
+## Lectura del agente y presupuesto de IA
+
+La captura de Oracle no se limita a 20 filas para el agente. Los filtros y
+agregados se resuelven sobre las coincidencias; los listados literales de campos
+se obtienen en Python, no solo el de autores. El análisis y los borradores
+procesan toda la selección por lotes de contexto y consolidan los hallazgos.
+No se confunde límite de tokens por llamada con cantidad máxima de registros.
+
+Solo el equipo modifica `COMMUNITYLAB_CONTEXTO_TOKENS` (32768 inicialmente) y
+`COMMUNITYLAB_SALIDA_TOKENS` (4096) en el entorno del servidor de Marketing.
+No son ajustes del visitante ni cambian SQL, permisos o límites de Oracle.
+El presupuesto es compartido con el proveedor de respaldo y usa una estimación
+conservadora, no un tokenizer exacto. Los detalles y limitaciones están en
+[flujo conversacional](agente_conversacional.md#presupuesto-de-contexto-y-cobertura).
+
+Marketing aplica además un presupuesto total por consulta (30 intentos y 250000
+tokens reservados inicialmente), con hasta dos consultas simultáneas por proceso.
+Cuenta interpretación, lotes, reintentos, respaldo, correcciones y verificación.
+La cuota horaria compartida es configurable pero arranca desactivada, sin techo
+de gasto acumulado. No se cambian permisos ni límites de Oracle. Las referencias
+de las síntesis se conservan por hallazgo, no por todo el lote procesado.
+Ver [admisión y presupuesto](agente_conversacional.md#admisión-y-presupuesto-total-por-consulta).
+
+Las consultas analíticas generadas por IA ahora requieren revisión factual de
+su texto completo antes de guardarse. La revisión usa mensajes originales y
+agregados calculados por Python; no trata los hallazgos del redactor como prueba.
+Consume el mismo presupuesto por consulta y no ejecuta SQL ni modifica Oracle.
+Los listados locales no necesitan una segunda llamada de verificación.
+
+## Propuesta histórica de sincronización (no operación vigente)
+
 No se ha ejecutado contra INSUMOS ni se han cambiado permisos o infraestructura.
 Parte de `feature/marco-cloud-cliente-bd-w5` y conserva su conexión mediante Vault.
 

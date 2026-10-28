@@ -43,6 +43,30 @@ def entrega_v12():
 
 
 class PruebasConjuntoConsultable(unittest.TestCase):
+    def test_autor_desde_entrega_dataset_y_null(self):
+        entrega = entrega_v13()
+        entrega["interacciones"][0]["autor"] = "María"
+        conjunto = construir_conjunto_consultable(entrega)
+        self.assertEqual(conjunto["version"], "1.2")
+        self.assertIsNone(conjunto["registros"][0]["autor"])
+        self.assertEqual(conjunto["registros"][1]["autor"], "María")
+        conjunto = construir_conjunto_consultable(
+            entrega, [{"id": "int-001", "autor": "José"}],
+        )
+        self.assertEqual(conjunto["registros"][0]["autor"], "José")
+
+    def test_autor_ausente_no_exporta_marca_tecnica(self):
+        entrega = entrega_v13()
+        entrega["interacciones"][0]["autor"] = "__communitylab_ausente__:autor"
+        self.assertIsNone(construir_conjunto_consultable(entrega)["registros"][1]["autor"])
+
+    def test_autor_invalido_no_se_exporta(self):
+        for autor in (0, False, [], 12, ["Ana"], "a" * 101):
+            entrega = entrega_v13()
+            entrega["interacciones"][0]["autor"] = autor
+            with self.assertRaises(ValueError):
+                construir_conjunto_consultable(entrega)
+
     def test_campos_estrictos_y_orden_por_id(self):
         conjunto = construir_conjunto_consultable(entrega_v13())
         self.assertEqual(conjunto["campos"], list(CAMPOS))

@@ -3,6 +3,9 @@
 from typing import Any
 
 from pydantic import BaseModel
+from langchain_core.runnables import RunnableLambda
+
+from src.agentes.consumo import reservar_intento
 
 from src.agentes.fallback_ia import (
     invocar_modelo_con_fallback,
@@ -86,6 +89,7 @@ def _obtener_modelo_estructurado(
     modelo: str | None = None,
     temperatura: float | None = None,
     top_p: float | None = None,
+    max_tokens: int | None = None,
 ):
     """Obtiene un modelo estructurado del proveedor indicado."""
     # Solo se reenvían los parámetros indicados para no romper adaptadores
@@ -96,18 +100,24 @@ def _obtener_modelo_estructurado(
             ("modelo", modelo),
             ("temperatura", temperatura),
             ("top_p", top_p),
+            ("max_tokens", max_tokens),
         )
         if valor is not None
     }
     if proveedor == PROVEEDOR_GEMINI:
-        return obtener_modelo_gemini_estructurado(esquema, **extras)
+        cadena = obtener_modelo_gemini_estructurado(esquema, **extras)
+    elif proveedor == PROVEEDOR_NVIDIA_NIM:
+        cadena = obtener_modelo_nvidia_estructurado(esquema, **extras)
+    else:
+        raise ValueError(f"Proveedor de IA no soportado: {proveedor}")
+    if max_tokens is None:
+        return cadena
 
-    if proveedor == PROVEEDOR_NVIDIA_NIM:
-        return obtener_modelo_nvidia_estructurado(esquema, **extras)
+    def autorizar(entrada):
+        reservar_intento(entrada, esquema.model_json_schema(), max_tokens)
+        return entrada
 
-    raise ValueError(
-        f"Proveedor de IA no soportado: {proveedor}"
-    )
+    return RunnableLambda(autorizar) | cadena
 
 
 def obtener_modelo_generacion_estructurado(
@@ -118,6 +128,7 @@ def obtener_modelo_generacion_estructurado(
     modelo: str | None = None,
     temperatura: float | None = None,
     top_p: float | None = None,
+    max_tokens: int | None = None,
 ):
     """Obtiene el modelo estructurado utilizado por los generadores."""
     modelo_resuelto = modelo
@@ -135,6 +146,7 @@ def obtener_modelo_generacion_estructurado(
         modelo=modelo_resuelto,
         temperatura=temperatura,
         top_p=top_p,
+        max_tokens=max_tokens,
     )
 
 

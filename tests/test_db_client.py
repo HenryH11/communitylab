@@ -16,10 +16,11 @@ from src.services import ingest_server as db
 from src.config import db_client as lector
 
 
-def documento(*ids, version="1.1", spam=1):
+def documento(*ids, version="1.2", spam=1):
+    campos = db.CAMPOS_CONJUNTO if version == "1.2" else db.CAMPOS_CONJUNTO[:-1]
     salida = {
         "version": version,
-        "campos": list(db.CAMPOS_CONJUNTO),
+        "campos": list(campos),
         "total": len(ids),
         "registros": [
             dict(
@@ -34,7 +35,10 @@ def documento(*ids, version="1.1", spam=1):
             for i in ids
         ],
     }
-    if version == "1.1":
+    if version == "1.2":
+        for registro in salida["registros"]:
+            registro["autor"] = None
+    if version in ("1.1", "1.2"):
         salida["total_spam_excluido"] = spam
     return salida
 
@@ -123,7 +127,7 @@ class Cursor:
                     for i in sorted(con.filas)
                 ]
                 if not self.resultado:
-                    self.resultado = [meta + (None,) * 7]
+                    self.resultado = [meta + (None,) * len(db.CAMPOS_CONJUNTO)]
         else:
             raise AssertionError(f"SQL no modelado: {sql}")
 
@@ -195,7 +199,9 @@ def test_roundtrip_contrato_11_unicode_null_sin_mutar():
 def test_roundtrip_version_10():
     doc, con = documento("int-001", version="1.0"), Conexion()
     cargar(doc, con)
-    esperado = dict(doc, version="1.1", total_spam_excluido=0)
+    esperado = dict(doc, version="1.2", campos=list(db.CAMPOS_CONJUNTO), total_spam_excluido=0)
+    for registro in esperado["registros"]:
+        registro["autor"] = None
     assert lector.leer_conjunto(conexion=con) == esperado
 
 
@@ -575,6 +581,39 @@ def test_contrato_y_sql_no_reintroducen_alias_recortado():
     doc, con = documento("int-001"), Conexion()
     registro = doc["registros"][0]
     registro["contenido_corto"] = registro.pop("contenido_textual")
-    with pytest.raises(ValueError, match="7 campos"):
+    with pytest.raises(ValueError, match="campos"):
         cargar(doc, con)
     assert not con.operaciones
+
+
+def test_autor_roundtrip_hasta_el_agente():
+    from src.app.fuente_agente import adaptar_conjunto
+
+    doc, con = documento("int-001", "int-002"), Conexion()
+    doc["registros"][0]["autor"] = "María Gómez"
+    cargar(doc, con)
+    leido = lector.leer_conjunto(conexion=con)
+    assert leido == doc
+    assert "d.autor" in lector._SQL_SELECT_TODOS
+    assert ":autor" in db._SQL_UPSERT
+    assert adaptar_conjunto(leido)[0]["autor"] == "María Gómez"
+    assert adaptar_conjunto(leido)[1]["autor"] == ""
+
+
+@pytest.mark.parametrize("autor", [12, [], "", "  ", "a" * 101])
+def test_autor_invalido_no_abre_conexion(autor):
+    doc, con = documento("int-001"), Conexion()
+    doc["registros"][0]["autor"] = autor
+    with pytest.raises(ValueError, match="autor"):
+        cargar(doc, con)
+    assert con.operaciones == []
+
+
+def test_lote_11_anterior_conserva_autor_y_huella_en_reintento():
+    doc, con = documento("int-001", version="1.1"), Conexion()
+    cargar(doc, con)
+    huellas = set(con.cargas)
+    con.filas["int-001"]["autor"] = "Ana"
+    assert cargar(doc, con)["repetido"] is True
+    assert set(con.cargas) == huellas
+    assert lector.leer_conjunto(conexion=con)["registros"][0]["autor"] == "Ana"

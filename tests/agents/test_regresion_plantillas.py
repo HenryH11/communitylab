@@ -9,6 +9,8 @@ from src.agentes.conversacion import AgenteConversacional, BorradorMarketing, Gr
 from src.agentes.interpretacion import PlanConsulta
 from src.app.publicacion_redes import texto_publicacion
 
+pytestmark = pytest.mark.usefixtures("verificacion_analitica_simulada")
+
 
 def borrador(contenido):
     return {

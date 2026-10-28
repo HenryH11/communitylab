@@ -131,15 +131,15 @@ def test_comprobar_destino_consulta_tablas_sin_publicar_secretos(monkeypatch):
 
 @pytest.mark.parametrize("fila,verificado", [
     (None, False),
-    (("#general", "neutral", "aprendizaje", "comentario", "Otro texto", None), False),
-    (("#general", "neutral", "aprendizaje", "comentario", "Texto completo", None), True),
+    (("#general", "neutral", "aprendizaje", "comentario", "Otro texto", None, None), False),
+    (("#general", "neutral", "aprendizaje", "comentario", "Texto completo", None, "Ana"), True),
 ])
 def test_verificar_contenido_real_no_solo_conteo(fila, verificado):
     registro = dict(zip(ingest_server.CAMPOS_CONJUNTO, [
-        "demo-1", "#general", "neutral", "aprendizaje", "comentario", "Texto completo", None,
+        "demo-1", "#general", "neutral", "aprendizaje", "comentario", "Texto completo", None, "Ana",
     ]))
     documento = {
-        "version": "1.1", "campos": list(ingest_server.CAMPOS_CONJUNTO),
+        "version": "1.2", "campos": list(ingest_server.CAMPOS_CONJUNTO),
         "total": 1, "total_spam_excluido": 0, "registros": [registro],
     }
     conexion = MagicMock()

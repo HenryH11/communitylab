@@ -2,7 +2,7 @@
 
 Aplana la entrega de DS en un registro por interacción con los campos estrictos que
 consumen las herramientas del agente: id, canal, sentimiento, tema, tipo,
-contenido_textual y fecha. Acepta el contrato de salida de DS (v1.3 y v1.4, campos
+contenido_textual, fecha y autor. Acepta el contrato de salida de DS (v1.3 y v1.4, campos
 planos) y el paquete de auditoría (v1.2, con entrada/analisis/datos). La fecha no viaja
 en el contrato: se toma del dataset de entrada, unido por id. Los mensajes que DS marca
 como spam (v1.4) quedan fuera del índice y solo se cuentan. Sin IA ni red.
@@ -12,8 +12,10 @@ import argparse
 import json
 from pathlib import Path
 
-CAMPOS = ("id", "canal", "sentimiento", "tema", "tipo", "contenido_textual", "fecha")
-VERSION = "1.1"
+from src.datos.metadatos import valor_publico
+
+CAMPOS = ("id", "canal", "sentimiento", "tema", "tipo", "contenido_textual", "fecha", "autor")
+VERSION = "1.2"
 
 
 def _mensajes_por_id(mensajes):
@@ -56,6 +58,14 @@ def construir_conjunto_consultable(entrega, mensajes=None):
         texto = fila.get("texto") or original.get("texto")
         if not isinstance(texto, str) or not texto.strip():
             raise ValueError(f"El registro {identificador} requiere texto no vacío.")
+        autor = fila.get("autor")
+        if autor is None:
+            autor = original.get("autor")
+        if autor is not None and not isinstance(autor, str):
+            raise ValueError(f"El registro {identificador} requiere autor de texto o null.")
+        autor = valor_publico(autor).strip() or None
+        if autor is not None and len(autor) > 100:
+            raise ValueError(f"El autor de {identificador} supera 100 caracteres.")
         registros[identificador] = {
             "id": identificador,
             "canal": fila.get("canal") or original.get("canal"),
@@ -64,6 +74,7 @@ def construir_conjunto_consultable(entrega, mensajes=None):
             "tipo": fila.get("tipo_detectado"),
             "contenido_textual": texto,
             "fecha": fila.get("fecha") or original.get("fecha"),
+            "autor": autor,
         }
     filas = [registros[i] for i in sorted(registros)]
     return {"version": VERSION, "campos": list(CAMPOS), "total": len(filas),

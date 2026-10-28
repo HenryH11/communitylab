@@ -8,12 +8,21 @@ import streamlit as st
 
 from src.agentes.conversacion import ESTILOS_REDACCION, AgenteConversacional
 from src.agentes.procesamiento import procesar_paquete_entrega
-from src.app import estilo_agente, fuente_agente, publicacion_redes, vista_ayuda, vista_inicio, vista_plantillas
+from src.app import estilo_agente, fuente_agente, fuentes_citadas, publicacion_redes, vista_ayuda, vista_inicio, vista_plantillas
 from src.app import tema as identidad
 from src.app.curaduria_oci import contexto_curaduria
 from src.app.errores_agente import explicar_error
 from src.datos.entrega_ia import preparar_paquete_ia
-from src.datos.metadatos import valor_publico
+
+TURNOS_POR_PAGINA = 10
+
+
+def _inicios_turnos(historial: list[dict]) -> list[int]:
+    return [
+        indice for indice, mensaje in enumerate(historial)
+        if indice == 0 or mensaje["role"] == "user" or historial[indice - 1]["role"] != "user"
+    ]
+
 
 def render(*, modo_interno: bool = False) -> None:
     st.set_page_config(
@@ -170,6 +179,8 @@ def render(*, modo_interno: bool = False) -> None:
                                     )
                                     st.session_state.pop("agente_conversacional", None)
                                     st.session_state.pop("historial_agente", None)
+                                    st.session_state.pop("fuentes_agente_versionadas", None)
+                                    st.session_state.pop("pagina_historial_agente", None)
                                     st.success("Procesamiento completado.")
                                 except Exception as error:
                                     st.error(
@@ -468,21 +479,6 @@ def render(*, modo_interno: bool = False) -> None:
                     )
 
 
-    def _mostrar_fuentes(salida, resultados):
-        citas = salida.get("citas", [])
-        if not citas:
-            st.caption("La respuesta no incluye fuentes citadas.")
-            return
-        for cita in citas:
-            fuente = resultados.get(cita, {})
-            st.markdown(
-                f"**{cita}** · "
-                f"{valor_publico(fuente.get('autor')) or 'Autor desconocido'} · "
-                f"{valor_publico(fuente.get('canal')) or 'Canal desconocido'}"
-            )
-            st.write(fuente.get("texto", ""))
-
-
     def _mostrar_verificacion(salida):
         verificacion = salida.get("verificacion", {})
         st.caption(f"Estado: {verificacion.get('estado', 'no_disponible')}")
@@ -497,8 +493,15 @@ def render(*, modo_interno: bool = False) -> None:
                 "Respaldada" if afirmacion.get("respaldada") else "Requiere revisión"
             )
             st.markdown(f"- **{estado_afirmacion}:** {afirmacion['afirmacion']}")
+            if afirmacion.get("respaldo_agregado"):
+                st.caption("Respaldo: agregados calculados por la aplicación para esta consulta.")
             if afirmacion.get("citas"):
-                st.caption("Fuentes: " + ", ".join(afirmacion["citas"]))
+                citas = list(dict.fromkeys(afirmacion["citas"]))
+                muestra = ", ".join(citas[:3])
+                st.caption(
+                    f"{len(citas)} fuentes de respaldo. IDs: {muestra}"
+                    + ("… Filtra por esta afirmación en el explorador para verlas todas." if len(citas) > 3 else ".")
+                )
 
 
     _ETIQUETAS_ESTILO = {
@@ -750,6 +753,16 @@ def render(*, modo_interno: bool = False) -> None:
                 st.warning(explicar_error(error))
                 return
             historial = st.session_state.setdefault("historial_agente", [])
+            if not historial or "fuentes_agente_versionadas" not in st.session_state:
+                almacen = {}
+                for turno in historial:
+                    anterior = turno.get("salida", {})
+                    if "fuentes_citadas" in anterior:
+                        fuentes_citadas.conservar_fuentes(
+                            anterior, anterior["fuentes_citadas"], almacen=almacen,
+                        )
+                st.session_state["fuentes_agente_versionadas"] = almacen
+            almacen = st.session_state["fuentes_agente_versionadas"]
             if not mensajes:
                 if not historial and not consulta:
                     st.markdown(
@@ -770,7 +783,33 @@ def render(*, modo_interno: bool = False) -> None:
                 )
             resultados = {mensaje["id"]: mensaje for mensaje in mensajes}
 
-            for indice, mensaje in enumerate(historial):
+            inicios = _inicios_turnos(historial)
+            if consulta:
+                inicios.append(len(historial))
+            total_turnos = len(inicios)
+            paginas = max(1, (total_turnos + TURNOS_POR_PAGINA - 1) // TURNOS_POR_PAGINA)
+            clave_pagina = "pagina_historial_agente"
+            if consulta:
+                st.session_state[clave_pagina] = 1
+            st.session_state[clave_pagina] = min(
+                max(st.session_state.get(clave_pagina, 1), 1), paginas,
+            )
+            pagina = int(st.number_input(
+                "Página del historial (1: más recientes)",
+                min_value=1, max_value=paginas, step=1,
+                key=clave_pagina, disabled=paginas == 1,
+            ))
+            fin_turno = max(0, total_turnos - (pagina - 1) * TURNOS_POR_PAGINA)
+            inicio_turno = max(0, fin_turno - TURNOS_POR_PAGINA)
+            inicio = inicios[inicio_turno] if inicios else 0
+            fin = inicios[fin_turno] if fin_turno < total_turnos else len(historial)
+            if inicios:
+                st.caption(
+                    f"Turnos {inicio_turno + 1}–{fin_turno} de {total_turnos}. "
+                    "Navegar no consulta al modelo ni elimina respuestas."
+                )
+            for indice in range(inicio, fin):
+                mensaje = historial[indice]
                 with st.chat_message(mensaje["role"]):
                     st.markdown(
                         estilo_agente.marca_voz(mensaje["role"]),
@@ -806,6 +845,7 @@ def render(*, modo_interno: bool = False) -> None:
                         respuesta = {"role": "assistant", "error": explicar_error(error)}
                         st.warning(respuesta["error"])
                     else:
+                        fuentes_citadas.conservar_fuentes(salida, resultados, almacen=almacen)
                         respuesta = {
                             "role": "assistant",
                             "content": salida["respuesta"],
@@ -821,17 +861,34 @@ def render(*, modo_interno: bool = False) -> None:
                 historial.extend([{"role": "user", "content": consulta}, respuesta])
 
     def _mostrar_detalle_agente(mensaje, salida, resultados, *, clave):
+        consumo = salida.get("consumo")
+        if consumo:
+            st.caption(
+                f"{consumo['intentos_proveedor']} intentos de proveedor · "
+                f"Reserva estimada: {consumo['tokens_reservados_estimados']} de "
+                f"{consumo['max_tokens']} tokens por consulta (no facturación real)."
+            )
+        procesamiento = salida.get("resumen", {}).get("procesamiento", {})
+        if procesamiento:
+            st.caption(
+                f"{procesamiento['registros_procesados']} registros procesados · "
+                f"{procesamiento['lotes_fuente']} lotes de fuentes · "
+                f"{procesamiento['llamadas_generacion']} llamadas de generación."
+            )
         if salida.get("borrador"):
             st.markdown(estilo_agente.borrador(salida["borrador"]), unsafe_allow_html=True)
             publicacion_redes.render(salida["borrador"], clave=clave)
-        if mensaje.get("modo_verificacion") == "verificacion_automatica":
+        if (
+            mensaje.get("modo_verificacion") == "verificacion_automatica"
+            or salida.get("verificacion", {}).get("obligatoria")
+        ):
             with st.expander("Verificación y fuentes", expanded=True):
                 _mostrar_verificacion(salida)
                 st.markdown("**Fuentes citadas**")
-                _mostrar_fuentes(salida, resultados)
+                fuentes_citadas.render(salida, resultados, clave=f"{clave}_fuentes")
         elif salida.get("citas"):
             with st.expander("Fuentes citadas"):
-                _mostrar_fuentes(salida, resultados)
+                fuentes_citadas.render(salida, resultados, clave=f"{clave}_fuentes")
 
     # Evita que Streamlit elimine los ajustes al ocultar sus widgets en otra página.
     for clave in (

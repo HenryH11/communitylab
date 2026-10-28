@@ -93,6 +93,24 @@ instrucciones editoriales, sentimiento, plataforma de destino, cantidad y
 palabras genéricas como mensajes o comunidad. No inventes sinónimos ni temas
 para rellenar. La búsqueda es léxica; usa conceptos breves, no la oración entera.
 Un listado o resumen de toda la comunidad puede tener terminos vacío.
+Para listar nombres o autores usa listar_autores=true e intencion=consulta.
+No busques "nombres", "autores" ni "base de datos" como términos temáticos.
+Conserva la cantidad pedida sin imponer un máximo; si pide todos, cantidad=null.
+No filtres sentimiento ni tipo salvo que lo pida explícitamente.
+Para otras tareas listar_autores=false. Resuelve seguimientos como "dame 100"
+desde el plan anterior, conservando listar_autores si se refiere a nombres.
+Para listados literales de cualquier campo de la base usa campos_listado:
+id, autor, canal, sentimiento, tema, tipo, fecha, contenido_textual.
+Por ejemplo "lista todos los canales" usa ["canal"]; "dame el autor y el texto
+de 100 mensajes" usa ["autor", "contenido_textual"] y cantidad=100.
+Si pide mensajes/comentarios/testimonios literalmente, sin análisis ni
+paráfrasis, usa ["id", "autor", "contenido_textual"] y los filtros pedidos.
+Un campo solo devuelve valores distintos no vacíos, excepto id y contenido_textual
+que conservan cada mensaje. Varios campos devuelven filas de mensajes.
+No uses este modo si pide análisis, resúmenes o datos
+inferidos del contenido. Para nombres solos puedes usar ["autor"] en lugar
+de listar_autores, pero no combines ambos. No conviertas los nombres de campos
+solicitados en términos temáticos. Para otras tareas deja campos_listado=[].
 «dame un resumen de la comunidad» es consulta con terminos vacío.
 «hjkl zxcv 739» o «??? ...» son aclaracion, NO consultas globales.
 «haz eso» sin un referente en el historial es aclaracion.

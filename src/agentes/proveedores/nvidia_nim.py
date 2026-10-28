@@ -138,6 +138,7 @@ def obtener_modelo_nvidia_estructurado(
     modelo: str | None = None,
     temperatura: float | None = None,
     top_p: float | None = None,
+    max_tokens: int | None = None,
 ):
     """
     Adapta NVIDIA NIM al contrato estructurado solicitado.
@@ -166,6 +167,8 @@ def obtener_modelo_nvidia_estructurado(
             "type": "json_object",
         }
     }
+    if max_tokens is not None:
+        parametros["max_tokens"] = max_tokens
 
     modelo_efectivo = modelo or getattr(
         cliente_base,
@@ -177,7 +180,7 @@ def obtener_modelo_nvidia_estructurado(
         modelo_efectivo == "nvidia/nemotron-3.5-super-vl-120b-a12b"
         and esquema.__name__ == "SugerenciaPreguntasFrecuentes"
     ):
-        parametros["max_tokens"] = 512
+        parametros["max_tokens"] = min(max_tokens, 512) if max_tokens is not None else 512
 
     modelo_json = cliente_base.bind(**parametros)
 

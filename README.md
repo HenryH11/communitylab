@@ -4,6 +4,14 @@
 > **Proyecto Oficial de Graduación — Equipo 39 (EnhanceIA Studio - EIAS)**
 > *Programa Oficial Oracle Next Education (ONE) G10 - LATAM & No Country*
 
+## Guías para entender el proyecto
+
+- [Manual de lectura del código](docs/manual_lectura_codigo.md): recorridos de
+  ejecución, contratos, estado, inventario y laboratorio offline.
+- [Razones de arquitectura y tecnologías](docs/razones_arquitectura_tecnologias.md):
+  estructura, decisiones, alternativas, compromisos y límites del diseño actual.
+
+
 ---
 
 ## 📖 1. Visión del Proyecto y Storytelling de Datos (80% Comercial / 20% Técnico)

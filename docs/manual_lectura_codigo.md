@@ -11,13 +11,40 @@ código. Puede convertirse a PDF cuando se quiera distribuir una edición fija.
 Si algo aquí contradice a la implementación, el código y sus pruebas son la
 fuente de verdad: actualiza este documento al cambiar el comportamiento.
 
-La meta es dar una comprensión operativa y de diseño cercana al 90%: qué
+La meta es dar una comprensión operativa y de diseño amplia: qué
 responsabilidad tiene cada módulo, qué datos recibe y produce, qué camino sigue
 una solicitud y dónde están sus límites. No sustituye leer una implementación
 cuando se va a modificarla. El comportamiento exacto también depende de
 LangChain, LangGraph, Gemini, NVIDIA NIM, Oracle, OCI, Streamlit y la
 configuración del entorno; las pruebas y el código vigente son la fuente de
 verdad.
+
+**No es una transcripción del 100% del código ni una medición de que quien lo
+lea entenderá el 90%.** Referenciar todos los archivos no demuestra comprender
+todos sus caminos. Este manual cubre el inventario Python completo y desarrolla
+las responsabilidades, contratos, algoritmos, estados y recorridos principales;
+al final de la guía de ejecución hay ejercicios para comprobar lo aprendido.
+Los helpers repetitivos se agrupan por responsabilidad y las bibliotecas externas
+no se explican internamente.
+
+Su documento complementario es
+[Razones de arquitectura y tecnologías](razones_arquitectura_tecnologias.md):
+este manual enseña **qué ejecuta el código y cómo seguirlo**; el otro explica
+**qué problema resuelve la estructura, qué cuesta y qué alternativas existen**.
+
+### Navegación por preguntas
+
+| Quiero entender... | Empieza aquí |
+| --- | --- |
+| Qué producto es y qué procesos existen | [Mapa mental](#mapa-mental) y [arquitectura vigente](#arquitectura-vigente-y-flujos) |
+| Cómo cambia un mensaje desde el origen | [Recorrido de una interacción](#recorrido-de-una-interacción) y [trazabilidad de campos](#trazabilidad-de-campos-entre-capas) |
+| Qué sucede al enviar una pregunta al chat | [Recorrido completo del chat](#recorrido-completo-del-chat) |
+| Cómo funcionan los lotes, las citas y la revisión | [Algoritmos del contexto y la verificación](#algoritmos-del-contexto-y-la-verificación) |
+| Qué vive en memoria y qué sobrevive al reinicio | [Mapa de estados y duración](#mapa-de-estados-y-duración) |
+| Cómo se publica y verifica un conjunto | [Recorrido de la publicación en Oracle](#recorrido-de-la-publicación-en-oracle) |
+| Cómo se guardan activos o se ejecutan plantillas | [Curaduría y catálogo diario](#curaduría-y-catálogo-diario-paso-a-paso) |
+| Qué archivo tocar para un cambio | [Índice del código](#índice-del-código-procesamiento-de-datos-y-ciencia-de-datos) y [cómo modificar](#cómo-modificar-sin-romper-contratos) |
+| Si realmente comprendí los flujos | [Laboratorio offline](#laboratorio-offline-de-principio-a-fin) y [autoevaluación](#autoevaluación-de-comprensión) |
 
 ## Cómo aprovecharlo
 
@@ -30,7 +57,7 @@ Hay tres formas de leer el proyecto:
 3. **Incidente:** busca el ID, etapa o ruta en el resultado, luego en los logs y
    finalmente en el módulo que produjo ese campo.
 
-Esta revisión, actualizada el 2026-10-27, contrastó 81 archivos `.py` en
+Esta revisión, actualizada el 2026-10-28, contrastó 81 archivos `.py` en
 `src/`, 25 en `scripts/` y 99 en `tests/` (205 en total), además de los
 manifiestos, contenedores, configuración y datos de referencia principales.
 Los recuentos incluyen pruebas y archivos `__init__.py`; algunos `__init__.py`
@@ -110,7 +137,9 @@ página y consume el Conjunto Consultable publicado. La variable
 el servicio de ingesta en el perfil `ingesta`. Los Dockerfiles construyen
 imágenes separadas: el frontend no incluye el servidor escritor y el servicio
 de ingesta no incluye la interfaz. Los procesos corren como usuario no root;
-la red de Compose es interna y los volúmenes de salida de las apps se separan.
+la red de Compose es un bridge llamado `communitylab-internal` y los volúmenes
+de salida de las apps se separan. El nombre de la red no impone por sí solo
+aislamiento de acceso ni equivale a `internal: true`.
 Las variables sensibles se inyectan al despliegue, no se guardan en el manual.
 
 ### Procesamiento y publicación de datos
@@ -530,6 +559,352 @@ sentimientos, temas, tipos, elegibilidad, activos, errores y fallos. Si hay
 empate de sentimientos predominantes, `sentimiento_predominante` queda en
 `null` y `sentimientos_predominantes` incluye todos los empatados.
 
+## Trazabilidad de campos entre capas
+
+La unidad de identidad es el **ID del mensaje**, no su posición ni el autor.
+Un autor puede escribir varios mensajes; una clasificación reordenada conserva
+su correspondencia por ID. No mezcles las dos versiones `1.2`: una puede
+referirse a un paquete histórico de auditoría y otra al Conjunto Consultable;
+el nombre del contrato importa tanto como su número.
+
+| Dato | Antes del análisis | Tras el análisis / publicación | Dentro del chat |
+| --- | --- | --- | --- |
+| Identidad | `id` de la interacción | `id`; los activos usan `id_interaccion` | `id` en evidencia y citas; los IDs de síntesis solo viven durante la consolidación |
+| Persona | `autor` original | Se conserva o se une por ID al construir el conjunto | `autor`; vacío no se sustituye por ID como nombre |
+| Texto | `texto` limpiado | `texto` en DS; `contenido_textual` en Oracle | `adaptar_conjunto()` lo devuelve como `texto` |
+| Canal | `canal` / contexto de origen | `canal` plano | Se puede filtrar; no equivale a plataforma del borrador |
+| Tipo | `tipo` preliminar, luego `tipo_original` | El modelo devuelve `tipo_detectado`; el conjunto lo llama `tipo` | Se adapta otra vez a `tipo_detectado` |
+| Tema | No es una etiqueta humana garantizada | `tema_principal` detectado; conjunto `tema` | Se adapta a `tema_principal`; participa en búsqueda y agregados |
+| Sentimiento | No lo determina el score de relevancia | `sentimiento` detectado | Filtro y distribución local; positivo incluye muy positivo |
+| Fecha | `fecha` del origen cuando existe | Se une por ID; Oracle permite `null` | Se normaliza; una fecha ausente no cumple un filtro temporal |
+| Elegibilidad | Reglas de Datos y `ids_contenido` | Estado interno con decisiones de contenido/FAQ | El contrato plano no transporta todo el estado editorial |
+| Spam | Ruido de calidad puede salir antes de IA | `es_spam_detectado`; se excluye del índice y se contabiliza | No se reconstruyen los mensajes excluidos desde un contador |
+| Resultado editorial | No existe todavía | `activos_generados` por ruta, luego `activos` aplanados | Un `borrador` del chat es otro flujo, no una fila Oracle |
+
+El Conjunto Consultable es una **proyección**, no una copia íntegra de DS:
+no incluye todos los fallos, puntajes, rutas ni activos. Si una capacidad nueva
+necesita esos campos, hay que ampliar el contrato y sus consumidores; el chat
+no puede recuperarlos por tener acceso a la tabla.
+
+Productores y adaptadores:
+[estado](../src/agentes/estado_agente.py),
+[entrega DS](../src/agentes/entrega_resultados.py),
+[proyección consultable](../src/datos/conjunto_consultable.py),
+[adaptación de lectura](../src/app/fuente_agente.py).
+
+## Recorrido completo del chat
+
+### A. Preparar la pantalla y los datos
+
+1. La entrada de Streamlit llama a
+   [interfaz.render()](../src/app/interfaz.py). Streamlit vuelve a ejecutar
+   el script al interactuar; un objeto local no sobrevive por sí solo.
+2. `_datos_agente()` usa el resultado procesado en la app interna o la captura
+   de Oracle en Marketing, y combina los adjuntos de la sesión.
+3. [obtener_captura()](../src/app/fuente_agente.py) reutiliza datos durante una
+   hora. Si vence y falla la lectura, conserva la captura previa con aviso.
+   Sin captura previa el fallo se informa, no se presenta una base vacía como
+   si fuera una lectura correcta. El reintento de captura fallida tiene su
+   propia espera; consultar otra vez no implica golpear Oracle inmediatamente.
+4. `_agente_para()` conserva la instancia en `st.session_state`. Si cambia
+   la firma de los datos, `actualizar_datos()` valida e indexa la nueva base
+   sin borrar la conversación.
+5. El historial visible conserva las respuestas completas; la página solo
+   renderiza diez turnos. Una página no es una ventana de evidencia ni el
+   contexto que recibe el intérprete.
+
+### B. Admitir, interpretar y buscar
+
+6. El decorador [limitar_consulta](../src/agentes/consumo.py) valida límites,
+   toma un cupo concurrente y crea un contador de consumo para toda la consulta.
+   El `finally` libera el cupo tanto en éxito como en excepción.
+7. `consultar()` valida texto, longitud, modo, plataforma/modelo seleccionable
+   y parámetros de muestreo. Después pide al intérprete un
+   [PlanConsulta](../src/agentes/interpretacion.py): intención, términos,
+   filtros, cantidad, listado, agrupación y posible nueva versión.
+8. El intérprete recibe fecha, historial reciente, plan anterior y vocabulario
+   disponible. Su salida estructurada también tiene validaciones cruzadas:
+   un borrador exige plataforma; no se puede pedir listado y agrupación a la
+   vez; tipos alternativos y tipo singular no se combinan. Se permite una
+   revisión del plan inválido; si no se obtiene un plan fiable, se informa el
+   error. No hay un parser por palabras clave como sustituto silencioso.
+9. Conversación, aclaración y fuera de alcance devuelven la respuesta del plan
+   sin buscar mensajes. Las otras intenciones construyen `FiltrosConsulta`.
+10. `_buscar()` normaliza tokens y consulta un índice invertido
+    `token -> índices de mensajes`. Los términos se unen como candidatos:
+    basta coincidir con uno; más coincidencias dan más puntaje. Después aplica
+    filtros. Sin términos, todos los mensajes son candidatos antes de filtrar.
+    No son embeddings ni SQL generado; no garantiza encontrar sinónimos que
+    el intérprete no tradujo a palabras presentes.
+11. Los filtros de tipo alternativo son OR; sentimiento, canal y fechas se
+    combinan con el resto. Positivo/negativo incluyen sus variantes intensas.
+    Ordena por coincidencias, preferencia por muy positivo y orden de entrada.
+    Esa preferencia no es una demostración de calidad editorial.
+
+### C. Resolver según la intención
+
+12. Sin coincidencias, genera una explicación local, con motivos y valores
+    disponibles. No llama al redactor ni inventa evidencia.
+13. `_resumir()` calcula sobre **todos los encontrados** los conteos de
+    sentimiento, tipo, canal y tema, con porcentajes redondeados a un decimal.
+    `universo_total` describe la base de la sesión; `total_coincidencias`,
+    los encontrados; `cantidad_solicitada`, una petición de selección.
+    No son tres formas de nombrar el mismo número.
+14. Un listado literal se resuelve en Python. Los autores se deduplican por
+    nombre normalizado y conservan un ID de respaldo por nombre; no equivalen
+    a un padrón de personas verificado. Listados de un solo metadato pueden
+    deduplicar valores; listar contenido o ID conserva registros. El intérprete
+    sí puede haber consumido una llamada aunque no haya redactor.
+15. Para análisis/borradores, `encontrados[:cantidad]` selecciona la evidencia.
+    Con cantidad `None` usa todas las coincidencias, sin el antiguo tope 20.
+    Los agregados siguen siendo del conjunto filtrado entero: pedir cinco
+    ejemplos no recalcula la distribución con esos cinco.
+16. `_generar()` usa una llamada si todo cabe o extracción/consolidación por
+    tokens. Devuelve un `SalidaConversacional`, no solamente una cadena.
+    Un borrador viaja en un objeto con plataforma, título, contenido y hashtags.
+17. Se validan fuentes, formato, copias literales y restricciones editoriales.
+    Para X se verifica el texto de publicación con hashtags contra 280
+    caracteres. Cambiar tono no autoriza cambiar hechos. Una nueva propuesta
+    lleva control contra el título/contenido anterior.
+18. Para preguntas agrupadas la aplicación calcula cantidades desde los IDs
+    de cada grupo y compone el texto presentado; no confía en un conteo libre
+    del modelo. Un mensaje puede aparecer en distintas dudas.
+
+### D. Verificar, confirmar y presentar
+
+19. Todo análisis generado pasa por `_verificar_analisis()`, contra originales
+    y agregados autorizados. Un borrador solo usa el ciclo de revisión factual
+    si su modo es automático; si falla, intenta una corrección y vuelve a
+    verificarla. El modo estricto del borrador no significa verificación
+    independiente.
+20. Solo al terminar los controles se guarda el turno y se cambia
+    `_ultimo_plan`; `_ultimo_borrador` cambia si hay borrador. Una excepción no
+    convierte el intento fallido en contexto de búsqueda exitoso.
+21. La UI captura las fuentes citadas antes de guardar su respuesta visible.
+    [conservar_fuentes()](../src/app/fuentes_citadas.py) reutiliza la misma
+    copia si ID, texto y metadatos son iguales; de otro modo conserva otra
+    versión. El origen puede actualizarse sin alterar respuestas anteriores.
+22. La respuesta muestra consumo, cobertura, borrador, revisión y fuentes según
+    corresponda. Los controles de publicación preparan texto/enlaces; no
+    acreditan que una red social haya publicado nada.
+
+### Lectura de la salida sin confundir campos
+
+| Campo | Qué prueba / qué no prueba |
+| --- | --- |
+| `respuesta` | Texto mostrado; no demuestra por sí solo que se consultó toda la base |
+| `citas` | IDs de respaldo; tener ID permitido no prueba respaldo semántico |
+| `hallazgos` | Hechos atómicos y procedencia registrada; no son fuentes originales |
+| `grupos_preguntas` | Dudas y mensajes asociados; sus grupos pueden solaparse |
+| `resumen.procesamiento` | Registros y etapas procesadas; cobertura no significa ausencia de omisiones en el resumen |
+| `verificacion` | Resultado de otra comprobación por modelo; no prueba formal de verdad ni exhaustividad |
+| `consumo` | Intentos y reservas conservadoras; no factura ni tokens exactos del proveedor |
+| `fuentes_citadas` | Versión histórica agregada por la UI al chat guardado; no la devuelve necesariamente todo consumidor de `consultar()` |
+
+## Algoritmos del contexto y la verificación
+
+### Empaquetar sin cortar la evidencia seleccionada
+
+[contexto.py](../src/agentes/contexto.py) recibe una función `cabe(fuentes)`
+que incluye instrucciones, historial, agregados, esquema y reserva de salida.
+No divide simplemente la lista cada N mensajes:
+
+1. Comprueba que incluso el contexto vacío quepa; si no, falla explícitamente.
+2. Añade el siguiente registro si cabe en el lote actual.
+3. Si no cabe pero el lote tiene elementos, cierra ese lote y reintenta el
+   mismo registro en otro vacío.
+4. Si el registro solo tampoco cabe, divide su `texto` a la mitad, manteniendo
+   ID y metadatos, y procesa ambas mitades en orden.
+5. Repite hasta empaquetar todo o detectar que ni un fragmento mínimo cabe.
+
+La fragmentación opera sobre caracteres Python, no bytes partidos a mitad
+de un carácter Unicode. Mantener el ID permite volver al mensaje original.
+Este algoritmo no recupera lo que ya se perdió antes de entrar al agente.
+En particular, el lector de adjuntos recorta cada texto al máximo de 50.000
+caracteres: **la ausencia de recorte durante el empaquetado no implica ausencia
+de límites en la importación**.
+
+### Consolidar y conservar procedencia
+
+[conversacion._generar()](../src/agentes/conversacion.py) empieza con
+`procedencia[id] = [id]`. En cada lote obtiene hallazgos atómicos o dudas.
+Cada nota se convierte en evidencia intermedia con ID `sintesis-nivel-indice`.
+El mapa relaciona ese ID solo con las fuentes que respaldaban esa nota.
+
+Si las notas todavía no caben, se consolidan en otro nivel. Si no disminuyen
+el contexto y sigue sin caber, se interrumpe en vez de entrar en un bucle.
+Al devolver la salida final se expanden los IDs intermedios a originales y se
+deduplican; el usuario no debe ver referencias inventadas de síntesis.
+
+Procesar todos los textos no garantiza que el extractor retenga cada detalle.
+Para «lista todos los textos» usa el camino literal, no una síntesis generativa.
+
+### Revisar afirmaciones, no simplemente revisar IDs
+
+[prompts/verificacion.py](../src/agentes/prompts/verificacion.py) exige revisar
+el texto final completo, no asumir que sus hallazgos ya lo justifican.
+La aplicación suministra originales y una lista permitida de agregados.
+Una afirmación aceptada necesita respaldo declarado y citas válidas o respaldo
+agregado autorizado; la marca de agregado no valida un borrador.
+
+Si no cabe la revisión completa, primero se extraen afirmaciones del candidato
+sin mensajes; luego se evalúan exactamente esas afirmaciones contra cada lote,
+con los mismos agregados. Rechaza cambios en la lista de afirmaciones y citas
+ajenas al lote. Combina los respaldos encontrados, no promedia opiniones.
+Una afirmación que exige unir fragmentos puede quedar sin comprobar: se prefiere
+rechazarla a presentar respaldo inexistente. Una extracción incompleta sigue
+siendo un límite semántico del modelo, no algo que Pydantic pueda probar.
+
+### Presupuesto por llamada frente a presupuesto por consulta
+
+Con los valores iniciales, una llamada dispone de 32.768 unidades estimadas
+totales menos 4.096 reservadas para salida. `estimar_tokens()` cuenta bytes
+UTF-8 de texto/JSON; no utiliza el tokenizador real. El cálculo de entrada
+añade esquema y margen. El redactor no recibe el total como texto disponible.
+
+El contador de [consumo.py](../src/agentes/consumo.py) suma reservas antes de
+cada intento real; una consulta puede tener interpretación, varios lotes,
+consolidación, revisión, reintentos y fallback. Los intentos fallidos no
+devuelven la reserva. Con 30 intentos o 250.000 unidades se detiene la consulta,
+sin entregar una respuesta parcial como válida.
+
+`ContextVar` asocia el contador a la ejecución; `Lock` protege admisión y cuota
+del proceso; `monotonic()` mide la ventana horaria. No forman una cuota
+distribuida. El control de conversación no debe confundirse con los ciclos
+del pipeline DS ni con la facturación de un proveedor externo.
+
+### Límites que todavía existen y qué significan
+
+Quitar el tope de evidencia de 20 no eliminó las barreras de entrada ni la
+reserva de salida. Son mecanismos con propósitos distintos:
+
+| Límite vigente | Dónde / efecto |
+| --- | --- |
+| 50.000 mensajes y 5.000.000 caracteres de texto por dataset del agente | `_extraer_mensajes()` rechaza excedentes; no selecciona en silencio los primeros |
+| 50.000 caracteres por mensaje del agente | El agente rechaza textos mayores; el lector de adjuntos recorta a ese tamaño antes de entregarlos |
+| 5 MiB por adjunto y 5.000 mensajes por archivo | `leer_archivo_usuario()` valida tamaño/cantidad; no es el número máximo de coincidencias de una consulta |
+| 1.000 caracteres de consulta | `consultar()` rechaza la petición larga antes de interpretarla |
+| Hasta 12 términos de búsqueda y 32 tipos alternativos en el plan | Restricciones de `PlanConsulta`, no un límite al número de registros |
+| Vocabulario de 32 valores por sentimiento/tipo/canal | `_indexar()` limita la guía enviada al intérprete; la base y los filtros no se reducen a esos 32 mensajes |
+| Contexto y salida por llamada | `contexto.py`; pueden requerir lotes o causar rechazo si ni instrucciones y esquema caben |
+| Intentos y reservas por consulta | `consumo.py`; pueden impedir completar una consulta aunque todos sus registros sean válidos |
+
+Estos números describen esta implementación, no cuotas oficiales del
+proveedor. Al ajustarlos, revisar productor, consumidor, UI y pruebas, no
+solamente cambiar una constante.
+
+## Mapa de estados y duración
+
+| Estado | Propietario y duración | Cuándo cambia / límite |
+| --- | --- | --- |
+| Datos originales, paquete y entrega DS | Variables/resultados de una corrida; archivos solo al exportar | No son la tabla publicada hasta completar la carga |
+| Tablas y recibos de carga | Oracle, durable según su administración | Transacción del ingestor; no se reinician al refrescar UI |
+| `captura_base_comunidad` | Sesión Streamlit | Expira tras una hora; puede quedar obsoleta con aviso |
+| `archivos_usuario` | Sesión Streamlit | Alta/baja de adjuntos; no se cargan a Oracle |
+| `_mensajes`, índice y vocabulario | Instancia de `AgenteConversacional` | Se reconstruyen al actualizar datos |
+| `_historial` | Instancia del agente | Retiene hasta 12 mensajes internos; se usan los últimos 6 en los prompts y cada respuesta guardada se limita a 4.000 caracteres |
+| `_ultimo_plan`, `_ultimo_borrador` | Instancia del agente | Última consulta completada / último borrador; no son un historial persistente |
+| `historial_agente` | Sesión UI | Respuestas completas y errores; no se recorta al paginar |
+| `fuentes_agente_versionadas` | Sesión UI | Una copia por ID y versión exacta; se trata como solo lectura |
+| `pagina_historial_agente` | Sesión UI | Cambia al navegar; nueva consulta vuelve a 1 |
+| Cupos y ventana horaria | Variables del proceso en `consumo.py` | Compartidos entre sesiones del proceso; no entre réplicas ni reinicios |
+| Catálogo diario | Objeto OCI | Reemplazo condicional por ETag; no es el historial privado del chat |
+| Ediciones, aprobaciones y recibos | Contexto de curaduría de sesión | Se invalidan al cambiar el objeto de resultado |
+
+**Tres números diferentes:** seis mensajes recientes de contexto, diez turnos
+por página de historial y diez fuentes por página de citas. Ninguno limita a
+diez los mensajes que se pueden analizar. La deduplicación evita copiar de
+nuevo una fuente igual, pero no impone un máximo de memoria si crecen las
+respuestas o las versiones distintas.
+
+## Recorrido de la publicación en Oracle
+
+Sigue [carga_oracle.py](../src/app/carga_oracle.py),
+[ingest_server.py](../src/services/ingest_server.py) y
+[db_client.py](../src/config/db_client.py). Este camino no es el guardado de
+activos en Object Storage.
+
+1. La UI construye el conjunto, conserva el JSON local por huella y comprueba
+   `/destino`. La identidad del destino es un hash; no es una contraseña.
+2. El operador confirma destino/entorno. La UI envía JSON y los encabezados
+   de confirmación correspondientes. Si el destino cambió, se debe confirmar
+   de nuevo; los datos sintéticos con esa marca requieren demostración.
+3. El servidor valida versión, campos, tipos y registros antes de escribir.
+   El contrato actual permite `fecha` y `autor` nulos, no todos los campos.
+4. `_publicar_lote()` exige conexión exclusiva sin autocommit ni transacción
+   activa. Bloquea tablas de datos, metadatos y recibos con `NOWAIT`.
+5. Lee filas/metadatos existentes y compara por ID. Mismo ID con contenido
+   distinto es conflicto, no una autorización para editar la fila.
+6. Calcula la huella del lote y consulta su recibo. Inserta solo filas nuevas
+   mediante el `MERGE` y parámetros enlazados; registra metadatos y recibo.
+   Un reintento idéntico no vuelve a sumar el spam del lote.
+7. Si se solapan lotes sin recibo y con contador de spam, rechaza la ambigüedad
+   en lugar de sumar dos veces. Versiones antiguas conservan su compatibilidad
+   de campos/huellas; no borran autores enriquecidos con cargas nuevas.
+8. Solo entonces hace `commit()`. Cualquier excepción provoca `rollback()`.
+   No hay una transacción que englobe proveedores externos y Oracle.
+9. `/verificar` compara las filas esperadas con las guardadas: devuelve
+   faltantes y diferentes. Confirmar envío HTTP no equivale a verificar datos.
+10. Marketing hace un único `SELECT` que reúne metadatos y registros, convierte
+    CLOB a texto, comprueba el total y expone el contrato actual. No necesita
+    una llamada por mensaje ni escribe un commit.
+
+### Leer los endpoints correctamente
+
+| Endpoint | Efecto / fallos relevantes |
+| --- | --- |
+| `GET /health` | Confirma que responde HTTP; no demuestra acceso a Oracle |
+| `GET /destino` | Comprueba Oracle e identidad/entorno; devuelve 503 si no logra comprobarlos |
+| `POST /sincronizar` | Valida y carga acumulativamente; 400 por validación y 500 por fallo interno |
+| `POST /verificar` | Solo compara el conjunto enviado; un HTTP 200 puede contener `verificado=false` |
+
+Los encabezados de destino no sustituyen autenticación ni una red privada.
+El nombre `instantanea_completa` no significa «borrar todo y reemplazar»:
+la implementación vigente es acumulativa, conserva registros anteriores y
+rechaza conflictos. No ejecutes una carga de prueba contra producción.
+
+## Curaduría y catálogo diario paso a paso
+
+### Un activo del pipeline que revisa una persona
+
+1. [contexto_curaduria()](../src/app/curaduria_oci.py) liga aprobaciones a una
+   salida concreta. Un resultado nuevo no hereda aprobaciones del anterior.
+2. La persona edita; el adaptador valida campos, esquema y codificación.
+   Reparar mojibake es una acción explícita: no debe cambiar silenciosamente
+   el texto que se aprobó.
+3. `guardar_curaduria()` hace una copia del resultado y reemplaza solo los
+   activos seleccionados, identificados por `(id_interaccion, tipo)`.
+4. [guardar_resultado_aprobado()](../src/app/guardado.py) comprueba todas las
+   selecciones, nombres y JSON antes de la primera escritura.
+5. El SDK síncrono trabaja secuencialmente en un hilo mediante el puente
+   asíncrono. Registra por activo guardado/fallido/omitido; no promete que un
+   lote de objetos sea una transacción atómica.
+6. [oci_client.py](../src/config/oci_client.py) sube JSON al bucket. Este
+   resultado es persistencia, no publicación automática en LinkedIn o X.
+
+### Una plantilla del catálogo diario
+
+1. [generar_plantillas_diarias.py](../scripts/generar_plantillas_diarias.py)
+   ejecuta la actualización; la condición de fecha está en
+   [plantillas_diarias.py](../src/app/plantillas_diarias.py). La hora de código
+   es 13:00 UTC. Definirla no instala por sí mismo un scheduler externo.
+2. El repositorio lee un único objeto y su ETag. Ausencia del objeto permite
+   creación; errores de permisos o red no se convierten en catálogo vacío.
+3. Se determinan pendientes: entrada ausente, de otra fecha o con prompt
+   cambiado. Un éxito vigente no se regenera sin necesidad.
+4. Se lee una captura para ese intento. Cada plantilla pendiente usa una
+   instancia nueva del agente, sin heredar la conversación de otra plantilla.
+5. Se valida plataforma, forma de salida y condiciones especiales como titular
+   y máximo de palabras del boletín. Si falla una plantilla, se registra el
+   fallo y pueden conservarse entradas anteriores con sus fechas.
+6. Un `PUT` reemplaza el documento con `if_match` del ETag leído o
+   `if_none_match="*"` si era creación. Un conflicto de concurrencia se propaga;
+   no se anuncia un catálogo guardado si otro escritor ganó.
+
+El catálogo, los activos curados y las fuentes históricas del chat son tres
+usos diferentes de almacenamiento. Que el chat preserve fuentes en sesión no
+convierte todas las entradas del catálogo OCI en instantáneas de evidencia.
+
 ## Evaluación: qué demuestra y qué no
 
 `src/evaluacion.py` calcula coincidencia exacta para sentimiento, tema, tipo y
@@ -811,6 +1186,29 @@ para la lista dinámica de casos descubiertos.
 | `src/agentes/prompts/caso_exito.py` | Plantilla `prompt_caso_exito` |
 | `src/agentes/prompts/insight_mejora.py` | Plantilla `prompt_insight_mejora` |
 
+#### Símbolos de consulta, sesión y publicación
+
+Estos son los puntos que conviene abrir después de entender los recorridos.
+No se enumeran otra vez todos los helpers: su orden de llamada se desarrolla
+en los capítulos anteriores.
+
+| Archivo | Símbolos que conectan el flujo |
+| --- | --- |
+| [interpretacion.py](../src/agentes/interpretacion.py) | `PlanConsulta.validar_plan`, `interpretar_consulta`, `_obtener_cadena_interpretacion` |
+| [conversacion.py](../src/agentes/conversacion.py) | `AgenteConversacional.__init__`, `actualizar_datos`, `_indexar`, `consultar`, `_buscar`, `_generar`, `_verificar_analisis`, `_verificar`, `_guardar_turno`; modelos `SalidaConversacional`, `HallazgoCitado`, `GrupoPregunta`, `SalidaVerificacion`; helpers `_resumir`, `_presentar_preguntas`, `_preparar_verificacion` |
+| [contexto.py](../src/agentes/contexto.py) | `PresupuestoContexto`, `obtener_presupuesto_contexto`, `estimar_tokens`, `dividir_evidencia` |
+| [consumo.py](../src/agentes/consumo.py) | `ConsumoConsulta`, `LimiteConsumo`, `limitar_consulta`, `estimar_entrada`, `reservar_intento` |
+| [fuente_agente.py](../src/app/fuente_agente.py) | `Captura`, `FuenteNoDisponible`, `adaptar_conjunto`, `leer_base`, `obtener_captura`, `leer_archivo_usuario`, `combinar` |
+| [interfaz.py](../src/app/interfaz.py) | `render`, `_inicios_turnos`; helpers anidados `_datos_agente`, `_agente_para`, `_render_agente`, `_mostrar_detalle_agente` |
+| [fuentes_citadas.py](../src/app/fuentes_citadas.py) | `conservar_fuentes`, `render`; el primero no renderiza y el segundo no genera respuestas |
+| [conjunto_consultable.py](../src/datos/conjunto_consultable.py) | `CAMPOS`, `VERSION`, `construir_conjunto_consultable`, `principal` |
+| [db_client.py](../src/config/db_client.py) | `obtener_secreto_vault`, `obtener_conexion_lectura`, `leer_conjunto` |
+| [carga_oracle.py](../src/app/carga_oracle.py) | `conservar_conjunto`, `solicitar`, `render_carga` |
+| [ingest_server.py](../src/services/ingest_server.py) | `validar_registro`, `_preparar_lote`, `_huella_lote`, `_publicar_lote`, `sincronizar_conjunto`, `comprobar_destino`, `verificar_conjunto`, `IngestHandler`, `run_server` |
+| [curaduria_oci.py](../src/app/curaduria_oci.py) | `contexto_curaduria`, `validar_activo_curado`, `reparar_activo_curado`, `guardar_curaduria` |
+| [guardado.py](../src/app/guardado.py) | `guardar_resultado_aprobado`, `_guardar_seleccion` |
+| [plantillas_diarias.py](../src/app/plantillas_diarias.py) | `PlantillaDiaria`, `CatalogoDiario`, `RepositorioCatalogo.leer/guardar`, `fecha_programada`, `actualizar_catalogo`, `validar_salida_catalogo` |
+
 #### Símbolos de `scripts/`
 
 | Archivo | Símbolos definidos |
@@ -881,8 +1279,8 @@ python -m src.datos.ingesta_reddit --help
 Arranque local de las dos entradas Streamlit:
 
 ```powershell
-streamlit run src/app/app.py
-streamlit run src/app/app_interna.py
+streamlit run src\app\app.py
+streamlit run src\app\app_interna.py
 ```
 
 El entrypoint interno debe mantenerse detrás de controles de acceso; no lo
@@ -928,7 +1326,8 @@ python -B -m pytest tests\integracion\prueba_entrega_resultados_funcional.py -v 
 Estas pruebas invocan proveedores reales y consumen cuota; algunos docstrings
 de esos archivos describen Gemini explícitamente. La segunda escribe artefactos
 en `output/`. Las pruebas `tests/integracion/prueba_nvidia_*.py` requieren
-NVIDIA NIM; ejecuta solo la prueba cuyo efecto esperas. El archivo
+NVIDIA NIM; ejecuta solo la prueba cuyo efecto esperas.
+
 Para reprocesar una salida guardada:
 
 ```powershell
@@ -936,6 +1335,139 @@ python -m scripts.reprocesar_fallidos `
   --entrada ruta\entrega.json `
   --salida ruta\entrega_reprocesada.json
 ```
+
+## Laboratorio offline de principio a fin
+
+Este ejemplo usa datos ficticios y dobles explícitos para el intérprete,
+redactor y verificador. **No evalúa la inteligencia del modelo**: permite
+observar contratos, agregados, fuentes y cambios de estado sin Oracle, OCI,
+credenciales ni llamadas de red. Parte de una entrega DS mínima construida
+para el ejemplo; no pretende reproducir un análisis real anterior.
+
+Con el entorno instalado, ejecuta desde la raíz en PowerShell:
+
+```powershell
+@'
+from unittest.mock import patch
+from src.datos.conjunto_consultable import construir_conjunto_consultable
+from src.app.fuente_agente import adaptar_conjunto
+from src.app.fuentes_citadas import conservar_fuentes
+from src.agentes.conversacion import AgenteConversacional
+from src.agentes.interpretacion import PlanConsulta
+
+entrega = {"interacciones": [
+    {"id": "demo-1", "autor": "Ana", "canal": "Discord",
+     "texto": "Termine un ejercicio.", "sentimiento": "positivo",
+     "tema_principal": "aprendizaje", "tipo_detectado": "comentario"},
+    {"id": "demo-2", "autor": None, "canal": "Discord",
+     "texto": "Tengo una duda sobre SQL.", "sentimiento": "neutral",
+     "tema_principal": "aprendizaje", "tipo_detectado": "pregunta_tecnica"},
+]}
+conjunto = construir_conjunto_consultable(entrega)
+assert conjunto["version"] == "1.2" and conjunto["total"] == 2
+mensajes = adaptar_conjunto(conjunto)
+assert mensajes[0]["texto"] == conjunto["registros"][0]["contenido_textual"]
+planes = iter([
+    PlanConsulta(intencion="consulta", listar_autores=True),
+    PlanConsulta(intencion="consulta"),
+])
+
+def redactar(**entrada):
+    assert entrada["resumen"]["total_coincidencias"] == 2
+    return {
+        "respuesta": "Hay dos mensajes. Ana termino un ejercicio.",
+        "citas": ["demo-1"],
+        "hallazgos": [{"afirmacion": "Ana termino un ejercicio.", "citas": ["demo-1"]}],
+    }
+
+def verificar(**entrada):
+    assert entrada["agregados"]["total_coincidencias"] == 2
+    return {"resumen": "Revision simulada.", "afirmaciones": [
+        {"afirmacion": "Hay dos mensajes.", "respaldada": True,
+         "respaldo_agregado": True, "citas": []},
+        {"afirmacion": "Ana termino un ejercicio.", "respaldada": True,
+         "citas": ["demo-1"]},
+    ]}
+
+with patch("src.agentes.consumo.load_dotenv"), patch("src.agentes.contexto.load_dotenv"):
+    agente = AgenteConversacional(
+        mensajes, interprete=lambda **_: next(planes),
+        generador=redactar, verificador=verificar,
+    )
+    listado = agente.consultar("Lista los autores")
+    assert listado["autores"] == ["Ana"]
+    assert listado["resumen"]["mensajes_sin_autor"] == 1
+    salida = agente.consultar("Resume los mensajes")
+    assert salida["verificacion"]["obligatoria"] is True
+    assert salida["consumo"]["intentos_proveedor"] == 0
+    assert len(agente.historial) == 4
+
+almacen = {}
+resultados = {m["id"]: m for m in mensajes}
+conservar_fuentes(salida, resultados, almacen=almacen)
+otra = {"citas": ["demo-1"]}
+conservar_fuentes(otra, resultados, almacen=almacen)
+assert salida["fuentes_citadas"]["demo-1"] is otra["fuentes_citadas"]["demo-1"]
+resultados["demo-1"]["texto"] = "Una edicion posterior."
+assert salida["fuentes_citadas"]["demo-1"]["texto"] == "Termine un ejercicio."
+print("Contrato 1.2; 2 mensajes; 1 autor; analisis revisado; fuente historica compartida.")
+'@ | .\.venv\Scripts\python.exe -
+```
+
+Los intentos son cero porque los tres colaboradores son funciones locales:
+no hubo una llamada real al proveedor. Con las dependencias reales,
+interpretar y revisar también consumen presupuesto. Este ejercicio no permite
+afirmar que cualquier análisis revisado vaya a gastar cero.
+
+Para observar rechazos y navegación con las pruebas ya existentes:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest `
+  tests\agents\test_verificacion_analitica.py `
+  tests\agents\test_contexto.py `
+  tests\test_fuentes_citadas.py `
+  tests\test_ingest_server.py -q
+```
+
+Esas pruebas usan dobles para evitar proveedores y base real. La suite contiene
+casos de texto sin respaldo, agotamiento, fallo sin cambio de contexto,
+fragmentación, fuentes versionadas, páginas antiguas, carga repetida y rollback.
+Lee el `assert` del caso, no solo su nombre.
+
+## Autoevaluación de comprensión
+
+El objetivo «entender al menos un 90%» necesita una definición observable; no se
+puede calcular a partir del tamaño del Markdown. Usa estas tareas como lista
+de comprobación, no como una certificación estadística. Responderlas de memoria
+sin poder ubicar el código todavía deja un hueco.
+
+| Debes poder explicar o demostrar | Comprueba tu respuesta |
+| --- | --- |
+| Por qué un mensaje poco relevante puede seguir en sentimiento | Dos poblaciones en `entrega_ia.py`; los motivos de calidad no son todos los del score |
+| Cómo una respuesta desordenada del analizador se une a la entrada | ID en `nodo_analizador.py`, no posición |
+| Cuándo se ejecuta generación y cuándo no se inicializa cliente | Rutas y cortes condicionales de `grafo.py` / `nodos_generadores.py` |
+| Qué diferencia ciclo de Datos, lote DS y lote conversacional | Plan de 10–30, llamadas DS de hasta 10 y empaquetado por presupuesto |
+| Qué pierde la proyección a Oracle | Campos del conjunto frente al contrato DS |
+| Por qué una consulta puede tener 100 coincidencias pero cinco ejemplos | `_resumir()` antes de seleccionar evidencia |
+| Por qué listar autores no devuelve IDs como nombres | Rama local de `consultar()` y ausencia de autor |
+| Cómo viaja un ID original por varios niveles de síntesis | Mapa `procedencia` en `_generar()` |
+| Qué impide aceptar un texto falso con un hallazgo verdadero | Revisión del texto final, no solo validación de IDs |
+| Qué sucede si la revisión consume el último intento permitido | Reserva previa, excepción, sin turno guardado ni nuevo plan |
+| Por qué ver la página 3 no cambia el contexto del agente | Historial visible frente al interno, claves estables |
+| Cómo se mantiene el texto citado tras editar la captura | Copia por versión, objetos compartidos solo entre respuestas |
+| Qué comprueba `/health` y qué no | HTTP frente a `/destino` y `/verificar` |
+| Por qué repetir un lote no duplica el total de spam | Huella y recibo dentro de la transacción |
+| Qué devuelve el guardado si falla uno de varios objetos | Informe por activo, no atomicidad de todo el lote |
+| Cómo el ETag evita pisar otro catálogo | Escritura condicional; el conflicto no se oculta |
+| Qué pruebas pueden correr sin red y cuáles cuestan cuota | Descubrimiento `test_` y ejecuciones explícitas `prueba_`; leer sus fixtures y docstrings |
+| Qué falta para afirmar calidad de producción | Evaluación real, permisos/red/scheduler y métricas operativas, no solamente mocks |
+
+Para una comprobación práctica, cambia los datos del laboratorio, predice la
+salida antes de ejecutarlo y localiza el productor y consumidor de cada campo.
+Después recorre una prueba fallida desde su excepción hasta la rama que la
+produce. Si puedes hacerlo en los flujos principales, tienes comprensión
+operativa; los detalles del SDK y las ramas excepcionales requieren volver al
+código cuando los modifiques.
 
 ## Cómo seguir un fallo
 
@@ -971,6 +1503,11 @@ que ya se produjeron correctamente.
 | Cambiar estructura pública | `contrato_salida_ciencia_datos.py`, validación, resumen y `entrega_resultados.py` | pruebas de entrega y observabilidad |
 | Ajustar reintentos o logs | `reintentos.py`, `observabilidad.py`, `modelo_ia.py`, `recuperacion.py` | `tests/agents/test_observabilidad_reintentos.py` |
 | Incorporar una fuente nueva | adaptador junto a `ingesta_reddit.py`, contrato de entrada, fixtures y paquete de Datos | prueba offline del parser/adaptador y `tests/test_entrega_ia.py` |
+| Cambiar filtros o intención del chat | `interpretacion.py`, su prompt, `conversacion.py` y vocabulario | `tests/agents/test_interpretacion.py`, `test_conversacion.py` |
+| Cambiar presupuesto o consolidación | `contexto.py`, `consumo.py`, fachada y adaptadores | `tests/agents/test_contexto.py`, `test_consumo.py`, `test_verificacion_analitica.py` |
+| Ampliar el conjunto o el esquema Oracle | `conjunto_consultable.py`, lector, ingestor, adaptador y contrato documentado | `tests/test_conjunto_consultable.py`, `test_db_client.py`, `test_ingest_server.py` |
+| Cambiar historial o fuentes históricas | `interfaz.py`, `fuentes_citadas.py` y limpieza de estado | `tests/test_fuentes_citadas.py`, `test_inicio.py` |
+| Cambiar catálogo diario o sus prompts | `plantillas_diarias.py`, vista, repositorio y ejecutor | `tests/test_plantillas_diarias.py`, `test_ejecutor_plantillas_diarias.py` |
 
 Antes de cambiar una etiqueta enumera sus productores y consumidores. Por
 ejemplo, agregar un `tipo_detectado` no consiste solo en editar el prompt:

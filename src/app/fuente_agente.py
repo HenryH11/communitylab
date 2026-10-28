@@ -117,6 +117,7 @@ def adaptar_conjunto(documento: Mapping[str, Any]) -> list[dict[str, Any]]:
             {
                 "id": identificador,
                 "texto": texto,
+                "autor": _texto(registro.get("autor")),
                 "canal": _texto(registro.get("canal")),
                 "sentimiento": _texto(registro.get("sentimiento")),
                 "tema_principal": _texto(registro.get("tema")),

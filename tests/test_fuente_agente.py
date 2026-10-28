@@ -66,6 +66,7 @@ def test_adaptar_conjunto_mapea_campos_y_omite_vacios():
         {
             "id": "m1",
             "texto": "Gran meetup",
+            "autor": "",
             "canal": "discord",
             "sentimiento": "positivo",
             "tema_principal": "eventos",

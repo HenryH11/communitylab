@@ -17,7 +17,7 @@ from src.config.autenticacion_oci import configuracion_cliente
 from src.config.protocolo_db import ConexionDB
 
 USUARIO_PREDETERMINADO = "ro_query_communitylab"
-VERSION_CONJUNTO = "1.1"
+VERSION_CONJUNTO = "1.2"
 CAMPOS_CONJUNTO = (
     "id",
     "canal",
@@ -26,6 +26,7 @@ CAMPOS_CONJUNTO = (
     "tipo",
     "contenido_textual",
     "fecha",
+    "autor",
 )
 _SEGMENTO = re.compile(r"[A-Za-z0-9_-]+\Z")
 
@@ -37,7 +38,8 @@ SELECT
         WHEN d.fecha IS NOT NULL THEN
             TO_CHAR(d.fecha AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
         ELSE NULL
-    END AS fecha
+    END AS fecha,
+    d.autor
 FROM rw_ingest_communitylab.conjunto_consultable_meta m
 LEFT JOIN rw_ingest_communitylab.conjunto_consultable d ON 1 = 1
 WHERE m.id = 1
@@ -196,13 +198,9 @@ def leer_conjunto(
             "la tabla no coincide con el total de la instantánea publicada"
         )
     return {
-        "version": version,
+        "version": VERSION_CONJUNTO,
         "campos": list(CAMPOS_CONJUNTO),
         "total": total,
-        **(
-            {"total_spam_excluido": spam}
-            if version == VERSION_CONJUNTO
-            else {}
-        ),
+        "total_spam_excluido": spam if version != "1.0" else 0,
         "registros": registros,
     }

@@ -30,7 +30,7 @@ LOGGER = logging.getLogger(__name__)
 
 USUARIO_PREDETERMINADO = "rw_ingest_communitylab"
 TABLA_PREDETERMINADA = "conjunto_consultable"
-VERSION_CONJUNTO = "1.1"
+VERSION_CONJUNTO = "1.2"
 CAMPOS_CONJUNTO = (
     "id",
     "canal",
@@ -39,8 +39,10 @@ CAMPOS_CONJUNTO = (
     "tipo",
     "contenido_textual",
     "fecha",
+    "autor",
 )
 _CAMPOS_REQUERIDOS = frozenset(CAMPOS_CONJUNTO)
+_CAMPOS_ANTERIORES = CAMPOS_CONJUNTO[:-1]
 _SEGMENTO = re.compile(r"[A-Za-z0-9_-]+\Z")
 
 _SQL_UPSERT = """
@@ -60,7 +62,8 @@ USING (
                     'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM'
                 )
             ELSE NULL
-        END AS fecha
+        END AS fecha,
+        :autor AS autor
     FROM dual
 ) origen
 ON (destino.id = origen.id)
@@ -71,10 +74,11 @@ WHEN MATCHED THEN
         destino.tema = origen.tema,
         destino.tipo = origen.tipo,
         destino.contenido_textual = origen.contenido_textual,
-        destino.fecha = origen.fecha
+        destino.fecha = origen.fecha,
+        destino.autor = origen.autor
 WHEN NOT MATCHED THEN
     INSERT (
-        id, canal, sentimiento, tema, tipo, contenido_textual, fecha
+        id, canal, sentimiento, tema, tipo, contenido_textual, fecha, autor
     )
     VALUES (
         origen.id,
@@ -83,7 +87,8 @@ WHEN NOT MATCHED THEN
         origen.tema,
         origen.tipo,
         origen.contenido_textual,
-        origen.fecha
+        origen.fecha,
+        origen.autor
     )
 """
 
@@ -103,7 +108,7 @@ _SQL_FILAS = """
 SELECT id, canal, sentimiento, tema, tipo, contenido_textual,
        CASE WHEN fecha IS NOT NULL THEN
            TO_CHAR(fecha AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')
-       ELSE NULL END
+       ELSE NULL END, autor
 FROM conjunto_consultable
 """
 _SQL_LEER_META = (
@@ -199,11 +204,11 @@ def obtener_conexion(
 
 
 def validar_registro(registro: Mapping[str, Any]) -> dict[str, Any]:
-    """Valida los 7 campos y sanitiza el identificador de un registro."""
+    """Valida los campos del registro, incluido el autor nullable."""
     if not isinstance(registro, Mapping):
         raise TypeError("cada registro debe ser un diccionario JSON")
-    if set(registro) != _CAMPOS_REQUERIDOS:
-        raise ValueError("el registro no contiene los 7 campos requeridos")
+    if set(registro) not in (_CAMPOS_REQUERIDOS, frozenset(_CAMPOS_ANTERIORES)):
+        raise ValueError("el registro no contiene los campos requeridos")
 
     identificador = registro.get("id")
     if not isinstance(identificador, str) or not _SEGMENTO.fullmatch(
@@ -220,6 +225,16 @@ def validar_registro(registro: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(contenido, str) or not contenido:
         raise ValueError("contenido_textual debe ser texto completo no vacío")
 
+    for campo, limite in (("id", 32), ("canal", 64), ("sentimiento", 32),
+                          ("tema", 100), ("tipo", 64)):
+        if len(registro[campo]) > limite:
+            raise ValueError(f"{campo} supera {limite} caracteres")
+    autor = registro.get("autor")
+    if autor is not None and (
+        not isinstance(autor, str) or not autor.strip() or len(autor) > 100
+    ):
+        raise ValueError("autor debe ser texto no vacío de hasta 100 caracteres o null")
+
     for valor in registro.values():
         if isinstance(valor, str):
             valor.encode("utf-8")
@@ -234,7 +249,7 @@ def validar_registro(registro: Mapping[str, Any]) -> dict[str, Any]:
             )
         datetime.strptime(fecha, "%Y-%m-%dT%H:%M:%SZ")
 
-    return {campo: registro[campo] for campo in CAMPOS_CONJUNTO}
+    return {campo: registro.get(campo) for campo in CAMPOS_CONJUNTO}
 
 
 def _preparar_lote(
@@ -244,9 +259,10 @@ def _preparar_lote(
     if not isinstance(documento, Mapping):
         raise TypeError("documento debe ser un diccionario JSON")
 
-    if documento.get("version") not in ("1.0", VERSION_CONJUNTO):
+    if documento.get("version") not in ("1.0", "1.1", VERSION_CONJUNTO):
         raise ValueError("versión del Conjunto Consultable no admitida")
-    if documento.get("campos") != list(CAMPOS_CONJUNTO):
+    campos = CAMPOS_CONJUNTO if documento["version"] == VERSION_CONJUNTO else _CAMPOS_ANTERIORES
+    if documento.get("campos") != list(campos):
         raise ValueError("campos no coincide con el contrato de DA")
 
     registros = documento.get("registros")
@@ -255,7 +271,11 @@ def _preparar_lote(
     ):
         raise ValueError("documento debe contener una lista en 'registros'")
 
-    lote = [validar_registro(item) for item in registros]
+    lote = []
+    for item in registros:
+        if not isinstance(item, Mapping) or set(item) != set(campos):
+            raise ValueError("los campos del registro no coinciden con la versión")
+        lote.append(validar_registro(item))
     total = documento.get("total")
     if type(total) is not int or total != len(lote):
         raise ValueError("total no coincide con la cantidad de registros")
@@ -265,7 +285,7 @@ def _preparar_lote(
         type(spam) is not int
         or spam < 0
         or (
-            documento["version"] == VERSION_CONJUNTO
+            documento["version"] in ("1.1", VERSION_CONJUNTO)
             and "total_spam_excluido" not in documento
         )
         or (documento["version"] == "1.0" and spam != 0)
@@ -285,7 +305,16 @@ def _huella_lote(
     canonico = {
         "version": documento["version"],
         "total_spam_excluido": documento.get("total_spam_excluido", 0),
-        "registros": sorted(lote, key=lambda registro: registro["id"]),
+        "registros": sorted(
+            [
+                {campo: registro[campo] for campo in (
+                    CAMPOS_CONJUNTO if documento["version"] == VERSION_CONJUNTO
+                    else _CAMPOS_ANTERIORES
+                )}
+                for registro in lote
+            ],
+            key=lambda registro: registro["id"],
+        ),
     }
     datos = json.dumps(
         canonico, ensure_ascii=False, sort_keys=True, separators=(",", ":")
@@ -324,7 +353,7 @@ def _publicar_lote(
                     raise ValueError(
                         "metadatos no coincide con las filas existentes"
                     )
-                if version not in ("1.0", VERSION_CONJUNTO):
+                if version not in ("1.0", "1.1", VERSION_CONJUNTO):
                     raise ValueError("versión almacenada no admitida")
                 if type(spam_anterior) is not int or spam_anterior < 0:
                     raise ValueError("contador de spam almacenado inválido")
@@ -338,7 +367,13 @@ def _publicar_lote(
             nuevos = []
             for registro in lote:
                 anterior = actuales.get(registro["id"])
-                if anterior is not None and anterior != registro:
+                campos_comparacion = (
+                    CAMPOS_CONJUNTO if documento["version"] == VERSION_CONJUNTO
+                    else _CAMPOS_ANTERIORES
+                )
+                if anterior is not None and any(
+                    anterior[campo] != registro[campo] for campo in campos_comparacion
+                ):
                     raise ValueError(
                         f"conflicto de contenido para id {registro['id']}; "
                         "no se sobrescriben registros existentes"
@@ -456,14 +491,16 @@ def verificar_conjunto(documento: Mapping[str, Any]) -> dict[str, Any]:
             for registro in lote:
                 cursor.execute(
                     "SELECT canal, sentimiento, tema, tipo, contenido_textual, "
-                    "TO_CHAR(SYS_EXTRACT_UTC(fecha), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') "
+                    "TO_CHAR(SYS_EXTRACT_UTC(fecha), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'), autor "
                     "FROM conjunto_consultable WHERE id = :id",
                     {"id": registro["id"]},
                 )
                 fila = cursor.fetchone()
                 if fila is None:
                     faltantes.append(registro["id"])
-                elif tuple(fila) != tuple(registro[c] for c in CAMPOS_CONJUNTO[1:]):
+                elif tuple(fila[:len(documento["campos"]) - 1]) != tuple(
+                    registro[c] for c in documento["campos"][1:]
+                ):
                     diferentes.append(registro["id"])
     return {
         "verificado": not faltantes and not diferentes,

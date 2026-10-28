@@ -55,6 +55,7 @@ def obtener_modelo_gemini(
     modelo: str | None = None,
     temperatura: float | None = None,
     top_p: float | None = None,
+    max_tokens: int | None = None,
 ) -> ChatGoogleGenerativeAI:
     """
     Carga las credenciales y crea un cliente configurado.
@@ -76,7 +77,9 @@ def obtener_modelo_gemini(
     modelo_id = modelo or obtener_modelo_gemini_id()
     muestreo = {
         clave: valor
-        for clave, valor in (("temperature", temperatura), ("top_p", top_p))
+        for clave, valor in (
+            ("temperature", temperatura), ("top_p", top_p), ("max_output_tokens", max_tokens),
+        )
         if valor is not None
     }
 
@@ -84,7 +87,7 @@ def obtener_modelo_gemini(
         api_key=api_key,
         model=modelo_id,
         rate_limiter=_rate_limiter,
-        max_retries=MAX_RETRIES_GEMINI,
+        max_retries=0 if max_tokens is not None else MAX_RETRIES_GEMINI,
         **muestreo,
     )
 
@@ -95,11 +98,14 @@ def obtener_modelo_gemini_estructurado(
     modelo: str | None = None,
     temperatura: float | None = None,
     top_p: float | None = None,
+    max_tokens: int | None = None,
 ):
     """Adapta Gemini al contrato estructurado solicitado."""
     muestreo = {
         clave: valor
-        for clave, valor in (("temperatura", temperatura), ("top_p", top_p))
+        for clave, valor in (
+            ("temperatura", temperatura), ("top_p", top_p), ("max_tokens", max_tokens),
+        )
         if valor is not None
     }
     try:
@@ -109,6 +115,8 @@ def obtener_modelo_gemini_estructurado(
             else obtener_modelo_gemini()
         )
     except TypeError:
+        if max_tokens is not None:
+            raise
         cliente_base = obtener_modelo_gemini()
 
     return cliente_base.with_structured_output(

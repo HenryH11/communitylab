@@ -52,7 +52,7 @@ def test_adaptacion_no_inventa_fechas_ni_importa_etiquetas():
     jsonschema.validate(fragmento, schema, format_checker=jsonschema.FormatChecker())
 
 
-def test_placeholders_no_cruzan_contextos_editoriales(monkeypatch):
+def test_placeholders_no_cruzan_contextos_editoriales(monkeypatch, verificacion_analitica_simulada):
     estado: EstadoAgente = {
         "id": "m1", "texto": "Un mensaje real", "autor": PREFIJO_AUSENTE + "autor",
         "canal": PREFIJO_AUSENTE + "canal", "origen": PREFIJO_AUSENTE + "origen",

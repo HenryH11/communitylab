@@ -10,7 +10,10 @@ import re
 from typing import Annotated, Any, Literal
 import unicodedata
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, PrivateAttr, ValidationError
+
+from src.agentes.contexto import dividir_evidencia, estimar_tokens, obtener_presupuesto_contexto
+from src.agentes.consumo import estimar_entrada, limitar_consulta
 
 from src.agentes.configuracion_ia import (
     PROVEEDOR_GEMINI,
@@ -32,13 +35,9 @@ from src.datos.metadatos import valor_publico
 MAX_MENSAJES = 50_000
 MAX_CARACTERES_DATASET = 5_000_000
 MAX_CARACTERES_METADATO = 250
-MAX_COINCIDENCIAS = 8
-MAX_EVIDENCIA_LISTADO = 20
-MAX_EVIDENCIA_X = 3
 LIMITE_CARACTERES_X = 280
 MAX_HISTORIAL = 6
 MAX_CARACTERES_CONSULTA = 1_000
-MAX_CARACTERES_MENSAJE = 1_200
 TEMPERATURA_MINIMA = 0.0
 TEMPERATURA_MAXIMA = 1.0
 TOP_P_MINIMO = 0.1
@@ -74,21 +73,30 @@ class BorradorMarketing(BaseModel):
 
 class GrupoPregunta(BaseModel):
     duda: str = Field(min_length=1, max_length=500)
-    citas: list[str] = Field(min_length=1, max_length=MAX_EVIDENCIA_LISTADO)
+    citas: list[str] = Field(min_length=1)
+
+class HallazgoCitado(BaseModel):
+    afirmacion: str = Field(min_length=1)
+    citas: list[str] = Field(min_length=1)
 
 
 class SalidaConversacional(BaseModel):
-    respuesta: str = Field(min_length=1, max_length=4_000)
+    _procesamiento: dict = PrivateAttr(default_factory=dict)
+    respuesta: str = Field(min_length=1)
     citas: list[str] = Field(
-        min_length=1, max_length=MAX_EVIDENCIA_LISTADO,
+        min_length=1,
         description=(
             "Solo IDs exactos de la evidencia, por ejemplo msg-1. "
             "Nunca textos citados, autores ni explicaciones."
         ),
     )
     borrador: BorradorMarketing | None = None
+    hallazgos: list[HallazgoCitado] = Field(
+        default_factory=list,
+        description="Hechos atómicos pertinentes, cada uno con sus fuentes exactas; obligatorio al extraer o consolidar lotes.",
+    )
     grupos_preguntas: list[GrupoPregunta] = Field(
-        default_factory=list, max_length=MAX_EVIDENCIA_LISTADO,
+        default_factory=list,
         description=(
             "Si filtros.agrupar_preguntas es true, agrupa TODAS las preguntas de la "
             "evidencia. Cada grupo contiene una duda y los IDs únicos que la expresan. "
@@ -100,11 +108,15 @@ class SalidaConversacional(BaseModel):
 class AfirmacionVerificada(BaseModel):
     afirmacion: str = Field(min_length=1, max_length=500)
     respaldada: bool
-    citas: list[str] = Field(max_length=MAX_COINCIDENCIAS)
+    citas: list[str]
+    respaldo_agregado: bool = Field(
+        default=False,
+        description="True solo si un agregado autorizado demuestra por completo la afirmación.",
+    )
 
 
 class SalidaVerificacion(BaseModel):
-    afirmaciones: list[AfirmacionVerificada] = Field(max_length=30)
+    afirmaciones: list[AfirmacionVerificada]
     resumen: str = Field(min_length=1, max_length=1_000)
 
 
@@ -114,6 +126,8 @@ class FiltrosConsulta:
     tipo_detectado: str | None = None
     tipos_detectados: list[str] = field(default_factory=list)
     agrupar_preguntas: bool = False
+    listar_autores: bool = False
+    campos_listado: list[str] = field(default_factory=list)
     fecha_desde: date | None = None
     fecha_hasta: date | None = None
     plataforma: str | None = None
@@ -296,6 +310,7 @@ class AgenteConversacional:
         """Devuelve el historial de esta instancia, nunca persistido en disco."""
         return [dict(turno) for turno in self._historial]
 
+    @limitar_consulta
     def consultar(
         self,
         consulta: str,
@@ -365,6 +380,8 @@ class AgenteConversacional:
             tipo_detectado=plan.tipo_detectado,
             tipos_detectados=plan.tipos_detectados,
             agrupar_preguntas=plan.agrupar_preguntas,
+            listar_autores=plan.listar_autores,
+            campos_listado=list(plan.campos_listado),
             canal=plan.canal,
             fecha_desde=plan.fecha_desde,
             fecha_hasta=plan.fecha_hasta,
@@ -373,7 +390,6 @@ class AgenteConversacional:
             cantidad=plan.cantidad,
         )
         consulta_busqueda = " ".join(plan.terminos)
-        self._ultimo_plan = plan
 
         encontrados = self._buscar(consulta_busqueda, filtros)
         hubo_no_elegibles = False
@@ -408,11 +424,101 @@ class AgenteConversacional:
                 },
             }
             self._guardar_turno(consulta, respuesta)
+            self._ultimo_plan = plan
             return salida
 
         resumen = _resumir(encontrados, filtros)
         resumen["universo_total"] = len(self._mensajes)
-        evidencia = encontrados[:_limite_evidencia(filtros)]
+        if filtros.listar_autores or filtros.campos_listado == ["autor"]:
+            autores: dict[str, tuple[str, str]] = {}
+            for mensaje in encontrados:
+                autor = valor_publico(mensaje["autor"])
+                if autor and autor.strip():
+                    nombre = autor.strip()
+                    autores.setdefault(nombre.casefold(), (nombre, mensaje["id"]))
+            seleccion = list(autores.values())[:filtros.cantidad]
+            resumen.update(
+                total_autores=len(autores),
+                mensajes_sin_autor=sum(
+                    not (valor_publico(m["autor"]) or "").strip() for m in encontrados
+                ),
+                mensajes_enviados_al_modelo=0,
+            )
+            if seleccion:
+                respuesta = f"Nombres distintos disponibles: {len(autores)}. Mostrando {len(seleccion)}."
+                if filtros.cantidad and filtros.cantidad > len(autores):
+                    respuesta += f" Pediste {filtros.cantidad}; no hay más nombres registrados en las coincidencias."
+                respuesta += "\n\n" + "\n".join(
+                    f"{i}. {nombre}" for i, (nombre, _) in enumerate(seleccion, 1)
+                )
+            else:
+                respuesta = "Los mensajes encontrados no tienen autor registrado; no puedo listar nombres."
+            salida = {
+                "respuesta": respuesta,
+                "autores": [nombre for nombre, _ in seleccion],
+                "citas": [identificador for _, identificador in seleccion],
+                "borrador": None,
+                "total_coincidencias": len(encontrados),
+                "resumen": resumen,
+                "filtros": _filtros_a_dict(filtros),
+                "modo": "consulta",
+                "verificacion": {
+                    "modo": modo_verificacion,
+                    "estado": "no_aplica",
+                    "resumen": "Listado calculado directamente de los autores registrados, sin redacción del modelo.",
+                    "afirmaciones": [],
+                },
+            }
+            self._guardar_turno(consulta, respuesta)
+            self._ultimo_plan = plan
+            return salida
+        if filtros.campos_listado:
+            campos_internos = {
+                "tema": "tema_principal", "tipo": "tipo_detectado", "contenido_textual": "texto",
+            }
+            registros = []
+            citas = []
+            vistos = set()
+            for mensaje in encontrados:
+                fila = {
+                    campo: valor_publico(mensaje[campos_internos.get(campo, campo)]) or None
+                    for campo in filtros.campos_listado
+                }
+                if len(fila) == 1 and filtros.campos_listado[0] not in {"id", "contenido_textual"}:
+                    valor = next(iter(fila.values()))
+                    clave = valor.casefold() if isinstance(valor, str) else valor
+                    if valor is None or clave in vistos:
+                        continue
+                    vistos.add(clave)
+                registros.append(fila)
+                citas.append(mensaje["id"])
+            total = len(registros)
+            registros, citas = registros[:filtros.cantidad], citas[:filtros.cantidad]
+            respuesta = f"Resultados disponibles: {total}. Mostrando {len(registros)}."
+            if filtros.cantidad and filtros.cantidad > total:
+                respuesta += f" Pediste {filtros.cantidad}; no hay más resultados con esos filtros."
+            respuesta += "\n\n" + "\n".join(
+                f"{i}. " + "; ".join(
+                    f"{campo}: {valor if valor is not None else 'sin registrar'}"
+                    for campo, valor in fila.items()
+                )
+                for i, fila in enumerate(registros, 1)
+            )
+            resumen.update(resultados_disponibles=total, mensajes_enviados_al_modelo=0)
+            salida = {
+                "respuesta": respuesta, "registros": registros, "citas": citas,
+                "borrador": None, "total_coincidencias": len(encontrados),
+                "resumen": resumen, "filtros": _filtros_a_dict(filtros), "modo": "consulta",
+                "verificacion": {
+                    "modo": modo_verificacion, "estado": "no_aplica",
+                    "resumen": "Listado obtenido directamente de los datos, sin redacción del modelo.",
+                    "afirmaciones": [],
+                },
+            }
+            self._guardar_turno(consulta, respuesta)
+            self._ultimo_plan = plan
+            return salida
+        evidencia = encontrados[:filtros.cantidad]
         muestreo: dict[str, Any] = (
             {"temperatura": temperatura, "top_p": top_p}
             if filtros.intencion == "borrador"
@@ -442,7 +548,7 @@ class AgenteConversacional:
             consulta=solicitud_generacion,
             filtros=filtros,
             resumen=resumen_generacion,
-            evidencia=_evidencia_acotada(evidencia),
+            evidencia=evidencia,
             **muestreo,
         )
         borrador_modelo = salida_modelo.borrador
@@ -503,7 +609,7 @@ class AgenteConversacional:
                 ),
                 filtros=filtros,
                 resumen=resumen_generacion,
-                evidencia=_evidencia_acotada(evidencia),
+                evidencia=evidencia,
                 **muestreo,
             )
         if (
@@ -572,7 +678,7 @@ class AgenteConversacional:
         ):
             resultado_verificacion = self._verificar(
                 borrador=borrador,
-                evidencia=_evidencia_acotada(evidencia),
+                evidencia=evidencia,
             )
             verificacion = _preparar_verificacion(
                 resultado_verificacion,
@@ -589,7 +695,7 @@ class AgenteConversacional:
                 )
                 corregida = self._generar(
                     consulta=correccion_factual, filtros=filtros, resumen=resumen_generacion,
-                    evidencia=_evidencia_acotada(evidencia), **muestreo,
+                    evidencia=evidencia, **muestreo,
                 )
                 _validar_correccion(
                     corregida, filtros, evidencia,
@@ -598,7 +704,7 @@ class AgenteConversacional:
                 assert corregida.borrador is not None
                 borrador = corregida.borrador.model_dump()
                 verificacion = _preparar_verificacion(
-                    self._verificar(borrador=borrador, evidencia=_evidencia_acotada(evidencia)),
+                    self._verificar(borrador=borrador, evidencia=evidencia),
                     ids_evidencia,
                 )
                 if verificacion["estado"] != "verificado":
@@ -608,6 +714,11 @@ class AgenteConversacional:
                     )
                 salida_modelo = corregida
                 respuesta = corregida.respuesta
+        if filtros.intencion == "consulta":
+            verificacion = self._verificar_analisis(
+                respuesta=respuesta, hallazgos=salida_modelo.hallazgos,
+                evidencia=evidencia, resumen=resumen,
+            )
         salida = {
             "respuesta": respuesta,
             "citas": salida_modelo.citas,
@@ -617,15 +728,54 @@ class AgenteConversacional:
             "filtros": _filtros_a_dict(filtros),
             "modo": filtros.intencion,
             "verificacion": verificacion,
+            "hallazgos": [hallazgo.model_dump() for hallazgo in salida_modelo.hallazgos],
         }
+        resumen["procesamiento"] = salida_modelo._procesamiento
         if filtros.agrupar_preguntas:
             salida["grupos_preguntas"] = [
                 grupo.model_dump() for grupo in salida_modelo.grupos_preguntas
             ]
         self._guardar_turno(consulta, respuesta, borrador)
+        self._ultimo_plan = plan
         if borrador is not None:
             self._ultimo_borrador = dict(borrador)
         return salida
+
+    def _verificar_analisis(
+        self, *, respuesta: str, hallazgos: list[HallazgoCitado],
+        evidencia: list[dict], resumen: dict,
+    ) -> dict:
+        agregados = {
+            campo: valor for campo, valor in resumen.items()
+            if campo in {
+                "universo_total", "total_coincidencias", "cantidad_solicitada",
+                "distribucion_sentimientos", "porcentaje_sentimientos",
+                "distribucion_tipos", "porcentaje_tipos",
+                "distribucion_canales", "porcentaje_canales",
+                "distribucion_temas", "porcentaje_temas", "filtros",
+            }
+        }
+        resultado = self._verificar(
+            borrador={
+                "tipo": "analisis",
+                "respuesta": respuesta,
+                "hallazgos_a_comprobar": [hallazgo.model_dump() for hallazgo in hallazgos],
+            },
+            evidencia=evidencia,
+            agregados=agregados,
+        )
+        ids = {mensaje["id"] for mensaje in evidencia}
+        if any(cita not in ids for a in resultado.afirmaciones for cita in a.citas):
+            raise ValueError("La revisión del análisis citó fuentes ajenas. No se guardó la respuesta.")
+        verificacion = _preparar_verificacion(resultado, ids, permitir_agregados=True)
+        if verificacion["estado"] != "verificado":
+            raise ValueError(
+                "No se pudo comprobar el respaldo de todas las afirmaciones del análisis. "
+                "No se mostró ni guardó la respuesta como válida."
+            )
+        verificacion["obligatoria"] = True
+        verificacion["alcance"] = "texto_final_y_hallazgos"
+        return verificacion
 
     def _interpretar(self, consulta: str, hoy: date) -> PlanConsulta:
         resultado = (self._interprete or interpretar_consulta)(
@@ -767,6 +917,149 @@ class AgenteConversacional:
         top_p: float | None = None,
         modelo: str | None = None,
     ) -> SalidaConversacional:
+        presupuesto = obtener_presupuesto_contexto()
+        llamadas = 0
+        maximo_estimado = 0
+
+        def tokens(fuentes: list[dict], datos: dict) -> int:
+            entrada = self._entrada_generacion(consulta, datos, fuentes)
+            return _tokens_prompt(prompt_conversacion, entrada, SalidaConversacional)
+
+        def invocar(fuentes: list[dict], datos: dict) -> SalidaConversacional:
+            nonlocal llamadas, maximo_estimado
+            parcial = datos["procesamiento"]["etapa"] == "extraccion_parcial"
+            filtros_etapa = replace(filtros, intencion="consulta", plataforma=None) if parcial else filtros
+            datos = {**datos, "filtros": _filtros_a_dict(filtros_etapa)}
+            estimacion = tokens(fuentes, datos)
+            if estimacion > presupuesto.entrada:
+                raise ValueError("La llamada excede el presupuesto de contexto; no se envió al modelo.")
+            resultado = self._invocar_generacion(
+                consulta=consulta, filtros=filtros_etapa, resumen=datos, evidencia=fuentes,
+                temperatura=temperatura, top_p=top_p, modelo=modelo,
+            )
+            if parcial and resultado.borrador is not None:
+                raise ValueError("La extracción de un lote produjo un borrador en vez de hechos; no se consolidó.")
+            permitidos = {m["id"] for m in fuentes}
+            if any(cita not in permitidos for cita in resultado.citas):
+                raise ValueError("El agente citó un mensaje que no estaba en la evidencia del lote.")
+            if (parcial or datos["procesamiento"]["nivel"] > 0) and not filtros.agrupar_preguntas:
+                if not resultado.hallazgos:
+                    raise ValueError("La síntesis no vinculó sus hallazgos a fuentes; no se guardó una respuesta.")
+            for hallazgo in resultado.hallazgos:
+                if len(hallazgo.citas) != len(set(hallazgo.citas)) or any(
+                    cita not in permitidos for cita in hallazgo.citas
+                ):
+                    raise ValueError("Un hallazgo contiene fuentes repetidas o ajenas al lote.")
+            if resultado.hallazgos and not filtros.agrupar_preguntas:
+                resultado.citas = list(dict.fromkeys(
+                    cita for hallazgo in resultado.hallazgos for cita in hallazgo.citas
+                ))
+            if filtros.agrupar_preguntas:
+                _presentar_preguntas(resultado.grupos_preguntas, permitidos)
+                if set(resultado.citas) != permitidos:
+                    raise ValueError("Las citas no cubren todas las preguntas del lote.")
+            llamadas += 1
+            maximo_estimado = max(maximo_estimado, estimacion)
+            return resultado
+
+        actuales = evidencia
+        procedencia = {m["id"]: [m["id"]] for m in evidencia}
+        nivel = 0
+        lotes_fuente = 1
+        while True:
+            datos = {
+                **resumen,
+                "filtros": _filtros_a_dict(filtros),
+                "procesamiento": {
+                    "etapa": "respuesta_final" if nivel == 0 else "consolidacion",
+                    "nivel": nivel,
+                    "fuentes_son_sintesis": nivel > 0,
+                },
+            }
+            if tokens(actuales, datos) <= presupuesto.entrada:
+                resultado = invocar(actuales, datos)
+                resultado.citas = list(dict.fromkeys(
+                    original for cita in resultado.citas for original in procedencia[cita]
+                ))
+                for grupo in resultado.grupos_preguntas:
+                    grupo.citas = list(dict.fromkeys(
+                        original for cita in grupo.citas for original in procedencia[cita]
+                    ))
+                for hallazgo in resultado.hallazgos:
+                    hallazgo.citas = list(dict.fromkeys(
+                        original for cita in hallazgo.citas for original in procedencia[cita]
+                    ))
+                resultado._procesamiento = {
+                    "registros_procesados": len(evidencia),
+                    "lotes_fuente": lotes_fuente,
+                    "llamadas_generacion": llamadas,
+                    "niveles_consolidacion": nivel,
+                    "cobertura_completa": True,
+                    "tokens_entrada_estimados_maximos": maximo_estimado,
+                    "presupuesto_entrada_tokens": presupuesto.entrada,
+                    "reserva_salida_tokens": presupuesto.salida,
+                    "estimacion": "bytes_utf8_con_margen",
+                }
+                return resultado
+
+            datos["procesamiento"]["etapa"] = "extraccion_parcial"
+            lotes = dividir_evidencia(
+                actuales, lambda fuentes: tokens(fuentes, datos) <= presupuesto.entrada,
+            )
+            if nivel == 0:
+                lotes_fuente = len(lotes)
+            siguientes = []
+            origenes = {}
+            for lote in lotes:
+                parcial = invocar(lote, datos)
+                notas = (
+                    [(grupo.duda, grupo.citas) for grupo in parcial.grupos_preguntas]
+                    if filtros.agrupar_preguntas else [
+                        (hallazgo.afirmacion, hallazgo.citas) for hallazgo in parcial.hallazgos
+                    ]
+                )
+                for texto, citas in notas:
+                    identificador = f"sintesis-{nivel}-{len(siguientes)}"
+                    siguientes.append({"id": identificador, "texto": texto})
+                    origenes[identificador] = list(dict.fromkeys(
+                        original for cita in citas for original in procedencia[cita]
+                    ))
+            siguientes_datos = {
+                **datos,
+                "procesamiento": {
+                    "etapa": "consolidacion", "nivel": nivel + 1, "fuentes_son_sintesis": True,
+                },
+            }
+            if (
+                estimar_tokens(siguientes) >= estimar_tokens(actuales)
+                and tokens(siguientes, siguientes_datos) > presupuesto.entrada
+            ):
+                raise ValueError(
+                    "La consolidación no redujo el contexto. No se devolvió una respuesta "
+                    "parcial; acota la solicitud o revisa el presupuesto del servidor."
+                )
+            actuales, procedencia = siguientes, origenes
+            nivel += 1
+
+    def _entrada_generacion(self, consulta: str, resumen: dict, evidencia: list[dict]) -> dict:
+        return {
+            "consulta": consulta,
+            "historial": json.dumps(self._historial[-MAX_HISTORIAL:], ensure_ascii=False),
+            "resumen": json.dumps(resumen, ensure_ascii=False, default=str),
+            "evidencia": json.dumps(evidencia, ensure_ascii=False),
+        }
+
+    def _invocar_generacion(
+        self,
+        *,
+        consulta: str,
+        filtros: FiltrosConsulta,
+        resumen: dict,
+        evidencia: list[dict],
+        temperatura: float | None = None,
+        top_p: float | None = None,
+        modelo: str | None = None,
+    ) -> SalidaConversacional:
         if self._generador is not None:
             resultado = self._generador(
                 consulta=consulta,
@@ -781,20 +1074,10 @@ class AgenteConversacional:
                 else SalidaConversacional.model_validate(resultado)
             )
 
-        entrada = {
-            "consulta": consulta,
-            "historial": json.dumps(
-                self._historial[-MAX_HISTORIAL:],
-                ensure_ascii=False,
-            ),
-            "resumen": json.dumps(resumen, ensure_ascii=False, default=str),
-            "evidencia": json.dumps(
-                _evidencia_acotada(evidencia),
-                ensure_ascii=False,
-            ),
-        }
+        entrada = self._entrada_generacion(consulta, resumen, evidencia)
         proveedor = PROVEEDOR_NVIDIA_NIM if modelo else obtener_proveedor_generacion()
-        seleccion = {"modelo_id": modelo} if modelo else {}
+        seleccion: dict[str, Any] = {"modelo_id": modelo} if modelo else {}
+        seleccion["max_tokens"] = obtener_presupuesto_contexto().salida
         config = config_ejecucion(
             "agente_conversacional",
             intento=1,
@@ -805,7 +1088,7 @@ class AgenteConversacional:
                 PROVEEDOR_NVIDIA_NIM, temperatura, top_p, **seleccion
             ).invoke(valor, config=config)
             respaldo = lambda valor: _obtener_cadena(
-                PROVEEDOR_GEMINI, temperatura, top_p
+                PROVEEDOR_GEMINI, temperatura, top_p, max_tokens=seleccion["max_tokens"],
             ).invoke(valor, config=config)
             primario.__name__ = PROVEEDOR_NVIDIA_NIM
             respaldo.__name__ = PROVEEDOR_GEMINI
@@ -815,7 +1098,7 @@ class AgenteConversacional:
                 respaldo=respaldo,
             )["resultado"]
         else:
-            resultado = _obtener_cadena(proveedor, temperatura, top_p).invoke(
+            resultado = _obtener_cadena(proveedor, temperatura, top_p, **seleccion).invoke(
                 entrada, config=config
             )
         return SalidaConversacional.model_validate(resultado)
@@ -825,11 +1108,84 @@ class AgenteConversacional:
         *,
         borrador: dict,
         evidencia: list[dict],
+        agregados: dict | None = None,
+    ) -> SalidaVerificacion:
+        presupuesto = obtener_presupuesto_contexto()
+
+        def cabe(fuentes: list[dict], objetivos: list[str] | None = None) -> bool:
+            entrada = {
+                "borrador": json.dumps(borrador, ensure_ascii=False),
+                "evidencia": json.dumps(fuentes, ensure_ascii=False),
+                "afirmaciones_objetivo": json.dumps(objetivos or [], ensure_ascii=False),
+                "agregados": json.dumps(agregados or {}, ensure_ascii=False),
+            }
+            return _tokens_prompt(prompt_verificacion, entrada, SalidaVerificacion) <= presupuesto.entrada
+
+        if cabe(evidencia):
+            return self._invocar_verificacion(
+                borrador=borrador, evidencia=evidencia,
+                agregados=agregados,
+            )
+        if not cabe([]):
+            raise ValueError("El borrador y las instrucciones de verificación exceden el presupuesto de contexto.")
+        extraccion = self._invocar_verificacion(
+            borrador=borrador, evidencia=[], agregados=agregados,
+        )
+        objetivos = list(dict.fromkeys(a.afirmacion for a in extraccion.afirmaciones))
+        if not objetivos:
+            raise ValueError("No se identificaron afirmaciones verificables para procesar por lotes.")
+        lotes = dividir_evidencia(evidencia, lambda fuentes: cabe(fuentes, objetivos))
+        afirmaciones = {
+            texto: AfirmacionVerificada(afirmacion=texto, respaldada=False, citas=[])
+            for texto in objetivos
+        }
+        for lote in lotes:
+            verificacion = self._invocar_verificacion(
+                borrador=borrador, evidencia=lote, afirmaciones_objetivo=objetivos,
+                agregados=agregados,
+            )
+            if (
+                len(verificacion.afirmaciones) != len(objetivos)
+                or {a.afirmacion for a in verificacion.afirmaciones} != set(objetivos)
+            ):
+                raise ValueError("La verificación por lotes no evaluó las mismas afirmaciones.")
+            permitidos = {m["id"] for m in lote}
+            for afirmacion in verificacion.afirmaciones:
+                if any(cita not in permitidos for cita in afirmacion.citas):
+                    raise ValueError("El verificador citó una fuente ajena al lote.")
+                if afirmacion.respaldada and (
+                    afirmacion.citas or (agregados is not None and afirmacion.respaldo_agregado)
+                ):
+                    anterior = afirmaciones[afirmacion.afirmacion]
+                    anterior.respaldada = True
+                    anterior.citas = list(dict.fromkeys([*anterior.citas, *afirmacion.citas]))
+                    anterior.respaldo_agregado |= afirmacion.respaldo_agregado and agregados is not None
+        return SalidaVerificacion(
+            afirmaciones=list(afirmaciones.values()),
+            resumen=(
+                f"Se contrastaron las mismas afirmaciones contra {len(lotes)} lotes. "
+                "Solo se marca respaldo cuando una fuente lo demuestra; una afirmación "
+                "que requiera combinar fragmentos puede necesitar revisión."
+            ),
+        )
+
+    def _invocar_verificacion(
+        self,
+        *,
+        borrador: dict,
+        evidencia: list[dict],
+        afirmaciones_objetivo: list[str] | None = None,
+        agregados: dict | None = None,
     ) -> SalidaVerificacion:
         if self._verificador is not None:
             resultado = self._verificador(
                 borrador=borrador,
                 evidencia=evidencia,
+                **({"agregados": agregados} if agregados is not None else {}),
+                **(
+                    {"afirmaciones_objetivo": afirmaciones_objetivo}
+                    if afirmaciones_objetivo is not None else {}
+                ),
             )
             return (
                 resultado
@@ -840,9 +1196,12 @@ class AgenteConversacional:
         entrada = {
             "borrador": json.dumps(borrador, ensure_ascii=False),
             "evidencia": json.dumps(evidencia, ensure_ascii=False),
+            "afirmaciones_objetivo": json.dumps(afirmaciones_objetivo or [], ensure_ascii=False),
+            "agregados": json.dumps(agregados or {}, ensure_ascii=False),
         }
         proveedor = obtener_proveedor_generacion()
-        cadena = _obtener_cadena_verificacion(proveedor)
+        max_tokens = obtener_presupuesto_contexto().salida
+        cadena = _obtener_cadena_verificacion(proveedor, max_tokens=max_tokens)
         config = config_ejecucion(
             "verificar_borrador",
             intento=1,
@@ -850,10 +1209,10 @@ class AgenteConversacional:
         )
         if proveedor == PROVEEDOR_NVIDIA_NIM:
             primario = lambda valor: _obtener_cadena_verificacion(
-                PROVEEDOR_NVIDIA_NIM
+                PROVEEDOR_NVIDIA_NIM, max_tokens=max_tokens,
             ).invoke(valor, config=config)
             respaldo = lambda valor: _obtener_cadena_verificacion(
-                PROVEEDOR_GEMINI
+                PROVEEDOR_GEMINI, max_tokens=max_tokens,
             ).invoke(valor, config=config)
             primario.__name__ = PROVEEDOR_NVIDIA_NIM
             respaldo.__name__ = PROVEEDOR_GEMINI
@@ -901,11 +1260,11 @@ def _presentar_preguntas(grupos: list[GrupoPregunta], ids_evidencia: set[str]) -
     lineas = []
     for grupo in grupos:
         citas = set(grupo.citas)
-        if len(citas) != len(grupo.citas) or vistos & citas or not citas <= ids_evidencia:
+        if len(citas) != len(grupo.citas) or not citas <= ids_evidencia:
             raise ValueError("Los grupos de preguntas contienen fuentes repetidas o ajenas.")
         vistos.update(citas)
         frecuencia = f"{len(citas)} mensajes" if len(citas) > 1 else "1 mensaje"
-        lineas.append(f"- {grupo.duda} — {frecuencia}. Fuentes: {', '.join(grupo.citas)}.")
+        lineas.append(f"- {grupo.duda} — {frecuencia}.")
     if vistos != ids_evidencia:
         raise ValueError("Los grupos no cubren todas las preguntas recuperadas.")
     repetidos = sum(len(grupo.citas) > 1 for grupo in grupos)
@@ -914,6 +1273,8 @@ def _presentar_preguntas(grupos: list[GrupoPregunta], ids_evidencia: set[str]) -
         f"En la muestra recuperada hay {len(vistos)} mensajes, agrupados en "
         f"{len(grupos)} dudas. Grupos con más de un mensaje: {repetidos}.\n\n"
         + "\n".join(lineas)
+        + "\n\nConsulta las referencias de cada duda en el explorador de fuentes "
+        "de la aplicación."
         + "\n\nEste resumen identifica preguntas; no propone respuestas sin contrastarlas "
         "por separado con fuentes."
     )
@@ -951,20 +1312,9 @@ def _validar_correccion(
         raise ValueError("La corrección sigue repitiendo el título o el contenido anterior.")
 
 
-def _evidencia_acotada(mensajes: list[dict]) -> list[dict]:
-    """Limita el texto enviado al modelo sin perderlo en el índice local."""
-    return [
-        {
-            **mensaje,
-            "texto": mensaje["texto"][:MAX_CARACTERES_MENSAJE],
-        }
-        for mensaje in mensajes
-    ]
-
-
 def _copia_literal_sin_cita(contenido: str, evidencia: list[dict]) -> bool:
     cuerpo = " ".join(contenido.casefold().split())
-    for mensaje in _evidencia_acotada(evidencia):
+    for mensaje in evidencia:
         texto = " ".join(mensaje["texto"].casefold().split())
         # Los hechos breves y las citas delimitadas no equivalen a pegar un post.
         if len(texto) < 80 or texto not in cuerpo:
@@ -980,18 +1330,23 @@ def _copia_literal_sin_cita(contenido: str, evidencia: list[dict]) -> bool:
 def _preparar_verificacion(
     verificacion: SalidaVerificacion,
     ids_evidencia: set[str],
+    *,
+    permitir_agregados: bool = False,
 ) -> dict:
     afirmaciones = []
     for afirmacion in verificacion.afirmaciones:
         citas_validas = [
             cita for cita in afirmacion.citas if cita in ids_evidencia
         ]
-        respaldada = afirmacion.respaldada and bool(citas_validas)
+        respaldada = afirmacion.respaldada and (
+            bool(citas_validas) or (permitir_agregados and afirmacion.respaldo_agregado)
+        )
         afirmaciones.append(
             {
                 "afirmacion": afirmacion.afirmacion,
                 "respaldada": respaldada,
                 "citas": citas_validas,
+                **({"respaldo_agregado": afirmacion.respaldo_agregado} if permitir_agregados else {}),
             }
         )
     todas_respaldadas = bool(afirmaciones) and all(
@@ -1039,20 +1394,14 @@ def _resumir(mensajes: list[dict], filtros: FiltrosConsulta) -> dict:
     }
     if filtros.cantidad:
         resumen["cantidad_solicitada"] = filtros.cantidad
-        resumen["mensajes_enviados_al_modelo"] = min(
-            len(mensajes), _limite_evidencia(filtros)
-        )
+    resumen["mensajes_enviados_al_modelo"] = (
+        min(len(mensajes), filtros.cantidad) if filtros.cantidad is not None else len(mensajes)
+    )
     return resumen
 
 
-def _limite_evidencia(filtros: FiltrosConsulta) -> int:
-    limite = min(filtros.cantidad, MAX_EVIDENCIA_LISTADO) if filtros.cantidad else (
-        MAX_EVIDENCIA_LISTADO if filtros.tipos_detectados or filtros.agrupar_preguntas
-        else MAX_COINCIDENCIAS
-    )
-    if filtros.intencion == "borrador" and filtros.plataforma == "x":
-        return min(limite, MAX_EVIDENCIA_X)
-    return limite
+def _tokens_prompt(prompt, entrada: dict, esquema: type[BaseModel]) -> int:
+    return estimar_entrada(prompt.format_messages(**entrada), esquema.model_json_schema())
 
 
 @lru_cache(maxsize=32)
@@ -1061,6 +1410,7 @@ def _obtener_cadena(
     temperatura: float | None = None,
     top_p: float | None = None,
     modelo_id: str | None = None,
+    max_tokens: int = 4096,
 ):
     muestreo: dict[str, Any] = {
         clave: valor
@@ -1073,17 +1423,19 @@ def _obtener_cadena(
         SalidaConversacional,
         proveedor=proveedor,
         ruta="conversacion",
+        max_tokens=max_tokens,
         **muestreo,
     )
     return prompt_conversacion | modelo
 
 
-@lru_cache(maxsize=4)
-def _obtener_cadena_verificacion(proveedor: str):
+@lru_cache(maxsize=8)
+def _obtener_cadena_verificacion(proveedor: str, max_tokens: int = 4096):
     modelo = obtener_modelo_generacion_estructurado(
         SalidaVerificacion,
         proveedor=proveedor,
         ruta="conversacion",
         modelo=MODELOS_RESPUESTA["super"] if proveedor == PROVEEDOR_NVIDIA_NIM else None,
+        max_tokens=max_tokens,
     )
     return prompt_verificacion | modelo

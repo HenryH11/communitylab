@@ -11,6 +11,7 @@ from src.agentes.errores_ia import (
     ErrorSalidaProveedor,
 )
 from src.agentes.observabilidad import obtener_contexto_llamada_ia
+from src.agentes.consumo import LimiteConsumo
 from src.agentes.reintentos import (
     FalloOperacion,
     ejecutar_con_reintentos,
@@ -189,6 +190,8 @@ def invocar_modelo_con_fallback(
         }
 
     except Exception as error_respaldo:
+        if isinstance(error_respaldo, LimiteConsumo):
+            raise
         assert fallo_primario is not None
 
         causa_primaria = _causa_fallo(

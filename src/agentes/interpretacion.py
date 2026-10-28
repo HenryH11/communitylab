@@ -19,6 +19,7 @@ from src.agentes.modelo_ia import (
     obtener_modelo_generacion_estructurado,
 )
 from src.agentes.observabilidad import config_ejecucion
+from src.agentes.contexto import obtener_presupuesto_contexto
 from src.agentes.plataformas import PlataformaPublicacion
 from src.agentes.prompts.interpretacion import prompt_interpretacion
 
@@ -59,6 +60,16 @@ class PlanConsulta(BaseModel):
         default=False,
         description="True para identificar o resumir preguntas frecuentes y agrupar dudas por sus fuentes.",
     )
+    listar_autores: bool = Field(
+        default=False,
+        description="True para listar nombres de autores presentes en los datos, sin redactar mensajes.",
+    )
+    campos_listado: list[Literal[
+        "id", "autor", "canal", "sentimiento", "tema", "tipo", "fecha", "contenido_textual",
+    ]] = Field(
+        default_factory=list,
+        description="Campos de la base solicitados como listado literal, sin análisis ni redacción.",
+    )
     canal: str | None = Field(default=None, max_length=250)
     fecha_desde: date | None = None
     fecha_hasta: date | None = None
@@ -71,7 +82,7 @@ class PlanConsulta(BaseModel):
             "longitud o plataforma; 'más cercano' por sí solo es cambio de tono."
         ),
     )
-    cantidad: int | None = Field(default=None, ge=1, le=1_000, strict=True)
+    cantidad: int | None = Field(default=None, ge=1, strict=True)
     respuesta: str = Field(default="", max_length=1_200)
 
     @model_validator(mode="after")
@@ -80,6 +91,13 @@ class PlanConsulta(BaseModel):
             raise ValueError("Una nueva versión requiere una petición de borrador.")
         if self.agrupar_preguntas and self.intencion != "consulta":
             raise ValueError("Agrupar preguntas requiere una consulta, no un borrador.")
+        if self.listar_autores and (self.intencion != "consulta" or self.agrupar_preguntas):
+            raise ValueError("Listar autores requiere una consulta sin agrupación de preguntas.")
+        if self.campos_listado and (
+            self.intencion != "consulta" or self.agrupar_preguntas or self.listar_autores
+        ):
+            raise ValueError("Listar campos requiere una consulta sin agrupación ni listar_autores.")
+        self.campos_listado = list(dict.fromkeys(self.campos_listado))
         if self.tipo_detectado and self.tipos_detectados:
             raise ValueError("Usa tipo_detectado o tipos_detectados, no ambos.")
         self.tipos_detectados = list(dict.fromkeys(t.strip() for t in self.tipos_detectados))
@@ -106,13 +124,14 @@ class PlanConsulta(BaseModel):
         return self
 
 
-@lru_cache(maxsize=4)
-def _obtener_cadena_interpretacion(proveedor: str):
+@lru_cache(maxsize=8)
+def _obtener_cadena_interpretacion(proveedor: str, max_tokens: int = 4096):
     modelo = obtener_modelo_generacion_estructurado(
         PlanConsulta,
         proveedor=proveedor,
         ruta="conversacion",
         temperatura=0.0,
+        max_tokens=max_tokens,
         modelo=(
             obtener_modelo_nvidia_interpretacion()
             if proveedor == PROVEEDOR_NVIDIA_NIM else None
@@ -138,17 +157,18 @@ def interpretar_consulta(
         "revision": "",
     }
     proveedor = obtener_proveedor_generacion()
+    max_tokens = obtener_presupuesto_contexto().salida
     config = config_ejecucion("interpretar_consulta", intento=1, ruta="conversacion")
     try:
         for intento in range(2):
             if proveedor == PROVEEDOR_NVIDIA_NIM:
                 def primario(valor):
-                    return _obtener_cadena_interpretacion(PROVEEDOR_NVIDIA_NIM).invoke(
+                    return _obtener_cadena_interpretacion(PROVEEDOR_NVIDIA_NIM, max_tokens=max_tokens).invoke(
                         valor, config=config
                     )
 
                 def respaldo(valor):
-                    return _obtener_cadena_interpretacion(PROVEEDOR_GEMINI).invoke(
+                    return _obtener_cadena_interpretacion(PROVEEDOR_GEMINI, max_tokens=max_tokens).invoke(
                         valor, config=config
                     )
 
@@ -158,7 +178,7 @@ def interpretar_consulta(
                     entrada, primario=primario, respaldo=respaldo
                 )["resultado"]
             else:
-                resultado = _obtener_cadena_interpretacion(proveedor).invoke(
+                resultado = _obtener_cadena_interpretacion(proveedor, max_tokens=max_tokens).invoke(
                     entrada, config=config
                 )
             plan = PlanConsulta.model_validate(resultado)

@@ -22,15 +22,33 @@ la comprobación del navegador con los datos y la imagen realmente desplegados.
    buscar; ante texto incomprensible se pide aclaración.
 3. Busca los términos del plan sobre un índice invertido construido al crear
    la instancia o actualizar sus datos. Aplica los filtros de forma
-   determinista antes de elegir hasta ocho mensajes como contexto, o la
-   cantidad solicitada hasta un máximo de 20. En X se limita a tres fuentes.
+   determinista. Las consultas reciben la cantidad solicitada, o todas las
+   coincidencias si no se indica cantidad, sin el antiguo tope de 20.
+   Esto también aplica a borradores: ya no hay topes de ocho fuentes ni tres
+   para X. La extensión del post no limita el universo que se analiza.
 4. Calcula distribuciones y conteos sobre todas las coincidencias, no solo
    sobre los mensajes incluidos en el contexto acotado.
-5. Si hay evidencia, realiza una llamada estructurada al proveedor de
-   generación configurado. NVIDIA NIM conserva el fallback existente a Gemini.
+5. Si se piden campos literales, `campos_listado` selecciona columnas del contrato:
+   ID, autor, canal, sentimiento, tema, tipo, fecha o contenido textual.
+   Python aplica filtros y cantidad sin enviar los textos al redactor. Un campo
+   de metadatos produce valores distintos no vacíos; ID y contenido textual
+   conservan cada mensaje. Varios campos producen filas y mantienen nulls.
+   Para nombres/autores, `listar_autores=true` o `campos_listado=["autor"]` produce un listado local
+   de nombres distintos no vacíos, respetando filtros y cantidad. Deduplica por
+   nombre sin distinguir mayúsculas y usa un ID real de fuente por nombre;
+   no identifica personas distintas que compartan nombre. No llama al redactor
+   ni envía los textos. Reporta nombres disponibles y mensajes sin autor;
+   nunca sustituye un nombre ausente por un ID de mensaje.
+   Para análisis y redacción, empaca la evidencia por presupuesto de contexto.
+   Si no cabe, extrae hallazgos por lotes y consolida las síntesis en uno o más
+   niveles hasta poder redactar el resultado final. NVIDIA NIM conserva el
+   fallback existente a Gemini con el mismo presupuesto operativo.
 6. Valida que las citas correspondan a la evidencia recuperada y, cuando se
    solicitó un borrador, que la salida incluya la plataforma y hashtags
    estructurados.
+   Las consultas analíticas generadas por IA pasan siempre por una revisión
+   factual del texto final completo y sus hallazgos, contra los mensajes
+   originales y agregados autorizados. No depende del selector de borradores.
 7. El usuario de la sesión elige el modo para cada consulta de borrador:
    `prompt_estricto` no ejecuta una revisión separada;
    `verificacion_automatica` revisa afirmaciones factuales y devuelve el resumen,
@@ -39,7 +57,9 @@ la comprobación del navegador con los datos y la imagen realmente desplegados.
    de nuevo. Si sigue sin respaldo, faltan afirmaciones verificables o las citas
    no son válidas, lanza un error sin guardar ni habilitar ese borrador.
 
-Cada turno requiere una llamada de interpretación. Las consultas sin
+Cada turno requiere una llamada de interpretación. Los listados de campos
+no requieren una segunda llamada: selección, deduplicación, conteos y
+presentación se resuelven en Python. Las consultas sin
 coincidencias no llaman al generador, y las interacciones de conversación,
 aclaración o fuera de alcance se responden desde el intérprete sin buscar.
 El modelo recibe la fecha UTC de referencia para interpretar períodos; `hoy`
@@ -58,7 +78,215 @@ términos que ningún mensaje menciona, filtros sin resultados, falta de fechas 
 mensajes no aptos para contenido, junto con los sentimientos y tipos
 disponibles. Pedidos como "los 20 mejores comentarios" se interpretan como
 mensajes positivos ordenados con `muy_positivo` primero; la cantidad pedida
-(hasta 20) se respeta y, si hay menos, la respuesta lo dice sin rellenar.
+se respeta y, si hay menos, la respuesta lo dice sin rellenar. El esquema
+acepta más de 20 citas y respuestas de más de 4000 caracteres; la cantidad
+solicitada ya no está limitada a 1000 por el intérprete.
+
+### Presupuesto de contexto y cobertura
+
+Esto elimina el recorte por número de registros, no los límites de tokens ni
+la cuota del proveedor. La búsqueda y los agregados se calculan sobre la
+captura completa. La cantidad del usuario selecciona el conjunto a procesar;
+si no indica cantidad se procesan todas las coincidencias, también para posts.
+
+`src/agentes/contexto.py` controla dos variables **solo del servidor**:
+
+| Variable | Valor inicial | Uso |
+|---|---:|---|
+| `COMMUNITYLAB_CONTEXTO_TOKENS` | 32768 | Presupuesto operativo total por llamada. |
+| `COMMUNITYLAB_SALIDA_TOKENS` | 4096 | Reserva y máximo de salida enviado a NVIDIA/Gemini. |
+
+La entrada dispone de la diferencia entre ambos valores. El cálculo incluye
+prompt, esquema estructurado, consulta, historial, agregados, evidencia y margen
+de formato. Se usa una estimación conservadora por bytes UTF-8, no el tokenizer
+exacto del proveedor: puede producir más lotes de los estrictamente necesarios.
+Estos valores no afirman la capacidad máxima de ningún modelo. El equipo debe
+elegir un presupuesto compatible con todos los modelos configurados y su respaldo.
+Una configuración vacía, no positiva o con salida mayor/igual al total se rechaza.
+Los dos Compose de Marketing transmiten estas variables al proceso de Streamlit;
+no hay controles ni parámetros públicos para cambiarlas desde el navegador.
+
+Ya no se recorta cada mensaje a 1200 caracteres. Si un texto individual no cabe,
+se fragmenta conservando todos sus caracteres y el ID original. Cada lote se
+procesa y sus síntesis conservan procedencia **por hallazgo**, no por lote
+completo. Cada `hallazgo` contiene una afirmación atómica y sus IDs exactos.
+Se genera una entrada intermedia por hallazgo, y al consolidar solo se expanden
+las referencias de los hallazgos elegidos. Las citas de un hecho no heredan las
+de los otros hechos de su lote. Las citas intermedias se traducen a IDs reales
+antes de devolver la respuesta. Los conteos globales siguen siendo
+los calculados en Python, no sumas del modelo. Analizar todo no garantiza
+reproducir cada detalle en una síntesis: para extraer campos literalmente se usa
+el listado determinista, sin comprimir sus valores.
+
+Las extracciones y consolidaciones sin `hallazgos` se rechazan (excepto el
+modo de agrupación, que usa `grupos_preguntas`). Cada referencia debe pertenecer
+a la entrada de esa etapa, sin duplicados dentro de un hallazgo. Las citas
+generales se calculan como unión de los hallazgos, no de todo lo procesado.
+La salida conserva `hallazgos` traducidos a fuentes originales para filtrarlos
+en el explorador. Esto evita la atribución indiscriminada por lote; no demuestra
+por sí solo que el modelo eligió evidencia semánticamente correcta. Para
+borradores se mantiene disponible la verificación factual independiente.
+
+### Revisión obligatoria del análisis final
+
+Las referencias válidas no garantizan que el texto final diga lo mismo que sus
+hallazgos. `_verificar_analisis` revisa la respuesta completa y los hallazgos
+candidatos en una llamada separada: debe extraer también las afirmaciones que
+aparecen solo en la respuesta. Los hallazgos y sus citas NO se pasan como
+evidencia autorizada; la evidencia son los mensajes originales seleccionados.
+
+También se pasan exclusivamente los agregados calculados por Python: universo,
+coincidencias, distribuciones, porcentajes, filtros y cantidad solicitada.
+Un conteo puede recibir `respaldo_agregado=true` sin inventar un ID de mensaje.
+Los agregados no demuestran causalidad, logros ni hechos que no contengan.
+Un indicador de agregado no valida un borrador: solo se acepta en esta revisión
+analítica con los agregados autorizados.
+
+El verificador evalúa el texto real que verá el usuario, incluida la presentación
+de preguntas agrupadas. Si necesita lotes, primero extrae las afirmaciones de
+todo el candidato y evalúa exactamente las mismas en cada lote; conserva los
+agregados globales, sin sumar resultados de síntesis. Una revisión vacía,
+afirmaciones sin respaldo, citas ajenas, fallo del proveedor o presupuesto
+agotado impiden mostrar/guardar la respuesta como válida. No se hace una
+reescritura automática de análisis que pueda introducir nuevas afirmaciones.
+
+El resultado expone `verificacion.obligatoria=true` y
+`alcance="texto_final_y_hallazgos"`; la interfaz muestra la revisión aunque el
+selector de verificación de borradores esté desactivado. Los respaldos por
+agregados se identifican como tales, separados de los mensajes citados.
+Los listados literales calculados en Python y las respuestas locales sin
+coincidencias no pasan por esta llamada, pues no son análisis generados por IA.
+
+Esta revisión consume el mismo presupuesto de intentos/tokens de la consulta
+y usa el fallback existente. Aumenta latencia y costo. Es una comprobación por
+modelo, no una prueba formal ni una garantía de extracción semántica perfecta.
+Las pruebas offline usan verificadores simulados e integración sin red; no
+sustituyen una evaluación real con el proveedor y el conjunto desplegados.
+
+La verificación también respeta el presupuesto. Cuando necesita lotes, primero
+extrae las afirmaciones del borrador y luego evalúa exactamente las mismas en
+todos ellos. Solo acepta respaldo demostrado por las fuentes de un lote. Es
+conservadora: un hecho que requiera combinar fragmentos puede necesitar revisión.
+
+`resumen.procesamiento` informa registros procesados, lotes fuente, llamadas de
+generación, niveles de consolidación y máximo estimado de entrada. La interfaz
+muestra cobertura y llamadas, no controles de presupuesto; el contador no incluye
+interpretación, verificación, reescrituras anteriores ni reintentos del proveedor.
+Si falla un lote, las instrucciones ya no caben o las síntesis no reducen el
+contexto, se lanza un error y no se guarda una respuesta parcial como exitosa.
+
+### Admisión y presupuesto total por consulta
+
+`src/agentes/consumo.py` envuelve la consulta completa, desde la interpretación
+hasta la última corrección/verificación, con un contexto aislado por petición.
+La fachada de modelos reserva consumo **antes de cada intento** de proveedor:
+entrada estimada (incluido esquema/margen) más máximo de salida. Los reintentos
+de la aplicación y el respaldo pasan por esa misma reserva. En estas llamadas
+Gemini usa cero reintentos internos del cliente para que no existan intentos
+ocultos fuera del contador; otros flujos conservan su política anterior.
+
+| Variable del servidor | Inicial | Efecto |
+|---|---:|---|
+| `COMMUNITYLAB_MAX_INTENTOS_CONSULTA` | 30 | Máximo de intentos a proveedores de una consulta, incluidas todas sus etapas. |
+| `COMMUNITYLAB_MAX_TOKENS_CONSULTA` | 250000 | Suma máxima de reservas conservadoras de entrada y salida. |
+| `COMMUNITYLAB_MAX_CONSULTAS_ACTIVAS` | 2 | Consultas simultáneas admitidas en este proceso. |
+| `COMMUNITYLAB_MAX_INTENTOS_HORA` | 0 | Intentos compartidos en ventana móvil de una hora; 0 desactiva la cuota. |
+
+No son topes de registros. Si el trabajo no cabe en el presupuesto total, se
+interrumpe antes del siguiente intento y no se guarda una respuesta incompleta
+como éxito. Los intentos fallidos no se reembolsan en los contadores: también
+pueden generar costo. Un error de cuota no activa otra ruta de proveedor para
+saltarlo. La concurrencia y la cuota comparten un bloqueo en memoria, también
+entre sesiones anónimas. Si no hay cupo se informa que el servicio está ocupado,
+sin crear una cola ilimitada. El cupo se libera incluso si la consulta falla.
+
+`salida.consumo` informa intentos y tokens reservados de **toda la consulta**.
+No se confunde con `resumen.procesamiento.llamadas_generacion`, que solo describe
+la generación final y sus lotes. La interfaz presenta ambos con su alcance.
+Los tokens reservados no son facturación ni tokens realmente consumidos.
+
+Por decisión de configuración inicial, la cuota horaria queda **desactivada**:
+hay protección por petición y capacidad, pero no techo al gasto acumulado entre
+visitantes. Activar esa cuota o configurar límites de gasto del proveedor sigue
+siendo necesario para fijar ese techo. Los límites compartidos son por proceso:
+reiniciarlo borra el historial horario y varias réplicas tienen cuotas separadas.
+Para un despliegue distribuido hace falta un contador/limitador externo compartido;
+este código no sustituye autenticación, protección de tráfico ni control de gasto.
+Todas las variables se transmiten desde Compose/entorno, nunca desde el navegador.
+
+### Explorador de fuentes citadas
+
+`src/app/fuentes_citadas.py` conserva todas las referencias, sin renderizar
+1200 textos al abrir el panel. Muestra diez fuentes por página, permite buscar
+por ID, autor, canal o contenido y reinicia la página cuando cambia un filtro.
+Cuando hay hallazgos, verificación o agrupación de dudas, permite seleccionar un
+hallazgo, afirmación o duda para explorar exactamente sus referencias registradas.
+Incluye las citas del verificador aunque no estuvieran en la lista general.
+
+Cada fuente tiene una vista previa de 180 caracteres y un control para mostrar
+su texto completo. La búsqueda examina todo el contenido, no solo esa vista.
+El panel usa un fragmento de Streamlit: navegar, buscar o abrir un texto no
+ejecuta otra consulta al modelo. Cada respuesta tiene claves independientes.
+Las dudas agrupadas ya no imprimen todas sus referencias dentro de la respuesta:
+las conservan en `grupos_preguntas`; los demás consumidores conservan acceso
+programático a esos IDs.
+
+Se distingue cantidad de registros procesados de cantidad de referencias.
+La procedencia de las síntesis se conserva por hallazgo, sin expandir todas
+las fuentes de un lote. El filtro muestra relaciones registradas por el modelo
+o verificador, no una verificación nueva ni una garantía de verdad.
+Al completar cada respuesta, la interfaz conserva en `salida.fuentes_citadas`
+una referencia a la copia histórica del contenido y metadatos de las fuentes
+referenciadas por la salida, hallazgos, verificación y grupos. El almacén
+`fuentes_agente_versionadas` comparte esa copia entre respuestas que citan el
+mismo ID con contenido y metadatos iguales. Solo copia versiones nuevas de las
+fuentes citadas, no toda la base ni una copia por turno. Las copias son
+independientes de los datos de entrada y se tratan como solo lectura; cambiar
+texto o metadatos crea otra versión, sin modificar la anterior. Al inicializar
+el almacén se deduplican también las copias ya presentes en el historial.
+El explorador usa esa copia tanto para buscar como para mostrar
+el texto: actualizar la captura, editar/eliminar mensajes o reutilizar un ID no
+cambia las fuentes de respuestas ya guardadas. Si una fuente no se pudo conservar,
+lo avisa y nunca la sustituye por un registro actual con ese ID.
+
+Esta conservación reside en el historial de Streamlit de la sesión, no en una
+base persistente: aumenta el uso de memoria por conversación y se pierde al
+reiniciar la sesión. Las respuestas antiguas que no tienen copia siguen
+permitiendo consultar los datos actuales, pero muestran explícitamente que
+podrían diferir del contenido usado originalmente. No se puede reconstruir
+retroactivamente una fuente histórica que no se guardó.
+
+El historial visual se presenta en páginas de diez turnos completos
+(pregunta/respuesta, incluidos los errores). La página 1 muestra los más
+recientes, en orden cronológico dentro de la página. Las páginas antiguas
+conservan sus fuentes, controles y claves de turno originales. Enviar una
+consulta desde cualquier página vuelve a la 1; el nuevo turno cuenta dentro
+del máximo de diez visibles. Navegar no llama al modelo y no elimina turnos ni
+cambia su contexto conversacional. Al reiniciar el historial desde el flujo
+interno se limpia también el almacén de fuentes y la página seleccionada.
+
+Esta estrategia reduce copias y trabajo de renderizado, pero no impone un
+techo total de memoria: respuestas y versiones realmente distintas siguen
+ocupando espacio mientras la sesión exista. No hay recorte silencioso ni
+persistencia en disco.
+
+Una pregunta puede contener varias dudas y su ID puede pertenecer a varios
+grupos. Dentro de cada grupo los IDs siguen siendo únicos, deben pertenecer a
+la evidencia y, entre todos los grupos, deben cubrir las preguntas recuperadas.
+El total cuenta mensajes distintos, mientras que la frecuencia de cada duda
+cuenta los IDs distintos de ese grupo; las frecuencias no se deben sumar como
+si los grupos fueran excluyentes. Esto también admite que fragmentos de un mismo
+mensaje aporten dudas diferentes tras consolidar.
+
+El último plan de búsqueda se actualiza únicamente al completar la consulta
+y guardar su turno (incluidos listados y respuestas sin coincidencias). Los
+fallos de búsqueda, generación, revisión o presupuesto conservan el plan del
+último turno completado; no contaminan los filtros de seguimientos posteriores.
+
+La fuente Oracle ahora transporta `autor` nullable del Conjunto Consultable
+1.2 hasta el agente. Tras desplegar el lector, las sesiones existentes deben
+renovar su captura (vigencia de una hora) o reiniciarse para ver ese campo;
+añadir la columna en DB no modifica una captura ya cargada en memoria.
 
 Se eliminaron las listas de palabras vacías y las expresiones regulares que
 decidían intención, filtros y seguimientos. El modelo devuelve un plan completo

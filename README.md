@@ -13,6 +13,13 @@ Las aplicaciones se ejecutan por separado: Marketing usa
 Consultar [despliegue y aislamiento de credenciales](docs/docker_cloud_semana4.md)
 antes de publicar cualquiera de las dos entradas.
 
+## Guías para entender el proyecto
+
+- [Manual de lectura del código](docs/manual_lectura_codigo.md): recorridos de
+  ejecución, contratos, estado, inventario y laboratorio offline.
+- [Razones de arquitectura y tecnologías](docs/razones_arquitectura_tecnologias.md):
+  estructura, decisiones, alternativas, compromisos y límites del diseño actual.
+
 Nuestra solución opera como una línea de ensamblaje inteligente: ingiere conversaciones desestructuradas, debates y testimonios orgánicos de canales digitales (ruido), los limpia mediante algoritmos matemáticos de relevancia semántica, y los procesa mediante **Modelos de Lenguaje de Gran Escala (LLMs)** y grafos de decisión dirigidos en **LangGraph** para empaquetarlos automáticamente en activos de marketing de alto impacto (MarTech) y entradas dinámicas de FAQ. La persistencia de los reportes se ejecuta de forma nativa e integral en la capa gratuita Always Free de **Oracle Cloud Infrastructure (OCI) Object Storage**.
 
 ---
